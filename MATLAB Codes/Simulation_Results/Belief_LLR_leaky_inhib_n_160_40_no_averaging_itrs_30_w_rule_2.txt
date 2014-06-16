@@ -1,0 +1,12 @@
+T 	 700 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227000 	 tau 	 5.030000 	 BBLR_thr 	 0.750000 	 acc_plus 	 0.373855 	 acc_minus 	 0.091204 	 err 	 0.227668 	
+T 	 1200 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227000 	 tau 	 5.030000 	 BBLR_thr 	 0.750000 	 acc_plus 	 0.313879 	 acc_minus 	 0.113135 	 err 	 0.237835 	
+T 	 2200 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227000 	 tau 	 5.030000 	 BBLR_thr 	 0.750000 	 acc_plus 	 0.433179 	 acc_minus 	 0.178016 	 err 	 0.219566 	
+T 	 1700 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227000 	 tau 	 5.030000 	 BBLR_thr 	 0.750000 	 acc_plus 	 0.386806 	 acc_minus 	 0.169788 	 err 	 0.220596 	
+T 	 700 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227000 	 tau 	 5.030000 	 BBLR_thr 	 0.150000 	 acc_plus 	 0.217282 	 acc_minus 	 0.092897 	 err 	 0.268252 	
+T 	 1200 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227000 	 tau 	 5.030000 	 BBLR_thr 	 0.150000 	 acc_plus 	 0.392902 	 acc_minus 	 0.129341 	 err 	 0.232426 	
+T 	 2700 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227000 	 tau 	 5.030000 	 BBLR_thr 	 0.750000 	 acc_plus 	 0.481470 	 acc_minus 	 0.207103 	 err 	 0.187321 	
+T 	 1700 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227000 	 tau 	 5.030000 	 BBLR_thr 	 0.150000 	 acc_plus 	 0.366830 	 acc_minus 	 0.161184 	 err 	 0.223082 	
+T 	 3200 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227000 	 tau 	 5.030000 	 BBLR_thr 	 0.750000 	 acc_plus 	 0.524251 	 acc_minus 	 0.271655 	 err 	 0.173442 	
+T 	 2200 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227000 	 tau 	 5.030000 	 BBLR_thr 	 0.150000 	 acc_plus 	 0.353944 	 acc_minus 	 0.195437 	 err 	 0.213210 	
+T 	 3200 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227000 	 tau 	 5.030000 	 BBLR_thr 	 0.150000 	 acc_plus 	 0.494490 	 acc_minus 	 0.277503 	 err 	 0.177429 	
+T 	 2700 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227000 	 tau 	 5.030000 	 BBLR_thr 	 0.150000 	 acc_plus 	 0.350218 	 acc_minus 	 0.129472 	 err 	 0.224062 	

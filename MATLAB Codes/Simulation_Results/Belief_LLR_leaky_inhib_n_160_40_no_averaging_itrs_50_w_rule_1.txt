@@ -1,0 +1,1 @@
+T 	 100 	 theta 	 0.020000 	 p 	 0.150000 	 q 	 0.115640 	 tau 	 5.015000 	 BBLR_thr 	 0.500000 	 acc_plus 	 0.659386 	 acc_minus 	 NaN 	 acc_0 	 0.001775 	

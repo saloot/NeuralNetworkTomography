@@ -1,0 +1,7 @@
+T 	 500 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227005 	 tau 	 5.030000 	 BBLR_thr 	 0.750000 	 acc_plus 	 0.510400 	 acc_minus 	 0.044444 	 err 	 0.200178 	
+T 	 500 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227005 	 tau 	 5.030000 	 BBLR_thr 	 0.150000 	 acc_plus 	 0.137131 	 acc_minus 	 0.086667 	 err 	 0.310973 	
+T 	 500 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227005 	 tau 	 5.030000 	 BBLR_thr 	 0.150000 	 acc_plus 	 0.218530 	 acc_minus 	 0.000000 	 err 	 0.325151 	
+T 	 500 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227005 	 tau 	 5.030000 	 BBLR_thr 	 0.150000 	 acc_plus 	 0.264697 	 acc_minus 	 0.130794 	 err 	 0.264636 	
+T 	 500 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227005 	 tau 	 5.030000 	 BBLR_thr 	 0.150000 	 acc_plus 	 0.337562 	 acc_minus 	 0.075000 	 err 	 0.209640 	
+T 	 500 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227005 	 tau 	 5.030000 	 BBLR_thr 	 0.150000 	 acc_plus 	 0.316667 	 acc_minus 	 0.090000 	 err 	 0.187887 	
+T 	 500 	 theta 	 0.050000 	 p 	 0.150000 	 q 	 0.227005 	 tau 	 5.030000 	 BBLR_thr 	 0.150000 	 acc_plus 	 0.249810 	 acc_minus 	 0.061905 	 err 	 0.276763 	
