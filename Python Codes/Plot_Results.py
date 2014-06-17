@@ -69,7 +69,7 @@ p_minus = connection_prob * (float(n_inh)/float(n))
 p_plus = connection_prob * (float(n_exc)/float(n))
 
 file_name_base_results = "./Results/Recurrent"       #The folder that stores the resutls
-file_name_base_plot = "./Results/Plot_Results"       #The folder to store resutls =
+file_name_base_plot = "./Results/Recurrent/Plot_Results"       #The folder to store resutls =
 name_base = 'FF_n_1_'
 name_base = 'Delayed_'
 if not os.path.isdir(file_name_base_plot):

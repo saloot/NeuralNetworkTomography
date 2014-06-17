@@ -106,22 +106,16 @@ def generate_activity_recurrent(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_fi
     #----------------------------------------------------------------------
     
     #--------------------Save Spike Times to the File----------------------        
-    SS = M_l2.spiketimes
+    SS = M_l2.spikes
     for l in range(0,len(SS)):
         item = SS[l]
-        if (len(item) == 0):
-            S_time_file.write("0 \t")
-        else:
-            for j in range(0,len(item)):
-                if (item[j]<0.00015):
-                    S_time_file.write("%f \t" % item[j])
-                elif (item[j]>0.00015):
-                    S_time_file.write("%f \t" % item[j])
-                    break                
-        S_time_file.write("-1 \n")
+        a = item[0]
+        b = item[1]
+        b = b.astype(float)
+        S_time_file.write("%d \t %f \n" %(a,b))
+        #S_time_file.write("\n")
     
-        
-    S_time_file.write("-2 \n")
+    S_time_file.write("-2 \t -2 \n")
     #----------------------------------------------------------------------    
     M_l1.source.clock.reinit()                  # Reset the spikemonitor's clock so that for the next random network, everything starts from t=0
     M_l2.source.clock.reinit()                  # Reset the spikemonitor's clock so that for the next random network, everything starts from t=0
@@ -196,33 +190,33 @@ def generate_activity_FF_n_1(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_file,
     print M_l3.nspikes, "spikes in output layer"
     #----------------------------------------------------------------------
     
+    
+    
     #--------------------Save Spike Times to the File----------------------        
-    SS = M_l2.spiketimes
+    SS = M_l2.spikes
     for l in range(0,len(SS)):
         item = SS[l]
-        if (len(item) == 0):
-            S_time_file.write("0 \t")
-        else:
-            for j in range(0,len(item)):
-                if (item[j]>0.000001):
-                    S_time_file.write("%f \t" % item[j])
-        S_time_file.write("-1 \n")
-        
+        a = item[0]
+        b = item[1]
+        b = b.astype(float)
+        S_time_file.write("%d \t %f \n" %(a,b))
+        #S_time_file.write("\n")
+    
+    S_time_file.write("-2 \t -2 \n")
+    
+    
     SS = M_l3.spiketimes
     for l in range(0,len(SS)):
         item = SS[l]
-        if (len(item) == 0):
-            S_time_file_out.write("0 \t")
-        else:
-            for j in range(0,len(item)):
-                if (item[j]>0.000):
-                    S_time_file_out.write("%f \t" % item[j])
-                    break                
+        a = item[0]
+        b = item[1]
+        b = b.astype(float)
+        S_time_file_out.write("%d \t %f \n" %(a,b))
+        #S_time_file_out.write("\n")
     
-    S_time_file_out.write("-2 \n")
-    S_time_file.write("-2 \n")
-
-        
+    S_time_file_out.write("-2 \t -2 \n")
+    #----------------------------------------------------------------------
+    
     #----------------------------------------------------------------------    
     M_l1.source.clock.reinit()                  # Reset the spikemonitor's clock so that for the next random network, everything starts from t=0
     M_l2.source.clock.reinit()                  # Reset the spikemonitor's clock so that for the next random network, everything starts from t=0
@@ -238,3 +232,111 @@ def generate_activity_FF_n_1(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_file,
     
     return (WWe,WWi,DDe,DDi)
 #==============================================================================
+
+
+
+
+#==============================================================================
+def beliefs_to_binary(binary_mode,W_inferred,n,p_plus,p_minus,thea,T,Delta,params,compensate_flag):
+    
+    a = W_inferred.shape    
+    n = a[0]
+        
+    if (binary_mode == 1):
+        q = params[0]
+        r = params[1]
+        epsilon_plus,epsilon_minus = determine_binary_threshold(n,p_plus,p_minus,theta,T,Delta,q)
+            
+        #epsilon_plus_adjusted = epsilon_plus * q/frac_input_neurons
+        #epsilon_minus_adjusted = epsilon_minus * q/frac_input_neurons
+            
+        epsilon_plus_adjusted = epsilon_plus  * (2*r-1)/(2*p_W_zero_1-1)
+        epsilon_minus_adjusted = epsilon_minus * (2*r-1)/(2*p_W_zero_1-1)
+
+        temp = (W_inferred > epsilon_plus_adjusted)
+        temp = temp.astype(int)            
+        W_binary = W_binary + temp
+            
+        temp = (W_inferred < epsilon_minus_adjusted)
+        temp = temp.astype(int)
+        W_binary = W_binary - temp
+    elif (binary_mode == 2):
+        
+        if (len(a)>1):
+            for i in range(0,n):
+                w_temp = W_inferred[:,i]
+                w_temp_s = np.sort(W_inferred[:,i])
+                ind = np.argsort(w_temp)
+                w_temp = np.zeros(n)
+                w_temp[ind[0:int(round(p_minus*n))+1]] = -1            
+                w_temp[ind[len(ind)-int(round(p_plus*n))+1:len(ind)+1]] = 1            
+                W_binary[:,i] = w_temp
+        else:
+            ind = np.argsort(W_inferred)
+            w_temp = np.zeros([n])
+            w_temp[ind[0:int(round(p_minus*n))+1]] = -1
+            w_temp[ind[len(ind)-int(round(p_plus*n))+1:len(ind)+1]] = 1            
+            W_binary = w_temp
+        
+    elif (binary_mode == 3):
+        
+        #---Process to make sure that all outgoing links have the same type----
+        total_belief = sum(W_inferred.T)
+        temp1 = np.sort(total_belief)
+        ind = np.argsort(total_belief)
+        
+        for i in ind[len(ind)-int(round(p_plus*n))+1:len(ind)+1]:
+            w_temp = W_inferred[i,:]
+            w_temp_s = np.sort(W_inferred[i,:])
+            ind2 = np.argsort(w_temp)
+            w_temp = np.zeros(n) 
+            w_temp[ind2[len(ind2)-int(round(connection_prob*n))+1:len(ind2)+1]] = 1
+            W_binary[i,:] = w_temp
+            
+        for i in ind[0:int(round(p_minus*n))+1]:
+            w_temp = W_inferred[i,:]
+            w_temp_s = np.sort(W_inferred[i,:])
+            ind2 = np.argsort(w_temp)
+            w_temp = np.zeros(n) 
+            w_temp[ind2[0:int(round(connection_prob*n))+1]] = -1
+            W_binary[i,:] = w_temp
+        #----------------------------------------------------------------------
+        
+    if compensate_flag:
+        #---Process to make sure that all outgoing links have the same type----
+        for i in range(0,n):
+            w_temp = W_binary_our[i,:]
+            d = sum(w_temp)
+            w_temp_s = np.sort(W_inferred_our[i,:])
+            ind = np.argsort(w_temp)
+            w_temp = np.zeros(n)
+            if (d>2):
+                w_temp[ind[len(ind)-int(round(connection_prob*n))+1:len(ind)+1]] = 1
+                W_binary_modified2[i,:] = w_temp
+                
+            elif (d< -1):
+                w_temp[ind[0:int(round(connection_prob*n))+1]] = -1
+                W_binary_modified2[i,:] = w_temp
+        #----------------------------------------------------------------------
+        
+    return W_binary
+#==============================================================================
+
+
+def calucate_accuracy(W_binary,W):
+    a = W.shape    
+    n = a[0]
+    
+    if (len(a)>1):
+        acc_plus = float(sum(sum(np.multiply(W_binary>np.zeros([n,n]),W>np.zeros([n,n])))))/float(sum(sum(W>np.zeros([n,n]))))
+        acc_minus = float(sum(sum(np.multiply(W_binary<np.zeros([n,n]),W<np.zeros([n,n])))))/float(sum(sum(W<np.zeros([n,n]))))
+        acc_zero = float(sum(sum(np.multiply(W_binary==np.zeros([n,n]),W==np.zeros([n,n])))))/float(sum(sum(W==np.zeros([n,n]))))
+        
+        prec_plus = float(sum(sum(np.multiply(W_binary>np.zeros([n,n]),W>np.zeros([n,n])))))/float(sum(sum(W_binary>np.zeros([n,n]))))
+        prec_minus = float(sum(sum(np.multiply(W_binary<np.zeros([n,n]),W<np.zeros([n,n])))))/float(sum(sum(W_binary<np.zeros([n,n]))))
+        prec_zero = float(sum(sum(np.multiply(W_binary==np.zeros([n,n]),W==np.zeros([n,n])))))/float(sum(sum(W_binary==np.zeros([n,n]))))
+    
+    recall = [acc_plus,acc_minus,acc_zero]
+    recall = [prec_plus,prec_minus,prec_zero]
+    return recall,precision
+#==============================================================================    
