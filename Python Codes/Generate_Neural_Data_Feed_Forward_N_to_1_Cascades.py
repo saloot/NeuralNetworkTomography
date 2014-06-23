@@ -175,6 +175,21 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         Wi = np.genfromtxt(file_name, dtype=None, delimiter='\t')
         Wi = Wi.reshape(n_inh,1)        
     else:
+        W_flag = 0
+        
+    file_name = file_name_base_data + "/Graphs/De_FF_n_1_%s.txt" %file_name_ending
+    W_flag = 1
+    if (os.path.isfile(file_name)):
+        De = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+        De = De.reshape(n_exc,1)        
+    else:
+        W_flag = 0
+    
+    file_name = file_name_base_data + "/Graphs/Di_FF_n_1_%s.txt" %file_name_ending
+    if (os.path.isfile(file_name)):        
+        Di = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+        Di = Wi.reshape(n_inh,1)        
+    else:
         W_flag = 0        
     
     if not W_flag:        
@@ -221,7 +236,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
     for cascade_count in range(0,no_cascades):
         
         #--------------------------Generate Activity---------------------------
-        WWe,WWi,DDe,DDi = generate_activity_FF_n_1(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_file,S_time_file_out,eqs,tau,tau_e,delay_max,frac_input_neurons)
+        WWe,WWi,DDe,DDi = generate_activity_FF_n_1(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_file,S_time_file_out,eqs,tau,tau_e,delay_max,frac_input_neurons,cascade_count)
         #----------------------------------------------------------------------
         
         #------------------------Check for Any Errors--------------------------

@@ -1,11 +1,11 @@
 #=======================DEFAULT VALUES FOR THE VARIABLES=======================
 n_exc_default = 160
 n_inh_default = 40
-connection_prob_default = 0.15
-frac_input_neurons_default = 0.6
-no_cascades_default = 10000
-ensemble_size_default = 8
-delay_max_default = 0.0
+connection_prob_default = 0.2
+frac_input_neurons_default = 0.4
+no_cascades_default = 8000
+ensemble_size_default = 10
+delay_max_default = 1.0
 binary_mode_default = 2
 file_name_base_result_default = "./Results/FeedForward"
 inference_method_default = 0
@@ -36,13 +36,13 @@ help_message = help_message + "\n"
 
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 #from brian import *
-import time
+from time import time
 import numpy as np
 import sys,getopt,os
+import matplotlib.pyplot as plt
 
-
-#os.chdir('C:\Python27')
-os.chdir('/home/salavati/Desktop/Neural_Tomography')
+os.chdir('C:\Python27')
+#os.chdir('/home/salavati/Desktop/Neural_Tomography')
 from auxiliary_functions import determine_binary_threshold
 from auxiliary_functions import q_func_scalar
 #==============================================================================
@@ -50,7 +50,7 @@ from auxiliary_functions import q_func_scalar
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
 os.system('clear')                                              # Clear the commandline window
-t0 = time.time()                                                     # Initialize the timer
+t0 = time()                                                     # Initialize the timer
 
 
 input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:B:A:D:F:M:")
@@ -159,20 +159,25 @@ file_name_base_data = "./Data/FeedForward"              # The folder to read neu
 file_name_base_results = "./Results/Feedforward"        # The folder to store resutls
 delay_max = float(delay_max)                            # This is done to avoid any incompatibilities in reading the data files
 
-T_range = range(100, no_cascades, 100)                  # The range of sample sizes considered to investigate the effect of sample size on the performance
+T_range = range(50, no_cascades, 250)                  # The range of sample sizes considered to investigate the effect of sample size on the performance
 #------------------------------------------------------------------------------
 
-#------------------Create the Necessary Directories if NEcessary---------------
+#------------------Create the Necessary Directories if Necessary---------------
 if not os.path.isdir(file_name_base_results):
     os.makedirs(file_name_base_results)
+if not os.path.isdir(file_name_base_results+'/Accuracies'):
     temp = file_name_base_results + '/Accuracies'
     os.makedirs(temp)
+if not os.path.isdir(file_name_base_results+'/RunningTimes'):
     temp = file_name_base_results + '/RunningTimes'
     os.makedirs(temp)
+if not os.path.isdir(file_name_base_results+'/Inferred_Graphs'):
     temp = file_name_base_results + '/Inferred_Graphs'
     os.makedirs(temp)
+if not os.path.isdir(file_name_base_results+'/BeliefQuality'):    
     temp = file_name_base_results + '/BeliefQuality'
     os.makedirs(temp)
+if not os.path.isdir(file_name_base_results+'/Plot_Results'):    
     temp = file_name_base_results + '/Plot_Results'
     os.makedirs(temp)    
 #------------------------------------------------------------------------------
@@ -183,6 +188,18 @@ t_base = t_base-t0
 
 
 #================PERFORM THE INFERENCE TASK FOR EACH ENSEMBLE==================
+B_exc_mean = np.zeros([len(T_range)])
+B_inh_mean = np.zeros([len(T_range)])
+B_void_mean = np.zeros([len(T_range)])
+B_exc_std = np.zeros([len(T_range)])
+B_inh_std = np.zeros([len(T_range)])
+B_void_std = np.zeros([len(T_range)])
+    
+B_void_max = np.zeros([len(T_range)])
+B_void_min = np.zeros([len(T_range)])
+B_inh_max = np.zeros([len(T_range)])
+B_exc_min = np.zeros([len(T_range)])
+
 for ensemble_count in range(0,ensemble_size):
 
     t0_ensemble = time()
@@ -217,7 +234,8 @@ for ensemble_count in range(0,ensemble_size):
     S_time_file = open(file_name,'r')
     S_times = np.genfromtxt(file_name, dtype=float, delimiter='\t')
     S_time_file.close()
-    
+    in_spikes.fill(0)
+    out_spikes.fill(0)
     s = S_times.shape
     cascade_count = 0
     for l in range(0,s[0]):
@@ -227,22 +245,22 @@ for ensemble_count in range(0,ensemble_size):
         else:
             in_spikes[neuron_count,cascade_count] = 1
     
-    
+    print(sum(np.sign(S_times)))
     file_name = file_name_base_data + "/Spikes/S_times_FF_n_1_out_cascades_%s.txt" %file_name_ending
-    
+    S_times.fill(0)
     S_time_file = open(file_name,'r')
     S_times = np.genfromtxt(file_name, dtype=float, delimiter='\t')
     S_time_file.close()
+
     
-    s = S_times.shape
-    cascade_count = 0
+    s = S_times.shape    
     for l in range(0,s[0]):
-        neuron_count = int(S_times[l,0])
-        if (neuron_count == -2.0):            
-            cascade_count = cascade_count + 1
-        else:
-            tt = round(10000*S_times[l,1])-1
-            out_spikes[cascade_count] = tt
+        cascade_count = int(S_times[l,0])
+        tt = round(10000*S_times[l,1])-1
+        out_spikes[cascade_count] = tt
+
+    print(sum(np.sign(S_times)))
+    S_times.fill(0)
     #..........................................................................
     
     #--------------------------------------------------------------------------            
@@ -254,10 +272,6 @@ for ensemble_count in range(0,ensemble_size):
 
 #============================INFER THE CONNECTIONS=============================
     
-    print "acc_plus \t acc_minus \t acc_zero"
-    print "-----------------------------------------------"
-    itr = 0
-    
     #--------------------------In-Loop Initializations--------------------------
     out_spikes_orig = out_spikes
     out_spikes_s = np.sign(out_spikes)
@@ -267,6 +281,19 @@ for ensemble_count in range(0,ensemble_size):
     out_spikes_s2 = (out_spikes_s2)
     #out_spikes_neg = tanh(np.multiply(out_spikes_neg,out_spikes_s2))
     L = in_spikes.sum(axis=0)
+    itr = 0
+    
+    B_exc_mean.fill(0)
+    B_inh_mean.fill(0)
+    B_void_mean.fill(0)
+    B_exc_std.fill(0)
+    B_inh_std.fill(0)
+    B_void_std.fill(0)
+    
+    B_void_max.fill(0)
+    B_void_min.fill(0)
+    B_inh_max.fill(0)
+    B_exc_min.fill(0)
     #--------------------------------------------------------------------------            
     
     
@@ -274,7 +301,7 @@ for ensemble_count in range(0,ensemble_size):
         
         #------------------------In-Loop Initializations-----------------------
         L_temp = L[0:T]
-        Delta = 1.0
+        Delta = 1.0/float(T)
         out_spikes_neg_temp = out_spikes_neg[0:T]
         in_spikes_temp = in_spikes[:,0:T]
         out_spikes_temp = out_spikes_s[0:T]
@@ -296,7 +323,7 @@ for ensemble_count in range(0,ensemble_size):
         
         #-----------CALCULATE AND STORE THE RUNNING TIME OF THE CODE------------        
         t1 = time()                             # Capture the timer to calculate the running time per ensemble
-        print "Total simulation time was %f s" %(t1-t0_ensemble+t_base)
+        #print "Total simulation time was %f s" %(t1-t0_ensemble+t_base)
         file_name = file_name_base_results + "/RunningTimes/T_FF_n_1_%s.txt" %file_name_ending2
         running_time_file = open(file_name,'a')
         running_time_file.write("%f \n" %(t1-t0_ensemble+t_base))
@@ -311,56 +338,75 @@ for ensemble_count in range(0,ensemble_size):
         #.........Caclulate the Minimum Value of the Excitatory Beliefs............
         a = np.nonzero(W>0)
         temp = W_inferred_our[a]
-        B_exc_min = temp.min()
+        B_exc_mean[itr] = temp.mean()
+        B_exc_std[itr] = temp.std()
+        B_exc_min[itr] = temp.mean()
         #..........................................................................
     
         #.........Caclulate the Maximum Value of the Inhibitory Beliefs............
         a = np.nonzero(W<0)
         temp = W_inferred_our[a]
-        B_inh_max = temp.max()
+        B_inh_mean[itr] = temp.mean()
+        B_inh_std[itr] = temp.std()
+        B_inh_max[itr] = temp.max()
         #..........................................................................
     
         #.......Caclulate the Minimum and Maximum Value of the Void Beliefs........
         a = np.nonzero(W==0)
         temp = W_inferred_our[a]
-        B_void_max = temp.max()
-        B_void_min = temp.min()
+        B_void_mean[itr] = temp.mean()
+        B_void_std[itr] = temp.std()
+        B_void_max[itr] = temp.max()
+        B_void_min[itr] = temp.min()
         #..........................................................................
     
     
         #.................Display and Write the Results to a File..................
-        print "B_exc_min: %f    B_void_max: %f    B_void_min: %f    B_inh_max: %f" %(B_exc_min,B_void_max,B_void_min,B_inh_max)
-        file_name = file_name_base_results + "/BeliefQuality/BQ_FF_Cascades_Delayed_%s.txt" %file_name_ending2
+               
+        file_name = file_name_base_results + "/BeliefQuality/BQ_FF_Cascades_FF_n_1_%s.txt" %file_name_ending2
         running_time_file = open(file_name,'a')
-        running_time_file.write("%f \t %f \t %f \t %f \n" %(B_exc_min,B_void_max,B_void_min,B_inh_max))
+        running_time_file.write("%f \t %f \t %f \n" %(B_exc_mean[itr],B_inh_mean[itr],B_void_mean[itr]))
+        running_time_file.close()
+        
+        file_name = file_name_base_results + "/BeliefQuality/BQ_FF_Max_Min_Cascades_FF_n_1_%s.txt" %file_name_ending2
+        running_time_file = open(file_name,'a')
+        running_time_file.write("%f \t %f \t %f \t %f \n" %(B_exc_min[itr],B_void_max[itr],B_void_min[itr],B_inh_max[itr]))
+        running_time_file.close()
+        
+        
+        file_name = file_name_base_results + "/BeliefQuality/BQ_FF_Std_Cascades_FF_n_1_%s.txt" %file_name_ending2
+        running_time_file = open(file_name,'a')
+        running_time_file.write("%f \t %f \t %f \n" %(B_exc_std[itr],B_inh_std[itr],B_void_std[itr]))
+        running_time_file.close()
+        
+        file_name = file_name_base_results + "/Plot_Results/B_exc_mean_FF_Cascades_FF_n_1_%s.txt" %file_name_ending
+        running_time_file = open(file_name,'a')
+        running_time_file.write("%d \t %f \t %f \n" %(T,B_exc_mean[itr],B_exc_std[itr]))
         running_time_file.close()
     
-        file_name = file_name_base_results + "/Plot_Results/B_exc_min_FF_Cascades_Delayed_%s.txt" %file_name_ending
+        file_name = file_name_base_results + "/Plot_Results/B_inh_mean_FF_Cascades_FF_n_1_%s.txt" %file_name_ending
         running_time_file = open(file_name,'a')
-        running_time_file.write("%d \t %f \n" %(T,B_exc_min))
+        running_time_file.write("%d \t %f \t %f \n" %(T,B_inh_mean[itr],B_inh_std[itr]))
         running_time_file.close()
     
-        file_name = file_name_base_results + "/Plot_Results/B_inh_max_FF_Cascades_Delayed_%s.txt" %file_name_ending
+        file_name = file_name_base_results + "/Plot_Results/B_void_mean_FF_Cascades_FF_n_1_%s.txt" %file_name_ending
         running_time_file = open(file_name,'a')
-        running_time_file.write("%d \t %f \n" %(T,B_inh_max))
-        running_time_file.close()
-    
-        file_name = file_name_base_results + "/Plot_Results/B_void_min_FF_Cascades_Delayed_%s.txt" %file_name_ending
-        running_time_file = open(file_name,'a')
-        running_time_file.write("%d \t %f \n" %(T,B_void_min))
-        running_time_file.close()
-    
-        file_name = file_name_base_results + "/Plot_Results/B_void_max_FF_Cascades_Delayed_%s.txt" %file_name_ending
-        running_time_file = open(file_name,'a')
-        running_time_file.write("%d \t %f \n" %(T,B_void_max))
+        running_time_file.write("%d \t %f \t %f \n" %(T,B_void_mean[itr],B_void_std[itr]))
         running_time_file.close()
         #..........................................................................
     
+        itr = itr + 1
     #------------------------------------------------------------------------------
     #------------------------------------------------------------------------------
-    
+    print "B_exc_mean: %f    B_void_mean: %f    B_inh_mean: %f" %(B_exc_mean[itr-1],B_void_mean[itr-1],B_inh_mean[itr-1])
+    print "B_exc_std: %f    B_void_std: %f    B_inh_std: %f\n" %(B_exc_std[itr-1],B_void_std[itr-1],B_inh_std[itr-1])
+ 
 #==================================================================================
 #==================================================================================
 
-        
+plt.plot(T_range,B_exc_min,'r')
+plt.plot(T_range,B_void_max,'g')
+plt.plot(T_range,B_void_min,'g--')
+plt.plot(T_range,B_inh_max,'b')
+plt.show()       
 

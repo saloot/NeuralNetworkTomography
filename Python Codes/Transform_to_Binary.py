@@ -1,10 +1,10 @@
 #=======================DEFAULT VALUES FOR THE VARIABLES=======================
-n_exc_default = 320
-n_inh_default = 80
-connection_prob_default = 0.15
-frac_input_neurons_default = 0.2
-no_cascades_default = 10000
-ensemble_size_default = 5
+n_exc_default = 120
+n_inh_default = 30
+connection_prob_default = 0.2
+frac_input_neurons_default = 0.35
+no_cascades_default = 1000
+ensemble_size_default = 1
 binary_mode_default = 2
 delay_max_default = 1.0
 file_name_base_result_default = "./Results/Recurrent"
@@ -47,6 +47,8 @@ import pickle
 #os.chdir('/home/salavati/Desktop/Neural_Tomography')
 from auxiliary_functions import determine_binary_threshold
 from auxiliary_functions import q_func_scalar
+from auxiliary_functions import beliefs_to_binary
+from auxiliary_functions import calucate_accuracy
 #==============================================================================
 
 
@@ -139,6 +141,8 @@ if 'inference_method' not in locals():
 
 #---------------------Initialize Simulation Variables--------------------------
 n = n_exc + n_inh                       # Total number of neurons in the output layer
+sim_window = round(12*delay_max)                     # This is the number of iterations performed within each cascade
+
 if delay_max>0:
     recorded_spikes = np.zeros([n,no_cascades*sim_window])                      # This matrix captures the time slot in which each neuron has fired in each step
 else:
@@ -148,7 +152,7 @@ cumulative_recorded_spikes = np.zeros([n,no_cascades*sim_window])               
 
 W_inferred_our = np.zeros([n,n])                                                # Initialize the inferred matrix (the matrix of belifs) using our algorithm
 W_binary_our = np.zeros([n,n])                                                  # Initialize the final binary matrix using our algorithm
-W_inferred_hebian = np.zeros([n,n])                                             # Initialize the inferred matrix (the matrix of belifs) using simple hebbian correlation algorithm
+W_inferred_hebbian = np.zeros([n,n])                                             # Initialize the inferred matrix (the matrix of belifs) using simple hebbian correlation algorithm
 W_binary_hebian = np.zeros([n,n])                                               # Initialize the final binary matrix using simple hebbian correlation algorithm
 W_binary_modified = np.zeros([n,n])                                             # Initialize the final binary matrix using a different "binarification" method
 W_binary_modified2 = np.zeros([n,n])                                            # Initialize the final binary matrix using another "binarification" method
@@ -168,9 +172,7 @@ name_base = "FF_n_to_1_"
 name_base = "Recurrent_"
 delay_max = float(delay_max)                         # This is done to avoid any incompatibilities in reading the data files   
 
-T_range = range(100, no_cascades, 500)               # The range of sample sizes considered to investigate the effect of sample size on the performance
-
-sim_window = round(12*delay_max)                     # This is the number of iterations performed within each cascade
+T_range = range(10, no_cascades, 50)               # The range of sample sizes considered to investigate the effect of sample size on the performance
 #------------------------------------------------------------------------------
 
 #------------------Create the Necessary Directories if NEcessary---------------
@@ -195,10 +197,20 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
 
     t0_ensemble = time()
     
-    T = 8000    
     #--------------------------------------------------------------------------                
     #----------------------------READ THE NETWORK------------------------------
     
+    #.......................Construct Prpoper File Names.......................
+    file_name_ending = "n_exc_%s" %str(int(n_exc))
+    file_name_ending = file_name_ending + "_n_inh_%s" %str(int(n_inh))    
+    file_name_ending = file_name_ending + "_p_%s" %str(connection_prob)
+    file_name_ending = file_name_ending + "_r_%s" %str(frac_input_neurons)
+    #file_name_ending = file_name_ending + "_f_%s" %str(input_stimulus_freq)
+    file_name_ending = file_name_ending + "_d_%s" %str((delay_max))
+    file_name_ending = file_name_ending + "_T_%s" %str(no_cascades)    
+    file_name_ending = file_name_ending + "_%s" %str(ensemble_count)    
+    #..........................................................................
+        
     #..........................Read the Input Matrix...........................
     file_name = file_name_base_data + "/Graphs/We_Recurrent_Cascades_Delay_%s.txt" %file_name_ending
     We = np.genfromtxt(file_name, dtype=None, delimiter='\t')
@@ -209,142 +221,135 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
     W = np.vstack((We,Wi))
     #..........................................................................
     
-    
-    #.......................Construct Prpoper File Names.......................
-    file_name_ending = "n_exc_%s" %str(int(n_exc))
-    file_name_ending = file_name_ending + "_n_inh_%s" %str(int(n_inh))    
-    file_name_ending = file_name_ending + "_p_%s" %str(connection_prob)
-    file_name_ending = file_name_ending + "_r_%s" %str(frac_input_neurons)
-    #file_name_ending = file_name_ending + "_f_%s" %str(input_stimulus_freq)
-    file_name_ending = file_name_ending + "_d_%s" %str((delay_max))
-    file_name_ending = file_name_ending + "_T_%s" %str(no_cascades)    
-    file_name_ending = file_name_ending + "_%s" %str(ensemble_count)
-    file_name_ending = file_name_ending +"_%s" %str(T)    
-    #..........................................................................
+    for T in T_range:
         
+        file_name_ending2 = file_name_ending +"_%s" %str(T)
+        Delta = 1.0/float(T)
         
-    #.........................Save the Belief Matrices.........................
-    file_name = file_name_base_results + "/Inferred_Graphs/W_"
-    file_name = file_name + name_base + "Cascades_Delay_%s.txt" %file_name_ending
-    W_inferred_our = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+        #.........................Save the Belief Matrices.........................
+        file_name = file_name_base_results + "/Inferred_Graphs/W_"
+        file_name = file_name + name_base + "Cascades_Delay_%s.txt" %file_name_ending2
+        W_inferred_our = np.genfromtxt(file_name, dtype=None, delimiter='\t')
 
-    file_name = file_name_base_results + "/Inferred_Graphs/W_Hebb_"
-    file_name = file_name + name_base + "Cascades_Delay_%s.txt" %file_name_ending
-    W_inferred_hebian = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-    #..........................................................................
+        file_name = file_name_base_results + "/Inferred_Graphs/W_Hebb_"
+        file_name = file_name + name_base + "Cascades_Delay_%s.txt" %file_name_ending2
+        W_inferred_hebbian = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+        #..........................................................................
         
         
-    #..........................In-Loop Initializations.........................
-    W_binary_our.fill(0)
-    W_binary_hebian.fill(0)
-    W_binary_modified.fill(0)
-    W_binary_modified2.fill(0)
-    #q = sum(in_spikes_temp)/T/n
-    #r = sum(out_spikes_temp)/T/n
-    params = []
-    #..........................................................................
-        
+        #..........................In-Loop Initializations.........................
+        W_binary_our.fill(0)
+        W_binary_hebian.fill(0)
+        W_binary_modified.fill(0)
+        W_binary_modified2.fill(0)
+        #q = sum(in_spikes_temp)/T/n
+        #r = sum(out_spikes_temp)/T/n
+        params = []
+        #..........................................................................
+            
     
-    #.................Calculate the Binary Matrix From Beliefs.................
-    W_binary_our = beliefs_to_binary(2,W_inferred_our,n,p_plus,p_minus,thea,T,Delta,params,0)
-    W_binary_hebian = beliefs_to_binary(2,W_inferred_hebbian,n,p_plus,p_minus,thea,T,Delta,params,0)
-    W_binary_hebian = beliefs_to_binary(3,W_inferred_our,n,p_plus,p_minus,thea,T,Delta,params,0)
-    W_binary_hebian = beliefs_to_binary(2,W_inferred_our,n,p_plus,p_minus,thea,T,Delta,params,1)
-    #..........................................................................
+        #.................Calculate the Binary Matrix From Beliefs.................
+        W_binary_our = beliefs_to_binary(2,W_inferred_our,n,p_plus,p_minus,theta,T,Delta,params,0)
+        W_binary_hebian = beliefs_to_binary(2,W_inferred_hebbian,n,p_plus,p_minus,theta,T,Delta,params,0)
+        W_binary_modified = beliefs_to_binary(3,W_inferred_our,n,p_plus,p_minus,theta,T,Delta,params,0)
+        W_binary_modified2 = beliefs_to_binary(2,W_inferred_our,n,p_plus,p_minus,theta,T,Delta,params,1)
+        #..........................................................................
         
-    #.......................Store the Binary Matrices..........................
-    file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_Our_"
-    file_name = file_name + name_base + "Cascades_Delay_%s.txt" %file_name_ending
-    np.savetxt(file_name,W_binary_our,'%d',delimiter='\t')
-    file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_Hebb_"
-    file_name = file_name + name_base + "Cascades_Delay_%s.txt" %file_name_ending
-    np.savetxt(file_name,W_binary_hebian,'%d',delimiter='\t')
-    #..........................................................................
+        #.......................Store the Binary Matrices..........................
+        file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_Our_"
+        file_name = file_name + name_base + "Cascades_Delay_%s.txt" %file_name_ending
+        np.savetxt(file_name,W_binary_our,'%d',delimiter='\t')
+        file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_Hebb_"
+        file_name = file_name + name_base + "Cascades_Delay_%s.txt" %file_name_ending
+        np.savetxt(file_name,W_binary_hebian,'%d',delimiter='\t')
+        #..........................................................................
         
 #==============================================================================
         
 
 #=============================CALCULATE ACCURACY===============================        
-    file_name_ending_new = file_name_ending + "_%s" %str(T)
-    file_name_ending_new = file_name_ending_new + "_%s" %str(binary_mode )
-    file_name_ending_new = file_name_ending_new + "_I_%s" %str(inference_method)
+        file_name_ending_new = file_name_ending + "_%s" %str(T)
+        file_name_ending_new = file_name_ending_new + "_%s" %str(binary_mode )
+        file_name_ending_new = file_name_ending_new + "_I_%s" %str(inference_method)
        
-    #---------Calculate and Display Recall & Precision for Our Method----------    
-    recal,precision = calucate_accuracy(W_binary_our,W)
+        #---------Calculate and Display Recall & Precision for Our Method----------    
+        recal,precision = calucate_accuracy(W_binary_our,W)
 
-    file_name = file_name_base_results + "/Accuracies/Rec_Delayed_%s.txt" %file_name_ending_new
-    acc_file = open(file_name,'a')
-    acc_file.write("%f \t %f \t %f \n" %(recal[0],recal[1],recal[2]))        
-    acc_file.close()
+        file_name = file_name_base_results + "/Accuracies/Rec_Delayed_%s.txt" %file_name_ending_new
+        acc_file = open(file_name,'a')
+        acc_file.write("%f \t %f \t %f \n" %(recal[0],recal[1],recal[2]))        
+        acc_file.close()
         
-    file_name = file_name_base_results + "/Accuracies/Prec_Delayed_%s.txt" %file_name_ending_new
-    acc_file = open(file_name,'a')
-    acc_file.write("%f \t %f \t %f \n" %(precision[0],precision[1],precision[2]))        
-    acc_file.close()
+        file_name = file_name_base_results + "/Accuracies/Prec_Delayed_%s.txt" %file_name_ending_new
+        acc_file = open(file_name,'a')
+        acc_file.write("%f \t %f \t %f \n" %(precision[0],precision[1],precision[2]))        
+        acc_file.close()
+            
+        print '-------------Our method performance in ensemble %d & T = %d------------' %(ensemble_count,T)
+        print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
+        print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(recal[0],recal[1],recal[2])
+        print '\n'
+        #--------------------------------------------------------------------------
         
-    print '-------------Our method performance in ensemble %d------------' %ensemble_count
-    print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
-    print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(recal[0],recal[1],recal[2])
-    print '\n'
-    #--------------------------------------------------------------------------
-        
-    #-------Calculate and Display Recall & Precision for Hebbian Method--------
-    recal,precision = calucate_accuracy(W_binary_hebian,W)
+        #-------Calculate and Display Recall & Precision for Hebbian Method--------
+        recal,precision = calucate_accuracy(W_binary_hebian,W)
     
-    file_name = file_name_base_results + "/Accuracies/Hebian_Rec_Delayed_%s.txt" %file_name_ending_new
-    acc_file = open(file_name,'a')
-    acc_file.write("%f \t %f \t %f \n" %(recal[0],recal[1],recal[2]))        
-    acc_file.close()
+        file_name = file_name_base_results + "/Accuracies/Hebian_Rec_Delayed_%s.txt" %file_name_ending_new
+        acc_file = open(file_name,'a')
+        acc_file.write("%f \t %f \t %f \n" %(recal[0],recal[1],recal[2]))        
+        acc_file.close()
         
-    file_name = file_name_base_results + "/Accuracies/Hebian_Prec_Delayed_%s.txt" %file_name_ending_new
-    acc_file = open(file_name,'a')
-    acc_file.write("%f \t %f \t %f \n" %(precision[0],precision[1],precision[2]))        
-    acc_file.close()
+        file_name = file_name_base_results + "/Accuracies/Hebian_Prec_Delayed_%s.txt" %file_name_ending_new
+        acc_file = open(file_name,'a')
+        acc_file.write("%f \t %f \t %f \n" %(precision[0],precision[1],precision[2]))        
+        acc_file.close()
         
-    print '-----------Hebbian method performance in ensemble %d----------' %ensemble_count
-    print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
-    print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(recal[0],recal[1],recal[2])
-    print '\n'
-    #--------------------------------------------------------------------------
+        print '-----------Hebbian method performance in ensemble %d & T = %d----------' %(ensemble_count,T)
+        print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
+        print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(recal[0],recal[1],recal[2])
+        print '\n'
+        #--------------------------------------------------------------------------
+        
+    
+        #---Calculate Recall & Precision for a Different Binarification Method-----
+        recal,precision = calucate_accuracy(W_binary_modified,W)
+    
+        file_name = file_name_base_results + "/Accuracies/Modified_Rec_Delayed_%s.txt" %file_name_ending_new
+        acc_file = open(file_name,'a')
+        acc_file.write("%f \t %f \t %f \n" %(recal[0],recal[1],recal[2]))        
+        acc_file.close()
+            
+        file_name = file_name_base_results + "/Accuracies/Modified_Prec_Delayed_%s.txt" %file_name_ending_new
+        acc_file = open(file_name,'a')
+        acc_file.write("%f \t %f \t %f \n" %(precision[0],precision[1],precision[2]))        
+        acc_file.close()
+            
+        print '-------Modified binary method performance in ensemble %d & T = %d------' %(ensemble_count,T)
+        print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
+        print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(recal[0],recal[1],recal[2])
+        print '\n'
+        #--------------------------------------------------------------------------
     
     
-    #---Calculate Recall & Precision for a Different Binarification Method-----
-    recal,precision = calucate_accuracy(W_binary_modified,W)
+        #---Calculate Recall & Precision for a Different Binarification Method-----
+        recal,precision = calucate_accuracy(W_binary_modified2,W)
     
-    file_name = file_name_base_results + "/Accuracies/Modified_Rec_Delayed_%s.txt" %file_name_ending_new
-    acc_file = open(file_name,'a')
-    acc_file.write("%f \t %f \t %f \n" %(recal[0],recal[1],recal[2]))        
-    acc_file.close()
+        file_name = file_name_base_results + "/Accuracies/Modified2_Rec_Delayed_%s.txt" %file_name_ending_new
+        acc_file = open(file_name,'a')
+        acc_file.write("%f \t %f \t %f \n" %(recal[0],recal[1],recal[2]))        
+        acc_file.close()
         
-    file_name = file_name_base_results + "/Accuracies/Modified_Prec_Delayed_%s.txt" %file_name_ending_new
-    acc_file = open(file_name,'a')
-    acc_file.write("%f \t %f \t %f \n" %(precision[0],precision[1],precision[2]))        
-    acc_file.close()
+        file_name = file_name_base_results + "/Accuracies/Modified2_Prec_Delayed_%s.txt" %file_name_ending_new
+        acc_file = open(file_name,'a')
+        acc_file.write("%f \t %f \t %f \n" %(precision[0],precision[1],precision[2]))        
+        acc_file.close()
         
-    print '-----------Hebbian method performance in ensemble %d----------' %ensemble_count
-    print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
-    print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(recal[0],recal[1],recal[2])
-    print '\n'
-    #--------------------------------------------------------------------------
-    
-    
-    #---Calculate Recall & Precision for a Different Binarification Method-----
-    recal,precision = calucate_accuracy(W_binary_modified2,W)
-    
-    file_name = file_name_base_results + "/Accuracies/Modified2_Rec_Delayed_%s.txt" %file_name_ending_new
-    acc_file = open(file_name,'a')
-    acc_file.write("%f \t %f \t %f \n" %(recal[0],recal[1],recal[2]))        
-    acc_file.close()
+        print '-------Modified binary 2 method performance in ensemble %d & T = %d-----' %(ensemble_count,T)
+        print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
+        print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(recal[0],recal[1],recal[2])        
+        print '=========================================================================='
+        print '\n'
+        #--------------------------------------------------------------------------
         
-    file_name = file_name_base_results + "/Accuracies/Modified2_Prec_Delayed_%s.txt" %file_name_ending_new
-    acc_file = open(file_name,'a')
-    acc_file.write("%f \t %f \t %f \n" %(precision[0],precision[1],precision[2]))        
-    acc_file.close()
-        
-    print '-----------Hebbian method performance in ensemble %d----------' %ensemble_count
-    print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
-    print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(recal[0],recal[1],recal[2])
-    print '\n'
-    #--------------------------------------------------------------------------
 #==============================================================================    
 

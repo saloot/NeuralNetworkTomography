@@ -134,7 +134,7 @@ def generate_activity_recurrent(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_fi
 
 
 #============GENERATE NEURAL ACTIVITY FOR THE FEEDFORWARD NETWORK==============
-def generate_activity_FF_n_1(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_file,S_time_file_out,eqs,tau,tau_e,delay_max,frac_input_neurons):
+def generate_activity_FF_n_1(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_file,S_time_file_out,eqs,tau,tau_e,delay_max,frac_input_neurons,cascade_count):
     
     #--------------------------Initializing Variables--------------------------
     global n
@@ -206,15 +206,13 @@ def generate_activity_FF_n_1(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_file,
     
     
     SS = M_l3.spiketimes
-    for l in range(0,len(SS)):
-        item = SS[l]
-        a = item[0]
-        b = item[1]
-        b = b.astype(float)
-        S_time_file_out.write("%d \t %f \n" %(a,b))
-        #S_time_file_out.write("\n")
     
-    S_time_file_out.write("-2 \t -2 \n")
+    if (SS[0]>0):
+        b = SS[0]
+        b = b[0]
+        b = b.astype(float)        
+        S_time_file_out.write("%d \t %f \n" %(cascade_count,b))
+        #S_time_file_out.write("\n")
     #----------------------------------------------------------------------
     
     #----------------------------------------------------------------------    
@@ -238,10 +236,16 @@ def generate_activity_FF_n_1(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_file,
 
 #==============================================================================
 def beliefs_to_binary(binary_mode,W_inferred,n,p_plus,p_minus,thea,T,Delta,params,compensate_flag):
-    
+    import numpy as np
+    connection_prob = p_plus + p_minus
     a = W_inferred.shape    
     n = a[0]
-        
+    if (len(a)>1):
+        W_binary = np.zeros([n,n])
+        W_binary.fill(0)
+    else:
+        W_binary = np.zeros([n])
+        W_binary.fill(0)
     if (binary_mode == 1):
         q = params[0]
         r = params[1]
@@ -281,9 +285,10 @@ def beliefs_to_binary(binary_mode,W_inferred,n,p_plus,p_minus,thea,T,Delta,param
     elif (binary_mode == 3):
         
         #---Process to make sure that all outgoing links have the same type----
-        total_belief = sum(W_inferred.T)
+        total_belief = np.sum(W_inferred,axis=1)
         temp1 = np.sort(total_belief)
         ind = np.argsort(total_belief)
+        
         
         for i in ind[len(ind)-int(round(p_plus*n))+1:len(ind)+1]:
             w_temp = W_inferred[i,:]
@@ -302,21 +307,22 @@ def beliefs_to_binary(binary_mode,W_inferred,n,p_plus,p_minus,thea,T,Delta,param
             W_binary[i,:] = w_temp
         #----------------------------------------------------------------------
         
+        
     if compensate_flag:
         #---Process to make sure that all outgoing links have the same type----
         for i in range(0,n):
-            w_temp = W_binary_our[i,:]
+            w_temp = W_binary[i,:]
             d = sum(w_temp)
-            w_temp_s = np.sort(W_inferred_our[i,:])
+            w_temp_s = np.sort(W_inferred[i,:])
             ind = np.argsort(w_temp)
             w_temp = np.zeros(n)
             if (d>2):
                 w_temp[ind[len(ind)-int(round(connection_prob*n))+1:len(ind)+1]] = 1
-                W_binary_modified2[i,:] = w_temp
+                W_binary[i,:] = w_temp
                 
             elif (d< -1):
                 w_temp[ind[0:int(round(connection_prob*n))+1]] = -1
-                W_binary_modified2[i,:] = w_temp
+                W_binary[i,:] = w_temp
         #----------------------------------------------------------------------
         
     return W_binary
@@ -337,6 +343,6 @@ def calucate_accuracy(W_binary,W):
         prec_zero = float(sum(sum(np.multiply(W_binary==np.zeros([n,n]),W==np.zeros([n,n])))))/float(sum(sum(W_binary==np.zeros([n,n]))))
     
     recall = [acc_plus,acc_minus,acc_zero]
-    recall = [prec_plus,prec_minus,prec_zero]
+    precision = [prec_plus,prec_minus,prec_zero]
     return recall,precision
 #==============================================================================    
