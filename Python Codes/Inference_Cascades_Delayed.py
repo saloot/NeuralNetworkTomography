@@ -1,9 +1,9 @@
 #=======================DEFAULT VALUES FOR THE VARIABLES=======================
-n_exc_default = 160
-n_inh_default = 40
+n_exc_default = 320
+n_inh_default = 80
 connection_prob_default = 0.15
-frac_input_neurons_default = 0.4
-no_cascades_default = 8000
+frac_input_neurons_default = 0.2
+no_cascades_default = 10000
 ensemble_size_default = 2
 binary_mode_default = 2
 delay_max_default = 1.0

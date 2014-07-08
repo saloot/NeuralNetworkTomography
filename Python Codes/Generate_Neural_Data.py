@@ -6,9 +6,10 @@ frac_input_neurons_default = 0.2
 no_cascades_default = 10000
 ensemble_size_default = 10
 delay_max_default = 1.0
-file_name_base_data_default = "./Data/Recurrent"
+file_name_base_data_default = "./Data/FeedForward"
 ensemble_count_init_default = 0
 code_folder = './'  #'/home/salavati/Desktop/Neural_Tomography'  #'C:\Python27'
+network_type_default ='F'
 #==============================================================================
 
 #================================INSTRUCTIONS==================================
@@ -27,6 +28,7 @@ help_message = help_message + "-D xxx: To specify the maximum delay for the neur
 help_message = help_message + "-S xxx: To specify the number of generated random graphs. Default value = %s.\n" %str(ensemble_size_default)
 help_message = help_message + "-A xxx: To specify the folder that stores the generated data. Default value = %s. \n" %str(file_name_base_data_default)
 help_message = help_message + "-F xxx: To specify the ensemble index to start simulation. Default value = %s. \n" %str(ensemble_count_init_default)
+help_message = help_message + "-N xxx: To specify the network type to simulate. Default value = %s. \n" %str(network_type_default)
 help_message = help_message + "#################################################################################"
 help_message = help_message + "\n"
 #==============================================================================
@@ -49,7 +51,7 @@ os.system('clear')                                              # Clear the comm
 t0 = time.time()                                                     # Initialize the timer
 
 
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:B:D:A:F:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:B:D:A:F:N:")
 if (input_opts):
     for opt, arg in input_opts:
         if opt == '-E':
@@ -72,6 +74,8 @@ if (input_opts):
             file_name_base_data = str(arg)                      # The folder to store results
         elif opt == '-F':
             ensemble_count_init = int(arg)                      # The ensemble to start simulations from
+        elif opt =='-N':
+            network_type = str(arg)                             # The type of network to simulate            
         elif opt == '-h':
             print(help_message)
             sys.exit()
@@ -107,10 +111,6 @@ if 'no_cascades' not in locals():
 if 'ensemble_size' not in locals():            
     ensemble_size = ensemble_size_default
     print('ATTENTION: The default value of %s for ensemble_size is considered.\n' %str(ensemble_size))
-    
-if 'file_name_base_data' not in locals():
-    file_name_base_data = file_name_base_data_default;
-    print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_data))
 
 if 'delay_max' not in locals():
     delay_max = delay_max_default;
@@ -120,23 +120,37 @@ if 'ensemble_count_init' not in locals():
     ensemble_count_init = ensemble_count_init_default;
     print('ATTENTION: The default value of %s for ensemble_count_init is considered.\n' %str(ensemble_count_init))    
 
+if'network_type' not in locals():
+    network_type = network_type_default;
+    print('ATTENTION: The default value of %s for network_type is considered.\n' %str(network_type))
+    
+if 'file_name_base_data' not in locals():
+    if (network_type == 'F'):
+        file_name_base_data = file_name_base_data_default;
+    elif (network_type == 'R'):
+        file_name_base_data = "./Data/Recurrent"
+    elif (network_type == 'M'):
+        file_name_base_data = "./Data/FeedForward_MultiLayer"
+        
+    print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_data))    
 #------------------------------------------------------------------------------
 
 #------------------Create the Necessary Directories if NEcessary---------------
 if not os.path.isdir(file_name_base_data):
     os.makedirs(file_name_base_data)
-    temp = file_name_base_data + '/Graphs'
-    os.makedirs(temp)
-    temp = file_name_base_data + '/Spikes'
+temp = file_name_base_data + '/Graphs'
+if not os.path.isdir(temp):
+    os.makedirs(temp)    
+temp = file_name_base_data + '/Spikes'
+if not os.path.isdir(temp):
     os.makedirs(temp)
 #------------------------------------------------------------------------------
 
 #--------------------------Initialize Other Variables--------------------------
 n = n_exc + n_inh                       # Total number of neurons in the output layer
 
-no_samples_per_cascade = max(3.0,12*delay_max) # Number of samples that will be recorded
+no_samples_per_cascade = max(3.0,12*np.max(delay_max)) # Number of samples that will be recorded
 running_period = (no_samples_per_cascade/10.0)  # Total running time in seconds
-#------------------------------------------------------------------------------
 
 
 #----------------------------------Neural Model--------------------------------

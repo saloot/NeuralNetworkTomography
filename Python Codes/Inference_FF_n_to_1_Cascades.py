@@ -6,7 +6,7 @@ frac_input_neurons_default = 0.4
 no_cascades_default = 8000
 ensemble_size_default = 10
 delay_max_default = 1.0
-binary_mode_default = 2
+binary_mode_default = 4
 file_name_base_result_default = "./Results/FeedForward"
 inference_method_default = 0
 ensemble_count_init_default = 0
@@ -41,10 +41,8 @@ import numpy as np
 import sys,getopt,os
 import matplotlib.pyplot as plt
 
-os.chdir('C:\Python27')
+#os.chdir('C:\Python27')
 #os.chdir('/home/salavati/Desktop/Neural_Tomography')
-from auxiliary_functions import determine_binary_threshold
-from auxiliary_functions import q_func_scalar
 #==============================================================================
 
 
@@ -75,9 +73,9 @@ if (input_opts):
         elif opt == '-A':
             file_name_base_data = str(arg)                      # The folder to store results
         elif opt == '-F':
-            ensemble_count_init = int(arg)                           # The index of ensemble we start with
+            ensemble_count_init = int(arg)                      # The index of ensemble we start with
         elif opt == '-M':
-            inference_method = int(arg)                           # The index of ensemble we start with 
+            inference_method = int(arg)                         # The inference method
         elif opt == '-h':
             print(help_message)
             sys.exit()
@@ -214,22 +212,22 @@ for ensemble_count in range(0,ensemble_size):
     file_name_ending = file_name_ending + "_r_%s" %str(frac_input_neurons)
     #file_name_ending = file_name_ending + "_f_%s" %str(input_stimulus_freq)
     file_name_ending = file_name_ending + "_d_%s" %str(delay_max)
-    file_name_ending = file_name_ending + "_T_%s" %str(no_cascades)    
-    file_name_ending = file_name_ending + "_%s" %str(ensemble_count)
+    file_name_ending3 = file_name_ending + "_T_%s" %str(no_cascades)    
+    file_name_ending3 = file_name_ending3 + "_%s" %str(ensemble_count)
     #..........................................................................
     
     #...........................Read the Input Matrix..........................
-    file_name = file_name_base_data + "/Graphs/We_FF_n_1_%s.txt" %file_name_ending
+    file_name = file_name_base_data + "/Graphs/We_FF_n_1_%s.txt" %file_name_ending3
     We = np.genfromtxt(file_name, dtype=None, delimiter='\t')
     
-    file_name = file_name_base_data + "/Graphs/Wi_FF_n_1_%s.txt" %file_name_ending
+    file_name = file_name_base_data + "/Graphs/Wi_FF_n_1_%s.txt" %file_name_ending3
     Wi = np.genfromtxt(file_name, dtype=None, delimiter='\t')
     
     W = np.hstack((We,Wi))
     #..........................................................................    
     
     #...........................Read and Sort Spikes...........................
-    file_name = file_name_base_data + "/Spikes/S_times_FF_n_1_cascades_%s.txt" %file_name_ending
+    file_name = file_name_base_data + "/Spikes/S_times_FF_n_1_cascades_%s.txt" %file_name_ending3
     
     S_time_file = open(file_name,'r')
     S_times = np.genfromtxt(file_name, dtype=float, delimiter='\t')
@@ -246,7 +244,7 @@ for ensemble_count in range(0,ensemble_size):
             in_spikes[neuron_count,cascade_count] = 1
     
     print(sum(np.sign(S_times)))
-    file_name = file_name_base_data + "/Spikes/S_times_FF_n_1_out_cascades_%s.txt" %file_name_ending
+    file_name = file_name_base_data + "/Spikes/S_times_FF_n_1_out_cascades_%s.txt" %file_name_ending3
     S_times.fill(0)
     S_time_file = open(file_name,'r')
     S_times = np.genfromtxt(file_name, dtype=float, delimiter='\t')
@@ -313,7 +311,10 @@ for ensemble_count in range(0,ensemble_size):
         #----------------------------------------------------------------------
         
         #------------------------Save the Belief Matrices---------------------------
-        file_name_ending2 = file_name_ending +"_%s" %str(T)
+          
+        file_name_ending2 = file_name_ending + "_%s" %str(ensemble_count)
+        file_name_ending2 = file_name_ending2 +"_%s" %str(T)
+        
         file_name = file_name_base_results + "/Inferred_Graphs/W_FF_n_to_1_Cascades_Delay_%s.txt" %file_name_ending2
         np.savetxt(file_name,W_inferred_our,'%5.3f',delimiter='\t')
 

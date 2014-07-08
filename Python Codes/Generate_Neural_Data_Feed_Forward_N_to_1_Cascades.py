@@ -1,9 +1,9 @@
 #=======================DEFAULT VALUES FOR THE VARIABLES=======================
-n_exc_default = 320
-n_inh_default = 80
-connection_prob_default = 0.15
-frac_input_neurons_default = 0.25
-no_cascades_default = 10000
+n_exc_default = 160
+n_inh_default = 40
+connection_prob_default = 0.2
+frac_input_neurons_default = 0.4
+no_cascades_default = 5000
 ensemble_size_default = 10
 delay_max_default = 1.0
 file_name_base_data_default = "./Data/FeedForward"
@@ -38,6 +38,9 @@ import numpy as np
 import os
 import sys,getopt,os
 from auxiliary_functions import *
+
+#os.chdir('C:\Python27')
+#os.chdir('/home/salavati/Desktop/Neural_Tomography')
 #==============================================================================
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
@@ -120,9 +123,13 @@ if 'ensemble_count_init' not in locals():
 #------------------Create the Necessary Directories if NEcessary---------------
 if not os.path.isdir(file_name_base_data):
     os.makedirs(file_name_base_data)
-    temp = file_name_base_data + '/Graphs'
+
+temp = file_name_base_data + '/Graphs'
+if not os.path.isdir(temp):    
     os.makedirs(temp)
-    temp = file_name_base_data + '/Spikes'
+
+temp = file_name_base_data + '/Spikes'
+if not os.path.isdir(temp):        
     os.makedirs(temp)
 #------------------------------------------------------------------------------
 
@@ -236,7 +243,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
     for cascade_count in range(0,no_cascades):
         
         #--------------------------Generate Activity---------------------------
-        WWe,WWi,DDe,DDi = generate_activity_FF_n_1(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_file,S_time_file_out,eqs,tau,tau_e,delay_max,frac_input_neurons,cascade_count)
+        WWe,WWi,DDe,DDi = generate_neural_activity(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_file,S_time_file_out,eqs,tau,tau_e,delay_max,frac_input_neurons,cascade_count,'F')
         #----------------------------------------------------------------------
         
         #------------------------Check for Any Errors--------------------------
