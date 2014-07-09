@@ -122,8 +122,8 @@ def determine_binary_threshold(method,params,obs):
 #------------------------------------------------------------------------------
 
 def initial_stimulation(t):
-    rates=zeros(n)*Hz    
-    if t < 0.1 * ms:
+    rates=np.zeros([n])*Hz    
+    if t < 0.00001 * ms:
         input_index = floor(n*rand(round(n*qqi)))
         input_index = input_index.astype(int)
         rates[input_index]=ones(round(n*qqi))*input_stimulus_freq *Hz
@@ -140,113 +140,268 @@ def initial_stimulation(t):
 # activity. The Brian simulator is used for this part.
 #------------------------------------------------------------------------------
 
-def generate_neural_activity(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_file,S_time_file_out,eqs,tau,tau_e,delay_max,frac_input_neurons,cascade_count,network_type):
+def generate_neural_activity(network_type,Neural_Connections,running_period,S_time_file_base,neural_model_eq,frac_input_neurons,cascade_count,no_layers):
     
     #--------------------------Initializing Variables--------------------------
     global n
     global qqi
     global input_stimulus_freq
-    n = n_exc+n_inh
+    
     qqi = frac_input_neurons
     input_stimulus_freq = 20000               # The frequency of spikes by the neurons in the input layer (in Hz)
+    import brian
+    
+    
+    
+    #..............Retrieve the Parameters for the Neural Models...............
+    eqs = neural_model_eq[0]
+    tau = neural_model_eq[1]
+    tau_e = neural_model_eq[2]
+    #..........................................................................
+    
     #--------------------------------------------------------------------------
     
-    #----------------------Initialize the Main Network-------------------------
-    main_network=NeuronGroup(n,model=eqs,threshold=10*mV,reset=0*mV)    # The whole neural network
-    Pe = main_network.subgroup(n_exc)                                   # The excitatory sub-group of neurons
-    Pi = main_network.subgroup(n_inh)                                   # The inhibitory sub-group of neurons
-    
-    if (network_type == 'F'):
-        output_neuron = NeuronGroup(1,model=eqs,threshold=10*mV,reset=0*mV)
-    
-    
+    #---------------------------The Recurrent Network--------------------------
     if (network_type == 'R'):
+        
+        #....................Retrieve the Network Parameters...................
+        neural_layers = []
+        n_exc_array = Neural_Connections['n_exc']
+        n_inh_array = Neural_Connections['n_inh']
+        
+        if (no_layers == 1):
+            n_exc = n_exc_array[0]
+            n_inh = n_inh_array[0]
+        n = n_exc + n_inh
+        main_layer = Neural_Connections['00']
+        We = main_layer[0]
+        De = main_layer[1]
+        Wi = main_layer[2]
+        Di = main_layer[3]
+        delay_max = main_layer[4]
+        #......................................................................
+        
+        #........................Initialize the Network......................
+        main_network=NeuronGroup(n,model=eqs,threshold=10*mV,reset=0*mV)    # The whole neural network
+        Pe = main_network.subgroup(n_exc)                                   # The excitatory sub-group of neurons
+        Pi = main_network.subgroup(n_inh)                                   # The inhibitory sub-group of neurons
+        
         Ce = DelayConnection(Pe, main_network,max_delay = delay_max*ms,delay = lambda i, j:delay_max * rand(1) * ms)
         Ci = DelayConnection(Pi, main_network,max_delay = delay_max*ms,delay = lambda i, j:delay_max * rand(1) * ms)
-    elif (network_type == 'F'):
-        Ce = DelayConnection(Pe, output_neuron,max_delay = delay_max*ms,delay = lambda i, j:delay_max * rand(1) * ms)
-        Ci = DelayConnection(Pi, output_neuron,max_delay = delay_max*ms,delay = lambda i, j:delay_max * rand(1) * ms)
+        neural_layers.append(main_network)
+        #......................................................................
+        
+        #....................Fix the Connections and Delays...................
+        Ce.connect(Pe,main_network,sparse.csc_matrix(We))    
+        Ci.connect(Pi,main_network,sparse.csc_matrix(Wi))
+    
+        Ce.set_delays(Pe,main_network,sparse.csc_matrix(De))
+        Ci.set_delays(Pi,main_network,sparse.csc_matrix(Di))
+        #......................................................................
+        
     #--------------------------------------------------------------------------
     
-    #------------------------Fix the Connections and Delays--------------------
-    Ce.connect(Pe,main_network,sparse.csc_matrix(We))    
-    Ci.connect(Pi,main_network,sparse.csc_matrix(Wi))
+    #--------------------------The FeedForward Network-------------------------
+    elif (network_type == 'F'):
+        
+        #....................Retrieve the Network Parameters...................
+        neurons_list = {}
+        delayed_connections_exc = {}
+        delayed_connections_inh = {}        
+        n_exc_array = Neural_Connections['n_exc']
+        n_inh_array = Neural_Connections['n_inh']
+        #......................................................................
+        
+        #........................Initialize the Network........................
+        for l in range(0,no_layers):
+            temp_list = []
+            ind = str
+            n_exc = int(n_exc_array[l])
+            n_inh = int(n_inh_array[l])
+            n = n_exc + n_inh
+            if (l == 0):
+                neurons = NeuronGroup(n,model=eqs,threshold=10*mV,reset=0*mV)
+            else:
+                neurons = NeuronGroup(n,model=eqs,threshold=10*mV,reset=0*mV)
+            
+            Pe = neurons.subgroup(n_exc)
+            Pi = neurons.subgroup(n_inh)
+            
+            
+            neurons_list[str(l)] = list([neurons,Pe,Pi,n_exc,n_inh])
+            
+            
+            
+        output_neuron = NeuronGroup(1,model=eqs,threshold=10*mV,reset=0*mV)        
+        neurons_list[str(l+1)] = list([output_neuron])
+        #......................................................................
+        
+        #.....................Connect the Layers Together......................
+        for l_in in range(0,no_layers):
+            
+            #~~~~~~~~~~~~~~~~~~Retrieve the Layers Parameters~~~~~~~~~~~~~~~~~~
+            temp_list = neurons_list[str(l_in)]
+            Pe = temp_list[1]
+            Pi = temp_list[2]
+            n_exc = temp_list[3]
+            n_inh = temp_list[4]
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            for l_out in range(l_in,no_layers):
+                
+                #~~~~~~~~~~~~~~~~Retrieve the Network Parameters~~~~~~~~~~~~~~~
+                temp_list = neurons_list[str(l_out+1)]
+                output_layer = temp_list[0]
+                
+                ind = str(l_in) + str(l_out)
+                main_layer = Neural_Connections[ind]
+                We = main_layer[0]
+                De = main_layer[1]
+                Wi = main_layer[2]
+                Di = main_layer[3]
+                delay_max = main_layer[4]
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+                #~~~~~~~~~~~~~~~~Fix the Connections and Delays~~~~~~~~~~~~~~~~
+                Ce = DelayConnection(Pe, output_layer,max_delay = delay_max*ms,delay = lambda i, j:delay_max * rand(1) * ms)
+                Ci = DelayConnection(Pi, output_layer,max_delay = delay_max*ms,delay = lambda i, j:delay_max * rand(1) * ms)
+                
+                Ce.connect(Pe,output_layer,sparse.csc_matrix(We))    
+                Ci.connect(Pi,output_layer,sparse.csc_matrix(Wi))
     
-    Ce.set_delays(Pe,main_network,sparse.csc_matrix(De))
-    Ci.set_delays(Pi,main_network,sparse.csc_matrix(Di))
+                Ce.set_delays(Pe,output_layer,sparse.csc_matrix(De))
+                Ci.set_delays(Pi,output_layer,sparse.csc_matrix(Di))
+                
+                
+                delayed_connections_exc[ind] = Ce
+                delayed_connections_inh[ind] = Ci
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #......................................................................
+        
     #--------------------------------------------------------------------------
         
     #--------Create and Initialize the Dummy Input Layer for Stimulation-------
-    inputer_dummy_layer=PoissonGroup(n,initial_stimulation)
+    temp_list = neurons_list['0']
+    main_network = temp_list[0]
+    
+    n = int(n_exc_array[0]) + int(n_inh_array[0])
+    
+    #main_network.v = randint(1,3,n)-1
+    #print sum(main_network.v)
+    inputer_dummy_layer=PoissonGroup(n,rates=initial_stimulation)    
     input_connections=Connection(inputer_dummy_layer,main_network,weight=lambda i,j:(1-abs(sign(i-j))),delay = 0*ms)
+    
+    #p1= PoissonInput(main_network, N=n, rate=1, weight=1, state='I')
     #--------------------------------------------------------------------------
     
     #-------------Create the Network and Add the Necessary Monitors------------
+    Ce = delayed_connections_exc['00']
+    Ci = delayed_connections_inh['00']
+    
     net = Network(main_network,[Ce,Ci])
     net.add(input_connections)
     net.add(inputer_dummy_layer)
+    #net.add(p1)
+    
+    Spike_monotos_list = {}
+    Spike_monotos_list['dummy'] = SpikeMonitor(inputer_dummy_layer)
+    Spike_monotos_list['l_1'] = SpikeMonitor(main_network)
+    net.add(Spike_monotos_list['dummy'])
+    net.add(Spike_monotos_list['l_1'])
     if (network_type == 'F'):
-        net.add(output_neuron)    
-    M_l1 = SpikeMonitor(inputer_dummy_layer)
-    M_l2 = SpikeMonitor(main_network)
-    if (network_type == 'F'):
-        M_l3 = SpikeMonitor(output_neuron)
-        
-    net.add(M_l1)
-    net.add(M_l2)
-    if (network_type == 'F'):
-        net.add(M_l3)    
+        for l_in in range(1,no_layers+1):
+            temp_list = neurons_list[str(l_in)]
+            neural_layer = temp_list[0]            
+            net.add(neural_layer)    
+            
+            ind = 'l_' + str(l_in+1)
+            Spike_monotos_list[ind] = SpikeMonitor(neural_layer)            
+            net.add(Spike_monotos_list[ind])
+            
+        for l_in in range(0,no_layers):
+            for l_out in range(l_in,no_layers):
+                ind = str(l_in) + str(l_out)
+                Ce = delayed_connections_exc[ind]
+                Ci = delayed_connections_inh[ind]
+                net.add(Ce)
+                net.add(Ci)
+                
     net.run(running_period * ms)        
     
     if (network_type == 'R'):
-        print M_l1.nspikes, "spikes in dummy layer"
-        print M_l2.nspikes, "spikes in output layer"
+        print Spike_monotos_list['dummy'].nspikes, "spikes in dummy layer"
+        print Spike_monotos_list['l_1'].nspikes, "spikes in output layer"
     elif (network_type == 'F'):
-        print M_l1.nspikes, "spikes in dummy layer"
-        print M_l2.nspikes, "spikes in input layer"
-        print M_l3.nspikes, "spikes in output layer"
+        print Spike_monotos_list['dummy'].nspikes, "spikes in dummy layer"        
+        for l_in in range(0,no_layers+1):
+            ind = 'l_' + str(l_in+1)
+            print Spike_monotos_list[ind].nspikes, "spikes in layer %s" %str(l_in+1)
+            
     #--------------------------------------------------------------------------
     
     #----------------------Save Spike Times to the File------------------------
-    SS = M_l2.spikes
-    for l in range(0,len(SS)):
-        item = SS[l]
-        a = item[0]
-        b = item[1]
-        b = b.astype(float)
-        S_time_file.write("%d \t %f \n" %(a,b))
+    if (network_type == 'R'):
+        SS = M_l2.spikes
+        for l in range(0,len(SS)):
+            item = SS[l]
+            a = item[0]
+            b = item[1]
+            b = b.astype(float)
+            S_time_file.write("%d \t %f \n" %(a,b))
     
-    S_time_file.write("-2 \t -2 \n")
+        S_time_file.write("-2 \t -2 \n")
     
     if (network_type == 'F'):
-        SS = M_l3.spiketimes
+        for l_in in range(0,no_layers+1):
+            file_name = S_time_file_base + '_l_' + str(l_in) +'.txt'
+            S_time_file = open(file_name,'a')
+            
+            ind = 'l_' + str(l_in+1) 
+            SS = Spike_monotos_list[ind].spiketimes          
+            
+            
+            for l in range(0,len(SS)):
+                item = SS[l]
+                
+                if (len(item)>1):
+                    a = item[0]
+                    b = item[1]
+                    b = b.astype(float)
+                    S_time_file.write("%d \t %f \n" %(a,b))
     
-        if (SS[0]>0):
-            b = SS[0]
-            b = b[0]
-            b = b.astype(float)        
-            S_time_file_out.write("%d \t %f \n" %(cascade_count,b))
+            S_time_file.write("-2 \t -2 \n")
+        
+            S_time_file.close()
     #--------------------------------------------------------------------------    
     
     #---------------Reinitialize the Clocks for Spike Timings------------------
-    M_l1.source.clock.reinit()                  # Reset the spikemonitor's clock so that for the next random network, everything starts from t=0
-    M_l2.source.clock.reinit()                  # Reset the spikemonitor's clock so that for the next random network, everything starts from t=0
+    Spike_monotos_list['dummy'].source.clock.reinit()                  # Reset the spikemonitor's clock so that for the next random network, everything starts from t=0    
     if (network_type == 'F'):
-        M_l3.source.clock.reinit()                  # Reset the spikemonitor's clock so that for the next random network, everything starts from t=0                        
+        for l_in in range(0,no_layers+1):
+            ind = 'l_' + str(l_in+1)
+            Spike_monotos_list[ind].source.clock.reinit()            
     #--------------------------------------------------------------------------
     
     #-------------Save the Connectivity and Delays in the Network--------------
-    WWe = Ce.W.todense()
-    WWi = Ci.W.todense()
-    DDe = Ce.delay.todense()
-    DDi = Ci.delay.todense() 
+    Neural_Connections_Out = {}
+    for l_in in range(0,no_layers):
+        for l_out in range(l_in,no_layers):
+            ind = str(l_in) + str(l_out)
+            Ce = delayed_connections_exc[ind]
+            Ci = delayed_connections_inh[ind]
+            WWe = Ce.W.todense()
+            WWi = Ci.W.todense()
+            DDe = Ce.delay.todense()
+            DDi = Ci.delay.todense()
+
+            Neural_Connections_Out[ind] = list([WWe,DDe,WWi,DDi])
     #--------------------------------------------------------------------------
         
     #--------------------Reset Everything to Rest Conditions-------------------
     clear(spikequeue)
     #--------------------------------------------------------------------------
     
-    return (WWe,WWi,DDe,DDi)
+    return Neural_Connections_Out
 #==============================================================================
 #==============================================================================
 

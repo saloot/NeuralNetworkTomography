@@ -3,13 +3,13 @@ n_exc_default = 160
 n_inh_default = 40
 connection_prob_default = 0.2
 frac_input_neurons_default = 0.4
-no_cascades_default = 5000
-ensemble_size_default = 10
+no_cascades_default = 50
+ensemble_size_default = 1
 delay_max_default = 1.0
 file_name_base_data_default = "./Data/MultiLayerFeedForward"
 ensemble_count_init_default = 0
 no_layers_default = 1
-random_delay_flag_flag = 0
+random_delay_flag_default = 0
 #==============================================================================
 
 #================================INSTRUCTIONS==================================
@@ -29,7 +29,7 @@ help_message = help_message + "-S xxx: To specify the number of generated random
 help_message = help_message + "-A xxx: To specify the folder that stores the generated data. Default value = %s. \n" %str(file_name_base_data_default)
 help_message = help_message + "-F xxx: To specify the ensemble index to start simulation. Default value = %s. \n" %str(ensemble_count_init_default)
 help_message = help_message + "-L xxx: To specify the number of layers in the network. Default value = %s. \n" %str(no_layers_default)
-help_message = help_message + "-R xxx: To specify if the delays are fixed (R=0) or random (R=1). Default value = %s. \n" %str(random_delay_flag_flag)
+help_message = help_message + "-R xxx: To specify if the delays are fixed (R=0) or random (R=1). Default value = %s. \n" %str(random_delay_flag_default)
 help_message = help_message + "#################################################################################"
 help_message = help_message + "\n"
 #==============================================================================
@@ -41,8 +41,14 @@ import time
 import numpy as np
 import os
 import sys,getopt,os
-from auxiliary_functions import *
+import auxiliary_functions
+reload(auxiliary_functions)
+from auxiliary_functions import generate_neural_activity
 
+%load_ext autoreload
+%reload_ext autoreload
+%reload_ext brian
+from brian import *
 #os.chdir('C:\Python27')
 #os.chdir('/home/salavati/Desktop/Neural_Tomography')
 #==============================================================================
@@ -180,6 +186,8 @@ eqs='''
 dv/dt=(I-v)/tau : volt
 dI/dt=-I/tau_e : volt
 '''
+
+neural_model_eq = list([eqs,tau,tau_e])
 #------------------------------------------------------------------------------
 
 #==============================================================================
@@ -239,6 +247,9 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         neural_layers = []
         neurons_exc = []
         neurons_inh = []
+        Neural_Connections = {}
+        Neural_Connections['n_exc'] = n_exc_array
+        Neural_Connections['n_inh'] = n_inh_array
         
         for l in range(0,no_layers):
         
@@ -247,8 +258,6 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             n = n_exc + n_inh
             neurons = NeuronGroup(n,model=eqs,threshold=10*mV,reset=0*mV)
             
-            
-        
             Pe = neurons.subgroup(n_exc)
             Pi = neurons.subgroup(n_inh)
             neural_layers.append(neurons)
@@ -266,13 +275,12 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             Pi = neurons_inh[l_in]
             n_exc = n_exc_array[l_in]
             n_inh = n_inh_array[l_in]
-            h = float(n_exc)/float(2)
-            h = float(n_inh)/float(2)
+
             
-            for l_out in range(l_in+1,no_layers+1):
-                output_layer = neural_layers[l_out]
-                connection_prob = connection_prob_matrix[l_in,l_out-1]
-                delay_max = delay_max_matrix[l_in,l_out-1]
+            for l_out in range(l_in,no_layers):
+                output_layer = neural_layers[l_out+1]
+                connection_prob = connection_prob_matrix[l_in,l_out]
+                delay_max = delay_max_matrix[l_in,l_out]
                 
                 if random_delay_flag:
                     Ce = Connection(Pe, output_layer, weight=1*mV, sparseness=connection_prob,max_delay=delay_max * ms,delay=lambda i, j:delay_max * rand(1) * ms)
@@ -286,6 +294,9 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 Wi = Ci.W.todense()
                 De = Ce.delay.todense()
                 Di = Ci.delay.todense()
+                
+                ind = str(l_in) + str(l_out)
+                Neural_Connections[ind] = list([We,De,Wi,Di,delay_max])
                 #..................................................................
                 
                 #..............Save Connectivity Matrices to the File..............
@@ -397,35 +408,39 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         #..........................................................
         #--------------------------------------------------------------------------
     
-        
- 
-    W = np.vstack((We,Wi))
     #-------------------Run the Network and Record Spikes----------------------
-    file_name = file_name_base_data + "/Spikes/S_times_FF_n_1_cascades_%s.txt" %file_name_ending
-    S_time_file = open(file_name,'w')
-    file_name = file_name_base_data + "/Spikes/S_times_FF_n_1_out_cascades_%s.txt" %file_name_ending
-    S_time_file_out = open(file_name,'w')
+    file_name_base = file_name_base_data + "/Spikes/S_times_MLFF_%s" %file_name_ending
+    
+    for l_in in range(0,no_layers+1):
+            file_name = file_name_base + '_l_' + str(l_in) +'.txt'
+            S_time_file = open(file_name,'w')
+            S_time_file.close()
+            
     for cascade_count in range(0,no_cascades):
         
         #--------------------------Generate Activity---------------------------
-        WWe,WWi,DDe,DDi = generate_neural_activity(n_exc,n_inh,running_period,We,Wi,De,Di,S_time_file,S_time_file_out,eqs,tau,tau_e,delay_max,frac_input_neurons,cascade_count,'F')
+        Neural_Connections_Out = generate_neural_activity('F',Neural_Connections,running_period,file_name_base,neural_model_eq,frac_input_neurons,cascade_count,no_layers)
         #----------------------------------------------------------------------
         
         #------------------------Check for Any Errors--------------------------
-        if norm(WWe-We):
-            print('something is wrong with We!')
-            break
-        if norm(WWi-Wi):
-            print('something is wrong with Wi!')
-            break
-        if norm(DDe-De):
-            print('something is wrong with De!')
-            break
-        if norm(DDi-Di):
-            print('something is wrong with Di!')
-            break
+        for l_in in range(0,no_layers):
+            for l_out in range(l_in,no_layers):
+                ind = str(l_in) + str(l_out)
+                
+                temp_list1 = Neural_Connections[ind]
+                temp_list2 = Neural_Connections_Out[ind]
+                
+                if norm(temp_list1[0]-temp_list2[0]):
+                    print('something is wrong with We!')
+                    break
+                if norm(temp_list1[2]-temp_list2[2]):
+                    print('something is wrong with Wi!')
+                    break
+                if norm(temp_list1[1]-temp_list2[1]):
+                    print('something is wrong with De!')
+                    break
+                if norm(temp_list1[3]-temp_list2[3]):
+                    print('something is wrong with Di!')
+                    break
         #----------------------------------------------------------------------
-        
-    S_time_file_out.close()
-    S_time_file.close()
 #==============================================================================
