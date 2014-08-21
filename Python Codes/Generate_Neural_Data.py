@@ -1,37 +1,14 @@
 #=======================DEFAULT VALUES FOR THE VARIABLES=======================
 FRAC_STIMULATED_NEURONS_DEFAULT = 0.4
-NO_STIMUL_ROUNDS_DEFAULT = 1000
+NO_STIMUL_ROUNDS_DEFAULT = 2000
 ENSEMBLE_SIZE_DEFAULT = 1
 FILE_NAME_BASE_DATA_DEFAULT = "./Data"
 ENSEMBLE_COUNT_INIT_DEFAULT = 0
 #==============================================================================
 
-#================================INSTRUCTIONS==================================
-help_message = "\n"
-help_message = help_message + "\n"
-help_message = help_message + "###################################INSTRUCTIONS################################\n"
-help_message = help_message + "Here is how to use the code: you have to specify the option flag and"
-help_message = help_message + "the quantity right afterwards.\nExample: -E 100 for setting a network with 100 excitatory neurons. "
-help_message = help_message + "The full list of options are as follows:\n"
-help_message = help_message + "-E xxx: To specify the number of excitatory neurons PER LAYER (as a list). Default value = '%s'.\n" %str(n_exc_default)
-help_message = help_message + "-I xxx: To specify the number of inhibitory neurons. Default value = %s.\n" %str(n_inh_default)
-help_message = help_message + "-P xxx: To specify the probabaility of having a connection between two neurons. Default value = %s.\n" %str(connection_prob_default)
-help_message = help_message + "-Q xxx: To specify the fraction of stimulated input neurons. Default value = %s.\n" %str(FRAC_STIMULATED_NEURONS_DEFAULT)
-help_message = help_message + "-T xxx: To specify the number of considered cascades. Default value = %s.\n" %str(NO_STIMUL_ROUNDS_DEFAULT)
-help_message = help_message + "-D xxx: To specify the maximum delay for the neural connections in milliseconds. Default value = %s.\n" %str(delay_max_default)
-help_message = help_message + "-S xxx: To specify the number of generated random graphs. Default value = %s.\n" %str(ENSEMBLE_SIZE_DEFAULT)
-help_message = help_message + "-A xxx: To specify the folder that stores the generated data. Default value = %s. \n" %str(FILE_NAME_BASE_DATA_DEFAULT)
-help_message = help_message + "-F xxx: To specify the ensemble index to start simulation. Default value = %s. \n" %str(ENSEMBLE_COUNT_INIT_DEFAULT)
-help_message = help_message + "-L xxx: To specify the number of layers in the network. Default value = %s. \n" %str(no_layers_default)
-help_message = help_message + "-R xxx: To specify if the delays are fixed (R=0) or random (R=1). Default value = %s. \n" %str(random_delay_flag_default)
-help_message = help_message + "#################################################################################"
-help_message = help_message + "\n"
-#==============================================================================
-
 
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 from brian import *
-import time
 import numpy as np
 import os
 import sys,getopt,os
@@ -45,9 +22,6 @@ reload(Neurons_and_Networks)
 from Neurons_and_Networks import NeuralNet
 from Neurons_and_Networks import *
 
-%load_ext autoreload
-%reload_ext autoreload
-%reload_ext brian
 import brian
 reload(brian)
 from brian import *
@@ -56,12 +30,34 @@ spikequeue.SpikeQueue.reinit
 #os.chdir('/home/salavati/Desktop/Neural_Tomography')
 #==============================================================================
 
+#================================INSTRUCTIONS==================================
+help_message = "\n"
+help_message = help_message + "\n"
+help_message = help_message + "###################################INSTRUCTIONS################################\n"
+help_message = help_message + "Here is how to use the code: you have to specify the option flag and"
+help_message = help_message + "the quantity right afterwards.\nExample: -E 100 for setting a network with 100 excitatory neurons. "
+help_message = help_message + "The full list of options are as follows:\n"
+help_message = help_message + "-E xxx: To specify the number of excitatory neurons PER LAYER (as a list). Default value = '%s'.\n" %str(N_EXC_ARRAY_DEFAULT)
+help_message = help_message + "-I xxx: To specify the number of inhibitory neurons. Default value = %s.\n" %str(N_INH_ARRAY_DEFAULT)
+help_message = help_message + "-P xxx: To specify the probabaility of having a connection between two neurons. Default value = %s.\n" %str(DELAY_MAX_MATRIX_DEFAULT)
+help_message = help_message + "-Q xxx: To specify the fraction of stimulated input neurons. Default value = %s.\n" %str(FRAC_STIMULATED_NEURONS_DEFAULT)
+help_message = help_message + "-T xxx: To specify the number of considered cascades. Default value = %s.\n" %str(NO_STIMUL_ROUNDS_DEFAULT)
+help_message = help_message + "-D xxx: To specify the maximum delay for the neural connections in milliseconds. Default value = %s.\n" %str(DELAY_MAX_MATRIX_DEFAULT)
+help_message = help_message + "-S xxx: To specify the number of generated random graphs. Default value = %s.\n" %str(ENSEMBLE_SIZE_DEFAULT)
+help_message = help_message + "-A xxx: To specify the folder that stores the generated data. Default value = %s. \n" %str(FILE_NAME_BASE_DATA_DEFAULT)
+help_message = help_message + "-F xxx: To specify the ensemble index to start simulation. Default value = %s. \n" %str(ENSEMBLE_COUNT_INIT_DEFAULT)
+help_message = help_message + "-L xxx: To specify the number of layers in the network. Default value = %s. \n" %str(NO_LAYERS_DEFAULT)
+help_message = help_message + "-R xxx: To specify if the delays are fixed (R=0) or random (R=1). Default value = %s. \n" %str(RANDOM_DELAY_FLAG_DEFAULT)
+help_message = help_message + "#################################################################################"
+help_message = help_message + "\n"
+#==============================================================================
+
+
 #================================INITIALIZATIONS===============================
 n_exc_array = None; n_inh_array= None; connection_prob_matrix = None
 random_delay_flag = None; no_layers = None; delay_max_matrix = None
 
 os.system('clear')                                              # Clear the commandline window
-t0 = time.time()                                                # Initialize the timer
 #==============================================================================
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
@@ -101,6 +97,7 @@ else:
 
 #================================INITIALIZATIONS===============================
 
+no_layers = 4
 
 #------------Set the Default Values if Variables are not Defines---------------
 if 'frac_stimulated_neurons' not in locals():
@@ -138,6 +135,7 @@ if not os.path.isdir(temp):
 #------------------------------------------------------------------------------
 
 #----------------------------------Neural Model--------------------------------
+global tau,tau_e
 tau=10*ms
 tau_e=2*ms # AMPA synapse
 eqs='''
@@ -158,7 +156,7 @@ reload(Neurons_and_Networks)
 from Neurons_and_Networks import NeuralNet
 from Neurons_and_Networks import *
 
-
+network_type = 'F'
 Network = NeuralNet(no_layers,n_exc_array,n_inh_array,connection_prob_matrix,delay_max_matrix,random_delay_flag,neural_model_eq)
 
 no_samples_per_cascade = max(3.0,25*Network.no_layers*np.max(Network.delay_max_matrix)) # Number of samples that will be recorded
@@ -180,8 +178,9 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         Network.create_weights(ensemble_count,file_name_base_data)
     #--------------------------------------------------------------------------
     
+        
     #-------------------Run the Network and Record Spikes----------------------
-    file_name_base = file_name_base_data + "/Spikes/S_times_%s" %file_name_ending
+    file_name_base = file_name_base_data + "/Spikes/S_times_%s" %Network.file_name_ending + "_q_%s" %str(frac_stimulated_neurons)
     
     for l_in in range(0,Network.no_layers):
         file_name = file_name_base + '_l_' + str(l_in) +'.txt'

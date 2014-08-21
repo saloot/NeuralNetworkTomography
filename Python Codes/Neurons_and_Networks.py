@@ -8,47 +8,57 @@
 from brian import*
 import os
 
-#-----------------------DEFAULT VALUES FOR THE VARIABLES-----------------------
 N_EXC_ARRAY_DEFAULT = [160,1]
 N_INH_ARRAY_DEFAULT = [40,0]
 CONNECTION_PROB_DEFAULT = 0.2
 NO_LAYERS_DEFAULT = 2
 DELAY_MAX_DEFAULT = 1.0
-RANDOM_DELAY_FLAG_DEFAULT = 0
+RANDOM_DELAY_FLAG_DEFAULT = 1
 
-#...........................THE DEFAULT NEURAL MODEL............................
-tau=10*ms
-tau_e=2*ms # AMPA synapse
-eqs='''
-dv/dt=(I-v)/tau : volt
-dI/dt=-I/tau_e : volt
-'''
-NEURAL_MODEL_DEFAULT = list([eqs,tau,tau_e])
-#...............................................................................
-    
-#.........................Connection Probability Matrix.........................
-CONNECTION_PROB_MATRIX_DEFAULT = np.zeros([NO_LAYERS_DEFAULT,NO_LAYERS_DEFAULT])
-for i in range(0,NO_LAYERS_DEFAULT):
-    for j in range(i+1,NO_LAYERS_DEFAULT):
-        l = j-i
-        p_temp = CONNECTION_PROB_DEFAULT/(math.log(j) + 0.5772156 + 0.85/(2*j))   # Using Harmonic number approximations
-        p_temp = 0.001*round(1000*p_temp/float(l))
-        CONNECTION_PROB_MATRIX_DEFAULT[i,j] = p_temp
-#...............................................................................
-    
-#...................Maximum Connection Delays Matrix............................
-DELAY_MAX_MATRIX_DEFAULT = np.zeros([NO_LAYERS_DEFAULT,NO_LAYERS_DEFAULT])
-for i in range(0,NO_LAYERS_DEFAULT):
-    for j in range(i+1,NO_LAYERS_DEFAULT):
-        DELAY_MAX_MATRIX_DEFAULT[i,j] = DELAY_MAX_DEFAULT*(0.9*(j-i))
-#...............................................................................
+CONNECTION_PROB_MATRIX_DEFAULT = np.zeros([2,2])
+CONNECTION_PROB_MATRIX_DEFAULT[0,1] = CONNECTION_PROB_DEFAULT
 
-#-------------------------------------------------------------------------------
-
+DELAY_MAX_MATRIX_DEFAULT = np.zeros([2,2])
+DELAY_MAX_MATRIX_DEFAULT[0,1] = 0.9
 class NeuralNet():
+    
     
     #--------------------------INITIALIZE THE CLASS----------------------------
     def __init__(self,no_layers = None, n_exc_array = None, n_inh_array = None, connection_prob_matrix = None,delay_max_matrix = None,random_delay_flag = None,neural_model_eq=None):
+        
+        #-----------------------DEFAULT VALUES FOR THE VARIABLES-----------------------
+        
+        global N_EXC_ARRAY_DEFAULT,N_INH_ARRAY_DEFAULT,CONNECTION_PROB_DEFAULT,NO_LAYERS_DEFAULT,NO_LAYERS_DEFAULT,DELAY_MAX_DEFAULT,RANDOM_DELAY_FLAG_DEFAULT
+
+        #...........................THE DEFAULT NEURAL MODEL............................
+        tau=10*ms
+        tau_e=2*ms # AMPA synapse
+        eqs='''
+        dv/dt=(I-v)/tau : volt
+        dI/dt=-I/tau_e : volt
+        '''
+        NEURAL_MODEL_DEFAULT = list([eqs,tau,tau_e])
+        #...............................................................................
+    
+        #.........................Connection Probability Matrix.........................
+        CONNECTION_PROB_MATRIX_DEFAULT = np.zeros([NO_LAYERS_DEFAULT,NO_LAYERS_DEFAULT])
+        for i in range(0,NO_LAYERS_DEFAULT):
+            for j in range(i+1,NO_LAYERS_DEFAULT):
+                l = j-i
+                p_temp = CONNECTION_PROB_DEFAULT/(math.log(j) + 0.5772156 + 0.85/(2*j))   # Using Harmonic number approximations
+                p_temp = 0.001*round(1000*p_temp/float(l))
+                CONNECTION_PROB_MATRIX_DEFAULT[i,j] = p_temp
+        #...............................................................................
+    
+        #...................Maximum Connection Delays Matrix............................
+        DELAY_MAX_MATRIX_DEFAULT = np.zeros([NO_LAYERS_DEFAULT,NO_LAYERS_DEFAULT])
+        for i in range(0,NO_LAYERS_DEFAULT):
+            for j in range(i+1,NO_LAYERS_DEFAULT):
+                DELAY_MAX_MATRIX_DEFAULT[i,j] = DELAY_MAX_DEFAULT*(0.9*(j-i))
+        #...............................................................................
+
+        #-------------------------------------------------------------------------------
+
         
         #................Assign Default Variables if Necessary.................
         if (no_layers is None):
@@ -56,6 +66,28 @@ class NeuralNet():
             print('ATTENTION: The default value of %s for no_layers is considered.\n' %str(no_layers))
         else:
             self.no_layers = no_layers
+        
+        #~~~~~~~~~~~~~~~~~Re-Assign Default Values If Necessary~~~~~~~~~~~~~~~~~
+        if self.no_layers != NO_LAYERS_DEFAULT:            
+            CONNECTION_PROB_MATRIX_DEFAULT = np.zeros([self.no_layers,self.no_layers])
+            for i in range(0,self.no_layers):
+                for j in range(i+1,self.no_layers):
+                    l = j-i
+                    p_temp = CONNECTION_PROB_DEFAULT/(math.log(j) + 0.5772156 + 0.85/(2*j))   # Using Harmonic number approximations
+                    p_temp = 0.001*round(1000*p_temp/float(l))
+                    CONNECTION_PROB_MATRIX_DEFAULT[i,j] = p_temp
+                    
+            DELAY_MAX_MATRIX_DEFAULT = np.zeros([self.no_layers,self.no_layers])
+            for i in range(0,self.no_layers):
+                for j in range(i+1,self.no_layers):
+                    DELAY_MAX_MATRIX_DEFAULT[i,j] = DELAY_MAX_DEFAULT*(0.9*(j-i))
+                    
+            N_EXC_ARRAY_DEFAULT = 160 * np.ones([self.no_layers])
+            N_INH_ARRAY_DEFAULT = 40 * np.ones([self.no_layers])
+            N_EXC_ARRAY_DEFAULT[self.no_layers-1] = 1
+            N_INH_ARRAY_DEFAULT[self.no_layers-1] = 0
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
         
         if (n_exc_array is None):
             self.n_exc_array = N_EXC_ARRAY_DEFAULT
@@ -149,6 +181,7 @@ class NeuralNet():
         file_name_ending = file_name_ending + "_d" + str_d
         #file_name_ending = file_name_ending + "_T_%s" %str(no_stimul_rounds)    
         file_name_ending = file_name_ending + "_%s" %str(ensemble_count)
+        self.file_name_ending = file_name_ending
         #......................................................................
               
         #....................Read the Weights and Delays.......................
@@ -202,7 +235,7 @@ class NeuralNet():
                 if (os.path.isfile(file_name)):
                     if (os.stat(file_name)[6]):
                         Di = np.genfromtxt(file_name, dtype=None, delimiter='\t')                    
-                        Di = Wi.reshape(n_inh_in,n_out)
+                        Di = Di.reshape(n_inh_in,n_out)
                     else:
                         Di = []
                 else:
@@ -285,6 +318,9 @@ class NeuralNet():
         
             n_exc = int(self.n_exc_array[l])
             n_inh = int(self.n_inh_array[l])
+
+            tau=10*ms
+            tau_e=2*ms
             n = n_exc + n_inh
             neurons = NeuronGroup(n,model=self.neural_model_eq[0],threshold=10*mV,reset=0*mV,refractory=1*ms)
             

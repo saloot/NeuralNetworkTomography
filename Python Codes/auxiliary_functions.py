@@ -47,7 +47,7 @@ def determine_binary_threshold(method,params,obs):
         T = params[3]
         Delta = params[4]
         q = params[5]
-        n = params[6]
+        n = params[7]
         #......................................................................
         
         #................Compute the Random Variables Parameters...............
@@ -89,11 +89,30 @@ def determine_binary_threshold(method,params,obs):
         #......................................................................
         
         #.........Computhe the Thresholds Using the K-Means Algorithms.........
-        centroids,res = kmeans(obs,3,iter=30)
+        success_itr = 0
+        centroids = np.zeros([1,3])
+        while success_itr<5:
+            temp,res = kmeans(obs,3,iter=30)
+            #print res
+            #if (len(temp) == 3):
+            #if res>0:
+            #    pdb.set_trace()
+            #if (res<0.015):
+            if 1:
+                success_itr = success_itr + 1
+                centroids = centroids + temp
+        
+        centroids = centroids/float(success_itr)
         ss = np.sort(centroids)
-        val_inh = ss[0]
-        val_exc = ss[2]
-        thr_zero = ss[1]
+        ss = ss[0]
+        if (len(ss) == 3):
+            val_inh = ss[0]
+            val_exc = ss[2]
+            thr_zero = ss[1]
+        else:
+            val_inh = min(ss)
+            val_exc = max(ss)
+            val_zero = 0.5 * (val_inh+val_exc)
         #......................................................................
         
         #.......................Adjust the Thresholds..........................
@@ -271,7 +290,7 @@ def generate_neural_activity(NeuralNetwork,running_period,S_time_file_base,frac_
                 
     net.run(running_period * ms)        
     
-    pdb.set_trace()
+    #pdb.set_trace()
     
     print Spike_monitors_list['dummy'].nspikes, "spikes in dummy layer"        
     for l_in in range(0,NeuralNetwork.no_layers):
@@ -282,7 +301,7 @@ def generate_neural_activity(NeuralNetwork,running_period,S_time_file_base,frac_
     #----------------------Save Spike Times to the File------------------------    
     for l_in in range(0,NeuralNetwork.no_layers):
         file_name = S_time_file_base + '_l_' + str(l_in) +'.txt'
-        S_time_file = open(file_name,'a')
+        S_time_file = open(file_name,'a+')
             
         ind = 'l_' + str(l_in) 
         SS = Spike_monitors_list[ind].spikes          
@@ -339,7 +358,7 @@ def generate_neural_activity(NeuralNetwork,running_period,S_time_file_base,frac_
 # and 0 entries.
 #------------------------------------------------------------------------------
 
-def beliefs_to_binary(binary_mode,W_inferred,n,p_exc,p_inh,thea,T,Delta,params,compensate_flag):
+def beliefs_to_binary(binary_mode,W_inferred,params,compensate_flag):
     
     #---------------------Import Necessary Libraries---------------------------
     import numpy as np
@@ -348,31 +367,39 @@ def beliefs_to_binary(binary_mode,W_inferred,n,p_exc,p_inh,thea,T,Delta,params,c
     
     #--------------------------Initializing Variables--------------------------
     centroids = []
-    connection_prob = p_exc + p_inh
-    a = W_inferred.shape    
-    n = a[0]
+    
+    a = W_inferred.shape
     lll = len(a)
+    if lll:
+        n = a[0]
+    else:
+        n = 1
     #--------------------------------------------------------------------------
     
     #---------Determine the Type of Network: FeedForward or Recurrent----------
     if (lll>1):
         W_binary = np.zeros([n,n])
+        if (binary_mode == 4):
+            centroids = np.zeros([n,3])
         W_binary.fill(0)
+        
     else:
         W_binary = np.zeros([n])
         W_binary.fill(0)
+        if (binary_mode == 4):
+            centroids = np.zeros([1,3])
     #--------------------------------------------------------------------------
     
     #----------------Binary Mode 1: Probabilistic Thresholding-----------------
     if (binary_mode == 1):
         
         #..................Get the Binarification Parameters...................
-        q = params[0]
-        r = params[1]
+        q = params[5]
+        r = params[6]        
+        params_bin = np.hstack([params,n])        
         #......................................................................
         
-        #..,...................Determine the Thresholds........................
-        params_bin = [p_exc,p_inh,theta,T,Delta,q,n]
+        #..,...................Determine the Thresholds........................        
         thrs = determine_binary_threshold('p',params_bin,[])
         thr_exc = thrs[0]
         thr_inh = thrs[2]
@@ -399,6 +426,15 @@ def beliefs_to_binary(binary_mode,W_inferred,n,p_exc,p_inh,thea,T,Delta,params,c
     
     #----------------Binary Mode 2: Sorting-Based Thresholding-----------------
     elif (binary_mode == 2):
+        
+        #..................Get the Binarification Parameters...................
+        q = params[0]
+        r = params[1]
+        p_exc = params[2]
+        p_inh = params[3]
+        Delta = params[4]
+        theta = params[5]
+        #......................................................................
         
         #..........................Recurrent Networks..........................
         if (lll>1):
@@ -430,6 +466,9 @@ def beliefs_to_binary(binary_mode,W_inferred,n,p_exc,p_inh,thea,T,Delta,params,c
     #--------------Binary Mode 3: Neuron-Type-Based Thresholding---------------
     elif (binary_mode == 3):
         
+        p_exc = params[2]
+        p_inh = params[3]
+        connection_prob = p_exc + p_inh
         #........Sum the Beleifs for the Outgoing Links of Each Neuron.........
         total_belief = np.sum(W_inferred,axis=1)
         temp1 = np.sort(total_belief)
@@ -461,23 +500,26 @@ def beliefs_to_binary(binary_mode,W_inferred,n,p_exc,p_inh,thea,T,Delta,params,c
     #--------------Binary Mode 4: Clustering-Based Thresholding----------------
     elif (binary_mode == 4):
 
-        #..,...................Determine the Thresholds........................
-        ww = W_inferred.ravel()
-        thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,ww)
-        centroids = [thr_inh,thr_zero,thr_exc]
+        #......................Determine the Thresholds........................
+        if (lll>1):        
+            for i in range(0,n):
+                ww = W_inferred[i,:]
+                thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,ww)
+                centroids[i,:] = [thr_inh,thr_zero,thr_exc]
+                #print centroids[i,:]
         #......................................................................
         
         #...................Transform the Graph to Binary......................
-        W_temp,res = vq(ww,np.array([thr_inh,thr_zero,thr_exc]))
-        W_temp = W_temp - 1
-        #......................................................................
-        
-        #....Reshape the Binary Vector to Matrix in Case of Recurrent Graphs...
-        if (lll>1):
-            for i in range(0,n):
-                W_binary[i,:] = W_binary[i,:] + W_temp[(i)*n:(i+1)*n]
+                W_temp,res = vq(ww,np.array([thr_inh,thr_zero,thr_exc]))
+                W_temp = W_temp - 1
+                W_binary[i,:] = W_temp
+                #pdb.set_trace()
         else:
-            W_binary = W_temp
+            ww = W_inferred.ravel()
+            thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,ww)
+            centroids = [thr_inh,thr_zero,thr_exc]
+            W_temp,res = vq(ww,np.array([thr_inh,thr_zero,thr_exc]))
+            W_binary = W_temp - 1
         #......................................................................
     #--------------------------------------------------------------------------
     
@@ -559,9 +601,18 @@ def calucate_accuracy(W_binary,W):
     else:
         A = np.zeros([n,1])
         W_binary = W_binary.reshape([n,1])
-        acc_plus = float(sum(np.multiply(W_binary>A,W>A)))/float(sum(W>A))
-        acc_minus = float(sum(np.multiply(W_binary<A,W<A)))/float(sum(W<A))
-        acc_zero = float(sum(np.multiply(W_binary==A,W==A)))/float(sum(W==A))
+        if (sum(W>A)):
+            acc_plus = float(sum(np.multiply(W_binary>A,W>A)))/float(sum(W>A))
+        else:
+            acc_plus = float('NaN')
+        if (sum(W<A)):
+            acc_minus = float(sum(np.multiply(W_binary<A,W<A)))/float(sum(W<A))
+        else:
+            acc_minus = float('NaN')
+        if (sum(W==A)):
+            acc_zero = float(sum(np.multiply(W_binary==A,W==A)))/float(sum(W==A))
+        else:
+            acc_zero = float('NaN')
 
         if (sum(W_binary>A)):
             prec_plus = float(sum(np.multiply(W_binary>A,W>A)))/float(sum(W_binary>A))
@@ -828,5 +879,229 @@ def verify_neural_activity(network_type,Neural_Connections,running_period,S_time
     #--------------------------------------------------------------------------
     
     return Neural_Connections_Out,Spikes_list
+#==============================================================================
+#==============================================================================
+
+
+#==============================================================================
+#==============================soft_threshold==================================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function truncates values that are smaller than a threshold to zero.
+#------------------------------------------------------------------------------
+
+def soft_threshold(W,thr):
+    WW = np.multiply(W-thr,W>thr) + np.multiply(W+thr,W<-thr)
+    return WW
+#==============================================================================
+#==============================================================================
+
+
+#==============================================================================
+#========================THE BASIC INFERENCE ALGORITHM=========================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function truncates performs different inference methods.
+#------------------------------------------------------------------------------
+def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params):
+           
+    #------------------------------Initialization------------------------------
+    s = in_spikes.shape
+    n = s[0]
+    TT = s[1]
+    
+    s = out_spikes.shape
+    m = s[0]
+    
+    if (TT != s[1]):
+        print('Error in the number of samples!')
+        sys.exit()
+        
+    W_inferred = np.zeros([m,n])
+    W_inferred.fill(0)
+    cost = []
+     
+    
+    #--------------------------------------------------------------------------
+    
+    #----------------------The Perceptron-based Algorithm----------------------
+    if (inference_method == 2):                
+        alpha0 = inferece_params[0]
+        sparse_thr_0 = inferece_params[1]
+        sparsity_flag = inferece_params[2]
+        theta = inferece_params[3]
+        range_tau = range(0,500)
+
+        cost = np.zeros([len(range_tau)])
+        
+        for ttau in range_tau:
+            temp = 0                
+            alpha = alpha0/float(1+log(ttau+1))
+            sparse_thr = sparse_thr_0/float(1+log(ttau+1))
+                        
+            for cascade_count in range(0,TT):
+                x = in_spikes[:,cascade_count]
+                x = x.reshape(n,1)
+                y = out_spikes[:,cascade_count]
+                y = y.reshape(m,1)                        
+                y_predict = 0.5*(1+np.sign(np.dot(W_inferred,np.sign(x))-theta))
+                y_predict = y_predict.reshape(m,1)
+                        
+                v = np.multiply(x<y,x>0) + np.multiply(y==0,x>0)
+                v = v.astype(int)
+                        
+                temp = temp + np.dot(y_predict - np.sign(y),v.T)                            
+                cost[ttau] = cost[ttau] + sum(pow(y_predict - np.sign(y),2))
+            
+            #pdb.set_trace()                
+            W_inferred = W_inferred - alpha * temp
+                            
+            if (sparsity_flag):
+                W_temp = soft_threshold(W_inferred.ravel(),sparse_thr)
+                W_inferred = W_temp.reshape([m,n])
+
+            if (cost[ttau] == 0):
+                break
+            elif (ttau>30):
+                if ( abs(cost[ttau]-cost[ttau-2])/float(cost[ttau]) < 0.0001):
+                    break
+    #--------------------------------------------------------------------------
+    
+    #-------------------------The ML-based Algorithm---------------------------
+    elif (inference_method == 0):
+        Delta = inferece_params[0]/float(T)
+        W_inferred = np.dot(in_spikes,out_spikes.T)*Delta
+    #--------------------------------------------------------------------------
+    
+    #-----------------------The Hebbian-based Algorithm------------------------
+    elif (inference_method == 1):
+        Delta = inferece_params[0]/float(T)
+        W_inferred = np.dot(in_spikes,out_spikes.T)*Delta
+    #--------------------------------------------------------------------------
+    
+    else:
+        print('Error! Invalid inference method.')
+        sys.exit()
+    
+    return W_inferred,cost
+#==============================================================================
+#==============================================================================
+
+#==============================================================================
+#===========================READ SPIKES FROM FILE==============================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function reads spikes for a multi-layer neural network and returns the
+# results in the form of a dictionary for each layer.
+#------------------------------------------------------------------------------
+def read_spikes(file_name_base,no_layers,n_exc_array,n_inh_array,no_stimul_rounds,sim_window):
+    Neural_Spikes = {}
+    for l_in in range(0,no_layers):        
+        file_name = file_name_base + '_l_' + str(l_in) +'.txt'        
+        S_times = np.genfromtxt(file_name, dtype=float, delimiter='\t')
+        
+        n_exc = n_exc_array[l_in]
+        n_inh = n_inh_array[l_in]
+        n = n_exc + n_inh
+            
+        in_spikes = np.zeros([n,no_stimul_rounds])
+        in_spikes.fill(0)
+    
+        recorded_spikes = np.zeros([n,no_stimul_rounds*sim_window])                      # This matrix captures the time slot in which each neuron has fired in each step
+        cumulative_recorded_spikes = np.zeros([n,no_stimul_rounds*sim_window])               # This matrix takes into account the effect of neural history 
+        recorded_spikes.fill(0)
+        for i in range(0,no_stimul_rounds):            
+            recorded_spikes[:,i*sim_window+sim_window-1] = -1
+    
+        s = S_times.shape
+        cascade_count = 0
+        for l in range(0,s[0]):
+            neuron_count = int(S_times[l,0])        
+            if (neuron_count == -2.0):            
+                cascade_count = cascade_count + 1
+            else:
+                #tt = mod(round(10000*S_times[l,1]),sim_window)-1
+                #in_spikes[neuron_count,round(10000*S_times[l,1])/sim_window] = tt;#S_times[l,1]
+                tt = round(10000*S_times[l,1])-1                
+                in_spikes[neuron_count,cascade_count] = S_times[l,1]
+                if (tt>0):
+                    recorded_spikes[neuron_count,(cascade_count)*sim_window+sim_window-1] = 0
+                    
+                recorded_spikes[neuron_count,(cascade_count)*sim_window+tt] = 1
+                cumulative_recorded_spikes[neuron_count,(cascade_count)*sim_window+tt+1:(cascade_count+1)*sim_window] = cumulative_recorded_spikes[neuron_count,(cascade_count)*sim_window+tt+1:(cascade_count+1)*sim_window] + np.divide(np.ones([sim_window-tt-1]),range(1,int(sim_window-tt)))
+                #cumulative_recorded_spikes[neuron_count,(cascade_count)*sim_window+tt+1:(cascade_count+1)*sim_window] = np.ones([sim_window-tt-1])
+
+        print(sum((S_times>0)))        
+        Neural_Spikes[str(l_in)] = list([recorded_spikes,cumulative_recorded_spikes,in_spikes]) #in_spikes
+    
+    return Neural_Spikes
+#==============================================================================
+#==============================================================================
+
+
+#==============================================================================
+#=========================BELIEF QUALITY ASSESSMENT============================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function calculates the quality of the computed beliefs about the neural
+# graph
+#------------------------------------------------------------------------------
+def calculate_belief_quality(W_inferred,W_orig):
+
+    #------------------------------Initialization------------------------------
+    ss = W_inferred.shape
+    n = ss[1]
+    
+    tt = W_orig.shape
+    
+    if (ss!=tt):
+        print('Error! The original and the ifnerred graphs should have the same size.')
+        sys.exit()
+        
+    B_exc_mean = np.zeros([n,1])
+    B_inh_mean = np.zeros([n,1])
+    B_void_mean = np.zeros([n,1])
+    
+    B_exc_min = np.zeros([n,1])
+    B_inh_max = np.zeros([n,1])
+    B_void_max = np.zeros([n,1])
+    B_void_min = np.zeros([n,1])
+    #--------------------------------------------------------------------------
+                
+    
+    for i in range(0,n):
+        
+        #--------Caclulate the Minimum Value of the Excitatory Beliefs---------
+        a = np.nonzero(W_orig[:,i]>0)
+        temp = W_inferred[a,i]
+        if len(temp[0]):
+            B_exc_mean[i] = temp.mean()        
+            B_exc_min[i] = temp.min()
+        else:
+            B_exc_mean[i] = float('NaN')
+            B_exc_min[i] = float('NaN') 
+        #----------------------------------------------------------------------
+    
+        #--------Caclulate the Maximum Value of the Inhibitory Beliefs---------
+        a = np.nonzero(W_orig[:,i]<0)
+        temp = W_inferred[a,i]        
+        if (len(temp[0]) > 0):
+            B_inh_mean[i] = temp.mean()            
+            B_inh_max[i] = temp.max()
+        else:
+            B_inh_mean[i] = float('NaN') #B_inh_mean[itr-1]            
+            B_inh_max[i] = float('NaN') #B_inh_max[itr-1]
+        #----------------------------------------------------------------------
+    
+        #------Caclulate the Minimum and Maximum Value of the Void Beliefs-----
+        a = np.nonzero(W_orig[:,i]==0)
+        temp = W_inferred[a,i]
+        B_void_mean[i] = temp.mean()
+        B_void_max[i] = temp.max()
+        B_void_min[i] = temp.min()
+        #----------------------------------------------------------------------
+    
+    
+    return np.hstack([B_exc_mean,B_void_mean,B_inh_mean]),np.hstack([B_exc_min,B_void_max,B_void_min,B_inh_max])
 #==============================================================================
 #==============================================================================

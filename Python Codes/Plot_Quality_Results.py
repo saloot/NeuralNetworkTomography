@@ -12,14 +12,14 @@ inference_method_default = 0
 
 
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
-from brian import *
+#from brian import *
 import time
 import numpy as np
 import sys,getopt,os
 from time import time
 import matplotlib.pyplot as plt
 
-os.chdir('C:\Python27')
+#os.chdir('C:\Python27')
 #==============================================================================
 
 
@@ -66,11 +66,11 @@ if 'inference_method' not in locals():
 
 
 #--------------------------Initialize Other Variables--------------------------
-T_range = range(10, no_cascades, 200)                    # The range of sample sizes considered to investigate the effect of sample size on the performance
+T_range = range(50, no_cascades, 200)                    # The range of sample sizes considered to investigate the effect of sample size on the performance
 q_range = [0.2,0.3,0.4]                                 # The range of stimulated fraction of neurons considered in simulations
 
 considered_var = 'T'                                    # The variable against which we plot the performance
-network_type = 'R'                                      # The type of the network considered in plotting the results, 'F' for feedforward and 'R' for recurrent
+network_type = 'MLF'                                      # The type of the network considered in plotting the results, 'F' for feedforward and 'R' for recurrent
 
 if (considered_var == 'T'):
     var_range = T_range
@@ -96,10 +96,14 @@ elif (network_type == 'F'):
     file_name_base_plot = "./Results/FeedForward/Plot_Results"       #The folder to store resutls =
     name_base = 'FF_n_1_'
     name_prefix = "BQ_FF_"
-    
+elif (network_type == 'MLF'):
+    file_name_base_results = "./Results/MultiLayerFeedForward"       #The folder that stores the resutls
+    file_name_base_plot = "./Results/MultiLayerFeedForward/Plot_Results"       #The folder to store resutls =
+    name_base = 'MLFF_'
+    name_prefix = "BQ_MLFF_"    
 if (inference_method == 0):
     name_prefix = name_prefix + ''
-else:
+elif (inference_method == 1):
     name_prefix = name_prefix + 'Hebbian_'
 #------------------------------------------------------------------------------
 
@@ -127,6 +131,17 @@ B_zero_max_std  = np.zeros([len(var_range)])                                    
 simulation_time = np.zeros([ensemble_size,len(var_range)])                  # The running time of the inference algorithm per ensemble
 #------------------------------------------------------------------------------
 
+str_p = ''
+str_d = ''
+str_n_exc = ''
+str_n_inh = ''
+for i in range(0,no_layers):
+    str_n_exc = str_n_exc + '_' + str(int(n_exc_array[i]))
+    str_n_inh = str_n_inh + '_' + str(int(n_inh_array[i]))
+    for j in range(i,no_layers):
+        str_p = str_p + '_' + str(connection_prob_matrix[i,j])
+        str_d = str_d + '_' + str(delay_max_matrix[i,j])
+
 #==============================================================================
 
 
@@ -134,57 +149,183 @@ simulation_time = np.zeros([ensemble_size,len(var_range)])                  # Th
 #=============================READ THE RESULTS=================================
 itr = 0
 
-for var in var_range:
-    if (considered_var == 'T'):
-        T = var
-    elif (considered_var == 'q'):        
-        frac_input_neurons = var
-        T = 8100
-
-    for ensemble_count in range(0,ensemble_size):
-    
-        #----------------------Construct Prpoper File Names------------------------
-        file_name_ending = name_base + "n_exc_%s" %str(int(n_exc))
-        file_name_ending = file_name_ending + "_n_inh_%s" %str(int(n_inh))    
-        file_name_ending = file_name_ending + "_p_%s" %str(connection_prob)
-        file_name_ending = file_name_ending + "_r_%s" %str(frac_input_neurons)
-        #file_name_ending = file_name_ending + "_f_%s" %str(input_stimulus_freq)
-        file_name_ending = file_name_ending + "_d_%s" %str(delay_max)
-        file_name_ending = file_name_ending + "_T_%s" %str(no_cascades)    
-        file_name_ending = file_name_ending + "_%s" %str(ensemble_count)
-        file_name_ending2 = file_name_ending + "_%s" %str(T)
-        #--------------------------------------------------------------------------
-                
-        #------------------Read the Standard Deviation of Beliefs------------------        
-        file_name = file_name_base_results + "/BeliefQuality/"
-        file_name = file_name + name_prefix + "Max_Min_Cascades_%s.txt" %file_name_ending2
-        Acc = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-        
-        s = Acc.shape
-        if (len(s) > 1):
-            temp = (sum(Acc,axis=0))/float(s[0])
-        else:
-            temp = Acc
-        
-        B_exc_min_Det[ensemble_count,itr] = B_exc_min_Det[ensemble_count,itr] + temp[0]
-        B_zero_max_Det[ensemble_count,itr] = B_zero_max_Det[ensemble_count,itr] + temp[1]
-        B_zero_min_Det[ensemble_count,itr] = B_zero_min_Det[ensemble_count,itr] + temp[2]
-        B_inh_max_Det[ensemble_count,itr] = B_inh_max_Det[ensemble_count,itr] + temp[3]
-        #--------------------------------------------------------------------------
+if (network_type == 'MLF'):
+    file_name_ending = "L_%s" %str(int(no_layers))
+    file_name_ending = file_name_ending + "_n_exc" + str_n_exc
+    file_name_ending = file_name_ending + "_n_inh" + str_n_inh
+    file_name_ending = file_name_ending + "_p" + str_p 
+    file_name_ending = file_name_ending + "_q_%s" %str(frac_input_neurons)
+    file_name_ending = file_name_ending + "_R_%s" %str(random_delay_flag)    
+    file_name_ending = file_name_ending + "_d" + str_d
+    file_name_ending = file_name_ending + "_T_%s" %str(no_cascades)    
+    for l_in in range(0,no_layers):
+        n_exc = n_exc_array[l_in]
+        n_inh = n_inh_array[l_in]
+        n = n_exc + n_inh
+        for l_out in range(l_in,no_layers):
+            itr = 0
             
-        #--------------------------Read the Running Time---------------------------
-        file_name_ending3 = file_name_ending + "_%s" %str(binary_mode)        
-        file_name_ending3 = file_name_ending + "_%s" %str(T)
-        if (network_type=='R'):
-            file_name = file_name_base_results + "/RunningTimes/T_Cascades_%s.txt" %file_name_ending3
-        else:
-            file_name = file_name_base_results + "/RunningTimes/T_%s.txt" %file_name_ending3
-        T_run = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-    
-        simulation_time[ensemble_count,itr] = sum(T_run)#/len(T_run)
-        #--------------------------------------------------------------------------
+            B_exc_min_Det.fill(0)
+            B_zero_min_Det.fill(0)
+            B_zero_max_Det.fill(0)
+            B_inh_max_Det.fill(0)
+            B_exc_min.fill(0)
+            B_zero_min.fill(0)
+            B_zero_max.fill(0)
+            B_inh_max.fill(0)
+            
+            B_exc_min_std.fill(0)
+            B_zero_min_std.fill(0)
+            B_zero_max_std.fill(0)
+            B_inh_max_std.fill(0)
+            
+            for var in var_range:
+                if (considered_var == 'T'):
+                    T = var
+                elif (considered_var == 'q'):        
+                    frac_input_neurons = var
+                    T = 8100
+                for ensemble_count in range(ensemble_count_init,ensemble_size):
+                    
+                    file_name_ending2 = file_name_ending + "_%s" %str(ensemble_count)
+                    file_name_ending2 = file_name_ending2 + '_l_' + str(l_in) + '_to_' + str(l_out)
+                    file_name_ending2 = file_name_ending2 + '_I_' + str(inference_method)
+                    if (sparsity_flag):
+                        file_name_ending2 = file_name_ending2 + '_S_' + str(sparsity_flag)
+                    file_name_ending2 = file_name_ending2 +"_%s" %str(T)
+                    
+                    #------------------Read the Standard Deviation of Beliefs------------------        
+                    file_name = file_name_base_results + "/BeliefQuality/"
+                    file_name = file_name + name_prefix + "Max_Min_%s.txt" %file_name_ending2
+                    Acc = np.genfromtxt(file_name, dtype=None, delimiter='\t')
         
-    itr = itr + 1
+                    s = Acc.shape
+                    if (len(s) > 1):
+                        temp = (sum(Acc,axis=0))/float(s[0])
+                    else:
+                        temp = Acc
+        
+                    B_exc_min_Det[ensemble_count,itr] = B_exc_min_Det[ensemble_count,itr] + temp[0]
+                    B_zero_max_Det[ensemble_count,itr] = B_zero_max_Det[ensemble_count,itr] + temp[1]
+                    B_zero_min_Det[ensemble_count,itr] = B_zero_min_Det[ensemble_count,itr] + temp[2]
+                    B_inh_max_Det[ensemble_count,itr] = B_inh_max_Det[ensemble_count,itr] + temp[3]
+                    #--------------------------------------------------------------------------
+                    
+                itr = itr + 1
+            
+            #-----------------------------Calculating the Mean-----------------------------
+            B_exc_min = B_exc_min_Det.mean(axis=0)
+            B_inh_max = B_inh_max_Det.mean(axis=0)
+            B_zero_min = B_zero_min_Det.mean(axis=0)
+            B_zero_max = B_zero_max_Det.mean(axis=0)
+
+            #simulation_time_tot = simulation_time.mean(axis=0)
+            #------------------------------------------------------------------------------
+
+
+            #---------------------Calculating the Standard Deviation-----------------------
+            B_exc_min_std = B_exc_min_Det.std(axis=0)
+            B_inh_max_std = B_inh_max_Det.std(axis=0)
+            B_zero_min_std = B_zero_min_Det.std(axis=0)
+            B_zero_max_std = B_zero_max_Det.std(axis=0)
+            
+            #std_simulation_time = simulation_time.std(axis=0)
+            #------------------------------------------------------------------------------
+            
+            #pdb.set_trace()
+            if (considered_var == 'T'):
+                file_name_ending_new = name_base + name_prefix + "Effect_T_n_exc_%s" %str(int(n_exc))
+            elif (considered_var == 'q'):        
+                file_name_ending_new = name_base + name_prefix + "Effect_q_n_exc_%s" %str(int(n_exc))
+            file_name_ending_new = file_name_ending_new + "L_%s" %str(int(no_layers))
+            file_name_ending_new = file_name_ending_new + "_n_exc" + str_n_exc
+            file_name_ending_new = file_name_ending_new + "_n_inh" + str_n_inh
+            file_name_ending_new = file_name_ending_new + "_p" + str_p
+            if (considered_var == 'T'):
+                file_name_ending_new = file_name_ending_new + "_q_%s" %str(frac_input_neurons)
+            file_name_ending_new = file_name_ending_new + "_R_%s" %str(random_delay_flag)    
+            file_name_ending_new = file_name_ending_new + "_d" + str_d
+            if (considered_var == 'q'):        
+                file_name_ending_new = file_name_ending_new + "_T_%s" %str(no_cascades)
+            
+            file_name_ending_new = file_name_ending_new + '_l_' + str(l_in) + '_to_' + str(l_out)
+            file_name_ending_new = file_name_ending_new + '_I_' + str(inference_method)
+            if (sparsity_flag):
+                file_name_ending_new = file_name_ending_new + '_S_' + str(sparsity_flag)
+            #-------------------------------------------------------------------------------
+
+            #-----------------------Write the Results to the File---------------------------
+            temp = np.vstack([var_range,B_exc_min,B_exc_min_std])
+            file_name = file_name_base_plot + "/Quality_exc_min_%s.txt" %file_name_ending_new
+            np.savetxt(file_name,temp.T,'%1.4f',delimiter='\t',newline='\n')
+    
+            temp = np.vstack([var_range,B_inh_max,B_inh_max_std])
+            file_name = file_name_base_plot + "/Quality_inh_max_%s.txt" %file_name_ending_new
+            np.savetxt(file_name,temp.T,'%1.4f',delimiter='\t',newline='\n')
+    
+            temp = np.vstack([var_range,B_zero_max,B_zero_max_std])
+            file_name = file_name_base_plot + "/Quality_zero_max_%s.txt" %file_name_ending_new
+            np.savetxt(file_name,temp.T,'%1.4f',delimiter='\t',newline='\n')
+    
+            temp = np.vstack([var_range,B_zero_min,B_zero_min_std])
+            file_name = file_name_base_plot + "/Quality_zero_min_%s.txt" %file_name_ending_new
+            np.savetxt(file_name,temp.T,'%1.4f',delimiter='\t',newline='\n')
+            #-------------------------------------------------------------------------------
+
+    
+
+else:
+    itr = 0
+    for var in var_range:
+        if (considered_var == 'T'):
+            T = var
+        elif (considered_var == 'q'):        
+            frac_input_neurons = var
+            T = 8100
+        for ensemble_count in range(ensemble_count_init,ensemble_size):
+    
+            #----------------------Construct Prpoper File Names------------------------
+            file_name_ending = name_base + "n_exc_%s" %str(int(n_exc))
+            file_name_ending = file_name_ending + "_n_inh_%s" %str(int(n_inh))    
+            file_name_ending = file_name_ending + "_p_%s" %str(connection_prob)
+            file_name_ending = file_name_ending + "_r_%s" %str(frac_input_neurons)
+            #file_name_ending = file_name_ending + "_f_%s" %str(input_stimulus_freq)
+            file_name_ending = file_name_ending + "_d_%s" %str(delay_max)
+            file_name_ending = file_name_ending + "_T_%s" %str(no_cascades)    
+            file_name_ending = file_name_ending + "_%s" %str(ensemble_count)
+            file_name_ending2 = file_name_ending + "_%s" %str(T)
+            #--------------------------------------------------------------------------
+                
+            #------------------Read the Standard Deviation of Beliefs------------------        
+            file_name = file_name_base_results + "/BeliefQuality/"
+            file_name = file_name + name_prefix + "Max_Min_Cascades_%s.txt" %file_name_ending2
+            Acc = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+        
+            s = Acc.shape
+            if (len(s) > 1):
+                temp = (sum(Acc,axis=0))/float(s[0])
+            else:
+                temp = Acc
+        
+            B_exc_min_Det[ensemble_count,itr] = B_exc_min_Det[ensemble_count,itr] + temp[0]
+            B_zero_max_Det[ensemble_count,itr] = B_zero_max_Det[ensemble_count,itr] + temp[1]
+            B_zero_min_Det[ensemble_count,itr] = B_zero_min_Det[ensemble_count,itr] + temp[2]
+            B_inh_max_Det[ensemble_count,itr] = B_inh_max_Det[ensemble_count,itr] + temp[3]
+            #--------------------------------------------------------------------------
+                
+            #--------------------------Read the Running Time---------------------------
+            file_name_ending3 = file_name_ending + "_%s" %str(binary_mode)        
+            file_name_ending3 = file_name_ending + "_%s" %str(T)
+            if (network_type=='R'):
+                file_name = file_name_base_results + "/RunningTimes/T_Cascades_%s.txt" %file_name_ending3
+            else:
+                file_name = file_name_base_results + "/RunningTimes/T_%s.txt" %file_name_ending3
+            T_run = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+    
+            simulation_time[ensemble_count,itr] = sum(T_run)#/len(T_run)
+            #--------------------------------------------------------------------------
+        
+        itr = itr + 1
 #==============================================================================
 
 
@@ -229,43 +370,45 @@ plt.plot(var_range,B_inh_max,'b')
 
 #--------------------------Construct Prpoper File Names-------------------------
 if (considered_var == 'T'):
-    e_ending = name_base + name_prefix + "Effect_T_n_exc_%s" %str(int(n_exc))
+    file_name_ending = name_base + name_prefix + "Effect_T_n_exc_%s" %str(int(n_exc))
 elif (considered_var == 'q'):        
-    e_ending = name_base + name_prefix + "Effect_q_n_exc_%s" %str(int(n_exc))        
+    file_name_ending = name_base + name_prefix + "Effect_q_n_exc_%s" %str(int(n_exc))        
 
-file_name_ending = file_name_ending + "_n_inh_%s" %str(int(n_inh))    
-file_name_ending = file_name_ending + "_p_%s" %str(connection_prob)
-if (considered_var == 'T'):
-    file_name_ending = file_name_ending + "_r_%s" %str(frac_input_neurons)
-#file_name_ending = file_name_ending + "_f_%s" %str(input_stimulus_freq)
-file_name_ending = file_name_ending + "_d_%s" %str(delay_max)
-file_name_ending = file_name_ending + "_%s" %str(ensemble_size)
-if (considered_var == 'q'):        
-    file_name_ending = file_name_ending + "_%s" %str(T)
-#-------------------------------------------------------------------------------
+if (network_type != 'MLF'):
+    file_name_ending = file_name_ending + "_n_inh_%s" %str(int(n_inh))    
+    file_name_ending = file_name_ending + "_p_%s" %str(connection_prob)
+    if (considered_var == 'T'):
+        file_name_ending = file_name_ending + "_r_%s" %str(frac_input_neurons)
+    #file_name_ending = file_name_ending + "_f_%s" %str(input_stimulus_freq)
+    file_name_ending = file_name_ending + "_d_%s" %str(delay_max)
+    file_name_ending = file_name_ending + "_%s" %str(ensemble_size)
+    if (considered_var == 'q'):        
+        file_name_ending = file_name_ending + "_%s" %str(T)
+    #-------------------------------------------------------------------------------
 
-#-----------------------Write the Results to the File---------------------------
-temp = np.vstack([var_range,B_exc_min,B_exc_min_std])
-file_name = file_name_base_plot + "/Quality_exc_min_%s.txt" %file_name_ending
-np.savetxt(file_name,temp.T,'%1.4f',delimiter='\t',newline='\n')
+    #-----------------------Write the Results to the File---------------------------
+    temp = np.vstack([var_range,B_exc_min,B_exc_min_std])
+    file_name = file_name_base_plot + "/Quality_exc_min_%s.txt" %file_name_ending
+    np.savetxt(file_name,temp.T,'%1.4f',delimiter='\t',newline='\n')
+    
+    temp = np.vstack([var_range,B_inh_max,B_inh_max_std])
+    file_name = file_name_base_plot + "/Quality_inh_max_%s.txt" %file_name_ending
+    np.savetxt(file_name,temp.T,'%1.4f',delimiter='\t',newline='\n')
+    
+    temp = np.vstack([var_range,B_zero_max,B_zero_max_std])
+    file_name = file_name_base_plot + "/Quality_zero_max_%s.txt" %file_name_ending
+    np.savetxt(file_name,temp.T,'%1.4f',delimiter='\t',newline='\n')
+    
+    temp = np.vstack([var_range,B_zero_min,B_zero_min_std])
+    file_name = file_name_base_plot + "/Quality_zero_min_%s.txt" %file_name_ending
+    np.savetxt(file_name,temp.T,'%1.4f',delimiter='\t',newline='\n')
+    #-------------------------------------------------------------------------------
 
-temp = np.vstack([var_range,B_inh_max,B_inh_max_std])
-file_name = file_name_base_plot + "/Quality_inh_max_%s.txt" %file_name_ending
-np.savetxt(file_name,temp.T,'%1.4f',delimiter='\t',newline='\n')
+    #-------------------Write the Running Times on the File-------------------------
+    temp = np.vstack([var_range,simulation_time_tot,std_simulation_time])
+    file_name = file_name_base_plot + "/Running_time_%s.txt" %file_name_ending
+    np.savetxt(file_name,temp.T,'%5.2f',delimiter='\t',newline='\n')
+    #-------------------------------------------------------------------------------
 
-temp = np.vstack([var_range,B_zero_max,B_zero_max_std])
-file_name = file_name_base_plot + "/Quality_zero_max_%s.txt" %file_name_ending
-np.savetxt(file_name,temp.T,'%1.4f',delimiter='\t',newline='\n')
-
-temp = np.vstack([var_range,B_zero_min,B_zero_min_std])
-file_name = file_name_base_plot + "/Quality_zero_min_%s.txt" %file_name_ending
-np.savetxt(file_name,temp.T,'%1.4f',delimiter='\t',newline='\n')
-#-------------------------------------------------------------------------------
-
-#-------------------Write the Running Times on the File-------------------------
-temp = np.vstack([var_range,simulation_time_tot,std_simulation_time])
-file_name = file_name_base_plot + "/Running_time_%s.txt" %file_name_ending
-np.savetxt(file_name,temp.T,'%5.2f',delimiter='\t',newline='\n')
-#-------------------------------------------------------------------------------
 
 #==============================================================================

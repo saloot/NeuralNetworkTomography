@@ -97,9 +97,6 @@ elif (network_type == 'F'):
     file_name_base_plot = "./Results/FeedForward/Plot_Results"      #The folder to store resutls
     name_base = 'FF_n_to_1_'    
 
-
-    
-
 if (inference_method == 0):
     name_prefix =  ''
 else:
