@@ -230,7 +230,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 file_name_ending2 = file_name_ending2 + '_I_' + str(inference_method)
                 if (sparsity_flag):
                     file_name_ending2 = file_name_ending2 + '_S_' + str(sparsity_flag)
-                file_name_ending2 = file_name_ending2 +"_%s" %str(T)
+                file_name_ending2 = file_name_ending2 +"_T_%s" %str(T)
                                     
                 file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending2
                 W_inferred = np.genfromtxt(file_name, dtype=None, delimiter='\t')
@@ -282,10 +282,11 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         
         
         #===============================SAVE THE RESULTS===================================
-            file_name = file_name_base_results + "/Accuracies/Rec_%s.txt" %file_name_ending2
+            temp_ending = file_name_ending2.replace("_T_%s" %str(T),'')
+            file_name = file_name_base_results + "/Accuracies/Rec_%s.txt" %temp_ending
             np.savetxt(file_name,np.vstack([T_range,recall_tot.T]).T,'%f',delimiter='\t',newline='\n')
         
-            file_name = file_name_base_results + "/Accuracies/Prec_%s.txt" %file_name_ending2
+            file_name = file_name_base_results + "/Accuracies/Prec_%s.txt" %temp_ending
             np.savetxt(file_name,np.vstack([T_range,prec_tot.T]).T,'%f',delimiter='\t',newline='\n')
         
             file_name_ending2 = file_name_ending2.replace('_l_' + str(l_in) + '_to_' + str(l_out),'')        
