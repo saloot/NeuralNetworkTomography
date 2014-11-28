@@ -723,7 +723,7 @@ def beliefs_to_binary(binary_mode,W_inferred,params,compensate_flag):
                         
             #-------------------------Assign Void Edges------------------------
             temp = (W_temp > mean_val - 0.1*var_val).astype(int)
-            temp = np.multiply(temp,(W_temp < mean_val < 0.1*var_val).astype(int))
+            temp = np.multiply(temp,(W_temp < mean_val - 0.1*var_val).astype(int))
             void_ind = np.nonzero(temp)
             W_binary[void_ind,i] = 0.0
             #------------------------------------------------------------------            
