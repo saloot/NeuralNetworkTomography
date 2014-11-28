@@ -686,7 +686,7 @@ def beliefs_to_binary(binary_mode,W_inferred,params,compensate_flag):
         
         
         #----------------------Assign Excitatory Edges--------------------------
-        stop_thr = 0.95
+        # We are going to select edges that are far from mean        
         fixed_inds = params[0]
         W_binary = nan * np.ones([n,m])
         if (norm(fixed_inds)):
@@ -698,80 +698,35 @@ def beliefs_to_binary(binary_mode,W_inferred,params,compensate_flag):
         for i in range(0,m):
             W_inferred_temp = copy.deepcopy(W_inferred[:,i])
             W_temp = W_inferred_temp
-            #pdb.set_trace()
+            
             if (norm(fixed_inds)):
                 mas = fixed_inds[:,i]
                 W_temp = ma.masked_array(W_temp,mask= mas)
             
-            mm = float(W_temp.max())
-            mm2 = float(W_temp.min())
-            aa = W_temp.mean()
-            #pdb.set_trace()
-            end_flag = 1
-            while end_flag:
-                ind = W_temp.argmax()
-                x = W_temp.max()
-                #pdb.set_trace()
-                if mm >0:
-                    if (x/mm) < stop_thr:
-                        end_flag = 0
-                    else:
-                        W_binary[ind,i] = 0.001#x
-                        W_temp[ind] = -10*abs(mm2)
-                else:
-                    end_flag = 1
+            max_val = float(W_temp.max())
+            mean_val = W_temp.mean()
+            min_val = float(W_temp.min())
+            var_val = pow(W_temp.var(),0.5)
+            
+            temp = (W_temp > mean_val + var_val).astype(int)
+            exc_ind = np.nonzero(temp)
+            W_binary[exc_ind,i] = 0.001
+            
+            
             #------------------------------------------------------------------
             
             #-------------------Assign Inhibitory Edges------------------------            
-            stop_thr = 0.85        
-            end_flag = 1
-            
-            W_temp = copy.deepcopy(W_inferred[:,i])
-            if (norm(fixed_inds)):
-                W_temp = ma.masked_array(W_temp,mask= mas)
-                
-            if mm2 == 0:
-                W_temp = W_temp + 1
-                mm2 = 1
-            while end_flag:
-                ind = W_temp.argmin()
-                x = W_temp.min()                                
-                if (mm2>0):
-                    if (mm2/float(x)) < stop_thr:
-                        end_flag = 0
-                    else:
-                        W_binary[ind,i] = -0.005#x
-                        W_temp[ind] = 10*abs(mm)
-                else:
-                    if (x/mm2) < stop_thr:
-                        end_flag = 0
-                    else:
-                        W_binary[ind,i] = -0.005#x
-                        W_temp[ind] = 10*abs(mm)
-                        
+            temp = (W_temp < mean_val - var_val).astype(int)
+            inh_ind = np.nonzero(temp)
+            W_binary[inh_ind,i] = -0.005
             #------------------------------------------------------------------
                         
             #-------------------------Assign Void Edges------------------------
-            end_flag = 1
-            stop_thr = 0.95
-            W_temp = copy.deepcopy(W_inferred[:,i])
-            if (norm(fixed_inds)):
-                W_temp = ma.masked_array(W_temp,mask= mas)
-            
-            for j in range(0,n):
-                r = float(W_temp[j]/float(aa))
-                if r>0:
-                    r = min(r,1/r)
-                elif r<0:
-                    r = -min(abs(r),1/abs(r))
-                else:
-                    r = 0
-                #pdb.set_trace()
-                if (r>stop_thr):                    
-                    W_binary[j,i] = 0#W_temp[j]
-            #------------------------------------------------------------------
-            
-            
+            temp = (W_temp > mean_val - 0.1*var_val).astype(int)
+            temp = np.multiply(temp,(W_temp < mean_val < 0.1*var_val).astype(int))
+            void_ind = np.nonzero(temp)
+            W_binary[void_ind,i] = 0.0
+            #------------------------------------------------------------------            
             
         if (norm(fixed_inds)):
             W_binary = np.multiply(fixed_inds,W_inferred) + np.multiply(1-fixed_inds,W_binary)
