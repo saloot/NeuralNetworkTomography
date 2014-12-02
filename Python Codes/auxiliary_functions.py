@@ -480,6 +480,7 @@ def beliefs_to_binary(binary_mode,W_inferred,params,compensate_flag):
     
     a = W_inferred.shape
     lll = len(a)
+    
     if lll>1:
         n = a[0]
         m = a[1]
@@ -488,7 +489,11 @@ def beliefs_to_binary(binary_mode,W_inferred,params,compensate_flag):
         m = 1
     else:
         n = 1
-        
+        m = 0
+    
+    if m:
+        W_inferred = W_inferred.reshape(n,m)   
+    
     if min(a) == 1:
         lll = 1
     #--------------------------------------------------------------------------
@@ -501,7 +506,7 @@ def beliefs_to_binary(binary_mode,W_inferred,params,compensate_flag):
         W_binary.fill(0)
         
     else:
-        W_binary = np.zeros([n])
+        W_binary = np.zeros([n,1])
         W_binary.fill(0)
         if ( (binary_mode == 4) or (binary_mode == 5)):
             centroids = np.zeros([1,3])
@@ -618,26 +623,33 @@ def beliefs_to_binary(binary_mode,W_inferred,params,compensate_flag):
     elif (binary_mode == 4):
 
         #......................Determine the Thresholds........................
-        if (lll>1):        
-            for i in range(0,n):
-                ww = W_inferred[i,:]
-                thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,ww)
-                centroids[i,:] = [thr_inh,thr_zero,thr_exc]
-                #print centroids[i,:]
+        fixed_inds = params[2]
+        for i in range(0,m):            
+            W_inferred_temp = copy.deepcopy(W_inferred[:,i])            
+            temp = np.ma.masked_array(W_inferred_temp,mask= fixed_inds[:,i])
+            masked_inds = np.nonzero((temp.mask).astype(int))
+            masked_vals = temp.compressed()
+                
+            params = params[0:2]
+            thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,masked_vals)
+            centroids[i,:] = [thr_inh,thr_zero,thr_exc]
+            #print centroids[i,:]
         #......................................................................
         
         #...................Transform the Graph to Binary......................
-                W_temp,res = vq(ww,np.array([thr_inh,thr_zero,thr_exc]))
-                W_temp = W_temp - 1
-                #pdb.set_trace()
-                W_binary[i,:] = W_temp
-                
-        else:
-            ww = W_inferred.ravel()
-            thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,ww)
-            centroids = [thr_inh,thr_zero,thr_exc]
-            W_temp,res = vq(ww,np.array([thr_inh,thr_zero,thr_exc]))
-            W_binary = W_temp - 1
+            W_temp,res = vq(masked_vals,np.array([thr_inh,thr_zero,thr_exc]))
+            W_temp = W_temp - 1
+
+        #----------------Role Back Values to Unmasked Indices--------------
+            mask_counter = 0
+            for j in range(0,n):                
+                if j in masked_inds[0]:                        
+                    W_binary[j,i] = sign(W_inferred.data[j,i])
+                else:
+                    W_binary[j,i] = W_temp[mask_counter]
+                    mask_counter = mask_counter + 1
+            #------------------------------------------------------------------    
+
         #......................................................................
     #--------------------------------------------------------------------------
     
@@ -685,52 +697,59 @@ def beliefs_to_binary(binary_mode,W_inferred,params,compensate_flag):
     elif (binary_mode == 7):
         
         
-        #----------------------Assign Excitatory Edges--------------------------
+        
         # We are going to select edges that are far from mean        
         fixed_inds = params[0]
+        a = params[1]
+        b = params[2]
         W_binary = nan * np.ones([n,m])
-        if (norm(fixed_inds)):
-            for i in range(0,n):
-                for j in range(0,m):
-                    if (fixed_inds[i,j]):
-                        W_binary[i,j] = 0
+        
         
         for i in range(0,m):
-            W_inferred_temp = copy.deepcopy(W_inferred[:,i])
-            W_temp = W_inferred_temp
+            W_inferred_temp = copy.deepcopy(W_inferred[:,i])            
+            temp = np.ma.masked_array(W_inferred_temp,mask= fixed_inds[:,i])
+            masked_inds = np.nonzero((temp.mask).astype(int))
+            masked_vals = temp.compressed()
             
-            if (norm(fixed_inds)):
-                mas = fixed_inds[:,i]
-                W_temp = ma.masked_array(W_temp,mask= mas)
+            W_temp = float('nan')*np.ones([len(masked_vals),1])
             
-            max_val = float(W_temp.max())
-            mean_val = W_temp.mean()
-            min_val = float(W_temp.min())
-            var_val = pow(W_temp.var(),0.5)
+            max_val = float(masked_vals.max())
+            mean_val = masked_vals.mean()
+            min_val = float(masked_vals.min())
+            var_val = pow(masked_vals.var(),0.5)
             
-            temp = (W_temp > mean_val + var_val).astype(int)
+            
+            
+            #----------------------Assign Excitatory Edges--------------------------
+            temp = (masked_vals > mean_val + a*var_val).astype(int)
             exc_ind = np.nonzero(temp)
-            W_binary[exc_ind,i] = 0.001
-            
-            
+            W_temp[exc_ind,0] = 0.001
             #------------------------------------------------------------------
             
             #-------------------Assign Inhibitory Edges------------------------            
-            temp = (W_temp < mean_val - var_val).astype(int)
+            temp = (masked_vals < mean_val - b*var_val).astype(int)
             inh_ind = np.nonzero(temp)
-            W_binary[inh_ind,i] = -0.005
+            W_temp[inh_ind,0] = -0.005
             #------------------------------------------------------------------
                         
             #-------------------------Assign Void Edges------------------------
-            temp = (W_temp > mean_val - 0.1*var_val).astype(int)
-            temp = np.multiply(temp,(W_temp < mean_val - 0.1*var_val).astype(int))
+            temp = (masked_vals > mean_val - 0.1*var_val).astype(int)
+            temp = np.multiply(temp,(masked_vals < mean_val + 0.1*var_val).astype(int))
             void_ind = np.nonzero(temp)
-            W_binary[void_ind,i] = 0.0
-            #------------------------------------------------------------------            
+            W_temp[void_ind,0] = 0.0
+            #------------------------------------------------------------------
             
-        if (norm(fixed_inds)):
-            W_binary = np.multiply(fixed_inds,W_inferred) + np.multiply(1-fixed_inds,W_binary)
-        
+            
+            #----------------Role Back Values to Unmasked Indices--------------
+            mask_counter = 0
+            for j in range(0,n):                
+                if j in masked_inds[0]:
+                    W_binary[j,i] = W_inferred[j,i]
+                else:
+                    W_binary[j,i] = W_temp[mask_counter,0]
+                    mask_counter = mask_counter + 1
+            #------------------------------------------------------------------
+
     #--------------------------------------------------------------------------
     
     #----If Necessary, Set All Outgoing Connections of a Neuron to one Type----
@@ -1113,7 +1132,7 @@ def soft_threshold(W,thr):
 #-------------------------------Descriptions-----------------------------------
 # This function truncates performs different inference methods.
 #------------------------------------------------------------------------------
-def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estimated):
+def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estim):
            
     #------------------------------Initialization------------------------------
     s = in_spikes.shape
@@ -1130,7 +1149,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
     W_inferred = np.zeros([n,m])
     W_inferred.fill(0)
     cost = []
-    
+    W_estimated = copy.deepcopy(W_estim)            
     if norm(W_estimated):
         fixed_ind = 1-isnan(W_estimated).astype(int)
         fixed_ind = fixed_ind.reshape(n,m)
@@ -1230,7 +1249,10 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
     #---------------------The Correlation-based Algorithm----------------------
     elif (inference_method == 0):
         Delta = inferece_params[0]#/float(inferece_params[1])
-        W_temp = np.dot(in_spikes,out_spikes.T)*Delta
+        theta = inferece_params[1]
+        out_spikes_estimated = np.sign(np.dot(W_inferred.T,in_spikes)>theta)
+        out_spikes_estimated = out_spikes_estimated.astype(int)
+        W_temp = np.dot(in_spikes,(out_spikes-out_spikes_estimated).T)*Delta        
         #pdb.set_trace()
         W_inferred = np.multiply(1-fixed_ind,W_temp) + np.multiply(fixed_ind,W_inferred)
     #--------------------------------------------------------------------------

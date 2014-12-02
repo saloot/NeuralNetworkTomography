@@ -265,11 +265,6 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
     
     for T in T_range:
         
-        #------------------------In-Loop Initializations-----------------------        
-        W_estimated = 0
-        fixed_entries = 0
-        #----------------------------------------------------------------------
-        
         #-------------------------If We Know the Location----------------------
         if we_know_location.lower() == 'y':
             
@@ -305,39 +300,42 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     if (generate_data_mode != 'R') and (inference_method != 4):
                         in_spikes = (in_spikes>0).astype(int)
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                                        
-                    #~~~~~~~~~~~~~~~~~~~~Perfrom Inference~~~~~~~~~~~~~~~~~~~~~
+                    
+                    #~~~~~~~~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~~~~~~~~
                     n = n_tot   
+                    W_estimated = np.zeros([n,m])
+                    fixed_entries = np.zeros([n,m])
+                    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    
+                    #~~~~~~~~~~~~~~~~~~~~Perfrom Inference~~~~~~~~~~~~~~~~~~~~~
+                    ind = str(l_in) + str(l_out);temp_list = Network.Neural_Connections[ind];W = temp_list[0]
                     for infer_itr in range(0,infer_itr_max):
                         W_inferred_our_tot,cost = inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estimated)
-                        if norm(fixed_entries):
-                            temp = np.ma.masked_array(W_inferred_our_tot,mask= fixed_entries)
-                            mmean = temp.mean()
-                            W_temp = W_inferred_our_tot#- mmean
-                            mmax = float(abs(W_temp).max())                            
-                            for i in range(0,n):
-                                for j in range(0,m):
-                                    if (fixed_entries[i,j] == 0):
-                                        W_estimated[i,j] = 0
-                            W_inferred_our_tot = W_estimated + np.multiply(1-fixed_entries,W_temp/mmax/1000.0)                           
-                            pdb.set_trace()
-
-                            W_estimated,centroids = beliefs_to_binary(7,temp.compressed(),[fixed_entries],0)
-                        else:
-                            temp = W_inferred_our_tot                            
-                            mmean = W_inferred_our_tot.mean()
-                            W_inferred_our_tot = W_inferred_our_tot# - mmean
-                            mmax = float(abs(W_inferred_our_tot).max())
-                            W_inferred_our_tot = W_inferred_our_tot/mmax
-                            W_estimated,centroids = beliefs_to_binary(7,temp,[fixed_entries],0)#;calucate_accuracy(W_binary_tot,W)                       
+                        #recal,precision = calucate_accuracy(W_estimated,W)
+                        #print '-------------Our method performance in ensemble %d & T = %d------------' %(ensemble_count,T)
+                        #print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
+                        #print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(precision[0],precision[1],precision[2])
+                        #print '\n'
                         
-                        fixed_entries = 1-isnan(W_estimated).astype(int)
+                        W_temp = np.ma.masked_array(W_inferred_our_tot,mask= fixed_entries)                        
+                        max_val = W_temp.max()
+                        min_val = W_temp.min()
+                        #W_temp = 0.001 + (W_temp.astype(float) - max_val) * 0.006 / float(max_val - min_val)
+                        
+                        #pdb.set_trace()                        
+                        
+                        W_estimated,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,1.25*(1+infer_itr/7.5),2.5*(1+infer_itr/15.0),],0)
+                        
+                        if infer_itr < infer_itr_max-1:
+                            fixed_entries = 1-isnan(W_estimated).astype(int)
+                        
                         if norm(1-fixed_entries) == 0:
                             break
                         #if norm(cost) and (cost[len(cost)-1] == 0):
                         #    break
-                        pdb.set_trace()
-                        #fixed_entries = fixed_entries.reshape(n,m)
+                    
+                    #W_temp = W_temp/float(max(abs(max_val),abs(min_val)))/1000.0    
+                    W_inferred_our_tot = W_temp.data
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                  
                 #..............................................................                
@@ -389,17 +387,25 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 
                 
                 #.....................Transform to Binary......................
-                    params = [adj_fact_exc,adj_fact_inh]                    
-                    W_binary,centroids = beliefs_to_binary(binary_mode,1000.0*W_inferred_our.T,params,0)
-                    pdb.set_trace()
-                    W_binary = W_binary.T
-                        
+                    params = [adj_fact_exc,adj_fact_inh,fixed_entries]
+                    
+                    
+                    if binary_mode == 7:
+                        W_bin,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,1.25,2.5*(1+infer_itr/15.0),],0)                    
+                        for i in range(0,m):
+                            for j in range(0,n):
+                                if isnan(W_bin[j,i]):
+                                    W_bin[j,i] = 0
+                    else:
+                        pdb.set_trace()
+                        W_bin,centroids = beliefs_to_binary(binary_mode,1*W_inferred_our_tot,params,0)
+
                     file_name_ending2 = file_name_ending2 + "_%s" %str(adj_fact_exc)
                     file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
                     file_name_ending2 = file_name_ending2 + "_B_%s" %str(binary_mode)
                 
                     file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2
-                    np.savetxt(file_name,W_binary,'%d',delimiter='\t',newline='\n')
+                    np.savetxt(file_name,W_bin,'%d',delimiter='\t',newline='\n')
         
                 
                     file_name = file_name_base_results + "/Inferred_Graphs/Scatter_Beliefs_%s.txt" %file_name_ending2                
@@ -414,7 +420,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 #..............................................................
                 
                 #....................Calculate the Accuracy....................
-                    recal,precision = calucate_accuracy(W_binary,W)
+                    recal,precision = calucate_accuracy(W_bin,W)
                     
                     print '-------------Our method performance in ensemble %d & T = %d------------' %(ensemble_count,T)
                     print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
