@@ -1,36 +1,45 @@
 #=======================DEFAULT VALUES FOR THE VARIABLES=======================
 FRAC_STIMULATED_NEURONS_DEFAULT = 0.4
 NO_STIMUL_ROUNDS_DEFAULT = 2000
-ENSEMBLE_SIZE_DEFAULT = 1
+ENSEMBLE_SIZE_DEFAULT = 5
 FILE_NAME_BASE_DATA_DEFAULT = "./Data"
 FILE_NAME_BASE_RESULT_DEFAULT = "./Results"
 FILE_NAME_BASE_PLOT_DEFAULT = "./Plot_Results"
 ENSEMBLE_COUNT_INIT_DEFAULT = 0
+INFERENCE_METHOD_DEFAULT = 3
 BINARY_MODE_DEFAULT = 4
-INFERENCE_METHOD_DEFAULT = 2
 SPARSITY_FLAG_DEFAULT = 0
+GENERATE_DATA_MODE_DEFAULT = 'R'
+INFERENCE_ITR_MAX_DEFAULT = 1
+WE_KNOW_LOCATION_DEFAULT = 'Y'
+PRE_SYNAPTIC_NEURON_DEFAULT = 'A'
 #==============================================================================
 
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
-#from brian import *
-import time
+from time import time
 import numpy as np
+import os
 import sys,getopt,os
-from scipy import sparse
 import matplotlib.pyplot as plt
+import pdb
 
-#os.chdir('C:\Python27')
-#os.chdir('/home/salavati/Desktop/Neural_Tomography')
+import auxiliary_functions
+reload(auxiliary_functions)
+from auxiliary_functions import *
 
 import Neurons_and_Networks
 reload(Neurons_and_Networks)
 from Neurons_and_Networks import NeuralNet
 from Neurons_and_Networks import *
-
-from auxiliary_functions import beliefs_to_binary
-from auxiliary_functions import calucate_accuracy
 #==============================================================================
 
+#================================INITIALIZATIONS===============================
+n_exc_array = None; n_inh_array= None; connection_prob_matrix = None
+random_delay_flag = None; no_layers = None; delay_max_matrix = None
+
+os.system('clear')                                              # Clear the commandline window
+t0 = time()                                                # Initialize the timer
+#==============================================================================
 
 #================================INITIALIZATIONS===============================
 
@@ -78,13 +87,47 @@ if 'inference_method' not in locals():
 if 'sparsity_flag' not in locals():
     sparsity_flag = SPARSITY_FLAG_DEFAULT;
     print('ATTENTION: The default value of %s for inference_method is considered.\n' %str(sparsity_flag))
+    
+if 'generate_data_mode' not in locals():
+    generate_data_mode = GENERATE_DATA_MODE_DEFAULT
+    print('ATTENTION: The default value of %s for generate_data_mode is considered.\n' %str(generate_data_mode))
+
+if 'infer_itr_max' not in locals():
+    infer_itr_max = INFERENCE_ITR_MAX_DEFAULT
+    print('ATTENTION: The default value of %s for infer_itr_max is considered.\n' %str(infer_itr_max))
+    
+if 'we_know_location' not in locals():
+    we_know_location = WE_KNOW_LOCATION_DEFAULT
+    print('ATTENTION: The default value of %s for we_know_location is considered.\n' %str(we_know_location))
+
+if 'pre_synaptic_method' not in locals():
+    pre_synaptic_method = PRE_SYNAPTIC_NEURON_DEFAULT
+    print('ATTENTION: The default value of %s for pre_synaptic_method is considered.\n' %str(pre_synaptic_method))
 #------------------------------------------------------------------------------
 
+#--------------------------Initialize the Network------------------------------
+Network = NeuralNet(no_layers,n_exc_array,n_inh_array,connection_prob_matrix,delay_max_matrix,random_delay_flag,'')
+#------------------------------------------------------------------------------
+
+
 #--------------------------Initialize Other Variables--------------------------
-T_range = range(50, no_stimul_rounds, 200)                   # The range of sample sizes considered to investigate the effect of sample size on the performance
 q_range = [0.2,0.3,0.4]                                 # The range of stimulated fraction of neurons considered in simulations
 a_range = np.arange(0.0,2,0.125)
 
+no_samples_per_cascade = max(3.0,25*Network.no_layers*np.max(Network.delay_max_matrix)) # Number of samples that will be recorded
+
+if generate_data_mode == 'F':
+    running_period = (no_samples_per_cascade/10.0)  # Total running time in mili seconds
+else:
+    running_period = (10*no_samples_per_cascade/10.0)  # Total running time in mili seconds
+
+sim_window = round(1+running_period*10)                     # This is the number of iterations performed within each cascade
+
+if (generate_data_mode == 'F'):
+    T_range = range(350, no_stimul_rounds, 300)                 # The range of sample sizes considered to investigate the effect of sample size on the performance
+else:
+    T_range = range(350, int(running_period*10), 300)
+    
 considered_var = 'T'                                    # The variable against which we plot the performance
 
 if (considered_var == 'T'):
@@ -100,9 +143,6 @@ if not os.path.isdir(file_name_base_plot):
     os.makedirs(file_name_base_plot)
 #------------------------------------------------------------------------------
 
-#--------------------------Initialize the Network------------------------------
-Network = NeuralNet(no_layers,n_exc_array,n_inh_array,connection_prob_matrix,delay_max_matrix,random_delay_flag,'')
-#------------------------------------------------------------------------------
 
 #---------------------Initialize Simulation Variables--------------------------
 det_Prec_exc = np.zeros([ensemble_size-ensemble_count_init,len(var_range)])                        # Detailed precision of the algorithm (per ensemble) for excitatory connections
@@ -140,36 +180,43 @@ std_Rec_total= np.zeros([len(var_range)])                                      #
 
 #=============================READ THE RESULTS=================================
 itr = 0
-adj_fact_exc = 1.0 #1 #1.25 #1.75 
+adj_fact_exc = 0.75 #1 #1.25 #1.75 
 adj_fact_inh = 0.5 #1 #1.25 #1.75
 
 Network.read_weights(0,file_name_base_data)
-file_name_ending = Network.file_name_ending
-file_name_ending = file_name_ending[0:len(file_name_ending)-2]
+file_name_ending1 = Network.file_name_ending
+file_name_ending1 = file_name_ending1[0:len(file_name_ending1)-2]
 
-for l_in in range(0,no_layers):
+for l_in in range(0,Network.no_layers):
     n_exc = Network.n_exc_array[l_in]
     n_inh = Network.n_inh_array[l_in]
     n = n_exc + n_inh
-    for l_out in range(l_in,no_layers):
+    for l_out in range(l_in+1,Network.no_layers):
         p = Network.connection_prob_matrix[l_in,l_out]
         p_exc = p * n_exc/float(n)
         p_inh = p * n_inh/float(n)
         
         for ensemble_count in range(ensemble_count_init,ensemble_size):
         
-            file_name_ending2 = file_name_ending + "_%s" %str(ensemble_count)
+            file_name_ending2 = file_name_ending1 + "_%s" %str(ensemble_count)
             file_name_ending2 = file_name_ending2 + '_l_' + str(l_in) + '_to_' + str(l_out)
             file_name_ending2 = file_name_ending2 + '_I_' + str(inference_method)
+            file_name_ending2 = file_name_ending2 + '_Loc_' + we_know_location
+            file_name_ending2 = file_name_ending2 + '_Pre_' + pre_synaptic_method
+            file_name_ending2 = file_name_ending2 + '_G_' + generate_data_mode
+            file_name_ending2 = file_name_ending2 + '_X_' + str(infer_itr_max)
             if (sparsity_flag):
                 file_name_ending2 = file_name_ending2 + '_S_' + str(sparsity_flag)
+            
+            
             file_name_ending2 = file_name_ending2 + "_%s" %str(adj_fact_exc)
             file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
             file_name_ending2 = file_name_ending2 + "_B_%s" %str(binary_mode)
-
+            
+            
             #------------------------------Read the Precisions-----------------------------
             file_name = file_name_base_results + "/Accuracies/Prec_%s.txt" %file_name_ending2            
-            precision_tot = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+            precision_tot = np.genfromtxt(file_name, dtype='float', delimiter='\t')
             
             var_range = precision_tot[:,0]
             det_Prec_exc[ensemble_count-ensemble_count_init,:] = (precision_tot[:,1]).T
@@ -179,7 +226,7 @@ for l_in in range(0,no_layers):
                 
             #--------------------------------Read the Recall-------------------------------
             file_name = file_name_base_results + "/Accuracies/Rec_%s.txt" %file_name_ending2
-            recall_tot = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+            recall_tot = np.genfromtxt(file_name, dtype='float', delimiter='\t')
             
             det_Rec_exc[ensemble_count-ensemble_count_init,:] = (recall_tot[:,1]).T
             det_Rec_inh[ensemble_count-ensemble_count_init,:] = (recall_tot[:,2]).T
@@ -199,11 +246,11 @@ for l_in in range(0,no_layers):
         Rec_inh = det_Rec_inh.mean(axis=0)
         Rec_zero = det_Rec_zero.mean(axis=0)
 
-        Prec_total = p_exc*Prec_exc+p_inh*Prec_inh+(1-connection_prob)*Prec_zero
-        Rec_total = p_exc * Rec_exc+p_inh*Rec_inh+(1-connection_prob)*Rec_zero
+        Prec_total = p_exc*Prec_exc+p_inh*Prec_inh+(1-p)*Prec_zero
+        Rec_total = p_exc * Rec_exc+p_inh*Rec_inh+(1-p)*Rec_zero
 
-        det_Prec_total = p_exc*det_Prec_exc+p_inh*det_Prec_inh+(1-connection_prob)*det_Prec_zero
-        det_Rec_total = p_exc * det_Rec_exc+p_inh*det_Rec_inh+(1-connection_prob)*det_Rec_zero
+        det_Prec_total = p_exc*det_Prec_exc+p_inh*det_Prec_inh+(1-p)*det_Prec_zero
+        det_Rec_total = p_exc * det_Rec_exc+p_inh*det_Rec_inh+(1-p)*det_Rec_zero
         #------------------------------------------------------------------------------
 
 
@@ -220,16 +267,10 @@ for l_in in range(0,no_layers):
         #------------------------------------------------------------------------------
         #==============================================================================
 
-        if 0:
-
+        if 1:
+            pdb.set_trace()
             #==============================PLOT THE RESULTS================================
-            plot(var_range,Prec_exc,'r')
-            plot(var_range,Prec_inh,'b')
-            plot(var_range,Prec_zero,'g')
-    
-            plot(var_range,Rec_exc,'r--')
-            plot(var_range,Rec_inh,'b--')
-            plot(var_range,Rec_zero,'g--')
+            plt.plot(var_range,Prec_exc,'r');plt.plot(var_range,Prec_inh,'b');plt.plot(var_range,Prec_zero,'g');plt.plot(var_range,Rec_exc,'r--');plt.plot(var_range,Rec_inh,'b--');plt.plot(var_range,Rec_zero,'g--');plt.show()
             #==============================================================================
 
 
@@ -237,13 +278,13 @@ for l_in in range(0,no_layers):
 
         #--------------------------Construct Prpoper File Names-------------------------
         if (considered_var == 'T'):
-            file_name_ending = "Effect_T_"
+            file_name_ending = "Effect_T"
         elif (considered_var == 'q'):        
             file_name_ending = "Effect_q_"
         elif (considered_var == 'a'):        
             file_name_ending = "Effect_a_"
         
-        file_name_ending = file_name_ending + '_l_' + str(l_in) + '_to_' + str(l_out)
+        file_name_ending = file_name_ending + '_l_' + str(l_in) + '_to_' + str(l_out)+'_'
         file_name_ending = file_name_ending + Network.file_name_ending
         
         if (considered_var != 'q'):
@@ -260,6 +301,11 @@ for l_in in range(0,no_layers):
         file_name_ending = file_name_ending + "_B_%s" %str(binary_mode)
         if (sparsity_flag):
             file_name_ending = file_name_ending + "_S_%s" %str(sparsity_flag)
+            
+        file_name_ending = file_name_ending + '_Loc_' + we_know_location
+        file_name_ending = file_name_ending + '_Pre_' + pre_synaptic_method
+        file_name_ending = file_name_ending + '_G_' + generate_data_mode
+        file_name_ending = file_name_ending + '_X_' + str(infer_itr_max)    
         #-------------------------------------------------------------------------------
 
         #-----------------------Write the Results to the File---------------------------
