@@ -165,7 +165,7 @@ else:
 
 sim_window = round(1+running_period*10)                     # This is the number of iterations performed within each cascade
 
-theta = 10                              # The update threshold of the neurons in the network
+theta = 5                             # The update threshold of the neurons in the network
 T_range = range(50, no_stimul_rounds, 200)                  # The range of sample sizes considered to investigate the effect of sample size on the performance
 #------------------------------------------------------------------------------
 
@@ -235,10 +235,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             B_exc_min = np.zeros([m,len(T_range)])
         
             ind = str(l_in) + str(l_out)
-                        
-            n_exc = Network.n_exc_array[l_out]
-            n_inh = Network.n_inh_array[l_out]
-            m = n_exc + n_inh
+            
     
             temp_list = Network.Neural_Connections[ind]
             W = temp_list[0]
@@ -251,7 +248,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             out_spikes = (temp_list[2])
             recorded_spikes = temp_list[0]
             
-            alpha0 = 0.75
+            alpha0 = 0.26
             sparse_thr0 = 0.65
             
             #--------------------------------------------------------------------------
@@ -274,13 +271,13 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     W_inferred_our,cost = inference_alg_per_layer(in_spikes_temp,out_spikes_temp,inference_method,inferece_params)
                     W_inferred_our = W_inferred_our.T
                 elif (inference_method == 0):
-                    inferece_params = [1]
-                    W_inferred_our = inference_alg_per_layer(cumulative_spikes_temp,recorded_spikes_temp,inference_method,inferece_params)
+                    inferece_params = [1,T]
+                    W_inferred_our,cost = inference_alg_per_layer(cumulative_spikes_temp,recorded_spikes_temp,inference_method,inferece_params)
                 
                 #.....The Hebbian Algorithm.......
                 else:
                     inferece_params = [1]
-                    W_inferred_our = inference_alg_per_layer((-pow(-1,np.sign(cumulative_spikes_temp))),recorded_spikes_temp,inference_method,inferece_params)
+                    W_inferred_our,cost = inference_alg_per_layer((-pow(-1,np.sign(cumulative_spikes_temp))),recorded_spikes_temp,inference_method,inferece_params)
                 #----------------------------------------------------------------------
         
                 #------------------------Save the Belief Matrices---------------------------
@@ -288,7 +285,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 file_name_ending23 = file_name_ending23 + '_I_' + str(inference_method)
                 if (sparsity_flag):
                     file_name_ending23 = file_name_ending23 + '_S_' + str(sparsity_flag)
-                file_name_ending2 = file_name_ending23 +"_%s" %str(T)
+                file_name_ending2 = file_name_ending23 +"_T_%s" %str(T)
                 file_name_ending24 = file_name_ending23 +"_T_%s" %str(no_stimul_rounds)
                 
                 file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending2
