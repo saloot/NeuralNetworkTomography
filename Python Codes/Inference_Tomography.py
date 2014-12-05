@@ -147,7 +147,7 @@ no_samples_per_cascade = max(3.0,25*Network.no_layers*np.max(Network.delay_max_m
 if generate_data_mode == 'F':
     running_period = (no_samples_per_cascade/10.0)  # Total running time in mili seconds
 else:
-    running_period = (10*no_samples_per_cascade/10.0)  # Total running time in mili seconds
+    running_period = (100*no_samples_per_cascade/10.0)  # Total running time in mili seconds
 
 sim_window = round(1+running_period*10)                     # This is the number of iterations performed within each cascade
 
@@ -155,7 +155,7 @@ theta = 0.005                                               # The update thresho
 
 
 if (generate_data_mode == 'F'):
-    T_range = range(350, no_stimul_rounds, 300)                 # The range of sample sizes considered to investigate the effect of sample size on the performance
+    T_range = range(200, no_stimul_rounds, 150)                 # The range of sample sizes considered to investigate the effect of sample size on the performance
 else:
     T_range = range(350, int(running_period*10), 300)
 #------------------------------------------------------------------------------
@@ -475,8 +475,181 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         #----------------------------------------------------------------------
         
         else:
-            in_spike = all_spikes
-            out_spikes = all_spikes
-            perform_inference
+            
+            #............Construct the Concatenated Weight Matrix..............            
+            W_tot = []
+            spikes_tot = []
+            for l_in in range(0,Network.no_layers):
+                n_exc = Network.n_exc_array[l_in]
+                n_inh = Network.n_inh_array[l_in]
+                n = n_exc + n_inh
+
+                temp_list = Neural_Spikes[str(l_in)]
+                spikes = (temp_list[2])
+
+                if len(spikes_tot):
+                    spikes_tot = np.vstack([spikes_tot,spikes])
+                else:
+                    spikes_tot = spikes
+                    
+                W_temp = []
+                for l_out in range(0,Network.no_layers):
+                    n_exc = Network.n_exc_array[l_out]
+                    n_inh = Network.n_inh_array[l_out]
+                    m = n_exc + n_inh
+                        
+                    if (l_out < l_in):
+                        if len(W_temp):
+                            W_temp = np.hstack([W_temp,np.zeros([n,m])])
+                        else:
+                            W_temp = np.zeros([n,m])
+                    else:                                        
+                        ind = str(l_in) + str(l_out);
+                        temp_list = Network.Neural_Connections[ind];
+                        W = temp_list[0]
+                        
+                        if len(W_temp):
+                            W_temp = np.hstack([W_temp,W])
+                        else:
+                            W_temp = W
+                
+                
+                
+                if len(W_tot):
+                    W_tot = np.vstack([W_tot,W_temp])
+                else:
+                    W_tot = W_temp
+            #..................................................................
+            
+            #......................In-Loop Initializations.....................
+            W = W_tot
+            m,n = W.shape
+            W_estimated = np.zeros([n,m])
+            fixed_entries = np.zeros([n,m])
+            #..................................................................
+                        
+            #........................Perfrom Inference.........................
+            for infer_itr in range(0,infer_itr_max):
+                W_inferred_our_tot,cost = inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estimated)
+                #recal,precision = calucate_accuracy(W_estimated,W)
+                #print '-------------Our method performance in ensemble %d & T = %d------------' %(ensemble_count,T)
+                #print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
+                #print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(precision[0],precision[1],precision[2])
+                #print '\n'
+                        
+                W_temp = np.ma.masked_array(W_inferred_our_tot,mask= fixed_entries)
+                max_val = abs(W_temp).max()
+                min_val = W_temp.min()
+                W_estimated,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,1.25*(1+infer_itr/7.5),2.5*(1+infer_itr/15.0),],0)
+                        
+                if infer_itr < infer_itr_max-1:
+                    fixed_entries = 1-isnan(W_estimated).astype(int)
+                        
+                if norm(1-fixed_entries) == 0:
+                    break
+                        
+            W_temp = W_temp/float(max_val)/1000.0
+            W_inferred_our = W_temp.data
+            #..................................................................
+            
+            
+            #...................Save the Belief Matrices...................                                                
+            file_name_ending23 = Network.file_name_ending + '_I_' + str(inference_method)
+            file_name_ending23 = file_name_ending23 + '_Loc_' + we_know_location
+            file_name_ending23 = file_name_ending23 + '_Pre_' + pre_synaptic_method
+            file_name_ending23 = file_name_ending23 + '_G_' + generate_data_mode
+            file_name_ending23 = file_name_ending23 + '_X_' + str(infer_itr_max)
+            if (sparsity_flag):
+                file_name_ending23 = file_name_ending23 + '_S_' + str(sparsity_flag)
+            file_name_ending2 = file_name_ending23 +"_T_%s" %str(T)
+
+            file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending2
+            np.savetxt(file_name,W_inferred_our,'%1.5f',delimiter='\t')
+            #..............................................................
+                
+                
+            #.....................Transform to Binary......................
+            params = [adj_fact_exc,adj_fact_inh,fixed_entries]
+            if binary_mode == 7:
+                W_bin,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,0.5*(1+infer_itr/4.0),1.0*(1+infer_itr/2.0)],0)                    
+                for i in range(0,m):
+                    for j in range(0,n):
+                        if isnan(W_bin[j,i]):
+                            W_bin[j,i] = 0
+            else:
+                W_inferred_our_tot = W_inferred_our_tot
+                W_bin,centroids = beliefs_to_binary(binary_mode,1000*W_inferred_our_tot,params,0)
+            
+            file_name_ending2 = file_name_ending2 + "_%s" %str(adj_fact_exc)
+            file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
+            file_name_ending2 = file_name_ending2 + "_B_%s" %str(binary_mode)
+                
+            file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2
+            np.savetxt(file_name,W_bin,'%d',delimiter='\t',newline='\n')
+        
+                
+            file_name = file_name_base_results + "/Inferred_Graphs/Scatter_Beliefs_%s.txt" %file_name_ending2                
+            ww = W_inferred_our.ravel()
+            ww = np.vstack([ww,np.zeros([len(ww)])])
+            np.savetxt(file_name,ww.T,'%f',delimiter='\t',newline='\n')
+
+            if (binary_mode == 4):
+                file_name = file_name_base_results + "/Inferred_Graphs/Centroids_%s.txt" %file_name_ending2
+                centroids = np.vstack([centroids,np.zeros([3])])
+                np.savetxt(file_name,centroids,'%f',delimiter='\t')
+            #..............................................................
+                
+            #....................Calculate the Accuracy....................
+            recal,precision = calucate_accuracy(W_bin,W)
+                    
+            print '-------------Our method performance in ensemble %d & T = %d------------' %(ensemble_count,T)
+            print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
+            print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(precision[0],precision[1],precision[2])
+            print '\n'
+            #..............................................................
+                    
+                    
+            #......................Save the Accuracies......................
+            temp_ending = file_name_ending2.replace("_T_%s" %str(T),'')
+            file_name = file_name_base_results + "/Accuracies/Rec_%s.txt" %temp_ending
+            if (T == T_range[0]):
+                acc_file = open(file_name,'w')
+            else:
+                acc_file = open(file_name,'a')
+            acc_file.write("%d \t %f \t %f \t %f" %(T,recal[0],recal[1],recal[2]))
+            acc_file.write("\n")
+            acc_file.close()
+                        
+            file_name = file_name_base_results + "/Accuracies/Prec_%s.txt" %temp_ending
+            if (T == T_range[0]):
+                acc_file = open(file_name,'w')
+            else:
+                acc_file = open(file_name,'a')
+            acc_file.write("%d \t %f \t %f \t %f" %(T,recal[0],recal[1],recal[2]))
+            acc_file.write("\n")
+            acc_file.close()
+                         
+            if (T == T_range[len(T_range)-1]):                        
+                file_name_ending2 = file_name_ending2.replace('_l_' + str(l_in) + '_to_' + str(l_out),'')        
+                file_name = file_name_base_results + "/Accuracies/Rec_Layers_Segregated_%s.txt" %file_name_ending2
+                if (first_flag2):
+                    acc_file = open(file_name,'w')
+                else:
+                    acc_file = open(file_name,'a')
+                
+                acc_file.write("%s \t %f \t %f \n" %(ind,recal[0],recal[1]))
+                acc_file.close()
+        
+                file_name = file_name_base_results + "/Accuracies/Prec_Layers_Segregated_%s.txt" %file_name_ending2
+                if (first_flag2):
+                    acc_file = open(file_name,'w')
+                else:
+                    acc_file = open(file_name,'a')                        
+                
+                acc_file.write("%s \t %f \t %f \n" %(ind,precision[0],precision[1]))
+                acc_file.close()
+                        
+                if ( (l_in == Network.no_layers-1) and (l_out == Network.no_layers-1) ):
+                    first_flag2 = 0
             
         #----------------------------------------------------------------------

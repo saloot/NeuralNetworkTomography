@@ -9,7 +9,7 @@ ENSEMBLE_COUNT_INIT_DEFAULT = 0
 INFERENCE_METHOD_DEFAULT = 3
 BINARY_MODE_DEFAULT = 4
 SPARSITY_FLAG_DEFAULT = 0
-GENERATE_DATA_MODE_DEFAULT = 'R'
+GENERATE_DATA_MODE_DEFAULT = 'F'
 INFERENCE_ITR_MAX_DEFAULT = 1
 WE_KNOW_LOCATION_DEFAULT = 'Y'
 PRE_SYNAPTIC_NEURON_DEFAULT = 'A'
@@ -124,7 +124,7 @@ else:
 sim_window = round(1+running_period*10)                     # This is the number of iterations performed within each cascade
 
 if (generate_data_mode == 'F'):
-    T_range = range(350, no_stimul_rounds, 300)                 # The range of sample sizes considered to investigate the effect of sample size on the performance
+    T_range = range(200, no_stimul_rounds, 150)                 # The range of sample sizes considered to investigate the effect of sample size on the performance
 else:
     T_range = range(350, int(running_period*10), 300)
     
