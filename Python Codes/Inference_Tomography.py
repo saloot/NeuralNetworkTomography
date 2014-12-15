@@ -8,7 +8,7 @@ ENSEMBLE_COUNT_INIT_DEFAULT = 0
 INFERENCE_METHOD_DEFAULT = 3
 BINARY_MODE_DEFAULT = 4
 SPARSITY_FLAG_DEFAULT = 0
-GENERATE_DATA_MODE_DEFAULT = 'R'
+GENERATE_DATA_MODE_DEFAULT = 'F'
 INFERENCE_ITR_MAX_DEFAULT = 1
 WE_KNOW_LOCATION_DEFAULT = 'Y'
 PRE_SYNAPTIC_NEURON_DEFAULT = 'A'
@@ -172,6 +172,10 @@ if not os.path.isdir(file_name_base_results+'/RunningTimes'):
 if not os.path.isdir(file_name_base_results+'/Inferred_Graphs'):
     temp = file_name_base_results + '/Inferred_Graphs'
     os.makedirs(temp)
+if not os.path.isdir(file_name_base_results+'/Verified_Spikes'):
+    temp = file_name_base_results + '/Verified_Spikes'
+    os.makedirs(temp)
+
 if not os.path.isdir(file_name_base_results+'/BeliefQuality'):    
     temp = file_name_base_results + '/BeliefQuality'
     os.makedirs(temp)
@@ -285,7 +289,8 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 n_inh = Network.n_inh_array[l_out]
                 m = n_exc + n_inh                
                 temp_list = Neural_Spikes[str(l_out)]            
-                out_spikes = (temp_list[2])
+                out_spikes_orig = (temp_list[2])
+                out_spikes = out_spikes_orig
                 if (generate_data_mode != 'R') and (inference_method != 4):
                     out_spikes = (out_spikes>0).astype(int)
                 out_spikes = out_spikes[:,0:T]
@@ -309,6 +314,8 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         else:
                             in_spikes = temp_list[2]
                             in_spikes = in_spikes[:,0:T]
+                    
+                    in_spikes_orig = in_spikes
                     if (generate_data_mode != 'R') and (inference_method != 4):
                         in_spikes = (in_spikes>0).astype(int)
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -364,6 +371,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         temp_list = Neural_Spikes[str(l_in)]            
                         in_spikes = (temp_list[2])
                         in_spikes = in_spikes[:,0:T]
+                        in_spikes_orig = in_spikes
                         if (generate_data_mode != 'R') and (inference_method != 4):
                             in_spikes = (in_spikes>0).astype(int)
 
@@ -442,6 +450,44 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     print '\n'
                 #..............................................................
                     
+                    
+                #.............Calculate Spike Prediction Accuracy..............
+                    if (T == T_range[len(T_range)-1]):
+                        Network_in = {}
+                        Network_in['n_in'] = n
+                        Network_in['n_out'] = 1
+                        Network_in['d_max'] = 1
+                        sps_pred = np.zeros([m,T])
+                        for uj in range(0,m):
+                            temp_W = W[:,uj] #W_bin[:,uj]
+                            temp_W = temp_W.reshape([n,1])
+                            Network_in['W'] = temp_W
+                            Network_in['D'] = np.sign(abs(temp_W))/10000.0
+                            sps_out = out_spikes[uj,:]
+                        
+                            for t in range(0,T):
+                                sps_in = in_spikes_orig[:,t]
+                                stimulated_neurons = np.nonzero(sps_in)
+                                stimulated_neurons = stimulated_neurons[0]
+                                stimulation_times = sps_in[stimulated_neurons] * 1000.0
+                                Neural_Connections_Out,out_spike = verify_neural_activity(Network,Network_in,running_period,frac_stimulated_neurons,stimulated_neurons,stimulation_times)
+                                sps_pred[uj,t] = out_spike                                
+                            
+                            print sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ))
+                    
+                        file_name = file_name_base_results + "/Verified_Spikes/Predicted_Spikes_%s.txt" %file_name_ending2
+                        np.savetxt(file_name,sps_pred,'%1.5f',delimiter='\t')
+                        file_name = file_name_base_results + "/Verified_Spikes/Out_Spikes_%s.txt" %file_name_ending2
+                        np.savetxt(file_name,out_spikes,'%1.5f',delimiter='\t')
+                        
+                        file_name = file_name_base_results + "/Verified_Spikes/Average_Mismatch_%s.txt" %file_name_ending2
+                        avg_mismatch = sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ),axis = 1)
+                        avg_mismatch = avg_mismatch.reshape([m,1])
+                        aa = np.array(range(0,m))
+                        aa = aa.reshape([m,1])
+                        avg_mismatch = np.hstack([aa,avg_mismatch])
+                        np.savetxt(file_name,avg_mismatch,'%3.5f',delimiter='\t')
+                #..............................................................    
                     
                 #......................Save the Accuracies......................
                     temp_ending = file_name_ending2.replace("_T_%s" %str(T),'')
