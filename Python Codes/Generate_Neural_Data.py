@@ -1,11 +1,11 @@
 #=======================DEFAULT VALUES FOR THE VARIABLES=======================
 FRAC_STIMULATED_NEURONS_DEFAULT = 0.4
-NO_STIMUL_ROUNDS_DEFAULT = 2000
-ENSEMBLE_SIZE_DEFAULT = 1
+NO_STIMUL_ROUNDS_DEFAULT = 1000
+ENSEMBLE_SIZE_DEFAULT = 5
 FILE_NAME_BASE_DATA_DEFAULT = "./Data"
 ENSEMBLE_COUNT_INIT_DEFAULT = 0
+GENERATE_DATA_MODE_DEFAULT = 'R'
 #==============================================================================
-
 
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 from brian import *
@@ -30,29 +30,6 @@ spikequeue.SpikeQueue.reinit
 #os.chdir('/home/salavati/Desktop/Neural_Tomography')
 #==============================================================================
 
-#================================INSTRUCTIONS==================================
-help_message = "\n"
-help_message = help_message + "\n"
-help_message = help_message + "###################################INSTRUCTIONS################################\n"
-help_message = help_message + "Here is how to use the code: you have to specify the option flag and"
-help_message = help_message + "the quantity right afterwards.\nExample: -E 100 for setting a network with 100 excitatory neurons. "
-help_message = help_message + "The full list of options are as follows:\n"
-help_message = help_message + "-E xxx: To specify the number of excitatory neurons PER LAYER (as a list). Default value = '%s'.\n" %str(N_EXC_ARRAY_DEFAULT)
-help_message = help_message + "-I xxx: To specify the number of inhibitory neurons. Default value = %s.\n" %str(N_INH_ARRAY_DEFAULT)
-help_message = help_message + "-P xxx: To specify the probabaility of having a connection between two neurons. Default value = %s.\n" %str(DELAY_MAX_MATRIX_DEFAULT)
-help_message = help_message + "-Q xxx: To specify the fraction of stimulated input neurons. Default value = %s.\n" %str(FRAC_STIMULATED_NEURONS_DEFAULT)
-help_message = help_message + "-T xxx: To specify the number of considered cascades. Default value = %s.\n" %str(NO_STIMUL_ROUNDS_DEFAULT)
-help_message = help_message + "-D xxx: To specify the maximum delay for the neural connections in milliseconds. Default value = %s.\n" %str(DELAY_MAX_MATRIX_DEFAULT)
-help_message = help_message + "-S xxx: To specify the number of generated random graphs. Default value = %s.\n" %str(ENSEMBLE_SIZE_DEFAULT)
-help_message = help_message + "-A xxx: To specify the folder that stores the generated data. Default value = %s. \n" %str(FILE_NAME_BASE_DATA_DEFAULT)
-help_message = help_message + "-F xxx: To specify the ensemble index to start simulation. Default value = %s. \n" %str(ENSEMBLE_COUNT_INIT_DEFAULT)
-help_message = help_message + "-L xxx: To specify the number of layers in the network. Default value = %s. \n" %str(NO_LAYERS_DEFAULT)
-help_message = help_message + "-R xxx: To specify if the delays are fixed (R=0) or random (R=1). Default value = %s. \n" %str(RANDOM_DELAY_FLAG_DEFAULT)
-help_message = help_message + "#################################################################################"
-help_message = help_message + "\n"
-#==============================================================================
-
-
 #================================INITIALIZATIONS===============================
 n_exc_array = None; n_inh_array= None; connection_prob_matrix = None
 random_delay_flag = None; no_layers = None; delay_max_matrix = None
@@ -61,43 +38,30 @@ os.system('clear')                                              # Clear the comm
 #==============================================================================
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:G:")
 if (input_opts):
-    for opt, arg in input_opts:
-        if opt == '-E':
-            n_exc_array = np.matrix(str(arg))                   # The number of excitatory neurons in each layer
-        elif opt == '-I':
-            n_inh_array = np.matrix(str(arg))                   # The number of excitatory neurons in each layer            
-        elif opt == '-P':
-            connection_prob_matrix = np.matrix(str(arg))        # The probability of having a link from each layer to the other. Separate the rows with a ";"
-        elif opt == '-Q':
+    for opt, arg in input_opts:        
+        if opt == '-Q':
             frac_stimulated_neurons = float(arg)                # Fraction of neurons in the input layer that will be excited by a stimulus
         elif opt == '-T':
             no_stimul_rounds = int(arg)                         # Number of times we inject stimulus to the network
         elif opt == '-S':
-            ensemble_size = int(arg)                            # The number of random networks that will be generated        
-        elif opt == '-D':
-            delay_max_matrix = np.matrix(str(arg))              # The maximum amount of synaptic delay in mili seconds
+            ensemble_size = int(arg)                            # The number of random networks that will be generated                
         elif opt == '-A':
             file_name_base_data = str(arg)                      # The folder to store results
         elif opt == '-F':
             ensemble_count_init = int(arg)                      # The ensemble to start simulations from
-        elif opt == '-L':
-            no_layers = int(arg)                                # The number of layers in the network
-        elif opt == '-R':
-            random_delay_flag = int(arg)                        # The ensemble to start simulations from            
+        elif opt == '-G':
+            generate_data_mode = str(arg)                       # The data generating method            
         elif opt == '-h':
             print(help_message)
             sys.exit()
 else:
     print('Code will be executed using default values')
- 
 #==============================================================================
 
 
 #================================INITIALIZATIONS===============================
-
-no_layers = 4
 
 #------------Set the Default Values if Variables are not Defines---------------
 if 'frac_stimulated_neurons' not in locals():
@@ -113,12 +77,16 @@ if 'ensemble_size' not in locals():
     print('ATTENTION: The default value of %s for ensemble_size is considered.\n' %str(ensemble_size))
     
 if 'file_name_base_data' not in locals():
-    file_name_base_data = FILE_NAME_BASE_DATA_DEFAULT;
+    file_name_base_data = FILE_NAME_BASE_DATA_DEFAULT
     print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_data))
 
 if 'ensemble_count_init' not in locals():
-    ensemble_count_init = ENSEMBLE_COUNT_INIT_DEFAULT;
+    ensemble_count_init = ENSEMBLE_COUNT_INIT_DEFAULT
     print('ATTENTION: The default value of %s for ensemble_count_init is considered.\n' %str(ensemble_count_init))
+    
+if 'generate_data_mode' not in locals():
+    generate_data_mode = GENERATE_DATA_MODE_DEFAULT
+    print('ATTENTION: The default value of %s for generate_data_mode is considered.\n' %str(generate_data_mode))
 #------------------------------------------------------------------------------
 
 #------------------Create the Necessary Directories if Necessary---------------
@@ -146,24 +114,15 @@ dI/dt=-I/tau_e : volt
 neural_model_eq = list([eqs,tau,tau_e])
 #------------------------------------------------------------------------------
 
-import auxiliary_functions
-reload(auxiliary_functions)
-from auxiliary_functions import generate_neural_activity
-
-
-import Neurons_and_Networks
-reload(Neurons_and_Networks)
-from Neurons_and_Networks import NeuralNet
-from Neurons_and_Networks import *
-
-network_type = 'F'
-Network = NeuralNet(no_layers,n_exc_array,n_inh_array,connection_prob_matrix,delay_max_matrix,random_delay_flag,neural_model_eq)
+#Network = NeuralNet(no_layers,n_exc_array,n_inh_array,connection_prob_matrix,delay_max_matrix,random_delay_flag,neural_model_eq,'inline','','')
+Network = NeuralNet(None,None,None,None,None,None,None, 'command_line',input_opts,args)
 
 no_samples_per_cascade = max(3.0,25*Network.no_layers*np.max(Network.delay_max_matrix)) # Number of samples that will be recorded
-if network_type == 'F':
+if generate_data_mode == 'F':
     running_period = (no_samples_per_cascade/10.0)  # Total running time in mili seconds
 else:
-    running_period = (10*no_samples_per_cascade/10.0)  # Total running time in mili seconds
+    no_stimul_rounds = 1
+    running_period = (200*no_samples_per_cascade/10.0)  # Total running time in mili seconds
 #==============================================================================
 
 
@@ -176,11 +135,12 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
     #-----------------Create the Weights If They Do Not Exist------------------
     if not Network.read_weights(ensemble_count,file_name_base_data):
         Network.create_weights(ensemble_count,file_name_base_data)
+        print "Weight Created"
     #--------------------------------------------------------------------------
     
         
     #-------------------Run the Network and Record Spikes----------------------
-    file_name_base = file_name_base_data + "/Spikes/S_times_%s" %Network.file_name_ending + "_q_%s" %str(frac_stimulated_neurons)
+    file_name_base = file_name_base_data + "/Spikes/S_times_%s" %Network.file_name_ending + "_q_%s" %str(frac_stimulated_neurons) + '_G_' + generate_data_mode
     
     for l_in in range(0,Network.no_layers):
         file_name = file_name_base + '_l_' + str(l_in) +'.txt'
@@ -190,7 +150,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
     for cascade_count in range(0,no_stimul_rounds):
         
         #--------------------------Generate Activity---------------------------
-        Neural_Connections_Out = generate_neural_activity(Network,running_period,file_name_base,frac_stimulated_neurons,cascade_count)
+        Neural_Connections_Out = generate_neural_activity(Network,running_period,file_name_base,frac_stimulated_neurons,cascade_count,generate_data_mode)
         #----------------------------------------------------------------------
         
         #------------------------Check for Any Errors--------------------------

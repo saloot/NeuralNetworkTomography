@@ -458,8 +458,9 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         Network_in['n_out'] = 1
                         Network_in['d_max'] = 1
                         sps_pred = np.zeros([m,T])
-                        for uj in range(0,m):
-                            temp_W = W[:,uj] #W_bin[:,uj]
+                        W_bin = np.multiply(W_bin>0,0.001*np.ones([n,m])) + np.multiply(W_bin<0,-0.005*np.ones([n,m]))
+                        for uj in range(0,m):                            
+                            temp_W = W_bin[:,uj] #W_bin[:,uj]
                             temp_W = temp_W.reshape([n,1])
                             Network_in['W'] = temp_W
                             Network_in['D'] = np.sign(abs(temp_W))/10000.0
@@ -475,10 +476,27 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                             
                             print sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ))
                     
+                        #file_name = file_name_base_results + "/Verified_Spikes/Predicted_Spikes_%s.txt" %file_name_ending2
+                        #save_matrix = np.zeros([10*min(T,100),3])                        
+                        #itr_mat = 0
+                        #for ik in range(0,10):
+                        #    for ij in range(0,min(T,100)):
+                        #        save_matrix[itr_mat,:] = [ij,ik,sps_pred[ik,ij]]
+                        #        itr_mat = itr_mat + 1
+                                
+                        #np.savetxt(file_name,save_matrix,'%3.5f',delimiter='\t')        
+                        
                         file_name = file_name_base_results + "/Verified_Spikes/Predicted_Spikes_%s.txt" %file_name_ending2
-                        np.savetxt(file_name,sps_pred,'%1.5f',delimiter='\t')
-                        file_name = file_name_base_results + "/Verified_Spikes/Out_Spikes_%s.txt" %file_name_ending2
-                        np.savetxt(file_name,out_spikes,'%1.5f',delimiter='\t')
+                        save_matrix = np.zeros([10*min(T,100),3])                        
+                        itr_mat = 0
+                        for ik in range(0,10):
+                            for ij in range(0,min(T,100)):
+                                val = 2 + np.sign(out_spikes[ik,ij]) - np.sign(sps_pred[ik,ij])
+                                
+                                save_matrix[itr_mat,:] = [ij,ik,val]
+                                itr_mat = itr_mat + 1
+                        
+                        np.savetxt(file_name,save_matrix,'%3.5f',delimiter='\t')
                         
                         file_name = file_name_base_results + "/Verified_Spikes/Average_Mismatch_%s.txt" %file_name_ending2
                         avg_mismatch = sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ),axis = 1)
