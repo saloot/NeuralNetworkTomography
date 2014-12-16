@@ -452,46 +452,36 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     
                     
                 #.............Calculate Spike Prediction Accuracy..............
-                    if (T == T_range[len(T_range)-1]):
+                    if 1: #(T == T_range[len(T_range)-1]):
                         Network_in = {}
                         Network_in['n_in'] = n
-                        Network_in['n_out'] = 1
+                        Network_in['n_out'] = m
                         Network_in['d_max'] = 1
                         sps_pred = np.zeros([m,T])
-                        W_bin = np.multiply(W_bin>0,0.001*np.ones([n,m])) + np.multiply(W_bin<0,-0.005*np.ones([n,m]))
-                        for uj in range(0,m):                            
-                            temp_W = W_bin[:,uj] #W_bin[:,uj]
-                            temp_W = temp_W.reshape([n,1])
-                            Network_in['W'] = temp_W
-                            Network_in['D'] = np.sign(abs(temp_W))/10000.0
-                            sps_out = out_spikes[uj,:]
+                        W_bin = np.multiply(W_bin>0,0.001*np.ones([n,m])) + np.multiply(W_bin<0,-0.005*np.ones([n,m]))                        
                         
-                            for t in range(0,T):
-                                sps_in = in_spikes_orig[:,t]
-                                stimulated_neurons = np.nonzero(sps_in)
-                                stimulated_neurons = stimulated_neurons[0]
-                                stimulation_times = sps_in[stimulated_neurons] * 1000.0
-                                Neural_Connections_Out,out_spike = verify_neural_activity(Network,Network_in,running_period,frac_stimulated_neurons,stimulated_neurons,stimulation_times)
-                                sps_pred[uj,t] = out_spike                                
+                        temp_W = W #W_bin
+                        temp_W = temp_W.reshape([n,m])
+                        Network_in['W'] = temp_W
+                        Network_in['D'] = np.sign(abs(temp_W))/10000.0                    
+                        
+                        for t in range(0,T):
+                            sps_in = in_spikes_orig[:,t]
+                            stimulated_neurons = np.nonzero(sps_in)
+                            stimulated_neurons = stimulated_neurons[0]                            
+                            stimulation_times = sps_in[stimulated_neurons] * 1000.0
+                            Neural_Connections_Out,out_spike = verify_neural_activity(Network,Network_in,running_period,frac_stimulated_neurons,stimulated_neurons,stimulation_times)
+                            sps_pred[:,t] = out_spike                                
                             
-                            print sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ))
-                    
-                        #file_name = file_name_base_results + "/Verified_Spikes/Predicted_Spikes_%s.txt" %file_name_ending2
-                        #save_matrix = np.zeros([10*min(T,100),3])                        
-                        #itr_mat = 0
-                        #for ik in range(0,10):
-                        #    for ij in range(0,min(T,100)):
-                        #        save_matrix[itr_mat,:] = [ij,ik,sps_pred[ik,ij]]
-                        #        itr_mat = itr_mat + 1
-                                
-                        #np.savetxt(file_name,save_matrix,'%3.5f',delimiter='\t')        
                         
+                        print sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ))
+                                            
                         file_name = file_name_base_results + "/Verified_Spikes/Predicted_Spikes_%s.txt" %file_name_ending2
                         save_matrix = np.zeros([10*min(T,100),3])                        
                         itr_mat = 0
                         for ik in range(0,10):
                             for ij in range(0,min(T,100)):
-                                val = 2 + np.sign(out_spikes[ik,ij]) - np.sign(sps_pred[ik,ij])
+                                val = 1 + np.sign(out_spikes[ik,ij]) - np.sign(sps_pred[ik,ij])
                                 
                                 save_matrix[itr_mat,:] = [ij,ik,val]
                                 itr_mat = itr_mat + 1
@@ -612,13 +602,8 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         
             #........................Perfrom Inference.........................
             for infer_itr in range(0,infer_itr_max):
-                W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0)
-                #recal,precision = calucate_accuracy(W_estimated,W)
-                #print '-------------Our method performance in ensemble %d & T = %d------------' %(ensemble_count,T)
-                #print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
-                #print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(precision[0],precision[1],precision[2])
-                #print '\n'
                 
+                W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0)
                 W_tmp = abs(np.ma.masked_array(W_inferred_our_tot,mask= (W_inferred_our_tot==float('inf')).astype(int)))
                 
                 if (inference_method == 4):
@@ -628,13 +613,35 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                                 W_inferred_our_tot[ii,jj] = 1*W_tmp.max()
                             
                 W_temp = np.ma.masked_array(W_inferred_our_tot,mask= fixed_entries)
-                max_val = abs(W_temp).max()
-                min_val = W_temp.min()
-                W_estimated,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,1.25*(1+infer_itr/7.5),2.5*(1+infer_itr/15.0),],0)
+                
+                W_estimated,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,1.25*(1+infer_itr/7.5),2500*(1+infer_itr/15.0),],0)
+                
+                
+                W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0)
+                W_tmp = abs(np.ma.masked_array(W_inferred_our_tot,mask= (W_inferred_our_tot==float('inf')).astype(int)))
+                
+                if (inference_method == 4):
+                    for ii in range (0,m):
+                        for jj in range(0,n):
+                            if (W_inferred_our_tot[ii,jj]==float('inf')):
+                                W_inferred_our_tot[ii,jj] = 1*W_tmp.max()
+                            
+                W_temp = np.ma.masked_array(W_inferred_our_tot,mask= fixed_entries)
+                
+                W_estimated_inh,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,12500*(1+infer_itr/7.5),1.75*(1+infer_itr/15.0),],0)
+                
+                for ii in range (0,m):
+                    for jj in range(0,n):
+                        if not np.isnan(W_estimated_inh[ii,jj]):
+                            W_estimated[ii,jj] = W_estimated_inh[ii,jj]
                         
-                if infer_itr < infer_itr_max-1:
-                    fixed_entries = 1-isnan(W_estimated).astype(int)
-                        
+                        if np.isnan(W_estimated[ii,jj]):
+                            W_estimated[ii,jj] = 0
+                
+                
+                fixed_entries = 1-isnan(W_estimated).astype(int)
+                W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0)
+                
                 if norm(1-fixed_entries) == 0:
                     break
             
@@ -661,7 +668,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 
                 
             #.....................Transform to Binary......................
-            fixed_entries = 1- np.sign(Updated_Vals)
+            #fixed_entries = 1- np.sign(Updated_Vals)
             pdb.set_trace()
             params = [adj_fact_exc,adj_fact_inh,fixed_entries]
             if binary_mode == 7:
