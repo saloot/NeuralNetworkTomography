@@ -460,7 +460,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         sps_pred = np.zeros([m,T])
                         W_bin = np.multiply(W_bin>0,0.001*np.ones([n,m])) + np.multiply(W_bin<0,-0.005*np.ones([n,m]))                        
                         
-                        temp_W = W #W_bin
+                        temp_W = W_bin
                         temp_W = temp_W.reshape([n,m])
                         Network_in['W'] = temp_W
                         Network_in['D'] = np.sign(abs(temp_W))/10000.0                    
@@ -516,7 +516,17 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     acc_file.write("%d \t %f \t %f \t %f" %(T,recal[0],recal[1],recal[2]))
                     acc_file.write("\n")
                     acc_file.close()
-                         
+                    
+                    file_name = file_name_base_results + "/Verified_Spikes/Spike_Acc_per_T_%s.txt" %temp_ending
+                    if (T == T_range[0]):
+                        acc_file = open(file_name,'w')
+                    else:
+                        acc_file = open(file_name,'a')
+                    acc_file.write("%d \t %f \n" %(T,sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ))/float(sum(np.sign(out_spikes))) ))
+                    acc_file.write("\n")
+                    acc_file.close()
+                    
+                    
                     if (T == T_range[len(T_range)-1]):                        
                         file_name_ending2 = file_name_ending2.replace('_l_' + str(l_in) + '_to_' + str(l_out),'')        
                         file_name = file_name_base_results + "/Accuracies/Rec_Layers_Segregated_%s.txt" %file_name_ending2
@@ -603,6 +613,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             #........................Perfrom Inference.........................
             for infer_itr in range(0,infer_itr_max):
                 
+                #~~~~~~~~~~~~~~Classify Excitatory Neurons Only~~~~~~~~~~~~~~~~                
                 W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0)
                 W_tmp = abs(np.ma.masked_array(W_inferred_our_tot,mask= (W_inferred_our_tot==float('inf')).astype(int)))
                 
@@ -611,12 +622,13 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         for jj in range(0,n):
                             if (W_inferred_our_tot[ii,jj]==float('inf')):
                                 W_inferred_our_tot[ii,jj] = 1*W_tmp.max()
-                            
-                W_temp = np.ma.masked_array(W_inferred_our_tot,mask= fixed_entries)
+                                            
                 
                 W_estimated,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,1.25*(1+infer_itr/7.5),2500*(1+infer_itr/15.0),],0)
+                fixed_entries = 1-isnan(W_estimated).astype(int)
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
-                
+                #~~~~~~~~~~~~~~Classify Inhibitory Neurons Only~~~~~~~~~~~~~~~~                
                 W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0)
                 W_tmp = abs(np.ma.masked_array(W_inferred_our_tot,mask= (W_inferred_our_tot==float('inf')).astype(int)))
                 
@@ -628,27 +640,25 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                             
                 W_temp = np.ma.masked_array(W_inferred_our_tot,mask= fixed_entries)
                 
-                W_estimated_inh,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,12500*(1+infer_itr/7.5),1.75*(1+infer_itr/15.0),],0)
+                W_estimated_inh,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,12500*(1+infer_itr/7.5),2*(1+infer_itr/15.0),],0)
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
+                #~~~~~~~~~~~~~~~~~~~~~~~~Mix the Two~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 for ii in range (0,m):
                     for jj in range(0,n):
                         if not np.isnan(W_estimated_inh[ii,jj]):
                             W_estimated[ii,jj] = W_estimated_inh[ii,jj]
                         
-                        if np.isnan(W_estimated[ii,jj]):
-                            W_estimated[ii,jj] = 0
-                
-                
-                fixed_entries = 1-isnan(W_estimated).astype(int)
-                W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0)
-                
+                        if (infer_itr == infer_itr_max -1):
+                            if np.isnan(W_estimated[ii,jj]):
+                                W_estimated[ii,jj] = 0
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                if (infer_itr < infer_itr_max -1):
+                    fixed_entries = 1-isnan(W_estimated).astype(int)
+
                 if norm(1-fixed_entries) == 0:
                     break
-            
-            
-            
-            W_temp = W_temp/float(max_val)/1000.0
-            W_inferred_our = W_temp.data
             #..................................................................
             
             
@@ -667,19 +677,19 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             #..............................................................
                 
                 
-            #.....................Transform to Binary......................
-            #fixed_entries = 1- np.sign(Updated_Vals)
-            pdb.set_trace()
+            #.....................Transform to Binary......................            
             params = [adj_fact_exc,adj_fact_inh,fixed_entries]
             if binary_mode == 7:
-                W_bin,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,0.5*(1+infer_itr/4.0),1.0*(1+infer_itr/2.0)],0)                    
+                W_bin,centroids = beliefs_to_binary(7,W_estimated,[fixed_entries,0.5*(1+infer_itr/4.0),1.0*(1+infer_itr/2.0)],0)                    
                 for i in range(0,m):
                     for j in range(0,n):
                         if isnan(W_bin[j,i]):
                             W_bin[j,i] = 0
             else:
                 W_inferred_our_tot = W_inferred_our_tot
-                W_bin,centroids = beliefs_to_binary(binary_mode,1000*W_inferred_our_tot,params,0)
+                W_bin,centroids = beliefs_to_binary(binary_mode,10*W_estimated,params,0)
+            
+            W_bin = W_estimated
             
             file_name_ending2 = file_name_ending2 + "_%s" %str(adj_fact_exc)
             file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
@@ -709,7 +719,52 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             print '\n'
             #..............................................................
                     
-                    
+            #.............Calculate Spike Prediction Accuracy..............
+            if 1: #(T == T_range[len(T_range)-1]):
+                Network_in = {}
+                Network_in['n_in'] = n
+                Network_in['n_out'] = m
+                Network_in['d_max'] = 1
+                sps_pred = np.zeros([m,T])
+                W_bin = np.multiply(W_bin>0,0.001*np.ones([n,m])) + np.multiply(W_bin<0,-0.005*np.ones([n,m]))                        
+                        
+                temp_W = W_bin
+                temp_W = temp_W.reshape([n,m])
+                Network_in['W'] = temp_W
+                Network_in['D'] = np.sign(abs(temp_W))/10000.0
+                        
+                for t in range(0,T):
+                    sps_in = in_spikes_orig[:,t]
+                    stimulated_neurons = np.nonzero(sps_in)
+                    stimulated_neurons = stimulated_neurons[0]
+                    stimulation_times = sps_in[stimulated_neurons] * 1000.0
+                    Neural_Connections_Out,out_spike = verify_neural_activity(Network,Network_in,running_period,frac_stimulated_neurons,stimulated_neurons,stimulation_times)
+                    sps_pred[:,t] = out_spike
+                            
+                        
+                print sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ))
+                                            
+                file_name = file_name_base_results + "/Verified_Spikes/Predicted_Spikes_%s.txt" %file_name_ending2
+                save_matrix = np.zeros([10*min(T,100),3])
+                itr_mat = 0
+                for ik in range(0,10):
+                    for ij in range(0,min(T,100)):
+                        val = 1 + np.sign(out_spikes[ik,ij]) - np.sign(sps_pred[ik,ij])
+                                
+                        save_matrix[itr_mat,:] = [ij,ik,val]
+                        itr_mat = itr_mat + 1
+                        
+                np.savetxt(file_name,save_matrix,'%3.5f',delimiter='\t')
+                        
+                file_name = file_name_base_results + "/Verified_Spikes/Average_Mismatch_%s.txt" %file_name_ending2
+                avg_mismatch = sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ),axis = 1)
+                avg_mismatch = avg_mismatch.reshape([m,1])
+                aa = np.array(range(0,m))
+                aa = aa.reshape([m,1])
+                avg_mismatch = np.hstack([aa,avg_mismatch])
+                np.savetxt(file_name,avg_mismatch,'%3.5f',delimiter='\t')
+                #..............................................................
+                
             #......................Save the Accuracies......................
             temp_ending = file_name_ending2.replace("_T_%s" %str(T),'')
             file_name = file_name_base_results + "/Accuracies/Rec_%s.txt" %temp_ending
@@ -729,7 +784,16 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             acc_file.write("%d \t %f \t %f \t %f" %(T,recal[0],recal[1],recal[2]))
             acc_file.write("\n")
             acc_file.close()
-                         
+                        
+            file_name = file_name_base_results + "/Verified_Spikes/Spike_Acc_per_T_%s.txt" %temp_ending
+            if (T == T_range[0]):
+                acc_file = open(file_name,'w')
+            else:
+                acc_file = open(file_name,'a')
+            acc_file.write("%d \t %f \n" %(T,sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ))/float(sum(np.sign(out_spikes))) ))
+            acc_file.write("\n")
+            acc_file.close()
+                    
             if (T == T_range[len(T_range)-1]):                        
                 file_name_ending2 = file_name_ending2.replace('_l_' + str(l_in) + '_to_' + str(l_out),'')        
                 file_name = file_name_base_results + "/Accuracies/Rec_Layers_Segregated_%s.txt" %file_name_ending2
