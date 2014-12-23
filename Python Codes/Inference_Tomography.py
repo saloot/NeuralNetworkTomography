@@ -12,6 +12,7 @@ GENERATE_DATA_MODE_DEFAULT = 'F'
 INFERENCE_ITR_MAX_DEFAULT = 1
 WE_KNOW_LOCATION_DEFAULT = 'Y'
 PRE_SYNAPTIC_NEURON_DEFAULT = 'A'
+VERIFY_FLAG_DEFAULT = 0
 #==============================================================================
 
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
@@ -43,7 +44,7 @@ t0 = time()                                                # Initialize the time
 #==============================================================================
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:G:X:Y:K:C:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:G:X:Y:K:C:V:")
 if (input_opts):
     for opt, arg in input_opts:
         if opt == '-Q':
@@ -72,6 +73,8 @@ if (input_opts):
             we_know_location = str(arg)                         # The flag that determines if we know the location of neurons (with respect to each other) (Y/N)
         elif opt == '-C': 
             pre_synaptic_method = str(arg)                      # The flag that determines if all previous-layers neurons count as  pre-synaptic (A/O)
+        elif opt == '-V': 
+            verify_flag = int(arg)                              # If 1, the post-synaptic states will be predicted
         elif opt == '-h':
             print(help_message)
             sys.exit()
@@ -134,6 +137,10 @@ if 'we_know_location' not in locals():
 if 'pre_synaptic_method' not in locals():
     pre_synaptic_method = PRE_SYNAPTIC_NEURON_DEFAULT
     print('ATTENTION: The default value of %s for pre_synaptic_method is considered.\n' %str(pre_synaptic_method))
+
+if 'verify_flag' not in locals():
+    verify_flag = VERIFY_FLAG_DEFAULT
+    print('ATTENTION: The default value of %s for verify_flag is considered.\n' %str(verify_flag))
 #------------------------------------------------------------------------------
 
 #--------------------------Initialize the Network------------------------------
@@ -147,7 +154,7 @@ no_samples_per_cascade = max(3.0,25*Network.no_layers*np.max(Network.delay_max_m
 if generate_data_mode == 'F':
     running_period = (no_samples_per_cascade/10.0)  # Total running time in mili seconds
 else:
-    running_period = (100*no_samples_per_cascade/10.0)  # Total running time in mili seconds
+    running_period = (300*no_samples_per_cascade/10.0)  # Total running time in mili seconds
 
 sim_window = round(1+running_period*10)                     # This is the number of iterations performed within each cascade
 
@@ -155,9 +162,11 @@ theta = 0.005                                               # The update thresho
 
 
 if (generate_data_mode == 'F'):
-    T_range = range(200, no_stimul_rounds, 150)                 # The range of sample sizes considered to investigate the effect of sample size on the performance
+    T_step = int(no_stimul_rounds/10.0)
+    T_range = range(200, no_stimul_rounds, T_step)                 # The range of sample sizes considered to investigate the effect of sample size on the performance
 else:
-    T_range = range(350, int(running_period*10), 300)
+    T_step = int(running_period*10/10.0)
+    T_range = range(350, int(running_period*10), T_step)
 #------------------------------------------------------------------------------
 
 #------------------Create the Necessary Directories if Necessary---------------
@@ -261,17 +270,25 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             
     #--------------------------In-Loop Initializations-------------------------
     if (generate_data_mode == 'R'):
-        #------------------Pre Process the Spikes if Necessary-----------------
+        #------------------Preprocess the Spikes if Necessary-----------------
+        d_max = 10
+        d_window = 1+d_max
         Processed_Neural_Spikes = {}
+        Rough_Neural_Spikes = {}
         for l in range(0,Network.no_layers):                
             temp_list = Neural_Spikes[str(l)]
             spikes = temp_list[2]
             n,T = spikes.shape
             out_spikes = np.zeros([n,T])
+            out_spikes_rough = np.zeros([n,1+int(T/float(d_window))])
+            t_rough = 0
             for t in range(0,T):
-                out_spikes[:,t] = sum(spikes[:,max(t-10,0):t],axis = 1)
-                
-            Processed_Neural_Spikes[str(l)] = (out_spikes>0).astype(int)        
+                out_spikes[:,t] = sum(spikes[:,max(t-d_window,0):t],axis = 1)
+                if (np.mod(t,d_window) == 0) and (t > 0):
+                    out_spikes_rough[:,t_rough] = out_spikes[:,t]
+                    t_rough = t_rough + 1
+            Processed_Neural_Spikes[str(l)] = (out_spikes>0).astype(int)
+            Rough_Neural_Spikes[str(l)] = (out_spikes_rough>0).astype(int)
     #--------------------------------------------------------------------------
     
     
@@ -294,29 +311,46 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 if (generate_data_mode != 'R') and (inference_method != 4):
                     out_spikes = (out_spikes>0).astype(int)
                 out_spikes = out_spikes[:,0:T]
-                
+                rough_out_spikes = Rough_Neural_Spikes[str(l_out)]
+                tt = 1+int(T/float(d_window))
+                rough_out_spikes = rough_out_spikes[:,0:tt]
                 #.....If ALL previous Layers Count as Pre-synaptic Neurons.....        
                 if pre_synaptic_method.lower() == 'a':
                     in_spikes = []
+                    rough_in_spikes = []
                     
 
                     #~~~~~~~~~~~~~~Concatenate Pre-synaptic Spikes~~~~~~~~~~~~~
                     n_tot = 0
                     for l_in in range(0,l_out):
-                        temp_list = Neural_Spikes[str(l_in)]
+                        if (generate_data_mode != 'R'):
+                            temp_list = Neural_Spikes[str(l_in)]
+                            temp_list[2]
+                        else:
+                            temp_list = Processed_Neural_Spikes[str(l_in)]
                         n_exc = Network.n_exc_array[l_in]
                         n_inh = Network.n_inh_array[l_in]
                         n_tot = n_tot + n_exc + n_inh                
                         if len(in_spikes):
-                            in_spikes_temp = temp_list[2]
+                            in_spikes_temp = temp_list
                             in_spikes_temp = in_spikes_temp[:,0:T]
                             in_spikes = np.concatenate([in_spikes,in_spikes_temp])
+                            if (generate_data_mode == 'R'):
+                                temp_sp = Rough_Neural_Spikes[str(l_in)]                                
+                                temp_sp = temp_sp[:,0:tt]
+                                rough_in_spikes = np.concatenate([rough_in_spikes,temp_sp])
                         else:
-                            in_spikes = temp_list[2]
+                            in_spikes = temp_list
                             in_spikes = in_spikes[:,0:T]
-                    
-                    in_spikes_orig = in_spikes
-                    if (generate_data_mode != 'R') and (inference_method != 4):
+                            if (generate_data_mode == 'R'):
+                                temp_sp = Rough_Neural_Spikes[str(l_in)]                                
+                                rough_in_spikes = temp_sp[:,0:tt]
+                                
+                    if (generate_data_mode != 'R'):
+                        in_spikes_orig = in_spikes
+                    else:
+                        in_spikes_orig = rough_in_spikes
+                    if (generate_data_mode != 'R') or (inference_method != 4):
                         in_spikes = (in_spikes>0).astype(int)
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     
@@ -389,6 +423,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     ind = str(l_in) + str(l_out)
                     temp_list = Network.Neural_Connections[ind]
                     W = temp_list[0]
+                    pdb.set_trace()
                     W_inferred_our = W_inferred_our_tot[n_so_far:n_so_far+n,:]                        
                     n_so_far = n_so_far + n
                 
@@ -427,7 +462,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     file_name_ending2 = file_name_ending2 + "_B_%s" %str(binary_mode)
                 
                     file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2
-                    np.savetxt(file_name,W_bin,'%d',delimiter='\t',newline='\n')
+                    np.savetxt(file_name,W_bin,'%1.5f',delimiter='\t',newline='\n')
         
                 
                     file_name = file_name_base_results + "/Inferred_Graphs/Scatter_Beliefs_%s.txt" %file_name_ending2                
@@ -442,7 +477,11 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 #..............................................................
                 
                 #....................Calculate the Accuracy....................
-                    recal,precision = calucate_accuracy(W_bin,W)
+                    for i in range(0,m):
+                        for j in range(0,n):
+                            if isnan(W_estimated[j,i]):
+                                W_estimated[j,i] = 0
+                    recal,precision = calucate_accuracy(W_bin,W) #(W_estimated,W)
                     
                     print '-------------Our method performance in ensemble %d & T = %d------------' %(ensemble_count,T)
                     print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
@@ -452,12 +491,19 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     
                     
                 #.............Calculate Spike Prediction Accuracy..............
-                    if 1: #(T == T_range[len(T_range)-1]):
+                    if verify_flag: #(T == T_range[len(T_range)-1]):
                         Network_in = {}
                         Network_in['n_in'] = n
                         Network_in['n_out'] = m
                         Network_in['d_max'] = 1
-                        sps_pred = np.zeros([m,T])
+                        if (generate_data_mode == 'R'):
+                            TT = 1+int(T/float(d_window))
+                            out_spikes_orig = rough_out_spikes
+                        else:
+                            TT = T
+                            out_spikes_orig = out_spikes
+                            
+                        sps_pred = np.zeros([m,TT])
                         W_bin = np.multiply(W_bin>0,0.001*np.ones([n,m])) + np.multiply(W_bin<0,-0.005*np.ones([n,m]))                        
                         
                         temp_W = W_bin
@@ -465,23 +511,23 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         Network_in['W'] = temp_W
                         Network_in['D'] = np.sign(abs(temp_W))/10000.0                    
                         
-                        for t in range(0,T):
+                        for t in range(0,TT):
                             sps_in = in_spikes_orig[:,t]
                             stimulated_neurons = np.nonzero(sps_in)
                             stimulated_neurons = stimulated_neurons[0]                            
                             stimulation_times = sps_in[stimulated_neurons] * 1000.0
-                            Neural_Connections_Out,out_spike = verify_neural_activity(Network,Network_in,running_period,frac_stimulated_neurons,stimulated_neurons,stimulation_times)
+                            Neural_Connections_Out,out_spike = verify_neural_activity(Network,Network_in,(no_samples_per_cascade/10.0),frac_stimulated_neurons,stimulated_neurons,stimulation_times)
                             sps_pred[:,t] = out_spike                                
                             
                         
-                        print sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ))
+                        print sum(abs(np.sign(out_spikes_orig) - np.sign(sps_pred) ))
                                             
                         file_name = file_name_base_results + "/Verified_Spikes/Predicted_Spikes_%s.txt" %file_name_ending2
                         save_matrix = np.zeros([10*min(T,100),3])                        
                         itr_mat = 0
                         for ik in range(0,10):
-                            for ij in range(0,min(T,100)):
-                                val = 1 + np.sign(out_spikes[ik,ij]) - np.sign(sps_pred[ik,ij])
+                            for ij in range(0,min(TT,100)):
+                                val = 1 + np.sign(out_spikes_orig[ik,ij]) - np.sign(sps_pred[ik,ij])
                                 
                                 save_matrix[itr_mat,:] = [ij,ik,val]
                                 itr_mat = itr_mat + 1
@@ -489,7 +535,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         np.savetxt(file_name,save_matrix,'%3.5f',delimiter='\t')
                         
                         file_name = file_name_base_results + "/Verified_Spikes/Average_Mismatch_%s.txt" %file_name_ending2
-                        avg_mismatch = sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ),axis = 1)
+                        avg_mismatch = sum(abs(np.sign(out_spikes_orig) - np.sign(sps_pred) ),axis = 1)
                         avg_mismatch = avg_mismatch.reshape([m,1])
                         aa = np.array(range(0,m))
                         aa = aa.reshape([m,1])
@@ -517,14 +563,15 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     acc_file.write("\n")
                     acc_file.close()
                     
-                    file_name = file_name_base_results + "/Verified_Spikes/Spike_Acc_per_T_%s.txt" %temp_ending
-                    if (T == T_range[0]):
-                        acc_file = open(file_name,'w')
-                    else:
-                        acc_file = open(file_name,'a')
-                    acc_file.write("%d \t %f \n" %(T,sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ))/float(sum(np.sign(out_spikes))) ))
-                    acc_file.write("\n")
-                    acc_file.close()
+                    if verify_flag:
+                        file_name = file_name_base_results + "/Verified_Spikes/Spike_Acc_per_T_%s.txt" %temp_ending
+                        if (T == T_range[0]):
+                            acc_file = open(file_name,'w')
+                        else:
+                            acc_file = open(file_name,'a')
+                        acc_file.write("%d \t %f \n" %(T,sum(abs(np.sign(out_spikes_orig) - np.sign(sps_pred) ))/float(sum(np.sign(out_spikes_orig))) ))
+                        acc_file.write("\n")
+                        acc_file.close()
                     
                     
                     if (T == T_range[len(T_range)-1]):                        
@@ -604,9 +651,10 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             W = W_tot
             m,n = W.shape
             W_estimated = np.zeros([n,m])
-            fixed_entries = np.zeros([n,m])
+            fixed_entries = np.zeros([n,m])            
             out_spikes_tot = out_spikes_tot[:,0:T]
-            in_spikes_tot = out_spikes_tot            
+            in_spikes_tot = out_spikes_tot
+            in_spikes_orig = in_spikes_tot
             #..................................................................
             
                         
@@ -673,7 +721,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             file_name_ending2 = file_name_ending23 +"_T_%s" %str(T)
 
             file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending2
-            np.savetxt(file_name,W_inferred_our,'%1.5f',delimiter='\t')
+            np.savetxt(file_name,W_inferred_our_tot,'%1.5f',delimiter='\t')
             #..............................................................
                 
                 
@@ -695,12 +743,12 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
             file_name_ending2 = file_name_ending2 + "_B_%s" %str(binary_mode)
                 
-            file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2
-            np.savetxt(file_name,W_bin,'%d',delimiter='\t',newline='\n')
-        
+            file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2            
+            np.savetxt(file_name,W_bin,'%1.5f',delimiter='\t',newline='\n')
+            
                 
             file_name = file_name_base_results + "/Inferred_Graphs/Scatter_Beliefs_%s.txt" %file_name_ending2                
-            ww = W_inferred_our.ravel()
+            ww = W_inferred_our_tot.ravel()
             ww = np.vstack([ww,np.zeros([len(ww)])])
             np.savetxt(file_name,ww.T,'%f',delimiter='\t',newline='\n')
 
@@ -720,7 +768,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             #..............................................................
                     
             #.............Calculate Spike Prediction Accuracy..............
-            if 1: #(T == T_range[len(T_range)-1]):
+            if verify_flag: #(T == T_range[len(T_range)-1]):
                 Network_in = {}
                 Network_in['n_in'] = n
                 Network_in['n_out'] = m
@@ -733,23 +781,22 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 Network_in['W'] = temp_W
                 Network_in['D'] = np.sign(abs(temp_W))/10000.0
                         
-                for t in range(0,T):
-                    sps_in = in_spikes_orig[:,t]
+                for t in range(0,T):                    
+                    sps_in = np.multiply(in_spikes_orig[:,t],(in_spikes_orig[:,t] == 0.0002).astype(int))
                     stimulated_neurons = np.nonzero(sps_in)
                     stimulated_neurons = stimulated_neurons[0]
                     stimulation_times = sps_in[stimulated_neurons] * 1000.0
                     Neural_Connections_Out,out_spike = verify_neural_activity(Network,Network_in,running_period,frac_stimulated_neurons,stimulated_neurons,stimulation_times)
-                    sps_pred[:,t] = out_spike
-                            
+                    sps_pred[:,t] = out_spike + sps_in                    
                         
-                print sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ))
+                print sum(abs(np.sign(out_spikes_tot) - np.sign(sps_pred) ))
                                             
                 file_name = file_name_base_results + "/Verified_Spikes/Predicted_Spikes_%s.txt" %file_name_ending2
                 save_matrix = np.zeros([10*min(T,100),3])
                 itr_mat = 0
-                for ik in range(0,10):
+                for ik in range(n-(n_exc+n_inh),n-(n_exc+n_inh)+10):
                     for ij in range(0,min(T,100)):
-                        val = 1 + np.sign(out_spikes[ik,ij]) - np.sign(sps_pred[ik,ij])
+                        val = 1 + np.sign(out_spikes_tot[ik,ij]) - np.sign(sps_pred[ik,ij])
                                 
                         save_matrix[itr_mat,:] = [ij,ik,val]
                         itr_mat = itr_mat + 1
@@ -757,7 +804,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 np.savetxt(file_name,save_matrix,'%3.5f',delimiter='\t')
                         
                 file_name = file_name_base_results + "/Verified_Spikes/Average_Mismatch_%s.txt" %file_name_ending2
-                avg_mismatch = sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ),axis = 1)
+                avg_mismatch = sum(abs(np.sign(out_spikes_tot) - np.sign(sps_pred) ),axis = 1)
                 avg_mismatch = avg_mismatch.reshape([m,1])
                 aa = np.array(range(0,m))
                 aa = aa.reshape([m,1])
@@ -785,14 +832,14 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             acc_file.write("\n")
             acc_file.close()
                         
-            file_name = file_name_base_results + "/Verified_Spikes/Spike_Acc_per_T_%s.txt" %temp_ending
-            if (T == T_range[0]):
-                acc_file = open(file_name,'w')
-            else:
-                acc_file = open(file_name,'a')
-            acc_file.write("%d \t %f \n" %(T,sum(abs(np.sign(out_spikes) - np.sign(sps_pred) ))/float(sum(np.sign(out_spikes))) ))
-            acc_file.write("\n")
-            acc_file.close()
+            if verify_flag:
+                file_name = file_name_base_results + "/Verified_Spikes/Spike_Acc_per_T_%s.txt" %temp_ending
+                if (T == T_range[0]):
+                    acc_file = open(file_name,'w')
+                else:
+                    acc_file = open(file_name,'a')
+                acc_file.write("%d \t %f \n" %(T,sum(abs(np.sign(out_spikes_tot[n-(n_exc+n_inh):n,:]) - np.sign(sps_pred[n-(n_exc+n_inh):n,:]) ))/float(sum(np.sign(out_spikes_tot[n-(n_exc+n_inh):n,:]))) ))                
+                acc_file.close()
                     
             if (T == T_range[len(T_range)-1]):                        
                 file_name_ending2 = file_name_ending2.replace('_l_' + str(l_in) + '_to_' + str(l_out),'')        

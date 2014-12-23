@@ -162,12 +162,7 @@ def determine_binary_threshold(method,params,obs):
         centroids = np.zeros([1,3])
         temp2= np.zeros([1,3])
         while success_itr<1:
-            temp,res = kmeans(obs,3,iter=30)
-            #print res
-            #if (len(temp) == 3):
-            #if res>0:
-            #    pdb.set_trace()
-            #if (res<0.015):
+            temp,res = kmeans(obs,3,iter=30)            
             if 1:
                 success_itr = success_itr + 1
                 
@@ -204,6 +199,50 @@ def determine_binary_threshold(method,params,obs):
         
     #--------------------------------------------------------------------------
     
+    #-------------The Clustering Based Approach Into Two Groups----------------
+    elif (method == 'c2'):
+        
+        #.....................Get the Simulation Parameters....................        
+        n = len(obs)
+        adj_factor_exc = params[0]        
+        #......................................................................
+        
+        #.........Computhe the Thresholds Using the K-Means Algorithms.........
+        success_itr = 0
+        centroids = np.zeros([1,2])
+        temp2= np.zeros([1,2])
+        while success_itr<1:
+            temp,res = kmeans(obs,2,iter=30)            
+            if 1:
+                success_itr = success_itr + 1                
+                centroids = temp
+                
+                
+        
+        centroids = centroids/float(success_itr)
+        ss = np.sort(centroids)
+        
+        if (len(ss) == 2):
+            val_minus = ss[0]
+            val_plus = ss[1]            
+        else:
+            val_minus = min(ss)
+            val_plus = max(ss)            
+        #......................................................................
+        
+        #.......................Adjust the Thresholds..........................
+        min_val = np.min(obs) 
+        max_val = np.max(obs)
+    
+        thr_minus = val_minus #+ (adj_factor_inh -1)*(val_inh - min_val)
+        #thr_inh = np.min([thr_inh,thr_zero-.01])
+    
+        thr_plus = val_plus #+ (adj_factor_exc -1)*(val_exc - max_val)
+        #thr_exc = np.max([thr_exc,thr_zero+.01])
+        #......................................................................
+        
+    #--------------------------------------------------------------------------
+    
     return [thr_inh,thr_zero,thr_exc]
 #==============================================================================    
 #==============================================================================        
@@ -221,13 +260,15 @@ def initial_stimulation(t):
     rates=np.zeros([n])*Hz    
     
     if t in stimul_times:        
-        input_index = floor(n*rand(round(n*qqi)))
-        input_index = input_index.astype(int)
+        #input_index = floor(n*rand(round(n*qqi)))
+        #input_index = input_index.astype(int)        
         input_index = [neuron_indices[i] for i, x in enumerate(stimul_times) if x == t]
         rates[input_index]=ones(round(n*qqi))*input_stimulus_freq *Hz
-        #print input_index
-    
+        
+        
     return rates
+
+
 #==============================================================================
 #==============================================================================
 
@@ -242,8 +283,14 @@ def initial_stimulation(t):
 
 def verify_stimulation(t):
     rates=np.zeros([n])*Hz    
-    if t < 0.00001 * ms:
-        rates[stimul_ind]=ones(sum(stimul_ind))*input_stimulus_freq *Hz
+    
+    if t in stimul_times:        
+        #input_index = floor(n*rand(round(n*qqi)))
+        #input_index = input_index.astype(int)        
+        input_index = [neuron_indices[i] for i, x in enumerate(stimul_times*1000) if x*ms == t]
+        rates[input_index]=ones(round(n*qqi))*input_stimulus_freq *Hz
+        
+        
     return rates
 #==============================================================================
 #==============================================================================
@@ -279,7 +326,7 @@ def generate_neural_activity(NeuralNetwork,running_period,S_time_file_base,frac_
         
         for j in range(0,n):
             #no_stim_points = int(running_period/3.2)
-            no_stim_points = int(0.1* running_period*rand(1))
+            no_stim_points = int(frac_input_neurons* running_period*(0.5+rand(1)/2))
             #no_stim_points = no_stim_points[0]
             times_neur = range(1,int(running_period))
             random.shuffle(times_neur)
@@ -631,20 +678,23 @@ def beliefs_to_binary(binary_mode,W_inferred,params,compensate_flag):
             masked_vals = temp.compressed()
                 
             params = params[0:2]
-            thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,masked_vals)
-            centroids[i,:] = [thr_inh,thr_zero,thr_exc]
+            if sum(sum(abs(masked_vals))):                
+                thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,masked_vals)
+                centroids[i,:] = [thr_inh,thr_zero,thr_exc]
             #print centroids[i,:]
         #......................................................................
         
         #...................Transform the Graph to Binary......................
-            W_temp,res = vq(masked_vals,np.array([thr_inh,thr_zero,thr_exc]))
-            W_temp = W_temp - 1
+                W_temp,res = vq(masked_vals,np.array([thr_inh,thr_zero,thr_exc]))
+                W_temp = W_temp - 1
+            else:                
+                W_temp = np.zeros(masked_vals.shape)
 
         #----------------Role Back Values to Unmasked Indices--------------
             mask_counter = 0
             for j in range(0,n):                
-                if j in masked_inds[0]:                        
-                    W_binary[j,i] = sign(W_inferred.data[j,i])
+                if j in masked_inds[0]:                    
+                    W_binary[j,i] = sign(W_inferred[j,i])
                 else:
                     W_binary[j,i] = W_temp[mask_counter]
                     mask_counter = mask_counter + 1
@@ -734,7 +784,7 @@ def beliefs_to_binary(binary_mode,W_inferred,params,compensate_flag):
                         
             #-------------------------Assign Void Edges------------------------
             temp = (masked_vals > mean_val - 0.1*var_val).astype(int)
-            temp = np.multiply(temp,(masked_vals < mean_val + 0.1*var_val).astype(int))
+            temp = np.multiply(temp,(masked_vals < mean_val + 0.05*var_val).astype(int))
             void_ind = np.nonzero(temp)
             W_temp[void_ind,0] = 0.0
             #------------------------------------------------------------------
@@ -794,7 +844,7 @@ def calucate_accuracy(W_binary,W):
     #----------------Compute Accuracy for Recurrent Networks-------------------
     if ( (lll>1) and (min(a)>1)):
         
-        A = np.zeros([n,n])
+        A = np.zeros(W.shape)
         if (sum(sum(W>A))):
             acc_plus = float(sum(sum(np.multiply(W_binary>A,W>A))))/float(sum(sum(W>A)))
         else:
@@ -878,236 +928,107 @@ def calucate_accuracy(W_binary,W):
 # matrix. The Brian simulator is used for this part.
 #------------------------------------------------------------------------------
 
-def verify_neural_activity(network_type,Neural_Connections,running_period,S_time_file_base,neural_model_eq,stimulated_neurons,cascade_count,no_layers):
-    
+def verify_neural_activity(NeuralNetwork,Network_in,running_period,frac_input_neurons,stimulated_neurons,stimulation_times):
     #--------------------------Initializing Variables--------------------------
+    
+    global stimul_times
+    global neuron_indices
+    global qqi
     global n
-    
     global input_stimulus_freq
-    global stimul_ind
-    
-    input_stimulus_freq = 20000               # The frequency of spikes by the neurons in the input layer (in Hz)
-    stimul_ind = stimulated_neurons
     import brian
     
+    qqi = frac_input_neurons
+    stimul_times = stimulation_times
+    neuron_indices = stimulated_neurons
+    input_stimulus_freq = 20000               # The frequency of spikes by the neurons in the input layer (in Hz)    
     
     
+    
+    for i in range(0,len(stimul_times)):
+        stimul_times[i] = stimul_times[i] *ms
+        
     #..............Retrieve the Parameters for the Neural Models...............
-    eqs = neural_model_eq[0]
-    tau = neural_model_eq[1]
-    tau_e = neural_model_eq[2]
+    eqs = NeuralNetwork.neural_model_eq[0]
+    tau = NeuralNetwork.neural_model_eq[1]
+    tau_e = NeuralNetwork.neural_model_eq[2]
     #..........................................................................
     
     #--------------------------------------------------------------------------
+        
     
-    #---------------------------The Recurrent Network--------------------------
-    if (network_type == 'R'):
         
-        #....................Retrieve the Network Parameters...................
-        neural_layers = []
-        n_exc_array = Neural_Connections['n_exc']
-        n_inh_array = Neural_Connections['n_inh']
-        
-        if (no_layers == 1):
-            n_exc = n_exc_array[0]
-            n_inh = n_inh_array[0]
-        n = n_exc + n_inh
-        main_layer = Neural_Connections['00']
-        We = main_layer[0]
-        De = main_layer[1]
-        Wi = main_layer[2]
-        Di = main_layer[3]
-        delay_max = main_layer[4]
-        #......................................................................
-        
-        #........................Initialize the Network......................
-        main_network=NeuronGroup(n,model=eqs,threshold=5*mV,reset=0*mV)    # The whole neural network
-        
-        
-        C = DelayConnection(main_network, main_network,max_delay = delay_max*ms,delay = lambda i, j:delay_max * rand(1) * ms)
-        neural_layers.append(main_network)
-        #......................................................................
-        
-        #....................Fix the Connections and Delays...................
-        C.connect(main_network,main_network,sparse.csc_matrix(W))    
-        C.set_delays(main_network,main_network,sparse.csc_matrix(D))
-        #......................................................................
-        
-    #--------------------------------------------------------------------------
+    #-----------------------Connect the Layers Together------------------------
+    n_in = Network_in['n_in']
+    n = n_in
+    n_out = Network_in['n_out']
+    W = Network_in['W']
+    D = Network_in['D']
+    delay_max = Network_in['d_max']
     
-    #--------------------------The FeedForward Network-------------------------
-    elif (network_type == 'F'):
+    input_layer = NeuronGroup(n_in,model=eqs,threshold=5*mV,reset=0*mV,refractory=1*ms)
+    output_layer = NeuronGroup(n_out,model=eqs,threshold=5*mV,reset=0*mV,refractory=1*ms)
         
-        #....................Retrieve the Network Parameters...................
-        neurons_list = {}
-        delayed_connections = {}
-        
-        n_exc_array = Neural_Connections['n_exc']
-        n_inh_array = Neural_Connections['n_inh']
-        #......................................................................
-        
-        #........................Initialize the Network........................
-        for l in range(0,no_layers):
-            temp_list = []
-            ind = str
-            n_exc = int(n_exc_array[l])
-            n_inh = int(n_inh_array[l])
-            n = n_exc + n_inh
-            if (l == 0):
-                neurons = NeuronGroup(n,model=eqs,threshold=5*mV,reset=0*mV)
-            else:
-                neurons = NeuronGroup(n,model=eqs,threshold=5*mV,reset=0*mV)
-            
-            neurons_list[str(l)] = list([neurons,n_exc,n_inh])
-            
-        output_neuron = NeuronGroup(1,model=eqs,threshold=5*mV,reset=0*mV)        
-        neurons_list[str(l+1)] = list([output_neuron])
-        #......................................................................
-        
-        #.....................Connect the Layers Together......................
-        for l_in in range(0,no_layers):
-            
-            #~~~~~~~~~~~~~~~~~~Retrieve the Layers Parameters~~~~~~~~~~~~~~~~~~
-            temp_list = neurons_list[str(l_in)]
-            input_layer = temp_list[0]
-            n_exc = temp_list[1]
-            n_inh = temp_list[2]
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            for l_out in range(l_in,no_layers):
-                
-                #~~~~~~~~~~~~~~~~Retrieve the Network Parameters~~~~~~~~~~~~~~~
-                temp_list = neurons_list[str(l_out+1)]
-                output_layer = temp_list[0]
-                
-                ind = str(l_in) + str(l_out)
-                main_layer = Neural_Connections[ind]
-                W = main_layer[0]
-                D = main_layer[1]
-                delay_max = main_layer[2]
-                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                
-                #~~~~~~~~~~~~~~~~Fix the Connections and Delays~~~~~~~~~~~~~~~~
-                C = DelayConnection(input_layer, output_layer,max_delay = delay_max*ms,delay = lambda i, j:delay_max * rand(1) * ms)
-                C.connect(input_layer,output_layer,sparse.csc_matrix(W))
-                #C.set_delays(input_layer,output_layer,sparse.csc_matrix(D))
-                delayed_connections[ind] = C
-                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #......................................................................
+    C = DelayConnection(input_layer, output_layer,max_delay = delay_max*ms,delay = lambda i, j:delay_max * abs(sign(j-i))* rand(1) * ms)
+    
+    C.connect(input_layer,output_layer,sparse.csc_matrix(W))
+    C.set_delays(input_layer,output_layer,sparse.csc_matrix(D))
+    #..........................................................................
         
     #--------------------------------------------------------------------------
         
-    #--------Create and Initialize the Dummy Input Layer for Stimulation-------
-    temp_list = neurons_list['0']
-    main_network = temp_list[0]
-    
-    n = int(n_exc_array[0]) + int(n_inh_array[0])
-    
-    #main_network.v = randint(1,3,n)-1
-    #print sum(main_network.v)
-    input_dummy_layer=PoissonGroup(n,rates=verify_stimulation)    
-    input_connections=Connection(input_dummy_layer,main_network,weight=lambda i,j:(1-abs(sign(i-j))),delay = 0*ms)
-    
-    #p1= PoissonInput(main_network, N=n, rate=1, weight=1, state='I')
+    #--------Create and Initialize the Dummy Input Layer for Stimulation-------    
+    input_dummy_layer=PoissonGroup(n_in,rates=verify_stimulation)    
+    input_connections=Connection(input_dummy_layer,input_layer,weight=lambda i,j:(1-abs(sign(i-j))),delay = 0*ms)
     #--------------------------------------------------------------------------
     
-    #-------------Create the Network and Add the Necessary Monitors------------
-    C = delayed_connections['00']
-    
-    net = Network(main_network,[C])
+    #-------------Create the Network and Add the Necessary Monitors------------    
+    net = Network(input_layer,[C])
     net.add(input_connections)
     net.add(input_dummy_layer)
-    #net.add(p1)
+    net.add(output_layer)
     
     Spike_monitors_list = {}
     Spike_monitors_list['dummy'] = SpikeMonitor(input_dummy_layer)
-    Spike_monitors_list['l_1'] = SpikeMonitor(main_network)
+    Spike_monitors_list['l_0'] = SpikeMonitor(input_layer)
+    Spike_monitors_list['l_1'] = SpikeMonitor(output_layer)            
     net.add(Spike_monitors_list['dummy'])
+    net.add(Spike_monitors_list['l_0'])    
     net.add(Spike_monitors_list['l_1'])
-    if (network_type == 'F'):
-        for l_in in range(1,no_layers+1):
-            temp_list = neurons_list[str(l_in)]
-            neural_layer = temp_list[0]            
-            net.add(neural_layer)    
-            
-            ind = 'l_' + str(l_in+1)
-            Spike_monitors_list[ind] = SpikeMonitor(neural_layer)            
-            net.add(Spike_monitors_list[ind])
-            
-        for l_in in range(0,no_layers):
-            for l_out in range(l_in,no_layers):
-                ind = str(l_in) + str(l_out)
-                C = delayed_connections[ind]
-                net.add(C)
-                
-                
+
     net.run(running_period * ms)        
+        
     
-    if (network_type == 'R'):
-        print Spike_monitors_list['dummy'].nspikes, "spikes in dummy layer"
-        print Spike_monitors_list['l_1'].nspikes, "spikes in output layer"
-    elif (network_type == 'F'):
-        print Spike_monitors_list['dummy'].nspikes, "spikes in dummy layer"        
-        for l_in in range(0,no_layers+1):
-            ind = 'l_' + str(l_in+1)
-            print Spike_monitors_list[ind].nspikes, "spikes in layer %s" %str(l_in+1)
-            
+    #print Spike_monitors_list['dummy'].nspikes, "spikes in dummy layer"            
+    #print Spike_monitors_list['l_0'].nspikes, "spikes in pre-synaptic neurons"
+    #print Spike_monitors_list['l_1'].nspikes, "spikes in output synaptic neuron"
     #--------------------------------------------------------------------------
     
-    #----------------------Save Spike Times to the File------------------------
-    Spikes_list = {}
-    for l_in in range(0,no_layers+1):
-        ind = 'l_' + str(l_in+1)
-        SS = Spike_monitors_list[ind].spikes          
-        if (l_in < no_layers):
-            n_exc = n_exc_array[l_in]
-            n_inh = n_inh_array[l_in]
-            n = n_exc + n_inh
-        else:
-            n = 1
-            
-        fired = np.zeros([n])
-        for l in range(0,len(SS)):
-            item = SS[l]            
-            if (len(item)>1):
-                aa = item[0]
-                bb = item[1]
-                #if (l_in == no_layers):
-                #    pdb.set_trace()
-                fired[aa] = bb.astype(float)
-                    
-    
-        ind = 'l_' + str(l_in+1)
-        Spikes_list[ind] = fired
-        
-            
-    #--------------------------------------------------------------------------    
+    #----------------------Save Spike Times to the File------------------------    
+    out_spike = 0
+    SS = Spike_monitors_list['l_1'].spikes
+    out_spike = np.zeros([1,n_out])
+    if len(SS):
+        for item in SS:            
+            out_spike[0,item[0]] = item[1]        
+    #--------------------------------------------------------------------------
     
     #---------------Reinitialize the Clocks for Spike Timings------------------
     Spike_monitors_list['dummy'].source.clock.reinit()                  # Reset the spikemonitor's clock so that for the next random network, everything starts from t=0    
-    if (network_type == 'F'):
-        for l_in in range(0,no_layers+1):
-            ind = 'l_' + str(l_in+1)
-            Spike_monitors_list[ind].source.clock.reinit()            
+    Spike_monitors_list['l_0'].source.clock.reinit()
+    Spike_monitors_list['l_1'].source.clock.reinit()
     #--------------------------------------------------------------------------
     
-    #-------------Save the Connectivity and Delays in the Network--------------
-    Neural_Connections_Out = {}
-    for l_in in range(0,no_layers):
-        for l_out in range(l_in,no_layers):
-            ind = str(l_in) + str(l_out)
-            C = delayed_connections[ind]
-            WW = C.W.todense()
-            DD = C.delay.todense()
+    #-------------Save the Connectivity and Delays in the Network--------------    
+    WW = C.W.todense()
+    DD = C.delay.todense()
+    Neural_Connections_Out = list([WW,DD])
+    #--------------------------------------------------------------------------
+    
+    return Neural_Connections_Out,out_spike
 
-            Neural_Connections_Out[ind] = list([WW,DD])
-    #--------------------------------------------------------------------------
-        
-    #--------------------Reset Everything to Rest Conditions-------------------
-    clear(spikequeue)
-    #--------------------------------------------------------------------------
+
     
-    return Neural_Connections_Out,Spikes_list
 #==============================================================================
 #==============================================================================
 
@@ -1132,7 +1053,7 @@ def soft_threshold(W,thr):
 #-------------------------------Descriptions-----------------------------------
 # This function truncates performs different inference methods.
 #------------------------------------------------------------------------------
-def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estim):
+def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estim,location_flag):
            
     #------------------------------Initialization------------------------------
     s = in_spikes.shape
@@ -1147,6 +1068,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
         sys.exit()
         
     W_inferred = np.zeros([n,m])
+    Updated_Vals = np.zeros([n,m])
     W_inferred.fill(0)
     cost = []
     W_estimated = copy.deepcopy(W_estim)            
@@ -1163,6 +1085,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
         W_inferred = W_inferred_orig        
     else:
         fixed_ind = np.zeros([n,m])
+        
     #--------------------------------------------------------------------------
     
     #----------------------The Perceptron-based Algorithm----------------------
@@ -1198,12 +1121,13 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~~~~~~~~~~~~~~~~Perform Inference~~~~~~~~~~~~~~~~~~~~~~~
-            for cascade_count in range(0,TT):            
+            for cascade_count in range(0,TT):                
                 x = in_spikes[:,cascade_count]
                 x = x.reshape(n,1)
-                v = (x>0).astype(int)
+                if (location_flag == 1):
+                    v = (x>0).astype(int)
                 y = out_spikes[:,cascade_count]
-                y = y.reshape(m,1)                        
+                y = y.reshape(m,1)
                 yy_predict = np.zeros([m,1])
                 
                 random.shuffle(neurons_ind)
@@ -1213,9 +1137,20 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                     ijk = neurons_ind[ijk2]
                     yy = y[ijk]                    
                     WW = W_inferred[:,ijk]
+                    if (location_flag == 0):
+                        if inference_method == 2:
+                            v = (x>0).astype(int)
+                        else:
+                            if yy > 0:
+                                v = (x<yy).astype(int)
+                            else:
+                                v = (x>0).astype(int)
+                            v = np.multiply(v,(x>0).astype(int))
+                    
                     y_predict = 0.5*(1+np.sign(np.dot(WW,v)-theta+0.00002))
                     upd_val = np.dot(y_predict - np.sign(yy),v.T)
                     W_inferred[:,ijk] = W_inferred[:,ijk] - alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
+                    Updated_Vals[:,ijk] = Updated_Vals[:,ijk] + np.sign(abs(v.T))
                     
                     cost[ttau] = cost[ttau] + sum(pow(y_predict - (yy>0.0001).astype(int),2))
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1226,6 +1161,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                 ter = W_inferred >- 0.001
                 W_inferred = np.multiply(ter.astype(int),W_inferred) - 0.001*(1-ter.astype(int))
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             
@@ -1250,9 +1186,27 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
     elif (inference_method == 0):
         Delta = inferece_params[0]#/float(inferece_params[1])
         theta = inferece_params[1]
-        out_spikes_estimated = np.sign(np.dot(W_inferred.T,in_spikes)>theta)
-        out_spikes_estimated = out_spikes_estimated.astype(int)
-        W_temp = np.dot(in_spikes,(out_spikes-out_spikes_estimated).T)*Delta        
+        if location_flag == 1:            
+            out_spikes_estimated = np.sign((np.dot(W_inferred.T,in_spikes)>theta).astype(int))
+            out_spikes_estimated = out_spikes_estimated.astype(int)
+            W_temp = np.dot(in_spikes,(out_spikes-out_spikes_estimated).T)*Delta
+        else:
+            m,T = out_spikes.shape
+            n,T = in_spikes.shape
+            W_temp = np.zeros([n,m])
+            for j in range(0,m):
+                y = out_spikes[j,:]
+                v = np.zeros([n,T])
+                for i in range(0,n):                    
+                    v[i,:] = (in_spikes[i,:]<y).astype(int)                
+                    v[i,:] = v[i,:] + np.multiply((in_spikes[i,:]>0).astype(int),y==0)
+                    v[i,:] = np.multiply(v[i,:],(in_spikes[i,:]>0).astype(int))
+                #pdb.set_trace()
+                Updated_Vals[:,j] = Updated_Vals[:,j] + sum(abs(v),axis=1)    
+                out_spikes_estimated = np.sign((np.dot(W_inferred[:,j].T,v)>theta).astype(int))
+                out_spikes_estimated = out_spikes_estimated.astype(int)                
+                W_temp[:,j] = np.dot(v,(np.sign(y)-out_spikes_estimated).T)*Delta#,(0.0001+sum(v,axis=1)*sum(y)/float(T)))
+                
         #pdb.set_trace()
         W_inferred = np.multiply(1-fixed_ind,W_temp) + np.multiply(fixed_ind,W_inferred)
     #--------------------------------------------------------------------------
@@ -1277,14 +1231,22 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                 for d in d_range:    
                     in_sp = in_sp_orig + d/10000.0 #np.roll(in_sp_orig,d)
                     #in_sp[0:d] = 0
-                    cc[itr] = (sum(np.multiply(in_sp>0,in_sp == out_sp))-TT*mu_in*mu_out)/float(c0) #np.dot(in_sp-mu_in,(out_sp-mu_out).T)/c0    
+                    cc[itr] = (sum(np.multiply(in_sp_orig>0,in_sp == out_sp))-sum(np.multiply(in_sp>0,out_sp==0))-TT*mu_in*mu_out)#/float(c0) #np.dot(in_sp-mu_in,(out_sp-mu_out).T)/c0    
                     itr = itr + 1
                     
+                
         
                 d_estim = d_range[np.argmax(cc)-1]
-                cd = diff(cc)                
-                D_estimated[i,j] = d_estim        
-                W_temp[i,j] = cc.max()
+                cd = diff(cc)
+                ii = np.argmax(cd)
+                
+                D_estimated[i,j] = d_estim
+                if abs(cd).max()>0:
+                    ii = cd.argmax()
+                    if cd[ii] > cd[ii + 1]:
+                        W_temp[i,j] = abs(cc[ii+1]/abs(c0+0.001))
+                    else:
+                        W_temp[i,j] = -abs(cc[ii]/abs(c0+0.001))
                 #W_temp[i,j] = np.dot(in_sp_orig,out_sp.T)
             
                                 
@@ -1370,9 +1332,6 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                         mem_pot[t] = np.dot(WW,cumul_sum_20[:,t])
                         binned_spikes[t] =  binned_spikes_tot[ijk,t]
 
-                
-                    
-
                     temp_binned_y = binned_spikes[firing_ind[l]+1:t+1]
                     y_predict = 0.5*(1+np.sign(mem_pot[firing_ind[l]+1:t+1]-theta+0.00002))
                     fire_ind = np.nonzero(y_predict)
@@ -1455,7 +1414,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
         sys.exit()
     
     
-    return W_inferred,cost
+    return W_inferred,cost,Updated_Vals
     
 #==============================================================================
 #==============================================================================
