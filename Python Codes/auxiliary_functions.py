@@ -763,43 +763,44 @@ def beliefs_to_binary(binary_mode,W_inferred,params,compensate_flag):
             
             W_temp = float('nan')*np.ones([len(masked_vals),1])
             
-            max_val = float(masked_vals.max())
-            mean_val = masked_vals.mean()
-            min_val = float(masked_vals.min())
-            var_val = pow(masked_vals.var(),0.5)
+            if sum(sum(abs(masked_vals))):
+                max_val = float(masked_vals.max())
+                mean_val = masked_vals.mean()
+                min_val = float(masked_vals.min())
+                var_val = pow(masked_vals.var(),0.5)
             
             
             
-            #----------------------Assign Excitatory Edges--------------------------
-            temp = (masked_vals > mean_val + a*var_val).astype(int)
-            exc_ind = np.nonzero(temp)
-            W_temp[exc_ind,0] = 0.001
-            #------------------------------------------------------------------
+                #----------------------Assign Excitatory Edges--------------------------
+                temp = (masked_vals > mean_val + a*var_val).astype(int)
+                exc_ind = np.nonzero(temp)
+                W_temp[exc_ind,0] = 0.001
+                #------------------------------------------------------------------
             
-            #-------------------Assign Inhibitory Edges------------------------            
-            temp = (masked_vals < mean_val - b*var_val).astype(int)
-            inh_ind = np.nonzero(temp)
-            W_temp[inh_ind,0] = -0.005
-            #------------------------------------------------------------------
+                #-------------------Assign Inhibitory Edges------------------------            
+                temp = (masked_vals < mean_val - b*var_val).astype(int)
+                inh_ind = np.nonzero(temp)
+                W_temp[inh_ind,0] = -0.005
+                #------------------------------------------------------------------
                         
-            #-------------------------Assign Void Edges------------------------
-            temp = (masked_vals > mean_val - 0.1*var_val).astype(int)
-            temp = np.multiply(temp,(masked_vals < mean_val + 0.05*var_val).astype(int))
-            void_ind = np.nonzero(temp)
-            W_temp[void_ind,0] = 0.0
+                #-------------------------Assign Void Edges------------------------
+                temp = (masked_vals > mean_val - 0.1*var_val).astype(int)
+                temp = np.multiply(temp,(masked_vals < mean_val + 0.05*var_val).astype(int))
+                void_ind = np.nonzero(temp)
+                W_temp[void_ind,0] = 0.0
             #------------------------------------------------------------------
             
             
-            #----------------Role Back Values to Unmasked Indices--------------
-            mask_counter = 0
-            for j in range(0,n):                
-                if j in masked_inds[0]:
-                    W_binary[j,i] = W_inferred[j,i]
-                else:
-                    W_binary[j,i] = W_temp[mask_counter,0]
-                    mask_counter = mask_counter + 1
-            #------------------------------------------------------------------
-
+                #----------------Role Back Values to Unmasked Indices--------------
+                mask_counter = 0
+                for j in range(0,n):                
+                    if j in masked_inds[0]:
+                        W_binary[j,i] = W_inferred[j,i]
+                    else:
+                        W_binary[j,i] = W_temp[mask_counter,0]
+                        mask_counter = mask_counter + 1
+                #------------------------------------------------------------------
+    
     #--------------------------------------------------------------------------
     
     #----If Necessary, Set All Outgoing Connections of a Neuron to one Type----
@@ -927,6 +928,16 @@ def calucate_accuracy(W_binary,W):
 # a given set of stimulated neurons and a network with a given connectivity
 # matrix. The Brian simulator is used for this part.
 #------------------------------------------------------------------------------
+
+def verify_neural_activity_simplified(W,in_spikes,theta):
+    
+    #--------------------------Initializing Variables--------------------------    
+    out_sps = (0.5*(1+np.sign(np.dot(W.T,(in_spikes>0).astype(int))-theta+0.00002)))
+    return out_sps
+    
+    
+
+
 
 def verify_neural_activity(NeuralNetwork,Network_in,running_period,frac_input_neurons,stimulated_neurons,stimulation_times):
     #--------------------------Initializing Variables--------------------------
