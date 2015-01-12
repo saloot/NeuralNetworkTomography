@@ -8,11 +8,11 @@ ENSEMBLE_COUNT_INIT_DEFAULT = 0
 INFERENCE_METHOD_DEFAULT = 3
 BINARY_MODE_DEFAULT = 4
 SPARSITY_FLAG_DEFAULT = 0
-GENERATE_DATA_MODE_DEFAULT = 'F'
+GENERATE_DATA_MODE_DEFAULT = 'R'
 INFERENCE_ITR_MAX_DEFAULT = 1
 WE_KNOW_LOCATION_DEFAULT = 'Y'
 PRE_SYNAPTIC_NEURON_DEFAULT = 'A'
-VERIFY_FLAG_DEFAULT = 0
+VERIFY_FLAG_DEFAULT = 1
 #==============================================================================
 
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
@@ -275,20 +275,26 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         d_window = 1+d_max
         Processed_Neural_Spikes = {}
         Rough_Neural_Spikes = {}
+        Rough_Neural_Times = {}
         for l in range(0,Network.no_layers):                
             temp_list = Neural_Spikes[str(l)]
             spikes = temp_list[2]
             n,T = spikes.shape
             out_spikes = np.zeros([n,T])
             out_spikes_rough = np.zeros([n,1+int(T/float(d_window))])
+            spikes_rough_times = np.zeros([n,1+int(T/float(d_window))])
             t_rough = 0
             for t in range(0,T):
                 out_spikes[:,t] = sum(spikes[:,max(t-d_window,0):t],axis = 1)
                 if (np.mod(t,d_window) == 0) and (t > 0):
                     out_spikes_rough[:,t_rough] = out_spikes[:,t]
+                    ind = np.nonzero(spikes[:,max(t-d_window,0):t])
+                    if ind or (ind == 0):
+                        spikes_rough_times[ind[0],t_rough] = ind[1]
                     t_rough = t_rough + 1
             Processed_Neural_Spikes[str(l)] = (out_spikes>0).astype(int)
             Rough_Neural_Spikes[str(l)] = (out_spikes_rough>0).astype(int)
+            Rough_Neural_Times[str(l)] = spikes_rough_times
     #--------------------------------------------------------------------------
     
     
@@ -311,9 +317,10 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 if (generate_data_mode != 'R') and (inference_method != 4):
                     out_spikes = (out_spikes>0).astype(int)
                 out_spikes = out_spikes[:,0:T]
-                rough_out_spikes = Rough_Neural_Spikes[str(l_out)]
-                tt = 1+int(T/float(d_window))
-                rough_out_spikes = rough_out_spikes[:,0:tt]
+                if (generate_data_mode == 'R'):
+                    rough_out_spikes = Rough_Neural_Spikes[str(l_out)]
+                    tt = 1+int(T/float(d_window))
+                    rough_out_spikes = rough_out_spikes[:,0:tt]
                 #.....If ALL previous Layers Count as Pre-synaptic Neurons.....        
                 if pre_synaptic_method.lower() == 'a':
                     in_spikes = []
@@ -325,7 +332,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     for l_in in range(0,l_out):
                         if (generate_data_mode != 'R'):
                             temp_list = Neural_Spikes[str(l_in)]
-                            temp_list[2]
+                            temp_list = temp_list[2]
                         else:
                             temp_list = Processed_Neural_Spikes[str(l_in)]
                         n_exc = Network.n_exc_array[l_in]
@@ -423,7 +430,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     ind = str(l_in) + str(l_out)
                     temp_list = Network.Neural_Connections[ind]
                     W = temp_list[0]
-                    pdb.set_trace()
+                    
                     W_inferred_our = W_inferred_our_tot[n_so_far:n_so_far+n,:]                        
                     n_so_far = n_so_far + n
                 
@@ -511,13 +518,15 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         Network_in['W'] = temp_W
                         Network_in['D'] = np.sign(abs(temp_W))/10000.0                    
                         
-                        for t in range(0,TT):
-                            sps_in = in_spikes_orig[:,t]
-                            stimulated_neurons = np.nonzero(sps_in)
-                            stimulated_neurons = stimulated_neurons[0]                            
-                            stimulation_times = sps_in[stimulated_neurons] * 1000.0
-                            Neural_Connections_Out,out_spike = verify_neural_activity(Network,Network_in,(no_samples_per_cascade/10.0),frac_stimulated_neurons,stimulated_neurons,stimulation_times)
-                            sps_pred[:,t] = out_spike                                
+                        
+                        sps_pred = verify_neural_activity_simplified(temp_W,in_spikes_orig,theta)
+                        #for t in range(0,TT):
+                        #    sps_in = in_spikes_orig[:,t]
+                        #    stimulated_neurons = np.nonzero(sps_in)
+                        #    stimulated_neurons = stimulated_neurons[0]                            
+                        #    stimulation_times = sps_in[stimulated_neurons] * 1000.0
+                        #    Neural_Connections_Out,out_spike = verify_neural_activity(Network,Network_in,(no_samples_per_cascade/10.0),frac_stimulated_neurons,stimulated_neurons,stimulation_times)
+                        #    sps_pred[:,t] = out_spike                                
                             
                         
                         print sum(abs(np.sign(out_spikes_orig) - np.sign(sps_pred) ))
@@ -604,18 +613,24 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             W_tot = []
             in_spikes_tot = []
             out_spikes_tot = []
+            rough_spikes_tot = []
             for l_in in range(0,Network.no_layers):
                 n_exc = Network.n_exc_array[l_in]
                 n_inh = Network.n_inh_array[l_in]
                 n = n_exc + n_inh
                 
-                temp_list = Neural_Spikes[str(l_in)]            
+                temp_list = Neural_Spikes[str(l_in)]
                 spikes = (temp_list[2])
+                rough_spikes = Rough_Neural_Times[str(l_in)]
                 #spikes = (spikes>0).astype(int)
                 if len(out_spikes_tot):
                     out_spikes_tot = np.vstack([out_spikes_tot,spikes])
+                    if generate_data_mode == 'R':
+                        rough_spikes_tot = np.vstack([rough_spikes_tot,rough_spikes])
                 else:
                     out_spikes_tot = spikes
+                    if generate_data_mode == 'R':
+                        rough_spikes_tot = rough_spikes
                 
                     
                 W_temp = []
@@ -651,10 +666,17 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             W = W_tot
             m,n = W.shape
             W_estimated = np.zeros([n,m])
-            fixed_entries = np.zeros([n,m])            
-            out_spikes_tot = out_spikes_tot[:,0:T]
-            in_spikes_tot = out_spikes_tot
-            in_spikes_orig = in_spikes_tot
+            fixed_entries = np.zeros([n,m])
+            if (generate_data_mode == 'R'):
+                tt = 1+int(T/float(d_window))
+                out_spikes_tot = rough_spikes_tot[:,0:tt]
+                in_spikes_tot = out_spikes_tot
+                in_spikes_orig = in_spikes_tot
+            else:
+                tt = T
+                out_spikes_tot = out_spikes_tot[:,0:tt]
+                in_spikes_tot = out_spikes_tot
+                in_spikes_orig = in_spikes_tot            
             #..................................................................
             
                         
@@ -766,36 +788,55 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(precision[0],precision[1],precision[2])
             print '\n'
             #..............................................................
-                    
+            
+            pdb.set_trace()   
             #.............Calculate Spike Prediction Accuracy..............
             if verify_flag: #(T == T_range[len(T_range)-1]):
                 Network_in = {}
                 Network_in['n_in'] = n
                 Network_in['n_out'] = m
                 Network_in['d_max'] = 1
-                sps_pred = np.zeros([m,T])
+                
                 W_bin = np.multiply(W_bin>0,0.001*np.ones([n,m])) + np.multiply(W_bin<0,-0.005*np.ones([n,m]))                        
                         
                 temp_W = W_bin
                 temp_W = temp_W.reshape([n,m])
                 Network_in['W'] = temp_W
                 Network_in['D'] = np.sign(abs(temp_W))/10000.0
+                
+                
+                
+                if (generate_data_mode == 'R'):                                        
+                    out_spikes_tot = rough_spikes_tot[:,0:tt]
+                    sps_pred = np.zeros([m,tt])
+                    rough_out_spikes = rough_spikes_tot[:,0:tt]
+                    for j in range(0,m):
+                        sps_out = out_spikes_tot[j,:]
+                        sps_out = sps_out.reshape([1,tt])
+                        sps_temp = np.dot(np.ones([m,1]),sps_out)
+                        sps_in = np.multiply((out_spikes_tot < sps_temp).astype(int),(out_spikes_tot>0).astype(int))
+                        sps_pred[j,:] = verify_neural_activity_simplified(temp_W[:,j],sps_in,theta)
+                    
+                    print sum(abs(np.sign(out_spikes_tot) - np.sign(sps_pred) ))
+                    
+                else:
+                    tt = T
+                    sps_pred = np.zeros([m,T])
+                    for t in range(0,T):                    
+                        sps_in = np.multiply(in_spikes_orig[:,t],(in_spikes_orig[:,t] == 0.0002).astype(int))
+                        stimulated_neurons = np.nonzero(sps_in)
+                        stimulated_neurons = stimulated_neurons[0]
+                        stimulation_times = sps_in[stimulated_neurons] * 1000.0
+                        Neural_Connections_Out,out_spike = verify_neural_activity(Network,Network_in,running_period,frac_stimulated_neurons,stimulated_neurons,stimulation_times)
+                        sps_pred[:,t] = out_spike + sps_in                    
                         
-                for t in range(0,T):                    
-                    sps_in = np.multiply(in_spikes_orig[:,t],(in_spikes_orig[:,t] == 0.0002).astype(int))
-                    stimulated_neurons = np.nonzero(sps_in)
-                    stimulated_neurons = stimulated_neurons[0]
-                    stimulation_times = sps_in[stimulated_neurons] * 1000.0
-                    Neural_Connections_Out,out_spike = verify_neural_activity(Network,Network_in,running_period,frac_stimulated_neurons,stimulated_neurons,stimulation_times)
-                    sps_pred[:,t] = out_spike + sps_in                    
-                        
-                print sum(abs(np.sign(out_spikes_tot) - np.sign(sps_pred) ))
+                    print sum(abs(np.sign(out_spikes_tot) - np.sign(sps_pred) ))
                                             
                 file_name = file_name_base_results + "/Verified_Spikes/Predicted_Spikes_%s.txt" %file_name_ending2
                 save_matrix = np.zeros([10*min(T,100),3])
                 itr_mat = 0
                 for ik in range(n-(n_exc+n_inh),n-(n_exc+n_inh)+10):
-                    for ij in range(0,min(T,100)):
+                    for ij in range(0,min(tt,100)):
                         val = 1 + np.sign(out_spikes_tot[ik,ij]) - np.sign(sps_pred[ik,ij])
                                 
                         save_matrix[itr_mat,:] = [ij,ik,val]
@@ -838,7 +879,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     acc_file = open(file_name,'w')
                 else:
                     acc_file = open(file_name,'a')
-                acc_file.write("%d \t %f \n" %(T,sum(abs(np.sign(out_spikes_tot[n-(n_exc+n_inh):n,:]) - np.sign(sps_pred[n-(n_exc+n_inh):n,:]) ))/float(sum(np.sign(out_spikes_tot[n-(n_exc+n_inh):n,:]))) ))                
+                acc_file.write("%d \t %f \n" %(tt,sum(abs(np.sign(out_spikes_tot[n-(n_exc+n_inh):n,:]) - np.sign(sps_pred[n-(n_exc+n_inh):n,:]) ))/float(sum(np.sign(out_spikes_tot[n-(n_exc+n_inh):n,:]))) ))                
                 acc_file.close()
                     
             if (T == T_range[len(T_range)-1]):                        
