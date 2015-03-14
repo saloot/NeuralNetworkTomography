@@ -5,14 +5,15 @@ ENSEMBLE_SIZE_DEFAULT = 1
 FILE_NAME_BASE_DATA_DEFAULT = "./Data"
 FILE_NAME_BASE_RESULT_DEFAULT = "./Results"
 ENSEMBLE_COUNT_INIT_DEFAULT = 0
-INFERENCE_METHOD_DEFAULT = 3
+INFERENCE_METHOD_DEFAULT = 0
 BINARY_MODE_DEFAULT = 4
 SPARSITY_FLAG_DEFAULT = 0
-GENERATE_DATA_MODE_DEFAULT = 'R'
+GENERATE_DATA_MODE_DEFAULT = 'F'
 INFERENCE_ITR_MAX_DEFAULT = 1
-WE_KNOW_LOCATION_DEFAULT = 'Y'
+WE_KNOW_LOCATION_DEFAULT = 'N'
 PRE_SYNAPTIC_NEURON_DEFAULT = 'A'
-VERIFY_FLAG_DEFAULT = 1
+DELAY_KNOWN_DEFAULT = 'N'
+VERIFY_FLAG_DEFAULT = 0
 #==============================================================================
 
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
@@ -44,7 +45,7 @@ t0 = time()                                                # Initialize the time
 #==============================================================================
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:G:X:Y:K:C:V:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:G:X:Y:K:C:V:J:")
 if (input_opts):
     for opt, arg in input_opts:
         if opt == '-Q':
@@ -75,6 +76,8 @@ if (input_opts):
             pre_synaptic_method = str(arg)                      # The flag that determines if all previous-layers neurons count as  pre-synaptic (A/O)
         elif opt == '-V': 
             verify_flag = int(arg)                              # If 1, the post-synaptic states will be predicted
+        elif opt == '-J': 
+            delay_known_flag = str(arg)                              # If 'Y', we assume that the delay is known during the inference algorithm
         elif opt == '-h':
             print(help_message)
             sys.exit()
@@ -141,6 +144,11 @@ if 'pre_synaptic_method' not in locals():
 if 'verify_flag' not in locals():
     verify_flag = VERIFY_FLAG_DEFAULT
     print('ATTENTION: The default value of %s for verify_flag is considered.\n' %str(verify_flag))
+    
+if 'delay_known_flag' not in locals():
+    delay_known_flag = DELAY_KNOWN_DEFAULT
+    print('ATTENTION: The default value of %s for delay_known_flag is considered.\n' %str(delay_known_flag))
+    
 #------------------------------------------------------------------------------
 
 #--------------------------Initialize the Network------------------------------
@@ -165,8 +173,8 @@ if (generate_data_mode == 'F'):
     T_step = int(no_stimul_rounds/10.0)
     T_range = range(200, no_stimul_rounds, T_step)                 # The range of sample sizes considered to investigate the effect of sample size on the performance
 else:
-    T_step = int(running_period*10/10.0)
-    T_range = range(350, int(running_period*10), T_step)
+    T_step = int((running_period*1-100)/5.0)-1
+    T_range = range(100, int(running_period*1)+1, T_step)
 #------------------------------------------------------------------------------
 
 #------------------Create the Necessary Directories if Necessary---------------
@@ -195,7 +203,7 @@ if not os.path.isdir(file_name_base_results+'/Plot_Results'):
 
 t_base = time()
 t_base = t_base-t0
-alpha0 = 0.000001
+alpha0 = 0.00085
 sparse_thr0 = 0.0001
 adj_fact_exc = 0.75
 adj_fact_inh = 0.5
@@ -203,7 +211,7 @@ adj_fact_inh = 0.5
 
 #............................Correlation-Bases Approach........................
 if (inference_method == 0):
-    inferece_params = [1,theta]           
+    inferece_params = [1,theta,generate_data_mode,[]]           
 #..............................................................................
 
 #............................Perceptron-Based Approach.........................
@@ -216,7 +224,7 @@ elif (inference_method == 3) or (inference_method == 2):
     # Just give the integrated version to the inference algorithm, i.e.: sum(in_spikes[stimul_span],out_spike)
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,20]
+    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,20,generate_data_mode,[]]
 #..............................................................................
 
 #.............................Event-Based Approach.............................
@@ -230,7 +238,13 @@ elif (inference_method == 4):
     d_window = 10
     inferece_params = [d_window]            
 #..............................................................................
-        
+
+#...............Perceptron-Based Approach for Background Traffic...............
+elif (inference_method == 6):
+    d_window = 0.012
+    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,50,d_window,[],[]]
+#..............................................................................
+
 #............................Hebbian-Based Approach............................
 else:
     inferece_params = [1]
@@ -239,6 +253,22 @@ else:
 
 #------------------------------------------------------------------------------
 
+n_layer_1 = Network.n_exc_array[0]+Network.n_inh_array[0]
+n_layer_2 = Network.n_exc_array[1]+Network.n_inh_array[1]
+
+mean_void_b = np.zeros([len(T_range),n_layer_1])
+mean_void_p = np.zeros([len(T_range),n_layer_1])
+mean_void_r = np.zeros([len(T_range),n_layer_2])
+mean_exc = np.zeros([len(T_range),n_layer_2])
+mean_inh = np.zeros([len(T_range),n_layer_2])
+mean_void = np.zeros([len(T_range),n_layer_2])
+
+std_void_b = np.zeros([len(T_range),n_layer_1])
+std_void_p = np.zeros([len(T_range),n_layer_1])
+std_void_r = np.zeros([len(T_range),n_layer_2])
+std_exc = np.zeros([len(T_range),n_layer_2])
+std_inh = np.zeros([len(T_range),n_layer_2])
+std_void = np.zeros([len(T_range),n_layer_2])
 #==============================================================================
 
 
@@ -259,15 +289,12 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         Neural_Spikes = read_spikes(file_name_base,Network.no_layers,Network.n_exc_array,Network.n_inh_array,['u',int(running_period*10)])
     #--------------------------------------------------------------------------
     
-    
-    
 #==============================================================================
 
     
 
 #============================INFER THE CONNECTIONS=============================
-    
-            
+       
     #--------------------------In-Loop Initializations-------------------------
     if (generate_data_mode == 'R'):
         #------------------Preprocess the Spikes if Necessary-----------------
@@ -276,8 +303,10 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         Processed_Neural_Spikes = {}
         Rough_Neural_Spikes = {}
         Rough_Neural_Times = {}
+        Actual_Neural_Times = {}
         for l in range(0,Network.no_layers):                
             temp_list = Neural_Spikes[str(l)]
+            spikes_actual_times = Neural_Spikes['act_'+str(l)]
             spikes = temp_list[2]
             n,T = spikes.shape
             out_spikes = np.zeros([n,T])
@@ -295,15 +324,20 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             Processed_Neural_Spikes[str(l)] = (out_spikes>0).astype(int)
             Rough_Neural_Spikes[str(l)] = (out_spikes_rough>0).astype(int)
             Rough_Neural_Times[str(l)] = spikes_rough_times
+            Actual_Neural_Times[str(l)] = spikes_actual_times
     #--------------------------------------------------------------------------
     
     
     
-    first_flag2 = 1    
+    first_flag2 = 1
+    itr_T = 0
     #--------------------------------------------------------------------------           
     
     for T in T_range:
         
+        
+        if inference_method == 0:
+            inferece_params = [1/float(T),theta,generate_data_mode]           
         #-------------------------If We Know the Location----------------------
         if we_know_location.lower() == 'y':
             
@@ -332,9 +366,11 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     for l_in in range(0,l_out):
                         if (generate_data_mode != 'R'):
                             temp_list = Neural_Spikes[str(l_in)]
-                            temp_list = temp_list[2]
+                            temp_list = temp_list[2]                            
+                            
                         else:
                             temp_list = Processed_Neural_Spikes[str(l_in)]
+                            temp_list = Actual_Neural_Times[str(l_in)]
                         n_exc = Network.n_exc_array[l_in]
                         n_inh = Network.n_inh_array[l_in]
                         n_tot = n_tot + n_exc + n_inh                
@@ -347,8 +383,14 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                                 temp_sp = temp_sp[:,0:tt]
                                 rough_in_spikes = np.concatenate([rough_in_spikes,temp_sp])
                         else:
-                            in_spikes = temp_list
-                            in_spikes = in_spikes[:,0:T]
+                            if l_in == 0:
+                                in_spikes = temp_list
+                        
+                        
+                            
+                                
+                            if (generate_data_mode != 'R'):
+                                in_spikes = in_spikes[:,0:T]
                             if (generate_data_mode == 'R'):
                                 temp_sp = Rough_Neural_Spikes[str(l_in)]                                
                                 rough_in_spikes = temp_sp[:,0:tt]
@@ -357,7 +399,37 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         in_spikes_orig = in_spikes
                     else:
                         in_spikes_orig = rough_in_spikes
-                    if (generate_data_mode != 'R') or (inference_method != 4):
+                        out_spikes_tot = Actual_Neural_Times[str(l_out)]
+                        in_spikes_tot = Actual_Neural_Times[str(l_in)]
+                        for sps in in_spikes_tot:
+                            sps_times = np.array(in_spikes_tot[sps])
+                            aas = sps_times<=T/1000.0
+                            aas = np.nonzero(aas)[0]
+                            if sum(aas):
+                                aas = aas[len(aas)-1]
+                                sps_times = sps_times[0:aas]
+                            else:
+                                sps_times = []
+                            in_spikes_tot[sps] = sps_times
+                        
+                        for sps in out_spikes_tot:
+                            sps_times = np.array(out_spikes_tot[sps])
+                            aas = sps_times<=T/1000.0
+                            aas = np.nonzero(aas)[0]
+                            if sum(aas):
+                                aas = aas[len(aas)-1]
+                                sps_times = sps_times[0:aas]
+                            else:
+                                sps_times = []
+                            out_spikes_tot[sps] = sps_times
+                            
+                        
+                        out_spikes = out_spikes_tot
+                        in_spikes = in_spikes_tot
+                        
+                        #pdb.set_trace()
+                        
+                    if (generate_data_mode != 'R'):# or (inference_method != 4):
                         in_spikes = (in_spikes>0).astype(int)
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     
@@ -368,9 +440,17 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     
                     #~~~~~~~~~~~~~~~~~~~~Perfrom Inference~~~~~~~~~~~~~~~~~~~~~
-                    ind = str(l_in) + str(l_out);temp_list = Network.Neural_Connections[ind];W = temp_list[0]
+                    ind = str(l_in) + str(l_out);temp_list = Network.Neural_Connections[ind];W = temp_list[0];DD = temp_list[1]                    
+                    if inference_method == 6:
+                        if delay_known_flag == 'Y':
+                            inferece_params[6] = DD
+                        else:
+                            inferece_params[6] = float('nan')*DD
+                        
+                    #pdb.set_trace()
                     for infer_itr in range(0,infer_itr_max):
                         W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estimated,1)
+                        # W_bin = 0.001*(W_inferred_our_tot>W_inferred_our_tot.mean()+W_inferred_our_tot.std()).astype(int) - 0.005*(W_inferred_our_tot<-W_inferred_our_tot.mean()-W_inferred_our_tot.std()).astype(int)
                         #recal,precision = calucate_accuracy(W_estimated,W)
                         #print '-------------Our method performance in ensemble %d & T = %d------------' %(ensemble_count,T)
                         #print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
@@ -383,8 +463,10 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         #W_temp = 0.001 + (W_temp.astype(float) - max_val) * 0.006 / float(max_val - min_val)
                         
                         #pdb.set_trace()                        
+                        W_estimated= []
+                        centroids = []
+                        #W_estimated,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,1.25*(1+infer_itr/7.5),2.5*(1+infer_itr/15.0),],0)
                         
-                        W_estimated,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,1.25*(1+infer_itr/7.5),2.5*(1+infer_itr/15.0),],0)
                         
                         if infer_itr < infer_itr_max-1:
                             fixed_entries = 1-isnan(W_estimated).astype(int)
@@ -420,7 +502,9 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         for infer_itr in range(0,infer_itr_max):
                             W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estimated,1)
                             W_inferred_our_tot = W_inferred_our_tot/(abs(W_inferred_our_tot).max())
-                            W_estimated,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_ind],0)#
+                            W_estimated= []
+                            centroids = []
+                            #W_estimated,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_ind],0)#
                             fixed_ind = 1-isnan(W_estimated).astype(int)
                             fixed_ind = fixed_ind.reshape(n,m)
                         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                    
@@ -442,7 +526,9 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     file_name_ending23 = file_name_ending23 + '_X_' + str(infer_itr_max)
                     if (sparsity_flag):
                         file_name_ending23 = file_name_ending23 + '_S_' + str(sparsity_flag)
-                    file_name_ending2 = file_name_ending23 +"_T_%s" %str(T)                        
+                    file_name_ending2 = file_name_ending23 +"_T_%s" %str(T)
+                    if delay_known_flag == 'Y':
+                        file_name_ending2 = file_name_ending2 +"_DD_Y"
 
                     file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending2
                     np.savetxt(file_name,W_inferred_our,'%1.5f',delimiter='\t')
@@ -462,7 +548,12 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                                     W_bin[j,i] = 0
                     else:
                         W_inferred_our_tot = W_inferred_our_tot
-                        W_bin,centroids = beliefs_to_binary(binary_mode,1000*W_inferred_our_tot,params,0)
+                        W_bin = []
+                        centroids = []
+                        
+                        #W_bin,centroids = beliefs_to_binary(binary_mode,1000*W_inferred_our_tot,params,0)
+                        #centroids = np.vstack([centroids,np.zeros([3])])
+                        
                     #pdb.set_trace()
                     file_name_ending2 = file_name_ending2 + "_%s" %str(adj_fact_exc)
                     file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
@@ -479,21 +570,21 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
 
                     if (binary_mode == 4):
                         file_name = file_name_base_results + "/Inferred_Graphs/Centroids_%s.txt" %file_name_ending2
-                        centroids = np.vstack([centroids,np.zeros([3])])
                         np.savetxt(file_name,centroids,'%f',delimiter='\t')
                 #..............................................................
                 
                 #....................Calculate the Accuracy....................
-                    for i in range(0,m):
-                        for j in range(0,n):
-                            if isnan(W_estimated[j,i]):
-                                W_estimated[j,i] = 0
-                    recal,precision = calucate_accuracy(W_bin,W) #(W_estimated,W)
-                    
+                    #for i in range(0,m):
+                    #    for j in range(0,n):
+                    #        if isnan(W_estimated[j,i]):
+                    #            W_estimated[j,i] = 0
+                    #recal,precision = calucate_accuracy(W_bin,W) #(W_estimated,W)
+                    recal = [0,0,0]
+                    precision = [0,0,0]
                     print '-------------Our method performance in ensemble %d & T = %d------------' %(ensemble_count,T)
-                    print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
-                    print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(precision[0],precision[1],precision[2])
-                    print '\n'
+                    #print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
+                    #print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(precision[0],precision[1],precision[2])
+                    #print '\n'
                 #..............................................................
                     
                     
@@ -611,29 +702,53 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             
             #............Construct the Concatenated Weight Matrix..............            
             W_tot = []
-            in_spikes_tot = []
-            out_spikes_tot = []
-            rough_spikes_tot = []
+            DD_tot = []
+            if generate_data_mode == 'R':
+                rough_spikes_tot = {}
+                in_spikes_tot = {}
+                out_spikes_tot = {}
+            else:
+                in_spikes_tot = []
+                out_spikes_tot = []
+            
+            n_so_far = 0
+            
             for l_in in range(0,Network.no_layers):
                 n_exc = Network.n_exc_array[l_in]
                 n_inh = Network.n_inh_array[l_in]
                 n = n_exc + n_inh
                 
-                temp_list = Neural_Spikes[str(l_in)]
-                spikes = (temp_list[2])
-                rough_spikes = Rough_Neural_Times[str(l_in)]
-                #spikes = (spikes>0).astype(int)
-                if len(out_spikes_tot):
-                    out_spikes_tot = np.vstack([out_spikes_tot,spikes])
-                    if generate_data_mode == 'R':
-                        rough_spikes_tot = np.vstack([rough_spikes_tot,rough_spikes])
+                
+                if generate_data_mode == 'R':
+                    
+                    spikes_times = Actual_Neural_Times[str(l_in)]
+                    for i in range(0,n):
+                        ind = str(n_so_far)
+                        ttimes = np.array(spikes_times[str(i)])
+                        if sum(abs(ttimes)):
+                            ttimes = ttimes[ttimes<T/1000.0]
+                        out_spikes_tot[ind] = ttimes
+                        
+                        n_so_far = n_so_far + 1
+                                        
                 else:
-                    out_spikes_tot = spikes
-                    if generate_data_mode == 'R':
-                        rough_spikes_tot = rough_spikes
+                    temp_list = Neural_Spikes[str(l_in)]
+                    spikes = (temp_list[2])
+                    #rough_spikes = Rough_Neural_Times[str(l_in)]
+                    
+                    #spikes = (spikes>0).astype(int)
+                    if len(out_spikes_tot):
+                        out_spikes_tot = np.vstack([out_spikes_tot,spikes])
+                        if generate_data_mode == 'R':
+                            rough_spikes_tot = np.vstack([rough_spikes_tot,rough_spikes])
+                    else:
+                        out_spikes_tot = spikes
+                        if generate_data_mode == 'R':
+                            rough_spikes_tot = rough_spikes
                 
                     
                 W_temp = []
+                D_temp = []
                 for l_out in range(0,Network.no_layers):
                     n_exc = Network.n_exc_array[l_out]
                     n_inh = Network.n_inh_array[l_out]
@@ -644,15 +759,27 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                             W_temp = np.hstack([W_temp,np.zeros([n,m])])
                         else:
                             W_temp = np.zeros([n,m])
+                            
+                        if len(D_temp):
+                            D_temp = np.hstack([D_temp,np.zeros([n,m])])
+                        else:
+                            D_temp = np.zeros([n,m])
+                            
                     else:                                        
                         ind = str(l_in) + str(l_out);
                         temp_list = Network.Neural_Connections[ind];
                         W = temp_list[0]
+                        DD = temp_list[1]
                         
                         if len(W_temp):
                             W_temp = np.hstack([W_temp,W])
                         else:
                             W_temp = W
+                        
+                        if len(D_temp):
+                            D_temp = np.hstack([D_temp,DD])
+                        else:
+                            D_temp = DD
                 
                 
                 
@@ -660,6 +787,11 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     W_tot = np.vstack([W_tot,W_temp])
                 else:
                     W_tot = W_temp
+                
+                if len(DD_tot):
+                    DD_tot = np.vstack([DD_tot,D_temp])
+                else:
+                    DD_tot = D_temp
             #..................................................................
             
             #......................In-Loop Initializations.....................
@@ -668,10 +800,12 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             W_estimated = np.zeros([n,m])
             fixed_entries = np.zeros([n,m])
             if (generate_data_mode == 'R'):
-                tt = 1+int(T/float(d_window))
-                out_spikes_tot = rough_spikes_tot[:,0:tt]
+                #tt = 1+int(T/float(d_window))
+                #out_spikes_tot = rough_spikes_tot[:,0:tt]
+                #in_spikes_tot = out_spikes_tot
+                #in_spikes_orig = in_spikes_tot
+                #out_spikes_tot = rough_spikes_tot
                 in_spikes_tot = out_spikes_tot
-                in_spikes_orig = in_spikes_tot
             else:
                 tt = T
                 out_spikes_tot = out_spikes_tot[:,0:tt]
@@ -679,13 +813,71 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 in_spikes_orig = in_spikes_tot            
             #..................................................................
             
-                        
+            
+            non_stimul_inds = {}
+            if (generate_data_mode != 'R'):
+                for ttt in range(0,T):
+                    temp = in_spikes_tot[0:n_layer_1,ttt]
+                    ttemp = np.nonzero(temp<=0)
+                    ttemp = list(ttemp[0])
+                    ttemp.extend(range(n_layer_1,n_layer_1+n_layer_2))
+                    non_stimul_inds[str(ttt)] = np.array(ttemp)
+                
+            
+            if inference_method == 3:
+                inferece_params[len(inferece_params)-1] = non_stimul_inds
+                
+            #pdb.set_trace()            
+            if inference_method == 6:
+                inferece_params[6] = DD_tot
             #........................Perfrom Inference.........................
             for infer_itr in range(0,infer_itr_max):
                 
                 #~~~~~~~~~~~~~~Classify Excitatory Neurons Only~~~~~~~~~~~~~~~~                
                 W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0)
                 W_tmp = abs(np.ma.masked_array(W_inferred_our_tot,mask= (W_inferred_our_tot==float('inf')).astype(int)))
+                #W_bin = 0.001*(W_inferred_our_tot>W_inferred_our_tot.mean()+W_inferred_our_tot.std()).astype(int) - 0.005*(W_inferred_our_tot<-W_inferred_our_tot.mean()-W_inferred_our_tot.std()).astype(int)
+                
+                
+                #-----Calculate the Mean and Variance of Different Beliefs-----
+                
+                #.................FF Excitatory Connections....................                
+                W_e = np.ma.masked_array(W_inferred_our_tot[0:n_layer_1,n_layer_1:n_layer_1+n_layer_2],mask= (W_tot[0:n_layer_1,n_layer_1:n_layer_1+n_layer_2]<=0).astype(int))
+                mean_exc[itr_T,:] = mean_exc[itr_T,:] + W_e.mean(axis = 0).data
+                std_exc[itr_T,:] = std_exc[itr_T,:] + W_e.std(axis = 0).data
+                
+                W_i = np.ma.masked_array(W_inferred_our_tot[0:n_layer_1,n_layer_1:n_layer_1+n_layer_2],mask= (W_tot[0:n_layer_1,n_layer_1:n_layer_1+n_layer_2]>=0).astype(int))
+                mean_inh[itr_T,:] = mean_inh[itr_T,:] + W_i.mean(axis = 0).data
+                std_inh[itr_T,:] = std_inh[itr_T,:] + W_i.std(axis = 0).data
+                
+                W_v = np.ma.masked_array(W_inferred_our_tot[0:n_layer_1,n_layer_1:n_layer_1+n_layer_2],mask= (W_tot[0:n_layer_1,n_layer_1:n_layer_1+n_layer_2]!=0).astype(int))
+                mean_void[itr_T,:] = mean_void[itr_T,:] + W_v.mean(axis = 0).data
+                std_void[itr_T,:] = std_void[itr_T,:] + W_v.std(axis = 0).data                
+                #..............................................................
+                                
+                #.......Recurrent Connections in the Post-Syanptic Layer.......
+                W_v_r = np.ma.masked_array(W_inferred_our_tot[n_layer_1:n_layer_1+n_layer_2,n_layer_1:n_layer_1+n_layer_2],mask= (W_tot[n_layer_1:n_layer_1+n_layer_2,n_layer_1:n_layer_1+n_layer_2]!=0).astype(int))
+                mean_void_r[itr_T,:] =  mean_void_r[itr_T,:] + W_v_r.mean(axis = 0).data
+                std_void_r[itr_T,:] = std_void_r[itr_T,:] + W_v_r.std(axis = 0).data                
+                #..............................................................                
+                
+                #.......Recurrent Connections in the Pre-Syanptic Layer........
+                W_v_p = np.ma.masked_array(W_inferred_our_tot[0:n_layer_1,0:n_layer_1],mask= (W_tot[0:n_layer_1,0:n_layer_1]!=0).astype(int))
+                mean_void_p[itr_T,:] =  mean_void_p[itr_T,:] + W_v_p.mean(axis = 0).data
+                std_void_p[itr_T,:] = std_void_p[itr_T,:] + W_v_p.std(axis = 0).data                
+                #..............................................................
+                
+                #.....Backward Connections From Post to Pre-Syanptic Layer.....
+                W_v_b = np.ma.masked_array(W_inferred_our_tot[n_layer_1:n_layer_1+n_layer_2,0:n_layer_1],mask= (W_tot[n_layer_1:n_layer_1+n_layer_2,0:n_layer_1]!=0).astype(int))
+                mean_void_b[itr_T,:] =  mean_void_b[itr_T,:] + W_v_b.mean(axis = 0).data
+                std_void_b[itr_T,:] = std_void_b[itr_T,:] + W_v_b.std(axis = 0).data                
+                #..............................................................
+                
+                if 0:
+                    plt.plot(mean_exc,'r'); plt.plot(mean_inh,'b');plt.plot(mean_void,'g');plt.plot(mean_void_r,'g--'); plt.show();
+                    plt.plot(mean_void_b,'g');plt.plot(mean_void_p,'g--'); plt.show();
+                    
+                #--------------------------------------------------------------
                 
                 if (inference_method == 4):
                     for ii in range (0,m):
@@ -694,41 +886,42 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                                 W_inferred_our_tot[ii,jj] = 1*W_tmp.max()
                                             
                 
-                W_estimated,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,1.25*(1+infer_itr/7.5),2500*(1+infer_itr/15.0),],0)
-                fixed_entries = 1-isnan(W_estimated).astype(int)
+                #W_estimated,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,1.25*(1+infer_itr/7.5),2500*(1+infer_itr/15.0),],0)
+                #fixed_entries = 1-isnan(W_estimated).astype(int)
+                #pdb.set_trace()
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
                 #~~~~~~~~~~~~~~Classify Inhibitory Neurons Only~~~~~~~~~~~~~~~~                
-                W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0)
-                W_tmp = abs(np.ma.masked_array(W_inferred_our_tot,mask= (W_inferred_our_tot==float('inf')).astype(int)))
+                #W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0)
+                #W_tmp = abs(np.ma.masked_array(W_inferred_our_tot,mask= (W_inferred_our_tot==float('inf')).astype(int)))
                 
-                if (inference_method == 4):
-                    for ii in range (0,m):
-                        for jj in range(0,n):
-                            if (W_inferred_our_tot[ii,jj]==float('inf')):
-                                W_inferred_our_tot[ii,jj] = 1*W_tmp.max()
-                            
-                W_temp = np.ma.masked_array(W_inferred_our_tot,mask= fixed_entries)
+                #if (inference_method == 4):
+                #    for ii in range (0,m):
+                #        for jj in range(0,n):
+                #            if (W_inferred_our_tot[ii,jj]==float('inf')):
+                #                W_inferred_our_tot[ii,jj] = 1*W_tmp.max()
+                #            
+                #W_temp = np.ma.masked_array(W_inferred_our_tot,mask= fixed_entries)
                 
-                W_estimated_inh,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,12500*(1+infer_itr/7.5),2*(1+infer_itr/15.0),],0)
+                #W_estimated_inh,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,12500*(1+infer_itr/7.5),2*(1+infer_itr/15.0),],0)
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
                 #~~~~~~~~~~~~~~~~~~~~~~~~Mix the Two~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                for ii in range (0,m):
-                    for jj in range(0,n):
-                        if not np.isnan(W_estimated_inh[ii,jj]):
-                            W_estimated[ii,jj] = W_estimated_inh[ii,jj]
+                #for ii in range (0,m):
+                #    for jj in range(0,n):
+                #        if not np.isnan(W_estimated_inh[ii,jj]):
+                #            W_estimated[ii,jj] = W_estimated_inh[ii,jj]
                         
-                        if (infer_itr == infer_itr_max -1):
-                            if np.isnan(W_estimated[ii,jj]):
-                                W_estimated[ii,jj] = 0
+                #        if (infer_itr == infer_itr_max -1):
+                #            if np.isnan(W_estimated[ii,jj]):
+                #                W_estimated[ii,jj] = 0
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-                if (infer_itr < infer_itr_max -1):
-                    fixed_entries = 1-isnan(W_estimated).astype(int)
+                #if (infer_itr < infer_itr_max -1):
+                #    fixed_entries = 1-isnan(W_estimated).astype(int)
 
-                if norm(1-fixed_entries) == 0:
-                    break
+                #if norm(1-fixed_entries) == 0:
+                #    break
             #..................................................................
             
             
@@ -741,6 +934,8 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             if (sparsity_flag):
                 file_name_ending23 = file_name_ending23 + '_S_' + str(sparsity_flag)
             file_name_ending2 = file_name_ending23 +"_T_%s" %str(T)
+            if delay_known_flag == 'Y':
+                file_name_ending2 = file_name_ending2 +"_DD_Y"
 
             file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending2
             np.savetxt(file_name,W_inferred_our_tot,'%1.5f',delimiter='\t')
@@ -757,9 +952,11 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                             W_bin[j,i] = 0
             else:
                 W_inferred_our_tot = W_inferred_our_tot
-                W_bin,centroids = beliefs_to_binary(binary_mode,10*W_estimated,params,0)
+                W_bin = []
+                centroids = []
+                #W_bin,centroids = beliefs_to_binary(binary_mode,1000*W_inferred_our_tot,params,0)
             
-            W_bin = W_estimated
+            #W_bin = W_estimated
             
             file_name_ending2 = file_name_ending2 + "_%s" %str(adj_fact_exc)
             file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
@@ -774,22 +971,23 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             ww = np.vstack([ww,np.zeros([len(ww)])])
             np.savetxt(file_name,ww.T,'%f',delimiter='\t',newline='\n')
 
-            if (binary_mode == 4):
+            if 0:#(binary_mode == 4):
                 file_name = file_name_base_results + "/Inferred_Graphs/Centroids_%s.txt" %file_name_ending2
                 centroids = np.vstack([centroids,np.zeros([3])])
                 np.savetxt(file_name,centroids,'%f',delimiter='\t')
             #..............................................................
                 
             #....................Calculate the Accuracy....................
-            recal,precision = calucate_accuracy(W_bin,W)
-                    
+            #recal,precision = calucate_accuracy(W_bin,W)
+            recal = [0,0,0]
+            precision = [0,0,0]
             print '-------------Our method performance in ensemble %d & T = %d------------' %(ensemble_count,T)
-            print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
-            print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(precision[0],precision[1],precision[2])
-            print '\n'
+            #print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
+            #print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(precision[0],precision[1],precision[2])
+            #print '\n'
             #..............................................................
             
-            pdb.set_trace()   
+            #pdb.set_trace()   
             #.............Calculate Spike Prediction Accuracy..............
             if verify_flag: #(T == T_range[len(T_range)-1]):
                 Network_in = {}
@@ -904,5 +1102,90 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         
                 if ( (l_in == Network.no_layers-1) and (l_out == Network.no_layers-1) ):
                     first_flag2 = 0
-            
+    
+        itr_T = itr_T + 1        
         #----------------------------------------------------------------------
+
+
+mean_void_b = np.divide(mean_void_b,ensemble_size)
+mean_void_p = np.divide(mean_void_p,ensemble_size)
+mean_void_r = np.divide(mean_void_r,ensemble_size)
+mean_exc = np.divide(mean_exc,ensemble_size)
+mean_inh = np.divide(mean_inh,ensemble_size)
+mean_void = np.divide(mean_void,ensemble_size)
+
+std_void_b = np.divide(std_void_b,ensemble_size)
+std_void_p = np.divide(std_void_p,ensemble_size)
+std_void_r = np.divide(std_void_r,ensemble_size)
+std_exc = np.divide(std_exc,ensemble_size)
+std_inh = np.divide(std_inh,ensemble_size)
+std_void = np.divide(std_void,ensemble_size)
+
+
+mu_mean_void_b = mean_void_b.mean(axis = 1)
+mu_mean_void_p = mean_void_p.mean(axis = 1)
+mu_mean_void_r = mean_void_r.mean(axis = 1)
+mu_mean_exc = mean_exc.mean(axis = 1)
+mu_mean_inh = mean_inh.mean(axis = 1)
+mu_mean_void = mean_void.mean(axis = 1)
+
+mu_std_void_b = std_void_b.mean(axis = 1)
+mu_std_void_p = std_void_p.mean(axis = 1)
+mu_std_void_r = std_void_r.mean(axis = 1)
+mu_std_exc = std_exc.mean(axis = 1)
+mu_std_inh = std_inh.mean(axis = 1)
+mu_std_void = std_void.mean(axis = 1)
+
+pdb.set_trace()
+
+temp = np.vstack([np.array(T_range).T,mu_mean_exc.T,mu_std_exc.T])
+file_name = file_name_base_results + "/Mean_var_exc_%s.txt" %file_name_ending2
+np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
+
+temp = np.vstack([np.array(T_range).T,mu_mean_inh.T,mu_std_inh.T])
+file_name = file_name_base_results + "/Mean_var_inh_%s.txt" %file_name_ending2
+np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
+
+temp = np.vstack([np.array(T_range).T,mu_mean_void.T,mu_std_void.T])
+file_name = file_name_base_results + "/Mean_var_void_%s.txt" %file_name_ending2
+np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
+
+temp = np.vstack([np.array(T_range).T,mu_mean_void_r.T,mu_std_void_r.T])
+file_name = file_name_base_results + "/Mean_var_void_recurr%s.txt" %file_name_ending2
+np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
+
+temp = np.vstack([np.array(T_range).T,mu_mean_void_p.T,mu_std_void_p.T])
+file_name = file_name_base_results + "/Mean_var_void_presyn%s.txt" %file_name_ending2
+np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
+
+temp = np.vstack([np.array(T_range).T,mu_mean_void_b.T,mu_std_void_b.T])
+file_name = file_name_base_results + "/Mean_var_void_back%s.txt" %file_name_ending2
+np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
+
+#plt.plot(mu_mean_exc,'b'); plt.plot(mu_mean_inh,'r');plt.plot(mu_mean_void,'g');plt.plot(mu_mean_void_r,'g--'); plt.show();
+#plt.plot(mu_std_exc,'b'); plt.plot(mu_std_inh,'r');plt.plot(mu_std_void,'g');plt.plot(mu_std_void_r,'g--');plt.plot(mu_std_void_b,'g-*');plt.plot(mu_std_void_p,'g-.'); plt.show();
+#plt.plot(mu_mean_void_b,'g');plt.plot(mu_mean_void_p,'g--'); plt.show();
+
+
+
+sp_prob = (in_spikes_tot>0).mean(axis=1)
+sp_prob = np.reshape(sp_prob,[m,1])
+W_inferred_our_tot2 = W_inferred_our_tot + np.dot(sp_prob,(1-2*sp_prob).T)
+
+aa = W_inferred_our_tot2.mean(axis= 0)
+aa = aa.reshape([1,m])
+W_inferred_our_tot2 = W_inferred_our_tot2-np.dot(np.ones([m,1]),aa)
+
+
+aa = abs(W_inferred_our_tot2).max(axis= 0)
+aa = aa.reshape([1,m])
+W_inferred_our_tot2 = np.divide(W_inferred_our_tot2,np.dot(np.ones([m,1]),aa))
+W_inferred_our_tot2 = tanh(1*W_inferred_our_tot2)
+plt.subplot(1, 2, 1);plt.imshow(W_inferred_our_tot2);plt.subplot(1, 2, 2);plt.imshow(np.sign(W_tot));plt.show()
+
+
+thr_inh = mu_mean_inh[len(T_range)-1] + (mu_mean_void[len(T_range)-1]-mu_mean_inh[len(T_range)-1])/2.0
+thr_exc1 = mu_mean_exc[len(T_range)-1] + (mu_mean_void[len(T_range)-1]-mu_mean_exc[len(T_range)-1])/2.0
+thr_exc2 = mu_mean_exc[len(T_range)-1] + (mu_mean_void_r[len(T_range)-1]-mu_mean_exc[len(T_range)-1])/2.0
+W_bin = 0.001*(np.multiply(W_inferred_our_tot>thr_exc1,W_inferred_our_tot<thr_exc2)).astype(int)
+W_bin = W_bin- 0.005*(W_inferred_our_tot<=thr_inh).astype(int)

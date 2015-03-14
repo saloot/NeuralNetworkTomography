@@ -157,45 +157,85 @@ def determine_binary_threshold(method,params,obs):
         adj_factor_inh = params[1]
         #......................................................................
         
+        
+        #...................Determine the Number of Clusters...................
+        #res = np.zeros([10])
+        #for k in range(1,10):            
+        #    temp,res[k] = kmeans(obs,k,iter=100)
+        #dres = diff(res)
+        #dres = dres[1:]
+        #dres = np.divide(dres,np.roll(dres,1))
+        #dres = dres[1:]
+        
+        ##if np.argmax(dres)<=1:        
+        ##   no_clusters = 3 + np.argmax(dres)
+        #if res[2]/float(res[1]) > 0.6:
+        #    no_clusters = 3
+        #else:
+        #    no_clusters = 2
+        
+        no_clusters = 3
+        #print no_clusters
+        #print res[1], res[2]/float(res[1])
+        #......................................................................
+        
         #.........Computhe the Thresholds Using the K-Means Algorithms.........
         success_itr = 0
-        centroids = np.zeros([1,3])
-        temp2= np.zeros([1,3])
-        while success_itr<1:
-            temp,res = kmeans(obs,3,iter=30)            
-            if 1:
-                success_itr = success_itr + 1
-                
-                #centroids = centroids + temp
-                centroids = temp
-                
-                
+        centroids = np.zeros([no_clusters])
+        res = 0
+        temp= np.zeros([no_clusters])
+        while success_itr<10:
+            temp,res = kmeans(obs,no_clusters,iter=30)            
+            if len(temp) == len(centroids):
+                success_itr = success_itr + 1                
+                centroids = centroids + temp
         
-        centroids = centroids/float(success_itr)
-        ss = np.sort(centroids)
-        #pdb.set_trace()
+        centroids = np.divide(centroids,float(success_itr))
         
-        #ss = ss[0]
-        if (len(ss) == 3):
-            val_inh = ss[0]
-            val_exc = ss[2]
-            thr_zero = ss[1]
-        else:
-            val_inh = min(ss)
-            val_exc = max(ss)
-            thr_zero = 0.5 * (val_inh+val_exc)
+        if no_clusters > 2:
+            
+            ss = np.sort(centroids)
+            #pdb.set_trace()
+        
+            #ss = ss[0]
+            if (len(ss) == 4):
+                val_inh = ss[0]
+                val_exc = ss[2]
+                thr_zero = ss[1]
+                thr_zero_r = None#ss[3]
+            else:
+                val_inh = ss[0]
+                val_exc = ss[2]
+                thr_zero = ss[1]
+                thr_zero_r = None#thr_zero
         #......................................................................
         
         #.......................Adjust the Thresholds..........................
-        min_val = np.min(obs) - (thr_zero-np.min(obs))-0.01
-        max_val = np.max(obs) - (thr_zero-np.max(obs))+0.01
+            min_val = np.min(obs) - (thr_zero-np.min(obs))-0.01
+            max_val = np.max(obs) - (thr_zero-np.max(obs))+0.01
+        
+            thr_inh = val_inh + (adj_factor_inh -1)*(val_inh - min_val)
+            thr_inh = np.min([thr_inh,thr_zero-.01])
     
-        thr_inh = val_inh + (adj_factor_inh -1)*(val_inh - min_val)
-        thr_inh = np.min([thr_inh,thr_zero-.01])
-    
-        thr_exc = val_exc + (adj_factor_exc -1)*(val_exc - max_val)
-        thr_exc = np.max([thr_exc,thr_zero+.01])
+            #thr_exc = val_exc + (adj_factor_exc -1)*(val_exc - max_val)
+            thr_exc = val_exc + (adj_factor_exc -1)*(val_exc - thr_zero)
+            thr_exc = np.max([thr_exc,thr_zero+.01])
+            
+            if no_clusters > 3:
+                thr_exc2 = thr_zero_r - (0.51)*(thr_zero_r-thr_exc)            
+                thr_exc2 = np.max([thr_exc2,thr_exc+.01])
+                thr_exc = thr_exc2
+            else:
+                thr_exc2 = None
+            
         #......................................................................
+        else:
+            ss = np.sort(centroids)
+            
+            thr_inh = ss[0]
+            thr_exc = ss[1]
+            thr_zero = 0
+            thr_exc2 = 0
         
     #--------------------------------------------------------------------------
     
@@ -243,7 +283,7 @@ def determine_binary_threshold(method,params,obs):
         
     #--------------------------------------------------------------------------
     
-    return [thr_inh,thr_zero,thr_exc]
+    return [thr_inh,thr_zero,thr_exc,thr_exc2]
 #==============================================================================    
 #==============================================================================        
 
@@ -326,7 +366,7 @@ def generate_neural_activity(NeuralNetwork,running_period,S_time_file_base,frac_
         
         for j in range(0,n):
             #no_stim_points = int(running_period/3.2)
-            no_stim_points = int(frac_input_neurons* running_period*(0.5+rand(1)/2))
+            no_stim_points = int(frac_input_neurons* running_period*(0.5+rand(1)/1.0))
             #no_stim_points = no_stim_points[0]
             times_neur = range(1,int(running_period))
             random.shuffle(times_neur)
@@ -672,21 +712,42 @@ def beliefs_to_binary(binary_mode,W_inferred,params,compensate_flag):
         #......................Determine the Thresholds........................
         fixed_inds = params[2]
         for i in range(0,m):            
-            W_inferred_temp = copy.deepcopy(W_inferred[:,i])            
-            temp = np.ma.masked_array(W_inferred_temp,mask= fixed_inds[:,i])
+            W_inferred_temp = copy.deepcopy(W_inferred[:,i])
+            mask_inds = fixed_inds
+            mask_inds[i,i] = 1
+            temp = np.ma.masked_array(W_inferred_temp,mask= mask_inds[:,i])
             masked_inds = np.nonzero((temp.mask).astype(int))
             masked_vals = temp.compressed()
                 
             params = params[0:2]
             if sum(sum(abs(masked_vals))):                
-                thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,masked_vals)
+                thr_inh,thr_zero,thr_exc,thr_zero2 = determine_binary_threshold('c',params,masked_vals)
+                #pdb.set_trace()
                 centroids[i,:] = [thr_inh,thr_zero,thr_exc]
             #print centroids[i,:]
         #......................................................................
         
         #...................Transform the Graph to Binary......................
-                W_temp,res = vq(masked_vals,np.array([thr_inh,thr_zero,thr_exc]))
-                W_temp = W_temp - 1
+                if sum(abs(centroids[i,:])):
+                    if thr_zero2 is not None:
+                        W_temp,res = vq(masked_vals,np.array([thr_inh,thr_exc]))
+                        #pdb.set_trace()
+                        #W_temp,res = vq(masked_vals,np.array([thr_inh,thr_zero,thr_exc,thr_zero2]))
+                        W_temp = W_temp - 1
+                        #W_temp = W_temp - (W_temp==1)
+                        #W_temp = W_temp - (W_temp==2)
+                    else:
+                        W_temp,res = vq(masked_vals,np.array([thr_inh,thr_zero,thr_exc]))
+                        #pdb.set_trace()
+                        W_temp = W_temp - 1
+                        
+                    #pdb.set_trace()
+                else:
+                    #if i == 12:
+                    #    pdb.set_trace()
+                    #elif i == 61:
+                    #    pdb.set_trace()
+                    W_temp = np.zeros(masked_vals.shape)    
             else:                
                 W_temp = np.zeros(masked_vals.shape)
 
@@ -1067,20 +1128,28 @@ def soft_threshold(W,thr):
 def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estim,location_flag):
            
     #------------------------------Initialization------------------------------
-    s = in_spikes.shape
-    n = s[0]
-    TT = s[1]
+    if inference_method < 6:
+        s = in_spikes.shape
+        n = s[0]
+        TT = s[1]
     
-    s = out_spikes.shape
-    m = s[0]
+        s = out_spikes.shape
+        m = s[0]
     
-    if (TT != s[1]):
-        print('Error in the number of samples!')
-        sys.exit()
-        
+        if (TT != s[1]):
+            print('Error in the number of samples!')
+            sys.exit()
+    else:
+        n = len(in_spikes)
+        m = len(out_spikes)
+
     W_inferred = np.zeros([n,m])
-    Updated_Vals = np.zeros([n,m])
     W_inferred.fill(0)
+    #W_inferred = initialize_W_rand(n,m,p_plus,p_minus)
+    #W_inferred = np.random.normal(0,1,[n,m])
+    #W_inferred = np.random.uniform(-0.001,0.001,[n,m])
+    Updated_Vals = np.zeros([n,m])
+    
     cost = []
     W_estimated = copy.deepcopy(W_estim)            
     if norm(W_estimated):
@@ -1091,7 +1160,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
         for i in range(0,n):
             for j in range(0,m):
                 if isnan(W_inferred_orig[i,j]):
-                    W_inferred_orig[i,j] = 0
+                    W_inferred_orig[i,j] = W_inferred[i,j]
                     
         W_inferred = W_inferred_orig        
     else:
@@ -1107,7 +1176,8 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
         sparse_thr_0 = inferece_params[1]
         sparsity_flag = inferece_params[2]
         theta = inferece_params[3]
-        max_itr_opt = inferece_params[4]        
+        max_itr_opt = inferece_params[4]
+        not_stimul_inds = inferece_params[6]
         #......................................................................        
         
         #..............................Initializations.........................        
@@ -1128,11 +1198,12 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~Randomize Runs~~~~~~~~~~~~~~~~~~~~~~~~~
             shuffled_ind = range(0,TT)
             random.shuffle(shuffled_ind)
-            neurons_ind = range(0,m)
+            neurons_ind = range(0,m)            
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~~~~~~~~~~~~~~~~Perform Inference~~~~~~~~~~~~~~~~~~~~~~~
-            for cascade_count in range(0,TT):                
+            for ttt in range(0,TT):
+                cascade_count = shuffled_ind[ttt]
                 x = in_spikes[:,cascade_count]
                 x = x.reshape(n,1)
                 if (location_flag == 1):
@@ -1142,10 +1213,14 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                 yy_predict = np.zeros([m,1])
                 
                 random.shuffle(neurons_ind)
-                
-                #~~~~~~~~~~~Upate the Incoming Weights to Each Neuron~~~~~~~~~~                
-                for ijk2 in range(0,m):
-                    ijk = neurons_ind[ijk2]
+                #~~~~~~~~~~~Upate the Incoming Weights to Each Neuron~~~~~~~~~~
+                if not_stimul_inds:
+                    non_stim_inds = not_stimul_inds[str(cascade_count)]
+                else:
+                    non_stim_inds = range(0,m)
+                for ijk2 in non_stim_inds:
+                    #ijk = neurons_ind[ijk2]
+                    ijk = ijk2
                     yy = y[ijk]                    
                     WW = W_inferred[:,ijk]
                     if (location_flag == 0):
@@ -1154,11 +1229,14 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                         else:
                             if yy > 0:
                                 v = (x<yy).astype(int)
+                                v = np.multiply(v,(x>0).astype(int))
                             else:
                                 v = (x>0).astype(int)
-                            v = np.multiply(v,(x>0).astype(int))
+                            
                     
                     y_predict = 0.5*(1+np.sign(np.dot(WW,v)-theta+0.00002))
+                    #if abs(y_predict):
+                    #    pdb.set_trace()
                     upd_val = np.dot(y_predict - np.sign(yy),v.T)
                     W_inferred[:,ijk] = W_inferred[:,ijk] - alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
                     Updated_Vals[:,ijk] = Updated_Vals[:,ijk] + np.sign(abs(v.T))
@@ -1193,14 +1271,131 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #--------------------------------------------------------------------------
     
+    
+    #----------The Perceptron-based Algorithm for Background Traffic-----------
+    elif (inference_method == 6):
+        
+        #......................Get Simulation Parameters.......................
+        alpha0 = inferece_params[0]
+        sparse_thr_0 = inferece_params[1]
+        sparsity_flag = inferece_params[2]
+        theta = inferece_params[3]
+        max_itr_opt = inferece_params[4]
+        d_window = inferece_params[5]
+        DD = inferece_params[6]
+        #......................................................................        
+        
+        #..............................Initializations.........................        
+        range_tau = range(0,max_itr_opt)
+        cost = np.zeros([len(range_tau)])        
+        #......................................................................
+        
+        #................Iteratively Update the Connectivity Matrix............
+        for ttau in range_tau:
+            
+            #~~~~~~~~~~~~~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~~~~~~~~~~~
+            temp = 0
+            alpha = alpha0/float(1+log(ttau+1))
+            sparse_thr = sparse_thr_0/float(1+log(ttau+1))
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~Randomize Runs~~~~~~~~~~~~~~~~~~~~~~~~~            
+            neurons_ind = range(0,m)
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            print 'Iteration ttau = %s' %str(ttau)
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~Perform Inference~~~~~~~~~~~~~~~~~~~~~~~
+            random.shuffle(neurons_ind)
+            for ijk2 in range(0,m):
+                #print ijk2
+                ijk = neurons_ind[ijk2]                                
+                y_times = out_spikes[str(ijk)]
+                WW = W_inferred[:,ijk]
+                #pdb.set_trace()
+                fire_ind = 0
+                for t_fire in y_times:                    
+                    if t_fire:
+                        if norm(WW):
+                            if fire_ind:
+                                mintt = int(1000*y_times[fire_ind-1])
+                            else:
+                                mintt = 1
+                            
+                        else:
+                            mintt = int(1000*t_fire-1)
+                        
+                        for tst in range(mintt,int(1000*t_fire)+1):
+                            v = np.zeros([n,1])
+                            for jjj in range(0,n):
+                                x = np.array(in_spikes[str(jjj)])
+                                #pdb.set_trace()
+                                if (DD[jjj,ijk] is not None) and (not isnan(DD[jjj,ijk])):
+                                    tst2 = max(0,(tst/1000.0)-DD[jjj,ijk])
+                                else:
+                                    tst2 = tst/1000.0
+                                    
+                                if fire_ind>0:
+                                    min_t = max(0,max(y_times[fire_ind-1]-0.0001,tst2-d_window))
+                                else:
+                                    min_t = max(0,tst/1000.0-d_window)
+                                
+                                v[jjj] = (sum(abs(np.sign(np.multiply( (x>=min_t).astype(int),(x<tst2).astype(int))))))
+                        
+                
+                            y_predict = 0.5*(1+np.sign(np.dot(WW,np.sign(v))-theta+0.00002))
+                            
+                            #print tst
+                            #print t_fire - 0.001
+                            if (tst/1000.0)<(t_fire - 0.001):
+                                upd_val = np.dot(y_predict,v.T)
+                                #print '000'
+                            else:
+                                upd_val = np.dot(y_predict - 1,v.T)
+                                #print '111'
+                            
+                            #pdb.set_trace()
+                            if sum(abs(upd_val)):
+                                W_inferred[:,ijk] = W_inferred[:,ijk] - alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
+                                WW = W_inferred[:,ijk]
+                                Updated_Vals[:,ijk] = Updated_Vals[:,ijk] + np.sign(abs(v.T))
+                                cost[ttau] = cost[ttau] + 1
+                                break
+                    fire_ind = fire_ind + 1
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+                #~~~~~~~~~~~~~~~~~~~~~Saturate the Weights~~~~~~~~~~~~~~~~~~~~                
+                ter = W_inferred < 0.001
+                W_inferred = np.multiply(ter.astype(int),W_inferred) + 0.001*(1-ter.astype(int))
+                ter = W_inferred >- 0.005
+                W_inferred = np.multiply(ter.astype(int),W_inferred) - 0.005*(1-ter.astype(int))
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            
+            #~~~~~~~~~~~~~~~~~~~~~~Check Stopping Conditions~~~~~~~~~~~~~~~~~~~
+            if (cost[ttau] == 0):
+                cost = cost[0:ttau+1]
+                pdb.set_trace()
+                break
+            elif (ttau>300):
+                if ( abs(cost[ttau]-cost[ttau-2])/float(cost[ttau]) < 0.0001):
+                    cost = cost[0:ttau+1]
+                    break
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    #--------------------------------------------------------------------------
+    
     #---------------------The Correlation-based Algorithm----------------------
     elif (inference_method == 0):
         Delta = inferece_params[0]#/float(inferece_params[1])
         theta = inferece_params[1]
+        data_mode = inferece_params[2]
+        #not_stimul_inds = inferece_params[3]
+                
         if location_flag == 1:            
             out_spikes_estimated = np.sign((np.dot(W_inferred.T,in_spikes)>theta).astype(int))
-            out_spikes_estimated = out_spikes_estimated.astype(int)
-            W_temp = np.dot(in_spikes,(out_spikes-out_spikes_estimated).T)*Delta
+            out_spikes_estimated = out_spikes_estimated.astype(int)            
+            W_temp = np.dot(in_spikes,(-pow(-1,out_spikes-out_spikes_estimated)).T)*Delta
         else:
             m,T = out_spikes.shape
             n,T = in_spikes.shape
@@ -1209,15 +1404,15 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                 y = out_spikes[j,:]
                 v = np.zeros([n,T])
                 for i in range(0,n):                    
-                    v[i,:] = (in_spikes[i,:]<y).astype(int)                
+                    v[i,:] = (in_spikes[i,:]<y).astype(int)                    
                     v[i,:] = v[i,:] + np.multiply((in_spikes[i,:]>0).astype(int),y==0)
                     v[i,:] = np.multiply(v[i,:],(in_spikes[i,:]>0).astype(int))
                 #pdb.set_trace()
                 Updated_Vals[:,j] = Updated_Vals[:,j] + sum(abs(v),axis=1)    
                 out_spikes_estimated = np.sign((np.dot(W_inferred[:,j].T,v)>theta).astype(int))
                 out_spikes_estimated = out_spikes_estimated.astype(int)                
-                W_temp[:,j] = np.dot(v,(np.sign(y)-out_spikes_estimated).T)*Delta#,(0.0001+sum(v,axis=1)*sum(y)/float(T)))
-                
+                W_temp[:,j] = np.dot(v,(-pow(-1,np.sign(y)-out_spikes_estimated)).T)*Delta#,(0.0001+sum(v,axis=1)*sum(y)/float(T)))
+                #pdb.set_trace()
         #pdb.set_trace()
         W_inferred = np.multiply(1-fixed_ind,W_temp) + np.multiply(fixed_ind,W_inferred)
     #--------------------------------------------------------------------------
@@ -1406,8 +1601,8 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                 W_inferred[:,ijk] = np.multiply(1-fixed_ind[:,ijk],W_inferred[:,ijk]) + np.multiply(fixed_ind[:,ijk],W_inferred_orig[:,ijk]) 
                 ter = W_inferred[:,ijk] < 0.001
                 W_inferred[:,ijk] = np.multiply(ter.astype(int),W_inferred[:,ijk]) + 0.001*(1-ter.astype(int))
-                ter = W_inferred[:,ijk] >- 0.001
-                W_inferred[:,ijk] = np.multiply(ter.astype(int),W_inferred[:,ijk]) - 0.001*(1-ter.astype(int))
+                ter = W_inferred[:,ijk] >- 0.005
+                W_inferred[:,ijk] = np.multiply(ter.astype(int),W_inferred[:,ijk]) - 0.005*(1-ter.astype(int))
                 #-----------------------------------------------------------------
 
             print cost[ttau]
@@ -1501,17 +1696,24 @@ def read_spikes(file_name_base,no_layers,n_exc_array,n_inh_array,params):
     
             s = S_times.shape
             
+            firing_times = {}
+            for ii in range(0,n):                
+                firing_times[str(ii)] = []
+                
             for l in range(0,s[0]):
-                neuron_count = int(S_times[l,0])        
+                neuron_count = int(S_times[l,0])
+                
                 if (neuron_count >= 0):                    
                     tt = round(10000*S_times[l,1])-1                
                     in_spikes[neuron_count,tt] = 1
                     tot_spikes[neuron_count+n_so_far,tt] = 1
+                    firing_times[str(neuron_count)].append(S_times[l,1])
                     
             n_so_far = n_so_far + n
             Neural_Spikes[str(l_in)] = list([[],[],in_spikes])
             Neural_Spikes['tot'] = tot_spikes
             print(sum(in_spikes))
+            Neural_Spikes['act_' + str(l_in)] = firing_times
     
     return Neural_Spikes
 #==============================================================================
