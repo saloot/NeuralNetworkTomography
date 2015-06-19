@@ -1,3 +1,22 @@
+#=======================IMPORT THE NECESSARY LIBRARIES=========================
+import math
+from brian import *
+from scipy import sparse
+import pdb
+import random
+import copy
+import numpy.ma as ma
+#==============================================================================
+
+#=======================DEFAULT VALUES FOR THE VARIABLES=======================
+FRAC_STIMULATED_NEURONS_DEFAULT = 0.4
+NO_STIMUL_ROUNDS_DEFAULT = 7000
+ENSEMBLE_SIZE_DEFAULT = 5
+FILE_NAME_BASE_DATA_DEFAULT = "../Data"
+ENSEMBLE_COUNT_INIT_DEFAULT = 0
+GENERATE_DATA_MODE_DEFAULT = 'R'
+#==============================================================================
+
 #==============================================================================
 #=============================initial_stimulation==============================
 #==============================================================================
@@ -410,3 +429,65 @@ def verify_neural_activity(NeuralNetwork,Network_in,running_period,frac_input_ne
 #==============================================================================
 
 
+#==============================================================================
+#===========================verify_neural_activity=============================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function runs the neural networks and generatethe required neural
+# activity. The Brian simulator is used for this part.
+
+# INPUTS:
+#    input_opts: the options provided by the user
+#------------------------------------------------------------------------------
+
+def parse_commands_gen_data(input_opts):
+    
+    if (input_opts):
+        for opt, arg in input_opts:        
+            if opt == '-Q':
+                frac_stimulated_neurons = float(arg)                # Fraction of neurons in the input layer that will be excited by a stimulus
+            elif opt == '-T':
+                no_stimul_rounds = int(arg)                         # Number of times we inject stimulus to the network
+            elif opt == '-S':
+                ensemble_size = int(arg)                            # The number of random networks that will be generated                
+            elif opt == '-A':
+                file_name_base_data = str(arg)                      # The folder to store results
+            elif opt == '-F':
+                ensemble_count_init = int(arg)                      # The ensemble to start simulations from
+            elif opt == '-G':
+                generate_data_mode = str(arg)                       # The data generating method            
+            elif opt == '-h':
+                print(help_message)
+                sys.exit()
+    else:
+        print('Code will be executed using default values')
+
+
+    #------------Set the Default Values if Variables are not Defines---------------
+    if 'frac_stimulated_neurons' not in locals():
+        frac_stimulated_neurons = FRAC_STIMULATED_NEURONS_DEFAULT
+        print('ATTENTION: The default value of %s for frac_stimulated_neurons is considered.\n' %str(frac_stimulated_neurons))
+
+    if 'no_stimul_rounds' not in locals():        
+        no_stimul_rounds = NO_STIMUL_ROUNDS_DEFAULT
+        print('ATTENTION: The default value of %s for no_stimul_rounds is considered.\n' %str(no_stimul_rounds))
+
+    if 'ensemble_size' not in locals():            
+        ensemble_size = ENSEMBLE_SIZE_DEFAULT
+        print('ATTENTION: The default value of %s for ensemble_size is considered.\n' %str(ensemble_size))
+    
+    if 'file_name_base_data' not in locals():
+        file_name_base_data = FILE_NAME_BASE_DATA_DEFAULT
+        print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_data))
+
+    if 'ensemble_count_init' not in locals():
+        ensemble_count_init = ENSEMBLE_COUNT_INIT_DEFAULT
+        print('ATTENTION: The default value of %s for ensemble_count_init is considered.\n' %str(ensemble_count_init))
+    
+    if 'generate_data_mode' not in locals():
+        generate_data_mode = GENERATE_DATA_MODE_DEFAULT
+        print('ATTENTION: The default value of %s for generate_data_mode is considered.\n' %str(generate_data_mode))
+    #------------------------------------------------------------------------------
+
+
+    return frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,file_name_base_data,ensemble_count_init,generate_data_mode
