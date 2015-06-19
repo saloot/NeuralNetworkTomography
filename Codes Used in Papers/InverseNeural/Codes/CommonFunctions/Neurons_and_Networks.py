@@ -15,13 +15,13 @@ import pdb
 #=======================DEFAULT VALUES FOR THE VARIABLES=======================
 FRAC_STIMULATED_NEURONS_DEFAULT = 0.4
 NO_STIMUL_ROUNDS_DEFAULT = 1000
-ENSEMBLE_SIZE_DEFAULT = 5
-FILE_NAME_BASE_DATA_DEFAULT = "./Data"
-FILE_NAME_BASE_RESULT_DEFAULT = "./Results"
+ENSEMBLE_SIZE_DEFAULT = 1
+FILE_NAME_BASE_DATA_DEFAULT = "../Data"
+FILE_NAME_BASE_RESULT_DEFAULT = "../Results"
 ENSEMBLE_COUNT_INIT_DEFAULT = 0
 
-N_EXC_ARRAY_DEFAULT = [50,40]
-N_INH_ARRAY_DEFAULT = [10,8]
+N_EXC_ARRAY_DEFAULT = [60,12]
+N_INH_ARRAY_DEFAULT = [15,3]
 CONNECTION_PROB_DEFAULT = 0.3
 NO_LAYERS_DEFAULT = 2
 DELAY_MAX_DEFAULT = 10.0
@@ -31,7 +31,7 @@ CONNECTION_PROB_MATRIX_DEFAULT = np.zeros([2,2])
 CONNECTION_PROB_MATRIX_DEFAULT[0,1] = CONNECTION_PROB_DEFAULT
 
 DELAY_MAX_MATRIX_DEFAULT = np.zeros([2,2])
-DELAY_MAX_MATRIX_DEFAULT[0,1] = 0.9
+DELAY_MAX_MATRIX_DEFAULT[0,1] = 9.0
 
 INFERENCE_METHOD_DEFAULT = 3
 BINARY_MODE_DEFAULT = 4
@@ -128,7 +128,7 @@ class NeuralNet():
             for j in range(i+1,NO_LAYERS_DEFAULT):
                 l = j-i
                 p_temp = CONNECTION_PROB_DEFAULT/(math.log(j) + 0.5772156 + 0.85/(2*j))   # Using Harmonic number approximations
-                p_temp = 0.001*round(1000*p_temp/float(l))
+                p_temp = 0.001 + 0.001*round(1000*p_temp/float(l))
                 CONNECTION_PROB_MATRIX_DEFAULT[i,j] = p_temp
         #...............................................................................
     

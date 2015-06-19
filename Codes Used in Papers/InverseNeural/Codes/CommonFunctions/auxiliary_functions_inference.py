@@ -1,12 +1,36 @@
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 import math
-from brian import *
+#from brian import *
 from scipy import sparse
-import pdb
+import pdb,os,sys
 import random
 import copy
 import numpy.ma as ma
+import numpy as np
+import math
 #==============================================================================
+
+
+#=======================DEFAULT VALUES FOR THE VARIABLES=======================
+FRAC_STIMULATED_NEURONS_DEFAULT = 0.4
+NO_STIMUL_ROUNDS_DEFAULT = 2000
+ENSEMBLE_SIZE_DEFAULT = 1
+FILE_NAME_BASE_DATA_DEFAULT = "../Data"
+FILE_NAME_BASE_RESULT_DEFAULT = "../Results"
+ENSEMBLE_COUNT_INIT_DEFAULT = 0
+INFERENCE_METHOD_DEFAULT = 3
+BINARY_MODE_DEFAULT = 4
+SPARSITY_FLAG_DEFAULT = 0
+GENERATE_DATA_MODE_DEFAULT = 'R'
+INFERENCE_ITR_MAX_DEFAULT = 1
+WE_KNOW_LOCATION_DEFAULT = 'N'
+PRE_SYNAPTIC_NEURON_DEFAULT = 'A'
+DELAY_KNOWN_DEFAULT = 'N'
+VERIFY_FLAG_DEFAULT = 0
+BETA_DEFAULT = 10
+ALPHA0_DEFAULT = 0.000093
+#==============================================================================
+
 
 #==============================================================================
 #========================THE BASIC INFERENCE ALGORITHM=========================
@@ -46,7 +70,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
     
     cost = []
     W_estimated = copy.deepcopy(W_estim)            
-    if norm(W_estimated):
+    if np.linalg.norm(W_estimated):
         fixed_ind = 1-isnan(W_estimated).astype(int)
         fixed_ind = fixed_ind.reshape(n,m)
         W_inferred_orig = W_estimated
@@ -93,14 +117,14 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                 firing_inds = np.nonzero(out_spikes[ijk,:])
                 firing_inds = firing_inds[0]
                 
-                print '-------------Neuron %s----------' %str(ijk2)
+                print '-------------Neuron %s----------' %str(ijk)
                 
                 for ttau in range_tau:
                     
                     #~~~~~~~~~~~~~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~~~~~~~~~~~
                     temp = 0
-                    alpha = alpha0/float(1+log(ttau+1))
-                    sparse_thr = sparse_thr_0/float(1+log(ttau+1))
+                    alpha = alpha0/float(1+math.log(ttau+1))
+                    sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
                     fire_itr = -1
                     last_window = 0
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -112,7 +136,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                         for ttt in range(t_fire+1,min(firing_inds[fire_itr+1]+1,TT)):
                                 
                             t_window = range(max(t_fire-d_window,last_window),ttt)
-                            v = np.sign(sum(in_spikes[:,t_window],axis = 1))
+                            v = np.sign(np.sum(in_spikes[:,t_window],axis = 1))
                         
                             y_predict = 0.5*(1+np.sign(np.dot(W_inferred[:,ijk],v)-theta+0.00002))
                             
@@ -152,8 +176,8 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                 
                 #~~~~~~~~~~~~~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~~~~~~~~~~~
                 temp = 0
-                alpha = alpha0/float(1+log(ttau+1))
-                sparse_thr = sparse_thr_0/float(1+log(ttau+1))
+                alpha = alpha0/float(1+math.log(ttau+1))
+                sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~Randomize Runs~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -312,4 +336,149 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
     
 #==============================================================================
 #==============================================================================
+
+
+#==============================================================================
+#==========================parse_commands_inf_algo=============================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function runs the neural networks and generatethe required neural
+# activity. The Brian simulator is used for this part.
+
+# INPUTS:
+#    input_opts: the options provided by the user
+#------------------------------------------------------------------------------
+
+def parse_commands_inf_algo(input_opts):
+    if (input_opts):
+        for opt, arg in input_opts:
+            if opt == '-Q':
+                frac_stimulated_neurons = float(arg)                # Fraction of neurons in the input layer that will be excited by a stimulus
+            elif opt == '-T':
+                no_stimul_rounds = int(arg)                         # Number of times we inject stimulus to the network
+            elif opt == '-S':
+                ensemble_size = int(arg)                            # The number of random networks that will be generated                
+            elif opt == '-A':
+                file_name_base_data = str(arg)                      # The folder to store results
+            elif opt == '-F':
+                ensemble_count_init = int(arg)                      # The ensemble to start simulations from        
+            elif opt == '-R':
+                random_delay_flag = int(arg)                        # The ensemble to start simulations from            
+            elif opt == '-B':
+                binary_mode = int(arg)                              # Defines the method to transform the graph to binary. "1" for threshold base and "2" for sparsity based                        
+            elif opt == '-M':
+                inference_method = int(arg)                         # The inference method
+            elif opt == '-G':
+                generate_data_mode = str(arg)                       # The data generating method            
+            elif opt == '-Y':
+                sparsity_flag = int(arg)                            # The flag that determines if sparsity should be observed during inference
+            elif opt == '-X':
+                infer_itr_max = int(arg)                            # The flag that determines if sparsity should be observed during inference            
+            elif opt == '-K':
+                we_know_location = str(arg)                         # The flag that determines if we know the location of neurons (with respect to each other) (Y/N)
+            elif opt == '-C': 
+                pre_synaptic_method = str(arg)                      # The flag that determines if all previous-layers neurons count as  pre-synaptic (A/O)
+            elif opt == '-V': 
+                verify_flag = int(arg)                              # If 1, the post-synaptic states will be predicted
+            elif opt == '-J': 
+                delay_known_flag = str(arg)                         # If 'Y', we assume that the delay is known during the inference algorithm
+            elif opt == '-U': 
+                beta = int(arg)                                     # Specify the update probability paramter (p = 1/beta) in STOCHASTIC NEUINF
+            elif opt == '-Z': 
+                alpha0 = float(arg)                                 # Specify the update learnining rate 
+            elif opt == '-h':
+                print(help_message)
+                sys.exit()
+    else:
+        print('Code will be executed using default values')
+        
+        
+    #------------Set the Default Values if Variables are not Defines---------------
+    if 'frac_stimulated_neurons' not in locals():
+        frac_stimulated_neurons = FRAC_STIMULATED_NEURONS_DEFAULT
+        print('ATTENTION: The default value of %s for frac_stimulated_neurons is considered.\n' %str(frac_stimulated_neurons))
+
+    if 'infer_itr_max' not in locals():
+        infer_itr_max = INFERENCE_ITR_MAX_DEFAULT
+        print('ATTENTION: The default value of %s for infer_itr_max is considered.\n' %str(infer_itr_max))
+        
+    if 'no_stimul_rounds' not in locals():        
+        no_stimul_rounds = NO_STIMUL_ROUNDS_DEFAULT
+        print('ATTENTION: The default value of %s for no_stimul_rounds is considered.\n' %str(no_stimul_rounds))
+
+    if 'ensemble_size' not in locals():            
+        ensemble_size = ENSEMBLE_SIZE_DEFAULT
+        print('ATTENTION: The default value of %s for ensemble_size is considered.\n' %str(ensemble_size))
+    
+    if 'file_name_base_data' not in locals():
+        file_name_base_data = FILE_NAME_BASE_DATA_DEFAULT;
+        print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_data))
+
+    if 'ensemble_count_init' not in locals():
+        ensemble_count_init = ENSEMBLE_COUNT_INIT_DEFAULT;
+        print('ATTENTION: The default value of %s for ensemble_count_init is considered.\n' %str(ensemble_count_init))
+    
+    if 'binary_mode' not in locals():
+        binary_mode = BINARY_MODE_DEFAULT;
+        print('ATTENTION: The default value of %s for binary_mode is considered.\n' %str(binary_mode))
+
+    if 'file_name_base_results' not in locals():
+        file_name_base_results = FILE_NAME_BASE_RESULT_DEFAULT;
+        print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_results))
+
+    if 'inference_method' not in locals():
+        inference_method = INFERENCE_METHOD_DEFAULT;
+        print('ATTENTION: The default value of %s for inference_method is considered.\n' %str(inference_method))
+
+    if 'sparsity_flag' not in locals():
+        sparsity_flag = SPARSITY_FLAG_DEFAULT;
+        print('ATTENTION: The default value of %s for sparsity_flag is considered.\n' %str(sparsity_flag))
+    
+    if 'generate_data_mode' not in locals():
+        generate_data_mode = GENERATE_DATA_MODE_DEFAULT
+        print('ATTENTION: The default value of %s for generate_data_mode is considered.\n' %str(generate_data_mode))
+
+    if 'we_know_location' not in locals():
+        we_know_location = WE_KNOW_LOCATION_DEFAULT
+        print('ATTENTION: The default value of %s for we_know_location is considered.\n' %str(we_know_location))
+
+    if 'verify_flag' not in locals():
+        verify_flag = VERIFY_FLAG_DEFAULT
+        print('ATTENTION: The default value of %s for verify_flag is considered.\n' %str(verify_flag))
+    
+    if 'beta' not in locals():
+        beta = BETA_DEFAULT
+        print('ATTENTION: The default value of %s for beta is considered.\n' %str(beta))
+    
+    if 'alpha0' not in locals():
+        alpha0 = ALPHA0_DEFAULT
+        print('ATTENTION: The default value of %s for alpha0 is considered.\n' %str(alpha0))
+    #------------------------------------------------------------------------------
+    
+    #------------------Create the Necessary Directories if Necessary---------------
+    if not os.path.isdir(file_name_base_results):
+        os.makedirs(file_name_base_results)
+    if not os.path.isdir(file_name_base_results+'/Accuracies'):
+        temp = file_name_base_results + '/Accuracies'
+        os.makedirs(temp)
+    if not os.path.isdir(file_name_base_results+'/RunningTimes'):
+        temp = file_name_base_results + '/RunningTimes'
+        os.makedirs(temp)
+    if not os.path.isdir(file_name_base_results+'/Inferred_Graphs'):
+        temp = file_name_base_results + '/Inferred_Graphs'
+        os.makedirs(temp)
+    if not os.path.isdir(file_name_base_results+'/Verified_Spikes'):
+        temp = file_name_base_results + '/Verified_Spikes'
+        os.makedirs(temp)
+
+    if not os.path.isdir(file_name_base_results+'/BeliefQuality'):    
+        temp = file_name_base_results + '/BeliefQuality'
+        os.makedirs(temp)
+    if not os.path.isdir(file_name_base_results+'/Plot_Results'):    
+        temp = file_name_base_results + '/Plot_Results'
+        os.makedirs(temp)    
+    #------------------------------------------------------------------------------
+
+
+    return frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,binary_mode,file_name_base_results,inference_method,sparsity_flag,we_know_location,verify_flag,beta,alpha0,infer_itr_max
 

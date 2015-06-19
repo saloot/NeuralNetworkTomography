@@ -1,6 +1,7 @@
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 import math
-from brian import *
+#from brian import *
+import numpy as np
 from scipy import sparse
 import pdb
 import random
@@ -149,7 +150,7 @@ def read_spikes(file_name_base,no_layers,n_exc_array,n_inh_array,params):
             n_so_far = n_so_far + n
             Neural_Spikes[str(l_in)] = list([[],[],in_spikes])
             Neural_Spikes['tot'] = tot_spikes
-            print(sum(in_spikes))
+            print(sum(sum(in_spikes)))
             print firing_times_max
             Neural_Spikes['act_' + str(l_in)] = firing_times
     

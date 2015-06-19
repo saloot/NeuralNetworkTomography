@@ -3,6 +3,7 @@ import brian
 from brian import *
 import numpy as np
 import sys,getopt,os
+
 from CommonFunctions.auxiliary_functions_generate import generate_neural_activity,parse_commands_gen_data
 from CommonFunctions.Neurons_and_Networks import *
 
@@ -13,7 +14,7 @@ os.system('clear')                                              # Clear the comm
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
 input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:G:")
-frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,file_name_base_data,ensemble_count_init,generate_data_mode = parse_commands_gen_data(input_opts)
+frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode = parse_commands_gen_data(input_opts)
 #==============================================================================
 
 

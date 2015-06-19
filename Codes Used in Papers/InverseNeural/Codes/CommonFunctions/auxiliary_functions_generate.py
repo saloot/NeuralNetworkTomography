@@ -1,6 +1,6 @@
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 import math
-from brian import *
+#from brian import *
 from scipy import sparse
 import pdb
 import random
@@ -430,7 +430,7 @@ def verify_neural_activity(NeuralNetwork,Network_in,running_period,frac_input_ne
 
 
 #==============================================================================
-#===========================verify_neural_activity=============================
+#==========================parse_commands_gen_data=============================
 #==============================================================================
 #-------------------------------Descriptions-----------------------------------
 # This function runs the neural networks and generatethe required neural
@@ -490,4 +490,4 @@ def parse_commands_gen_data(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,file_name_base_data,ensemble_count_init,generate_data_mode
+    return frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode
