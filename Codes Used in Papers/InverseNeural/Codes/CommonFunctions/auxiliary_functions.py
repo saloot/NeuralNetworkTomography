@@ -500,16 +500,18 @@ def combine_spikes_matrix_FF(Network,l_out,generate_data_mode,T,Neural_Spikes):
         out_spikes = (out_spikes>0).astype(int)
         out_spikes = out_spikes[:,0:T]
     else:
-        temp_sp = Neural_Spikes['act_'+str(l_in)]
-        out_spikes = np.zeros([m,T])
+        temp_sp = Neural_Spikes['act_'+str(l_out)]
+        out_spikes_tot = np.zeros([m,T])
         for i in range(0,m):
-            ttimes = np.array(in_spikes_temp[str(i)])
+            ttimes = np.array(temp_sp[str(i)])
+            
             ttimes = ttimes[ttimes<T/1000.0]
                         
             sps_inds = (1000*ttimes).astype(int)
-            out_spikes[i,sps_inds] = 1
+            out_spikes_tot[i,sps_inds] = 1
         
     
+        out_spikes = out_spikes_tot
 
     #~~~~~~~~~~~~~~Concatenate Pre-synaptic Spikes~~~~~~~~~~~~~
     n_tot = 0
@@ -554,7 +556,7 @@ def combine_spikes_matrix_FF(Network,l_out,generate_data_mode,T,Neural_Spikes):
                     temp_sp = Neural_Spikes['act_'+str(l_in)]
                     in_spikes = np.zeros([n,T])
                     for i in range(0,n):
-                        ttimes = np.array(in_spikes_temp[str(i)])
+                        ttimes = np.array(temp_sp[str(i)])
                         ttimes = ttimes[ttimes<T/1000.0]                    
                         
                         sps_inds = (1000*ttimes).astype(int)

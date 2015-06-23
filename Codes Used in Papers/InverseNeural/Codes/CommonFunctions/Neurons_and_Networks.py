@@ -7,8 +7,15 @@
 
 
 
+try:
+    from brian import*
+except:
+    print '============================='
+    print 'Brian simulator is not installed. I will try to do without it!'
+    import numpy as np
+    import math
+    print '============================='
 
-from brian import*
 import os
 import pdb
 
@@ -113,8 +120,16 @@ class NeuralNet():
         global N_EXC_ARRAY_DEFAULT,N_INH_ARRAY_DEFAULT,CONNECTION_PROB_DEFAULT,NO_LAYERS_DEFAULT,NO_LAYERS_DEFAULT,DELAY_MAX_DEFAULT,RANDOM_DELAY_FLAG_DEFAULT
 
         #...........................THE DEFAULT NEURAL MODEL............................
-        tau=10*ms
-        tau_e=2*ms # AMPA synapse
+        try:
+            tau=10*ms
+        except:
+            tau = 10
+        
+        try:
+            tau_e=2*ms # AMPA synapse
+        except:
+            tau_e = 2
+            
         eqs='''
         dv/dt=(I-v)/tau : volt
         dI/dt=-I/tau_e : volt

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pdb
 from copy import deepcopy
 
-from CommonFunctions.auxiliary_functions import read_spikes,combine_weight_matrix,combine_spikes_matrix
+from CommonFunctions.auxiliary_functions import read_spikes,combine_weight_matrix,combine_spikes_matrix,combine_spikes_matrix_FF,generate_file_name
 from CommonFunctions.auxiliary_functions_inference import *
 from CommonFunctions.Neurons_and_Networks import *
 
@@ -96,9 +96,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
     
     if we_know_location.lower() == 'n':        
         W_tot,DD_tot = combine_weight_matrix(Network)    
-        
-
-    itr_T = 0
+    
     #--------------------------------------------------------------------------           
     
     for T in T_range:
@@ -121,7 +119,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 #~~~~~~~~~~~~~~~~~~~~Perfrom Inference~~~~~~~~~~~~~~~~~~~~~
                 for infer_itr in range(0,infer_itr_max):
                     W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estimated,1,generate_data_mode)                        
-                        
+
                     W_temp = np.ma.masked_array(W_inferred_our_tot,mask= fixed_entries)                        
                     max_val = abs(W_temp).max()
                     min_val = W_temp.min()
@@ -129,11 +127,12 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     W_estimated= []
                     centroids = []
                     #W_estimated,centroids = beliefs_to_binary(7,W_inferred_our_tot,[fixed_entries,1.25*(1+infer_itr/7.5),2.5*(1+infer_itr/15.0),],0)
-                        
+                    
+                    
                     if infer_itr < infer_itr_max-1:
                         fixed_entries = 1-isnan(W_estimated).astype(int)
                         
-                    if norm(1-fixed_entries) == 0:
+                    if np.linalg.norm(1-fixed_entries) == 0:
                         break
 
                     
@@ -153,8 +152,9 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     W_inferred_our = W_inferred_our_tot[n_so_far:n_so_far+n,:]                        
                     n_so_far = n_so_far + n
                     file_name_ending_base = Network.file_name_ending + '_l_' + str(l_in) + '_to_' + str(l_out)                
-                    file_name_ending = generate_file_name(file_name_ending_base,inference_method,we_know_location,pre_synaptic_method,generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,delay_known_flag)                    
+                    file_name_ending = generate_file_name(file_name_ending_base,inference_method,we_know_location,'A',generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,'N')                    
                     file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending
+                
                     np.savetxt(file_name,W_inferred_our,'%1.5f',delimiter='\t')
                 #..............................................................
 
@@ -175,10 +175,9 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(out_spikes_tot_mat,out_spikes_tot_mat,inference_method,inferece_params,W_estimated,0,generate_data_mode)
                 
             #...................Save the Belief Matrices...................
-            file_name_ending = generate_file_name(Network.file_name_ending,inference_method,we_know_location,pre_synaptic_method,generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,delay_known_flag)                    
+            file_name_ending = generate_file_name(Network.file_name_ending,inference_method,we_know_location,'A',generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,'N')                    
             file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending
             np.savetxt(file_name,W_inferred_our_tot,'%1.5f',delimiter='\t')
             #..............................................................
 
-        itr_T = itr_T + 1        
         #----------------------------------------------------------------------

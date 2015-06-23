@@ -106,11 +106,9 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         #..............................................................
         
         #...................Save the Belief Matrices...................
-        file_name_ending = generate_file_name(Network.file_name_ending,inference_method,we_know_location,pre_synaptic_method,generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,delay_known_flag)
+        file_name_ending = generate_file_name(Network.file_name_ending,inference_method,we_know_location,'A',generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,'N')
         file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending
         np.savetxt(file_name,W_inferred_our_tot,'%1.5f',delimiter='\t')
         #..............................................................
-                
-                
-        itr_T = itr_T + 1
+        
     #----------------------------------------------------------------------

@@ -333,7 +333,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
         W_inferred = np.multiply(1-fixed_ind,W_temp) + np.multiply(fixed_ind,W_inferred)
     #--------------------------------------------------------------------------
     
-    
+    return  W_inferred,cost,Updated_Vals
 #==============================================================================
 #==============================================================================
 
