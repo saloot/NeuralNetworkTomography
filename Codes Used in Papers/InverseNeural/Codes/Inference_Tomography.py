@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pdb
 from copy import deepcopy
 
-from CommonFunctions.auxiliary_functions import read_spikes,combine_weight_matrix,combine_spikes_matrix
+from CommonFunctions.auxiliary_functions import read_spikes,combine_weight_matrix,combine_spikes_matrix,generate_file_name
 from CommonFunctions.auxiliary_functions_inference import *
 from CommonFunctions.Neurons_and_Networks import *
 
@@ -14,7 +14,7 @@ os.system('clear')                                              # Clear the comm
 #==============================================================================
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:G:X:Y:K:C:V:J:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:X:Y:C:V:J:")
 
 frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,binary_mode,file_name_base_results,inference_method,sparsity_flag,we_know_location,verify_flag,beta,alpha0,infer_itr_max = parse_commands_inf_algo(input_opts)
 #==============================================================================
@@ -80,22 +80,8 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
 
 #============================INFER THE CONNECTIONS=============================
        
-    #--------------------------In-Loop Initializations-------------------------
-    if (generate_data_mode == 'R'):
-        #------------------Preprocess the Spikes if Necessary-----------------
-        d_max = 10
-        d_window = 1+d_max
-        
-        Actual_Neural_Times = {}
-        for l in range(0,Network.no_layers):                
-            temp_list = Neural_Spikes[str(l)]
-            spikes_actual_times = Neural_Spikes['act_'+str(l)]        
-            Actual_Neural_Times[str(l)] = spikes_actual_times
-    #--------------------------------------------------------------------------
-    
     #--------------------Read the Whole Connectivity Matrix--------------------
-    W_tot,DD_tot = combine_weight_matrix(Network,generate_data_mode)
-    W = W_tot
+    W,DD_tot = combine_weight_matrix(Network)    
     m,n = W.shape
     #--------------------------------------------------------------------------           
     
@@ -103,7 +89,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
     for T in T_range:
         
         #.....................Assign Inference Parameters......................
-        out_spikes_tot,out_spikes_tot_mat,non_stimul_inds = combine_spikes_matrix(Network,generate_data_mode,T,Actual_Neural_Times,Neural_Spikes)
+        out_spikes_tot,out_spikes_tot_mat,non_stimul_inds = combine_spikes_matrix(Network,T,generate_data_mode,Neural_Spikes)
         
         W_estimated = np.zeros([n,m])
         fixed_entries = np.zeros([n,m])
@@ -119,21 +105,9 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         
         #..............................................................
         
-            
-        #...................Save the Belief Matrices...................                                                
-        file_name_ending23 = Network.file_name_ending + '_I_' + str(inference_method)
-        file_name_ending23 = file_name_ending23 + '_Loc_' + we_know_location
-        file_name_ending23 = file_name_ending23 + '_Pre_' + pre_synaptic_method
-        file_name_ending23 = file_name_ending23 + '_G_' + generate_data_mode
-        file_name_ending23 = file_name_ending23 + '_X_' + str(infer_itr_max)
-        file_name_ending23 = file_name_ending23 + '_Q_' + str(frac_stimulated_neurons)
-        if (sparsity_flag):
-            file_name_ending23 = file_name_ending23 + '_S_' + str(sparsity_flag)
-        file_name_ending2 = file_name_ending23 +"_T_%s" %str(T)
-        if delay_known_flag == 'Y':
-            file_name_ending2 = file_name_ending2 +"_DD_Y"
-
-        file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending2
+        #...................Save the Belief Matrices...................
+        file_name_ending = generate_file_name(Network.file_name_ending,inference_method,we_know_location,pre_synaptic_method,generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,delay_known_flag)
+        file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending
         np.savetxt(file_name,W_inferred_our_tot,'%1.5f',delimiter='\t')
         #..............................................................
                 

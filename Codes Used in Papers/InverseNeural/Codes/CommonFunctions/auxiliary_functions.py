@@ -25,6 +25,33 @@ def q_func_scalar(x):
 
 
 #==============================================================================
+#================================generate_file_name=================================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function generates the proper file anme ending to save our results
+# to proper files.
+#------------------------------------------------------------------------------
+
+def generate_file_name(file_name_ending_base,inference_method,we_know_location,pre_synaptic_method,generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,delay_known_flag):
+
+    file_name_ending23 = file_name_ending_base + '_I_' + str(inference_method)
+    file_name_ending23 = file_name_ending23 + '_Loc_' + we_know_location
+    file_name_ending23 = file_name_ending23 + '_Pre_' + pre_synaptic_method
+    file_name_ending23 = file_name_ending23 + '_G_' + generate_data_mode
+    file_name_ending23 = file_name_ending23 + '_X_' + str(infer_itr_max)
+    file_name_ending23 = file_name_ending23 + '_Q_' + str(frac_stimulated_neurons)
+    if (sparsity_flag):
+        file_name_ending23 = file_name_ending23 + '_S_' + str(sparsity_flag)
+    file_name_ending2 = file_name_ending23 +"_T_%s" %str(T)
+    if delay_known_flag == 'Y':
+        file_name_ending2 = file_name_ending2 +"_DD_Y"
+    
+    return file_name_ending2
+            
+#==============================================================================        
+#==============================================================================
+            
+#==============================================================================
 #=================================Multi_Picks==================================
 #==============================================================================
 #-------------------------------Descriptions-----------------------------------
@@ -70,6 +97,7 @@ def soft_threshold(W,thr):
 def read_spikes(file_name_base,no_layers,n_exc_array,n_inh_array,params):
     Neural_Spikes = {}
     store_method = params[0]
+    firing_times_max = 0
     
     if store_method == 'c':
         no_stimul_rounds = params[1]
@@ -112,6 +140,9 @@ def read_spikes(file_name_base,no_layers,n_exc_array,n_inh_array,params):
 
             print(sum((S_times>0)))        
             Neural_Spikes[str(l_in)] = list([recorded_spikes,cumulative_recorded_spikes,in_spikes]) #in_spikes
+            
+            if cascade_count > firing_times_max:
+                firing_times_max = cascade_count
     else:
         no_stimul_rounds = params[1]
         n_tot = sum(n_exc_array)+sum(n_inh_array)
@@ -151,9 +182,10 @@ def read_spikes(file_name_base,no_layers,n_exc_array,n_inh_array,params):
             Neural_Spikes[str(l_in)] = list([[],[],in_spikes])
             Neural_Spikes['tot'] = tot_spikes
             print(sum(sum(in_spikes)))
-            print firing_times_max
+            
             Neural_Spikes['act_' + str(l_in)] = firing_times
     
+    print firing_times_max
     return Neural_Spikes,firing_times_max
 #==============================================================================
 #==============================================================================
@@ -284,15 +316,13 @@ def calculate_belief_quality(W_inferred,W_orig):
 
 # INPUT:
 #    Network: the object containing the information about the structure of neural graph (ground truth)
-#    generate_data_mode: 'F' for stimulate-and-observe scenario
-#                        'R' for the general case, where all neurons in the network can be trigerred due to external traffic
 
 # OUTPUT:
 #    W_tot:  the matrix containing the connections weights of the 'whole' neural graph (all the layers)
 #    DD_tot: the matrix containing the connections delays of the 'whole' neural graph (all the layers)
 #------------------------------------------------------------------------------
 
-def combine_weight_matrix(Network,generate_data_mode):
+def combine_weight_matrix(Network):
     W_tot = []
     DD_tot = []
     
@@ -360,19 +390,15 @@ def combine_weight_matrix(Network,generate_data_mode):
 
 # INPUT:
 #    Network: the object containing the information about the structure of neural graph (ground truth)
-#    generate_data_mode: 'F' for stimulate-and-observe scenario
-#                        'R' for the general case, where all neurons in the network can be trigerred due to external traffic
 #    T: the duration of recorded samples (in miliseconds)
 #    Actual_Neural_Times: A dictionary containing the spike times (in seconds) for each neuron (dictionary keys are the neuron indices)
-#    Neural_Spikes: dictionary containing the spike times as an array for the case that we have: generate_data_mode = 'F'
 
 # OUTPUT:
 #    out_spikes_tot: a dictionary containing the spike times for all neurons in the graph
 #    out_spikes_tot_mat: a matrix of size T*n, where a '1' in entry (t,i) means neuron i has fired at time t (in miliseconds)
-#    non_stimul_inds: if we have (generate_data_mode =='F'), this dictionary specifies the neurons that have not been stimulated in each stimulation round
 #------------------------------------------------------------------------------
 
-def combine_spikes_matrix(Network,generate_data_mode,T,Actual_Neural_Times,Neural_Spikes):
+def combine_spikes_matrix(Network,T,generate_data_mode,Actual_Neural_Times):
         
     if generate_data_mode == 'R':                
         out_spikes_tot = {}
@@ -393,23 +419,21 @@ def combine_spikes_matrix(Network,generate_data_mode,T,Actual_Neural_Times,Neura
         n_exc = Network.n_exc_array[l_in]
         n_inh = Network.n_inh_array[l_in]
         n = n_exc + n_inh
-                
-                
-        if generate_data_mode == 'R':
-            spikes_times = Actual_Neural_Times[str(l_in)]
+        
+        if generate_data_mode == 'R':    
+            spikes_times = Actual_Neural_Times['act_'+str(l_in)]
             for i in range(0,n):
                 ind = str(n_so_far)
                 ttimes = np.array(spikes_times[str(i)])
                 ttimes = ttimes[ttimes<T/1000.0]
                 out_spikes_tot[ind] = ttimes
-                    
+                        
                 sps_inds = (1000*ttimes).astype(int)
                 out_spikes_tot_mat[n_so_far,sps_inds] = 1
-                        
+                            
                 n_so_far = n_so_far + 1
-
         else:
-            temp_list = Neural_Spikes[str(l_in)]
+            temp_list = Actual_Neural_Times[str(l_in)]
             spikes = (temp_list[2])
                 
             if len(out_spikes_tot):
@@ -432,12 +456,115 @@ def combine_spikes_matrix(Network,generate_data_mode,T,Actual_Neural_Times,Neura
             ttemp = list(ttemp[0])
             ttemp.extend(range(n_layer_1,n_layer_1+n_layer_2))
             non_stimul_inds[str(ttt)] = np.array(ttemp)
-        
-        
-                
+            
+
     return out_spikes_tot,out_spikes_tot_mat,non_stimul_inds
 #==============================================================================
 #==============================================================================
 
 
 
+#==============================================================================
+#================COMBINE SPIKE TIMES FOR DIFFERENT LAYERS======================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function combines the spike times for the neurons in different layers in
+# a large matrix that contains spikes for all the neurons in the graph. 
+
+# INPUT:
+#    Network: the object containing the information about the structure of neural graph (ground truth)
+#    l_out: the index of output layer (1,2,3,...)
+#    generate_data_mode: 'F' for stimulate-and-observe scenario
+#                        'R' for the general case, where all neurons in the network can be trigerred due to external traffic
+#    T: the duration of recorded samples (in miliseconds)
+#    Actual_Neural_Times: A dictionary containing the spike times (in seconds) for each neuron (dictionary keys are the neuron indices)
+#    Neural_Spikes: dictionary containing the spike times as an array for the case that we have: generate_data_mode = 'F'
+
+# OUTPUT:
+#    in_spikes: a matrix for pre-synaptic neural states, where a '1' in entry (i,t) means neuron i has fired at time t (in miliseconds)
+#    out_spikes: a matrix for post-synaptic neural states, where a '1' in entry (i,t) means neuron i has fired at time t (in miliseconds)
+#    non_stimul_inds: if we have (generate_data_mode =='F'), this dictionary specifies the neurons that have not been stimulated in each stimulation round
+#------------------------------------------------------------------------------
+
+def combine_spikes_matrix_FF(Network,l_out,generate_data_mode,T,Neural_Spikes):
+    
+    
+    n_exc = Network.n_exc_array[l_out]
+    n_inh = Network.n_inh_array[l_out]
+    m = n_exc + n_inh                
+    
+    temp_list = Neural_Spikes[str(l_out)]
+    out_spikes = (temp_list[2])
+            
+    if (generate_data_mode != 'R'):
+        out_spikes = (out_spikes>0).astype(int)
+        out_spikes = out_spikes[:,0:T]
+    else:
+        temp_sp = Neural_Spikes['act_'+str(l_in)]
+        out_spikes = np.zeros([m,T])
+        for i in range(0,m):
+            ttimes = np.array(in_spikes_temp[str(i)])
+            ttimes = ttimes[ttimes<T/1000.0]
+                        
+            sps_inds = (1000*ttimes).astype(int)
+            out_spikes[i,sps_inds] = 1
+        
+    
+
+    #~~~~~~~~~~~~~~Concatenate Pre-synaptic Spikes~~~~~~~~~~~~~
+    n_tot = 0
+    n_so_far = 0
+    in_spikes = []
+    for l_in in range(0,l_out):
+        if (generate_data_mode != 'R'):
+            temp_list = Neural_Spikes[str(l_in)]
+            temp_list = temp_list[2]
+        else:
+            temp_list = Neural_Spikes['act_'+str(l_in)]
+            
+        n_exc = Network.n_exc_array[l_in]
+        n_inh = Network.n_inh_array[l_in]
+        n = n_exc + n_inh
+        n_tot = n_tot + n_exc + n_inh
+        if len(in_spikes):
+            in_spikes_temp = temp_list
+            
+            if (generate_data_mode == 'R'):
+                out_spikes_tot_mat = np.zeros([n,T])
+                for i in range(0,n):
+                    ttimes = np.array(in_spikes_temp[str(i)])
+                    ttimes = ttimes[ttimes<T/1000.0]                    
+                    
+                    sps_inds = (1000*ttimes).astype(int)
+                    out_spikes_tot_mat[i,sps_inds] = 1
+                    
+                
+                in_spikes_temp = out_spikes_tot_mat
+                
+            in_spikes = np.concatenate([in_spikes,in_spikes_temp])
+            
+        else:
+            if l_in == 0:
+                in_spikes = temp_list
+                
+                    
+                if (generate_data_mode != 'R'):
+                    in_spikes = in_spikes[:,0:T]
+                else:
+                    temp_sp = Neural_Spikes['act_'+str(l_in)]
+                    in_spikes = np.zeros([n,T])
+                    for i in range(0,n):
+                        ttimes = np.array(in_spikes_temp[str(i)])
+                        ttimes = ttimes[ttimes<T/1000.0]                    
+                        
+                        sps_inds = (1000*ttimes).astype(int)
+                        in_spikes[i,sps_inds] = 1
+
+        if (generate_data_mode != 'R'):# or (inference_method != 4):
+            in_spikes = (in_spikes>0).astype(int)
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    return in_spikes, out_spikes
+    
+    
+    
