@@ -19,11 +19,11 @@ FILE_NAME_BASE_DATA_DEFAULT = "../Data"
 FILE_NAME_BASE_RESULT_DEFAULT = "../Results"
 ENSEMBLE_COUNT_INIT_DEFAULT = 0
 INFERENCE_METHOD_DEFAULT = 3
-BINARY_MODE_DEFAULT = 4
+TERNARY_MODE_DEFAULT = 4
 SPARSITY_FLAG_DEFAULT = 0
 GENERATE_DATA_MODE_DEFAULT = 'R'
 INFERENCE_ITR_MAX_DEFAULT = 1
-WE_KNOW_LOCATION_DEFAULT = 'N'
+WE_KNOW_TOPOLOGY_DEFAULT = 'N'
 PRE_SYNAPTIC_NEURON_DEFAULT = 'A'
 DELAY_KNOWN_DEFAULT = 'N'
 VERIFY_FLAG_DEFAULT = 0
@@ -363,9 +363,7 @@ def parse_commands_inf_algo(input_opts):
             elif opt == '-F':
                 ensemble_count_init = int(arg)                      # The ensemble to start simulations from        
             elif opt == '-R':
-                random_delay_flag = int(arg)                        # The ensemble to start simulations from            
-            elif opt == '-B':
-                binary_mode = int(arg)                              # Defines the method to transform the graph to binary. "1" for threshold base and "2" for sparsity based                        
+                random_delay_flag = int(arg)                        # The ensemble to start simulations from                        
             elif opt == '-M':
                 inference_method = int(arg)                         # The inference method
             elif opt == '-G':
@@ -375,7 +373,7 @@ def parse_commands_inf_algo(input_opts):
             elif opt == '-X':
                 infer_itr_max = int(arg)                            # The flag that determines if sparsity should be observed during inference            
             elif opt == '-K':
-                we_know_location = str(arg)                         # The flag that determines if we know the location of neurons (with respect to each other) (Y/N)
+                we_know_topology = str(arg)                         # The flag that determines if we know the location of neurons (with respect to each other) (Y/N)
             elif opt == '-C': 
                 pre_synaptic_method = str(arg)                      # The flag that determines if all previous-layers neurons count as  pre-synaptic (A/O)
             elif opt == '-V': 
@@ -418,9 +416,9 @@ def parse_commands_inf_algo(input_opts):
         ensemble_count_init = ENSEMBLE_COUNT_INIT_DEFAULT;
         print('ATTENTION: The default value of %s for ensemble_count_init is considered.\n' %str(ensemble_count_init))
     
-    if 'binary_mode' not in locals():
-        binary_mode = BINARY_MODE_DEFAULT;
-        print('ATTENTION: The default value of %s for binary_mode is considered.\n' %str(binary_mode))
+    if 'ternary_mode' not in locals():
+        ternary_mode = TERNARY_MODE_DEFAULT;
+        print('ATTENTION: The default value of %s for ternary_mode is considered.\n' %str(ternary_mode))
 
     if 'file_name_base_results' not in locals():
         file_name_base_results = FILE_NAME_BASE_RESULT_DEFAULT;
@@ -438,9 +436,9 @@ def parse_commands_inf_algo(input_opts):
         generate_data_mode = GENERATE_DATA_MODE_DEFAULT
         print('ATTENTION: The default value of %s for generate_data_mode is considered.\n' %str(generate_data_mode))
 
-    if 'we_know_location' not in locals():
-        we_know_location = WE_KNOW_LOCATION_DEFAULT
-        print('ATTENTION: The default value of %s for we_know_location is considered.\n' %str(we_know_location))
+    if 'we_know_topology' not in locals():
+        we_know_topology = WE_KNOW_TOPOLOGY_DEFAULT
+        print('ATTENTION: The default value of %s for we_know_topology is considered.\n' %str(we_know_topology))
 
     if 'verify_flag' not in locals():
         verify_flag = VERIFY_FLAG_DEFAULT
@@ -480,5 +478,5 @@ def parse_commands_inf_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,binary_mode,file_name_base_results,inference_method,sparsity_flag,we_know_location,verify_flag,beta,alpha0,infer_itr_max
+    return frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,verify_flag,beta,alpha0,infer_itr_max
 

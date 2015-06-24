@@ -32,10 +32,10 @@ def q_func_scalar(x):
 # to proper files.
 #------------------------------------------------------------------------------
 
-def generate_file_name(file_name_ending_base,inference_method,we_know_location,pre_synaptic_method,generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,delay_known_flag):
+def generate_file_name(file_name_ending_base,inference_method,we_know_topology,pre_synaptic_method,generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,delay_known_flag):
 
     file_name_ending23 = file_name_ending_base + '_I_' + str(inference_method)
-    file_name_ending23 = file_name_ending23 + '_Loc_' + we_know_location
+    file_name_ending23 = file_name_ending23 + '_Loc_' + we_know_topology
     file_name_ending23 = file_name_ending23 + '_Pre_' + pre_synaptic_method
     file_name_ending23 = file_name_ending23 + '_G_' + generate_data_mode
     file_name_ending23 = file_name_ending23 + '_X_' + str(infer_itr_max)

@@ -14,9 +14,9 @@ os.system('clear')                                              # Clear the comm
 #==============================================================================
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:G:X:Y:K:C:V:J:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:G:X:Y:K:C:V:J:")
 
-frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,binary_mode,file_name_base_results,inference_method,sparsity_flag,we_know_location,verify_flag,beta,alpha0,infer_itr_max = parse_commands_inf_algo(input_opts)
+frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,verify_flag,beta,alpha0,infer_itr_max = parse_commands_inf_algo(input_opts)
 #==============================================================================
 
 
@@ -37,21 +37,23 @@ else:
 sim_window = round(1+running_period*10)                     # This is the number of iterations performed within each cascade
 
 theta = 0.005                                               # The update threshold of the neurons in the network
-sparse_thr0 = 0.0001
+
 #------------------------------------------------------------------------------
 
 #-------------------------Initialize Inference Parameters----------------------
 
 #............................Perceptron-Based Approach.........................
 if (inference_method == 3) or (inference_method == 2):    
-    bin_size = 5
-    d_window = 15    
-    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,250,d_window,beta,bin_size]
+    bin_size = 5                                            # The size of time bins (not relevant in this version)
+    d_window = 15                                           # The time window the algorithm considers to account for pre-synaptic spikes
+    max_itr_optimization = 250                              # This is the maximum number of iterations performed by internal optimization algorithm for inference
+    sparse_thr0 = 0.0001                                    # The initial sparsity soft-threshold (not relevant in this version)
+    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size]
 #..............................................................................
 
-#...............................CCF-Based Approach.............................
+#.........................Cross Correlogram Approach...........................
 elif (inference_method == 4):
-    d_window = 15
+    d_window = 15                                           # The time window the algorithm considers to compare shifted versions of two spiking patterns
     inferece_params = [d_window]            
 #..............................................................................
 
@@ -63,8 +65,6 @@ elif (inference_method == 4):
 
 #================PERFORM THE INFERENCE TASK FOR EACH ENSEMBLE==================
 for ensemble_count in range(ensemble_count_init,ensemble_size):
-
-    t0_ensemble = time()
     
     #--------------------------READ THE NETWORK--------------------------------
     Network.read_weights(ensemble_count,file_name_base_data)
@@ -78,6 +78,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         Neural_Spikes,T_max = read_spikes(file_name_base,Network.no_layers,Network.n_exc_array,Network.n_inh_array,['u',int(running_period*10)])
     #--------------------------------------------------------------------------
     
+    #------Calculate the Range to Assess the Effect of Recording Duration------
     if (generate_data_mode == 'F'):
         T_max = int(T_max)
     else:
@@ -85,6 +86,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         
     T_step = int(T_max/6.0)
     T_range = range(T_step, T_max+1, T_step)
+    #--------------------------------------------------------------------------
     
     
 #==============================================================================
@@ -93,16 +95,15 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
 
 #============================INFER THE CONNECTIONS=============================
        
-    
-    if we_know_location.lower() == 'n':        
+    #--------------------Read the Whole Connectivity Matrix--------------------
+    if we_know_topology.lower() == 'n':        
         W_tot,DD_tot = combine_weight_matrix(Network)    
-    
     #--------------------------------------------------------------------------           
     
     for T in T_range:
         
-        #-------------------------If We Know the Location----------------------
-        if we_know_location.lower() == 'y':
+        #-------------------------If We Know the Topology----------------------
+        if we_know_topology.lower() == 'y':
             
             for l_out in range(1,Network.no_layers):        
                     
@@ -152,7 +153,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     W_inferred_our = W_inferred_our_tot[n_so_far:n_so_far+n,:]                        
                     n_so_far = n_so_far + n
                     file_name_ending_base = Network.file_name_ending + '_l_' + str(l_in) + '_to_' + str(l_out)                
-                    file_name_ending = generate_file_name(file_name_ending_base,inference_method,we_know_location,'A',generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,'N')                    
+                    file_name_ending = generate_file_name(file_name_ending_base,inference_method,we_know_topology,'A',generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,'N')                    
                     file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending
                 
                     np.savetxt(file_name,W_inferred_our,'%1.5f',delimiter='\t')
@@ -173,11 +174,14 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             #........................Perfrom Inference.........................
             for infer_itr in range(0,infer_itr_max):
                 W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(out_spikes_tot_mat,out_spikes_tot_mat,inference_method,inferece_params,W_estimated,0,generate_data_mode)
-                
+            #..............................................................
+            
             #...................Save the Belief Matrices...................
-            file_name_ending = generate_file_name(Network.file_name_ending,inference_method,we_know_location,'A',generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,'N')                    
+            file_name_ending = generate_file_name(Network.file_name_ending,inference_method,we_know_topology,'A',generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,'N')                    
             file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending
             np.savetxt(file_name,W_inferred_our_tot,'%1.5f',delimiter='\t')
             #..............................................................
 
         #----------------------------------------------------------------------
+    
+        print 'Inference successfully completed for T = %s ms' %str(T/1000.0)

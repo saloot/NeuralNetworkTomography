@@ -1,12 +1,34 @@
+#=======================DEFAULT VALUES FOR THE VARIABLES=======================
+FRAC_STIMULATED_NEURONS_DEFAULT = 0.4
+T_MAX_DEFAULT = 2000
+ENSEMBLE_SIZE_DEFAULT = 1
+FILE_NAME_BASE_DATA_DEFAULT = "../Data"
+FILE_NAME_BASE_RESULT_DEFAULT = "../Results"
+ENSEMBLE_COUNT_INIT_DEFAULT = 0
+TERNARY_MODE_DEFAULT = 4
+INFERENCE_METHOD_DEFAULT = 3
+SPARSITY_FLAG_DEFAULT = 0
+GENERATE_DATA_MODE_DEFAULT = 'R'
+INFERENCE_ITR_MAX_DEFAULT = 1
+WE_KNOW_TOPOLOGY_DEFAULT = 'Y'
+PRE_SYNAPTIC_NEURON_DEFAULT = 'A'
+DELAY_KNOWN_DEFAULT = 'N'
+BETA_DEFAULT = 10
+ALPHA0_DEFAULT = 0.000093
+#==============================================================================
+
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 import math
-from brian import *
+#from brian import *
 from scipy import sparse
-import pdb
+import numpy as np
+import pdb,os,sys
 import random
 import copy
 import numpy.ma as ma
 #==============================================================================
+
+
 
 #==============================================================================
 #===========================Determine_Binary_Threshold=========================
@@ -111,15 +133,18 @@ def determine_binary_threshold(method,params,obs):
         #......................................................................
         
         #.......................Adjust the Thresholds..........................
-        min_val = np.min(obs) - (thr_zero-np.min(obs))-0.01
-        max_val = np.max(obs) - (thr_zero-np.max(obs))+0.01
+        min_val = np.min(obs)# - (thr_zero-np.min(obs))-0.01
+        max_val = np.max(obs)# - (thr_zero-np.max(obs))+0.01
         
-        thr_inh = val_inh + (adj_factor_inh -1)*(val_inh - min_val)
+        #thr_inh = val_inh + (adj_factor_inh -1)*(val_inh - min_val)
+        thr_inh = val_inh + (adj_factor_inh -1)*(val_inh - thr_zero)
         thr_inh = np.min([thr_inh,thr_zero-.01])
-    
+        thr_inh = np.max([thr_inh,min_val+.01])
+        
         #thr_exc = val_exc + (adj_factor_exc -1)*(val_exc - max_val)
         thr_exc = val_exc + (adj_factor_exc -1)*(val_exc - thr_zero)
         thr_exc = np.max([thr_exc,thr_zero+.01])
+        thr_exc = np.min([thr_exc,max_val-.01])
             
         if no_clusters > 3:
             thr_exc2 = thr_zero_r - (0.51)*(thr_zero_r-thr_exc)
@@ -141,16 +166,16 @@ def determine_binary_threshold(method,params,obs):
 
 
 #==============================================================================
-#=============================beliefs_to_binary================================
+#=============================beliefs_to_ternary================================
 #==============================================================================
 #-------------------------------Descriptions-----------------------------------
 # This function transforms the beliefs matrix to a binary matrix, with +1,-1,
 # and 0 entries.
 
 # INPUTS:
-#    binary_mode: '4' for clustering-based approach (using K-Means)
-#                 '2' for sorting-based approach
-#                 '7' for the conservative approach of only assigning those edges that we are sure about (far from mean values)
+#    ternary_mode: '4' for clustering-based approach (using K-Means)
+#                  '2' for sorting-based approach
+#                  '7' for the conservative approach of only assigning those edges that we are sure about (far from mean values)
 #    W_inferred: The 'association-matrix' for the inferred graph
 #    params: specifies the necessary parameters for each ternarification algorithm
 #    dale_law_flag: if '1', the Dale law will be enforced and all outgoing connections for a neuron will have the same type
@@ -160,7 +185,7 @@ def determine_binary_threshold(method,params,obs):
 #    centroids: the class represntative for the clustering-based appraoch (using K-Means)
 #------------------------------------------------------------------------------
 
-def beliefs_to_binary(binary_mode,W_inferred,params,dale_law_flag):
+def beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag):
     
     #---------------------Import Necessary Libraries---------------------------
     import numpy as np
@@ -192,14 +217,14 @@ def beliefs_to_binary(binary_mode,W_inferred,params,dale_law_flag):
     
     #---------Determine the Type of Network: FeedForward or Recurrent----------
     W_binary = np.zeros([n,m])
-    if ( (binary_mode == 4) or (binary_mode == 5)):
+    if ( (ternary_mode == 4) or (ternary_mode == 5)):
         centroids = np.zeros([m,3])
     W_binary.fill(0)
     #--------------------------------------------------------------------------
     
     
     #----------------Binary Mode 2: Sorting-Based Thresholding-----------------
-    if (binary_mode == 2):
+    if (ternary_mode == 2):
         
         #..................Get the Binarification Parameters...................
         p_exc = params[0]
@@ -217,7 +242,7 @@ def beliefs_to_binary(binary_mode,W_inferred,params,dale_law_flag):
     
     
     #--------------Binary Mode 4: Clustering-Based Thresholding----------------
-    elif (binary_mode == 4):
+    elif (ternary_mode == 4):
 
         #......................Determine the Thresholds........................
         fixed_inds = params[2]
@@ -233,8 +258,9 @@ def beliefs_to_binary(binary_mode,W_inferred,params,dale_law_flag):
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~---~~~~~~~~~~~~~Classify Incoming Edges~~~~~~~~~~~~~~~~~~~~~~~~~~
-            params = [params[0:2],3]                # "3" refers to the number of classes, namely, excitatory, inhibitory and non-existent
-            if sum(sum(abs(masked_vals))):                
+            params = params[0:2]
+            params.append(3)                        # "3" refers to the number of classes, namely, excitatory, inhibitory and non-existent
+            if (sum(abs(masked_vals))):
                 thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,masked_vals)
                 centroids[i,:] = [thr_inh,thr_zero,thr_exc]
                 if sum(abs(centroids[i,:])):
@@ -249,7 +275,7 @@ def beliefs_to_binary(binary_mode,W_inferred,params,dale_law_flag):
             mask_counter = 0
             for j in range(0,n):                
                 if j in masked_inds[0]:                    
-                    W_binary[j,i] = sign(W_inferred[j,i])
+                    W_binary[j,i] = np.sign(W_inferred[j,i])
                 else:
                     W_binary[j,i] = W_temp[mask_counter]
                     mask_counter = mask_counter + 1
@@ -261,7 +287,7 @@ def beliefs_to_binary(binary_mode,W_inferred,params,dale_law_flag):
     
     
     #-----Binary Mode 7: Only Assigning Those Edges That We Are Sure About-----
-    elif (binary_mode == 7):
+    elif (ternary_mode == 7):
         
         # We are going to select edges that are far from mean        
         fixed_inds = params[0]
@@ -338,7 +364,7 @@ def beliefs_to_binary(binary_mode,W_inferred,params,dale_law_flag):
 
 
 #==============================================================================
-#=============================calucate_accuracy================================
+#=============================caculate_accuracy================================
 #==============================================================================
 #-------------------------------Descriptions-----------------------------------
 # This function compares the inferred binary matrix and compare it with the
@@ -354,7 +380,7 @@ def beliefs_to_binary(binary_mode,W_inferred,params,dale_law_flag):
 #    precision: the precision for inhibitory, non-existent and excitatory connections
 #------------------------------------------------------------------------------
 
-def calucate_accuracy(W_binary,W):
+def caculate_accuracy(W_binary,W):
     
     #--------------------------Initializing Variables--------------------------
     a = W.shape    
@@ -438,5 +464,144 @@ def calucate_accuracy(W_binary,W):
     return recall,precision
     #--------------------------------------------------------------------------
 #==============================================================================    
+
+
+#==============================================================================
+#========================parse_commands_ternary_algo===========================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function runs the neural networks and generatethe required neural
+# activity. The Brian simulator is used for this part.
+
+# INPUTS:
+#    input_opts: the options provided by the user
+#------------------------------------------------------------------------------
+
+def parse_commands_ternary_algo(input_opts):
+    if (input_opts):
+        for opt, arg in input_opts:
+            if opt == '-Q':
+                frac_stimulated_neurons = float(arg)                # Fraction of neurons in the input layer that will be excited by a stimulus
+            elif opt == '-T':
+                T_max = int(arg)                         # Number of times we inject stimulus to the network
+            elif opt == '-S':
+                ensemble_size = int(arg)                            # The number of random networks that will be generated                
+            elif opt == '-A':
+                file_name_base_data = str(arg)                      # The folder to store results
+            elif opt == '-F':
+                ensemble_count_init = int(arg)                      # The ensemble to start simulations from        
+            elif opt == '-R':
+                random_delay_flag = int(arg)                        # The ensemble to start simulations from            
+            elif opt == '-B':
+                ternary_mode = int(arg)                              # Defines the method to transform the graph to binary. "1" for threshold base and "2" for sparsity based                        
+            elif opt == '-M':
+                inference_method = int(arg)                         # The inference method
+            elif opt == '-G':
+                generate_data_mode = str(arg)                       # The data generating method            
+            elif opt == '-Y':
+                sparsity_flag = int(arg)                            # The flag that determines if sparsity should be observed during inference
+            elif opt == '-X':
+                infer_itr_max = int(arg)                            # The flag that determines if sparsity should be observed during inference            
+            elif opt == '-K':
+                we_know_topology = str(arg)                         # The flag that determines if we know the location of neurons (with respect to each other) (Y/N)
+            elif opt == '-C': 
+                pre_synaptic_method = str(arg)                      # The flag that determines if all previous-layers neurons count as  pre-synaptic (A/O)            
+            elif opt == '-J': 
+                delay_known_flag = str(arg)                         # If 'Y', we assume that the delay is known during the inference algorithm
+            elif opt == '-U': 
+                beta = int(arg)                                     # Specify the update probability paramter (p = 1/beta) in STOCHASTIC NEUINF
+            elif opt == '-Z': 
+                alpha0 = float(arg)                                 # Specify the update learnining rate 
+            elif opt == '-h':
+                print(help_message)
+                sys.exit()
+    else:
+        print('Code will be executed using default values')
+        
+        
+    #------------Set the Default Values if Variables are not Defines---------------
+    if 'frac_stimulated_neurons' not in locals():
+        frac_stimulated_neurons = FRAC_STIMULATED_NEURONS_DEFAULT
+        print('ATTENTION: The default value of %s for frac_stimulated_neurons is considered.\n' %str(frac_stimulated_neurons))
+
+    if 'infer_itr_max' not in locals():
+        infer_itr_max = INFERENCE_ITR_MAX_DEFAULT
+        print('ATTENTION: The default value of %s for infer_itr_max is considered.\n' %str(infer_itr_max))
+        
+    if 'T_max' not in locals():        
+        T_max = T_MAX_DEFAULT
+        print('ATTENTION: The default value of %s for T_max is considered.\n' %str(T_max))
+
+    if 'ensemble_size' not in locals():            
+        ensemble_size = ENSEMBLE_SIZE_DEFAULT
+        print('ATTENTION: The default value of %s for ensemble_size is considered.\n' %str(ensemble_size))
+    
+    if 'file_name_base_data' not in locals():
+        file_name_base_data = FILE_NAME_BASE_DATA_DEFAULT;
+        print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_data))
+
+    if 'ensemble_count_init' not in locals():
+        ensemble_count_init = ENSEMBLE_COUNT_INIT_DEFAULT;
+        print('ATTENTION: The default value of %s for ensemble_count_init is considered.\n' %str(ensemble_count_init))
+    
+    if 'ternary_mode' not in locals():
+        ternary_mode = TERNARY_MODE_DEFAULT;
+        print('ATTENTION: The default value of %s for ternary_mode is considered.\n' %str(ternary_mode))
+
+    if 'file_name_base_results' not in locals():
+        file_name_base_results = FILE_NAME_BASE_RESULT_DEFAULT;
+        print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_results))
+
+    if 'inference_method' not in locals():
+        inference_method = INFERENCE_METHOD_DEFAULT;
+        print('ATTENTION: The default value of %s for inference_method is considered.\n' %str(inference_method))
+
+    if 'sparsity_flag' not in locals():
+        sparsity_flag = SPARSITY_FLAG_DEFAULT;
+        print('ATTENTION: The default value of %s for sparsity_flag is considered.\n' %str(sparsity_flag))
+    
+    if 'generate_data_mode' not in locals():
+        generate_data_mode = GENERATE_DATA_MODE_DEFAULT
+        print('ATTENTION: The default value of %s for generate_data_mode is considered.\n' %str(generate_data_mode))
+
+    if 'we_know_topology' not in locals():
+        we_know_topology = WE_KNOW_TOPOLOGY_DEFAULT
+        print('ATTENTION: The default value of %s for we_know_topology is considered.\n' %str(we_know_topology))
+    
+    if 'beta' not in locals():
+        beta = BETA_DEFAULT
+        print('ATTENTION: The default value of %s for beta is considered.\n' %str(beta))
+    
+    if 'alpha0' not in locals():
+        alpha0 = ALPHA0_DEFAULT
+        print('ATTENTION: The default value of %s for alpha0 is considered.\n' %str(alpha0))
+    #------------------------------------------------------------------------------
+    
+    #------------------Create the Necessary Directories if Necessary---------------
+    if not os.path.isdir(file_name_base_results):
+        os.makedirs(file_name_base_results)
+    if not os.path.isdir(file_name_base_results+'/Accuracies'):
+        temp = file_name_base_results + '/Accuracies'
+        os.makedirs(temp)
+    if not os.path.isdir(file_name_base_results+'/RunningTimes'):
+        temp = file_name_base_results + '/RunningTimes'
+        os.makedirs(temp)
+    if not os.path.isdir(file_name_base_results+'/Inferred_Graphs'):
+        temp = file_name_base_results + '/Inferred_Graphs'
+        os.makedirs(temp)
+    if not os.path.isdir(file_name_base_results+'/Verified_Spikes'):
+        temp = file_name_base_results + '/Verified_Spikes'
+        os.makedirs(temp)
+
+    if not os.path.isdir(file_name_base_results+'/BeliefQuality'):    
+        temp = file_name_base_results + '/BeliefQuality'
+        os.makedirs(temp)
+    if not os.path.isdir(file_name_base_results+'/Plot_Results'):    
+        temp = file_name_base_results + '/Plot_Results'
+        os.makedirs(temp)    
+    #------------------------------------------------------------------------------
+
+
+    return frac_stimulated_neurons,T_max,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,ternary_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,beta,alpha0,infer_itr_max
 
 

@@ -16,7 +16,7 @@ os.system('clear')                                              # Clear the comm
 #==========================PARSE COMMAND LINE ARGUMENTS========================
 input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:X:Y:C:V:J:")
 
-frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,binary_mode,file_name_base_results,inference_method,sparsity_flag,we_know_location,verify_flag,beta,alpha0,infer_itr_max = parse_commands_inf_algo(input_opts)
+frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,verify_flag,beta,alpha0,infer_itr_max = parse_commands_inf_algo(input_opts)
 #==============================================================================
 
 
@@ -32,7 +32,7 @@ running_period = (no_stimul_rounds*no_samples_per_cascade/10.0)  # Total running
 no_stimul_rounds = 1
 
 theta = 0.005                                               # The update threshold of the neurons in the network
-sparse_thr0 = 0.0001
+
 t_base = time()
 #------------------------------------------------------------------------------
 
@@ -40,14 +40,16 @@ t_base = time()
 
 #...........................SOTCHASTIC NEUINF Approach.........................
 if (inference_method == 3) or (inference_method == 2):
-    d_window = 8                            # The time-window over which we count spikes from pre-synaptic neurons
-    bin_size = 5                            # The bin size for creating a rough version of spike times (in miliseconds)
-    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,250,d_window,beta,bin_size]
+    bin_size = 5                                            # The size of time bins (not relevant in this version)
+    d_window = 15                                           # The time window the algorithm considers to account for pre-synaptic spikes
+    max_itr_optimization = 2                              # This is the maximum number of iterations performed by internal optimization algorithm for inference
+    sparse_thr0 = 0.0001                                    # The initial sparsity soft-threshold (not relevant in this version)
+    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size]
 #..............................................................................
 
-#...............................CCF-Based Approach.............................
+#...........................Cross Correlogram Approach.........................
 elif (inference_method == 4):
-    d_window = 15
+    d_window = 15                                           # The time window the algorithm considers to compare shifted versions of two spiking patterns
     inferece_params = [d_window]            
 #..............................................................................
 
@@ -106,9 +108,12 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         #..............................................................
         
         #...................Save the Belief Matrices...................
-        file_name_ending = generate_file_name(Network.file_name_ending,inference_method,we_know_location,'A',generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,'N')
+        file_name_ending = generate_file_name(Network.file_name_ending,inference_method,we_know_topology,'A',generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,'N')
         file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending
         np.savetxt(file_name,W_inferred_our_tot,'%1.5f',delimiter='\t')
         #..............................................................
-        
+    
+        print 'Inference successfully completed for T = %s ms' %str(T/1000.0)    
     #----------------------------------------------------------------------
+
+    
