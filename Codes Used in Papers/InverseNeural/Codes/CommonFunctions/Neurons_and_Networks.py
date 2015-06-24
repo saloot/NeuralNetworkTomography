@@ -18,35 +18,7 @@ except:
 
 import os
 import pdb
-
-#=======================DEFAULT VALUES FOR THE VARIABLES=======================
-FRAC_STIMULATED_NEURONS_DEFAULT = 0.4
-NO_STIMUL_ROUNDS_DEFAULT = 1000
-ENSEMBLE_SIZE_DEFAULT = 1
-FILE_NAME_BASE_DATA_DEFAULT = "../Data"
-FILE_NAME_BASE_RESULT_DEFAULT = "../Results"
-ENSEMBLE_COUNT_INIT_DEFAULT = 0
-
-N_EXC_ARRAY_DEFAULT = [60,12]
-N_INH_ARRAY_DEFAULT = [15,3]
-CONNECTION_PROB_DEFAULT = 0.3
-NO_LAYERS_DEFAULT = 2
-DELAY_MAX_DEFAULT = 10.0
-RANDOM_DELAY_FLAG_DEFAULT = 1
-
-CONNECTION_PROB_MATRIX_DEFAULT = np.zeros([2,2])
-CONNECTION_PROB_MATRIX_DEFAULT[0,1] = CONNECTION_PROB_DEFAULT
-
-DELAY_MAX_MATRIX_DEFAULT = np.zeros([2,2])
-DELAY_MAX_MATRIX_DEFAULT[0,1] = 9.0
-
-INFERENCE_METHOD_DEFAULT = 3
-BINARY_MODE_DEFAULT = 4
-SPARSITY_FLAG_DEFAULT = 0
-#==============================================================================
-
-
-
+from default_values import *
 
 
 #================================INSTRUCTIONS==================================
@@ -67,7 +39,7 @@ help_message = help_message + "-A xxx: To specify the folder that stores the gen
 help_message = help_message + "-F xxx: To specify the ensemble index to start simulation. Default value = %s. \n" %str(ENSEMBLE_COUNT_INIT_DEFAULT)
 help_message = help_message + "-L xxx: To specify the number of layers in the network. Default value = %s. \n" %str(NO_LAYERS_DEFAULT)
 help_message = help_message + "-R xxx: To specify if the delays are fixed (R=0) or random (R=1). Default value = %s. \n" %str(RANDOM_DELAY_FLAG_DEFAULT)
-help_message = help_message + "-B xxx: To specify the binarification algorithm. Default value = %s. \n" %str(BINARY_MODE_DEFAULT)
+help_message = help_message + "-B xxx: To specify the binarification algorithm. Default value = %s. \n" %str(TERNARY_MODE_DEFAULT)
 help_message = help_message + "-M xxx: To specify the method use for inference, 0 for ours, 1 for Hopfield. Default value = %s. \n" %str(INFERENCE_METHOD_DEFAULT)
 help_message = help_message + "#################################################################################"
 help_message = help_message + "\n"

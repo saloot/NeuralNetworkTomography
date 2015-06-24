@@ -20,6 +20,7 @@ frac_stimulated_neurons,T_max,ensemble_size,file_name_base_data,ensemble_count_i
 #==============================================================================
 
 #================================INITIALIZATIONS===============================
+
 #--------------------------Initialize the Network------------------------------
 #Network = NeuralNet(no_layers,n_exc_array,n_inh_array,connection_prob_matrix,delay_max_matrix,random_delay_flag,'')
 Network = NeuralNet(None,None,None,None,None,None,None, 'command_line',input_opts,args)

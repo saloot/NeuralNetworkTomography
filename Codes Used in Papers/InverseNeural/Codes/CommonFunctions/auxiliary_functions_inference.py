@@ -8,27 +8,7 @@ import copy
 import numpy.ma as ma
 import numpy as np
 import math
-#==============================================================================
-
-
-#=======================DEFAULT VALUES FOR THE VARIABLES=======================
-FRAC_STIMULATED_NEURONS_DEFAULT = 0.4
-NO_STIMUL_ROUNDS_DEFAULT = 2000
-ENSEMBLE_SIZE_DEFAULT = 1
-FILE_NAME_BASE_DATA_DEFAULT = "../Data"
-FILE_NAME_BASE_RESULT_DEFAULT = "../Results"
-ENSEMBLE_COUNT_INIT_DEFAULT = 0
-INFERENCE_METHOD_DEFAULT = 3
-TERNARY_MODE_DEFAULT = 4
-SPARSITY_FLAG_DEFAULT = 0
-GENERATE_DATA_MODE_DEFAULT = 'R'
-INFERENCE_ITR_MAX_DEFAULT = 1
-WE_KNOW_TOPOLOGY_DEFAULT = 'N'
-PRE_SYNAPTIC_NEURON_DEFAULT = 'A'
-DELAY_KNOWN_DEFAULT = 'N'
-VERIFY_FLAG_DEFAULT = 0
-BETA_DEFAULT = 10
-ALPHA0_DEFAULT = 0.000093
+from default_values import *
 #==============================================================================
 
 
@@ -455,22 +435,9 @@ def parse_commands_inf_algo(input_opts):
     
     #------------------Create the Necessary Directories if Necessary---------------
     if not os.path.isdir(file_name_base_results):
-        os.makedirs(file_name_base_results)
-    if not os.path.isdir(file_name_base_results+'/Accuracies'):
-        temp = file_name_base_results + '/Accuracies'
-        os.makedirs(temp)
-    if not os.path.isdir(file_name_base_results+'/RunningTimes'):
-        temp = file_name_base_results + '/RunningTimes'
-        os.makedirs(temp)
+        os.makedirs(file_name_base_results)    
     if not os.path.isdir(file_name_base_results+'/Inferred_Graphs'):
         temp = file_name_base_results + '/Inferred_Graphs'
-        os.makedirs(temp)
-    if not os.path.isdir(file_name_base_results+'/Verified_Spikes'):
-        temp = file_name_base_results + '/Verified_Spikes'
-        os.makedirs(temp)
-
-    if not os.path.isdir(file_name_base_results+'/BeliefQuality'):    
-        temp = file_name_base_results + '/BeliefQuality'
         os.makedirs(temp)
     if not os.path.isdir(file_name_base_results+'/Plot_Results'):    
         temp = file_name_base_results + '/Plot_Results'

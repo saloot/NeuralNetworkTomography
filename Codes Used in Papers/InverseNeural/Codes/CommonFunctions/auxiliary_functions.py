@@ -199,109 +199,90 @@ def read_spikes(file_name_base,no_layers,n_exc_array,n_inh_array,params):
 # graph
 
 # INPUT:
+#    Network: the object that contains the informatin about the connectivity pattern of each layer
 #    W_inferred: the inferred graph (association matrix)
 #    W_orig: the actual graph (ground truth)
+#    l_out: the index of output layer (an integer)
+#    whiten_flag: if 1, the inferred graph will but whitened before calculating belief qualities
+#    zero_diagonals_flag: if 1, the diagonal elements (self feedback-loops) will be set to 0 before calculating belief qualities
+#    we_know_topology: if 'Y', the inference has been topology-aware
 
 # OUTPUT:
 #    mean_beliefs:    the avaerage beliefs for inhibitory, non-existent and excitatory connections
 #    max_min_beliefs: the maximum and minimul value of beliefs for inhibitory, non-existent and excitatory connections
 #------------------------------------------------------------------------------
-def calculate_belief_quality(W_inferred,W_orig):
+def calculate_belief_quality(Network,W_inferred,W_orig,l_out,whiten_flag,zero_diagonals_flag,we_know_topology):
 
-    #------------------------------Initialization------------------------------
-    ss = W_inferred.shape
-    m = ss[0]
-    n = ss[1]
+
+    from scipy.cluster.vq import whiten
     
-    tt = W_orig.shape
-    
-    if (ss!=tt):
-        print('Error! The original and the ifnerred graphs should have the same size.')
-        sys.exit()
-        
-    B_exc_mean = np.zeros([n,1])
-    B_inh_mean = np.zeros([n,1])
-    B_void_mean = np.zeros([n,1])
-    
-    B_exc_min = np.zeros([n,1])
-    B_inh_max = np.zeros([n,1])
-    B_void_max = np.zeros([n,1])
-    B_void_min = np.zeros([n,1])
+    #----------------------------Polish the Weights----------------------------
+    W_inferred_our_tot = copy.deepcopy(W_inferred)
+    W_inferred_our_tot = W_inferred_our_tot/float(abs(W_inferred_our_tot).max())
+    n,m = W_inferred_our_tot.shape
+    if zero_diagonals_flag:
+        for i in range(0,min(n,m)):
+            W_inferred_our_tot[i,i] = 0
+
+    if whiten_flag:
+        W_inferred_our_tot = W_inferred_our_tot + np.random.rand(n,m)/100000
+        W_inferred_our_tot = whiten(W_inferred_our_tot)
     #--------------------------------------------------------------------------
+    
+    #---------Calculate Beleif Qualities for Topology Aware Algorithm----------
+    if we_know_topology.lower() == 'y':
+        W_inferred_our_tot = W_inferred_our_tot[:,0:m]
+        W_e = np.ma.masked_array(W_inferred_our_tot,mask= (W_orig<=0).astype(int))
+        mean_exc = W_e.mean(axis = 0).data
+        std_exc = W_e.std(axis = 0).data
                 
-    if 1:
+        W_i = np.ma.masked_array(W_inferred_our_tot,mask= (W_orig>=0).astype(int))
+        mean_inh = W_i.mean(axis = 0).data
+        std_inh = W_i.std(axis = 0).data
+                    
+        W_v = np.ma.masked_array(W_inferred_our_tot,mask= (W_orig!=0).astype(int))
+        mean_void = W_v.mean(axis = 0).data
+        std_void = W_v.std(axis = 0).data
         
-        for i in range(0,n):
-        
-            #--------Caclulate the Minimum Value of the Excitatory Beliefs---------
-            a = np.nonzero(W_orig[:,i]>0)
-            temp = W_inferred[a,i]
-            if len(temp[0]):
-                B_exc_mean[i] = temp.mean()        
-                B_exc_min[i] = temp.min()
-            else:
-                B_exc_mean[i] = float('NaN')
-                B_exc_min[i] = float('NaN') 
-            #----------------------------------------------------------------------
+        std_void_r = 0
+        mean_void_r = 0
+    #--------------------------------------------------------------------------
     
-            #--------Caclulate the Maximum Value of the Inhibitory Beliefs---------
-            a = np.nonzero(W_orig[:,i]<0)
-            temp = W_inferred[a,i]        
-            if (len(temp[0]) > 0):
-                B_inh_mean[i] = temp.mean()            
-                B_inh_max[i] = temp.max()
-            else:
-                B_inh_mean[i] = float('NaN') #B_inh_mean[itr-1]            
-                B_inh_max[i] = float('NaN') #B_inh_max[itr-1]
-            #----------------------------------------------------------------------
     
-            #------Caclulate the Minimum and Maximum Value of the Void Beliefs-----
-            a = np.nonzero(W_orig[:,i]==0)
-            temp = W_inferred[a,i]
-            B_void_mean[i] = temp.mean()
-            B_void_max[i] = temp.max()
-            B_void_min[i] = temp.min()
-            #----------------------------------------------------------------------
+    #--------Calculate Beleif Qualities for Topology Unaware Algorithm---------
     else:
-       
-    
-        #--------Caclulate the Minimum Value of the Excitatory Beliefs---------
-        a = np.nonzero(W_orig>0)
-        #pdb.set_trace()
-        temp = W_inferred[a]
-        #pdb.set_trace()
-        if len(temp):
-            B_exc_mean[0] = temp.mean()        
-            B_exc_min[0] = temp.min()
+        ind_this_layer = 0
+        n_o = ind_this_layer + Network.n_exc_array[l_out] + Network.n_inh_array[l_out]
+        for l in range (0,l_out):
+            ind_this_layer = ind_this_layer + Network.n_exc_array[l] + Network.n_inh_array[l]
+        
+        W_e = np.ma.masked_array(W_inferred_our_tot[:,ind_this_layer:ind_this_layer + n_o],mask= (W_orig[:,ind_this_layer:ind_this_layer + n_o]<=0).astype(int))        
+        mean_exc = W_e.mean(axis = 0).data
+        std_exc = W_e.std(axis = 0).data
+                
+        W_i = np.ma.masked_array(W_inferred_our_tot[:,ind_this_layer:ind_this_layer + n_o],mask= (W_orig[:,ind_this_layer:ind_this_layer + n_o]>=0).astype(int))
+        mean_inh = W_i.mean(axis = 0).data
+        std_inh = W_i.std(axis = 0).data
+                
+        W_v = np.ma.masked_array(W_inferred_our_tot[:,ind_this_layer:ind_this_layer + n_o],mask= (W_orig[:,ind_this_layer:ind_this_layer + n_o]!=0).astype(int))
+        mean_void = W_v.mean(axis = 0).data
+        std_void = W_v.std(axis = 0).data
+        
+        if Network.no_layers > 1:
+            #.......Recurrent Connections in the Post-Syanptic Layer.......
+            W_v_r = np.ma.masked_array(W_inferred_our_tot[ind_this_layer:ind_this_layer + n_o,ind_this_layer:ind_this_layer + n_o],mask= (W_orig[ind_this_layer:ind_this_layer + n_o,ind_this_layer:ind_this_layer + n_o]!=0).astype(int))
+            mean_void_r = W_v_r.mean(axis = 0).data
+            std_void_r = W_v_r.std(axis = 0).data
+            #..............................................................                
         else:
-            B_exc_mean[0] = float('NaN')
-            B_exc_min[0] = float('NaN') 
-        #----------------------------------------------------------------------
+            std_void_r = 0
+            mean_void_r = 0
+    #--------------------------------------------------------------------------
     
-        #--------Caclulate the Maximum Value of the Inhibitory Beliefs---------
-        a = np.nonzero(W_orig<0)
-        temp = W_inferred[a]        
-        if (len(temp) > 0):
-            B_inh_mean[0] = temp.mean()            
-            B_inh_max[0] = temp.max()
-        else:
-            B_inh_mean[0] = float('NaN') #B_inh_mean[itr-1]            
-            B_inh_max[0] = float('NaN') #B_inh_max[itr-1]
-        #----------------------------------------------------------------------
+    means_vector = [mean_exc,mean_inh,mean_void,mean_void_r]
+    std_vector = [std_exc,std_inh,std_void,std_void_r]
     
-        #------Caclulate the Minimum and Maximum Value of the Void Beliefs-----
-        a = np.nonzero(W_orig==0)
-        temp = W_inferred[a]
-        B_void_mean[0] = temp.mean()
-        B_void_max[0] = temp.max()
-        B_void_min[0] = temp.min()
-        #----------------------------------------------------------------------
-
-    
-    mean_beliefs = np.hstack([B_exc_mean,B_void_mean,B_inh_mean])
-    max_min_beliefs = np.hstack([B_exc_min,B_void_max,B_void_min,B_inh_max])
-    
-    return mean_beliefs,max_min_beliefs
+    return means_vector,std_vector
 #==============================================================================
 #==============================================================================
 
@@ -395,7 +376,7 @@ def combine_weight_matrix(Network):
 
 # OUTPUT:
 #    out_spikes_tot: a dictionary containing the spike times for all neurons in the graph
-#    out_spikes_tot_mat: a matrix of size T*n, where a '1' in entry (t,i) means neuron i has fired at time t (in miliseconds)
+#    out_spikes_tot_mat: a matrix of size T*n, where a 1 in entry (t,i) means neuron i has fired at time t (in miliseconds)
 #------------------------------------------------------------------------------
 
 def combine_spikes_matrix(Network,T,generate_data_mode,Actual_Neural_Times):
@@ -481,8 +462,8 @@ def combine_spikes_matrix(Network,T,generate_data_mode,Actual_Neural_Times):
 #    Neural_Spikes: dictionary containing the spike times as an array for the case that we have: generate_data_mode = 'F'
 
 # OUTPUT:
-#    in_spikes: a matrix for pre-synaptic neural states, where a '1' in entry (i,t) means neuron i has fired at time t (in miliseconds)
-#    out_spikes: a matrix for post-synaptic neural states, where a '1' in entry (i,t) means neuron i has fired at time t (in miliseconds)
+#    in_spikes: a matrix for pre-synaptic neural states, where a 1 in entry (i,t) means neuron i has fired at time t (in miliseconds)
+#    out_spikes: a matrix for post-synaptic neural states, where a 1 in entry (i,t) means neuron i has fired at time t (in miliseconds)
 #    non_stimul_inds: if we have (generate_data_mode =='F'), this dictionary specifies the neurons that have not been stimulated in each stimulation round
 #------------------------------------------------------------------------------
 
@@ -568,5 +549,72 @@ def combine_spikes_matrix_FF(Network,l_out,generate_data_mode,T,Neural_Spikes):
     
     return in_spikes, out_spikes
     
+#==============================================================================
+#==============================================================================
+
+
+#==============================================================================
+#=============================save_plot_results===============================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function saves the plots corresponding to different measurment criteria
+# to correspoding files (for future access, integration intolatex plots, etc.)
+
+# INPUT:
+#    T_range: the range of recording time durations considered
+#    mean_exc: average value of algorithm's beliefs about "incoming" excitatory connections to this layer
+#    std_exc: standard devation of algorithm's beliefs about "incoming" excitatory connections to this layer
+#    mean_inh: average value of algorithm's beliefs about "incoming" inhibitory connections to this layer
+#    std_inh: standard devation of algorithm's beliefs about "incoming" inhibitory connections to this layer
+#    mean_void: average value of algorithm's beliefs about "incoming" void (non-existent) connections to this layer
+#    std_void: standard devation of algorithm's beliefs about "incoming" void (non-existent) connections to this layer
+#    mean_void_r: average value of algorithm's beliefs about "incoming" recurrent void (non-existent) connections from the same layer (if relevant)
+#    std_void_r: standard devation of algorithm's beliefs about "incoming" recurrent void (non-existent) connections from the same layer (if relevant)
+#    file_name_base_results: the base (usually address to the folder) where the results should be saved
+#    file_name_ending: the filename endings
+#    in_recurrent_flag: if 1, the code saves the results corresponding to incoming "void recurrent" links
+#    W_inferred_our_tot: the inferred graph
+#    W: the actual graph
+
+# OUTPUT:
+#    None
+#------------------------------------------------------------------------------
+def save_plot_results(T_range,mean_exc,std_exc,mean_inh,std_inh,mean_void,std_void,mean_void_r,std_void_r,file_name_base_results,file_name_ending,in_recurrent_flag,W_inferred_our_tot,W):
     
+    temp = np.vstack([np.array(T_range).T,(mean_exc).T,std_exc.T])
+    file_name = file_name_base_results + "/Plot_Results/Mean_var_exc_%s.txt" %file_name_ending
+    np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
+
+    temp = np.vstack([np.array(T_range).T,(mean_inh).T,std_inh.T])
+    file_name = file_name_base_results + "/Plot_Results/Mean_var_inh_%s.txt" %file_name_ending
+    np.savetxt(file_name,temp.T,'%f',delimiter='\t',newline='\n')
+
+    temp = np.vstack([np.array(T_range).T,(mean_void).T,std_void.T])
+    file_name = file_name_base_results + "/Plot_Results/Mean_var_void_%s.txt" %file_name_ending
+    np.savetxt(file_name,temp.T,'%f',delimiter='\t',newline='\n')
+
+    temp = np.vstack([np.array(T_range).T,(mean_exc-mean_void).T,std_exc.T])
+    file_name = file_name_base_results + "/Plot_Results/Gap_mean_exc_void_%s.txt" %file_name_ending
+    np.savetxt(file_name,temp.T,'%f',delimiter='\t',newline='\n')
+
+    temp = np.vstack([np.array(T_range).T,(mean_void-mean_inh).T,std_void.T])
+    file_name = file_name_base_results + "/Plot_Results/Gap_mean_void_inh_%s.txt" %file_name_ending
+    np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
+
+    if in_recurrent_flag:
+        temp = np.vstack([np.array(T_range).T,(mean_void_r).T,std_void_r.T])
+        file_name = file_name_base_results + "/Plot_Results/Mean_var_void_recurr%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
+
+        temp = np.vstack([np.array(T_range).T,(mean_exc-mean_void_r).T,std_exc.T])
+        file_name = file_name_base_results + "/Plot_Results/Gap_mean_exc_void_recurr%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
+        
     
+    file_name = file_name_base_results + "/Inferred_Graphs/Scatter_Beliefs_%s.txt" %file_name_ending
+    ww = W_inferred_our_tot.ravel()
+    ww = np.vstack([np.sign(W).ravel(),W_inferred_our_tot.ravel()])
+    np.savetxt(file_name,ww.T,'%f',delimiter='\t',newline='\n')
+
+#==============================================================================
+#==============================================================================
