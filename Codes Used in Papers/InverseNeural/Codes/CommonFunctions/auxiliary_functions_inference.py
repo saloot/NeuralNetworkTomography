@@ -439,6 +439,9 @@ def parse_commands_inf_algo(input_opts):
     if not os.path.isdir(file_name_base_results+'/Inferred_Graphs'):
         temp = file_name_base_results + '/Inferred_Graphs'
         os.makedirs(temp)
+    if not os.path.isdir(file_name_base_results+'/Accuracies'):
+        temp = file_name_base_results + '/Accuracies'
+        os.makedirs(temp)            
     if not os.path.isdir(file_name_base_results+'/Plot_Results'):    
         temp = file_name_base_results + '/Plot_Results'
         os.makedirs(temp)    

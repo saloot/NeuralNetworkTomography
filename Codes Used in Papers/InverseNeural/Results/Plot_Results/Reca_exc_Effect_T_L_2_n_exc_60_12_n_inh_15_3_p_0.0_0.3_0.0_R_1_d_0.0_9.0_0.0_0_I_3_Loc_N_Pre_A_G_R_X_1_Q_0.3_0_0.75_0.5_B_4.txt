@@ -1,0 +1,4 @@
+2.779	 nan	 nan
+5.458	 nan	 nan
+8.137	 nan	 nan
+10.816	 nan	 nan

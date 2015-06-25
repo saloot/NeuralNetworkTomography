@@ -16,7 +16,7 @@ os.system('clear')                                              # Clear the comm
 #==========================PARSE COMMAND LINE ARGUMENTS========================
 input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:K:C:")
 
-frac_stimulated_neurons,T_max,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,ternary_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,beta,alpha0,infer_itr_max = parse_commands_ternary_algo(input_opts)
+frac_stimulated_neurons,T_max,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,ternary_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,beta,alpha0,infer_itr_max,T_range = parse_commands_ternary_algo(input_opts)
 #==============================================================================
 
 #================================INITIALIZATIONS===============================
@@ -27,8 +27,9 @@ Network = NeuralNet(None,None,None,None,None,None,None, 'command_line',input_opt
 #------------------------------------------------------------------------------    
 
 #------Calculate the Range to Assess the Effect of Recording Duration------        
-T_step = int(T_max/6.0)
-T_range = range(T_step, T_max+1, T_step)
+if not T_range:
+    T_step = int(T_max/6.0)
+    T_range = range(T_step, T_max+1, T_step)
 #--------------------------------------------------------------------------
 
 #-----------------------Set Simulation Variables------------------------
@@ -83,8 +84,12 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 prec_tot[ind] = np.zeros([len(T_range),3])
                 
     else:
-        recall_tot = np.zeros([len(T_range),3])
-        prec_tot = np.zeros([len(T_range),3])
+        recall_tot = {}
+        prec_tot = {}
+        for l_out in range(0,Network.no_layers):
+            ind = str(l_out)
+            recall_tot[ind] = np.zeros([len(T_range),3])
+            prec_tot[ind] = np.zeros([len(T_range),3])
     #--------------------------------------------------------------------------
      
     #---------------------------CALCULATE ACCURACY-----------------------------       
@@ -92,7 +97,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
     for T in T_range:        
         if we_know_topology.lower() == 'y':
             
-            print '=====RESULTS IN LAYER: l_in=%s and l_out=%s========' %(l_in,l_out)
+            print '======RESULTS IN LAYER: l_in=%s and l_out=%s======' %(l_in,l_out)
         
             for l_in in range(0,Network.no_layers):
                 
@@ -184,54 +189,71 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             #--------------------------------------------------------------------------
 
             #-----------------Calculate the Binary Matrix From Beliefs-----------------
-            n,m = W_tot.shape
-            fixed_entries = np.zeros([n,m])
-            W_inferred = W_inferred[:,0:m]
-            if ternary_mode == 4:
-                params[2] = fixed_entries
-            elif ternary_mode == 2:
-                P = sum(abs(W_tot)>0)/float(m*n)
-                p_exc = P * (sum(W_tot>0)/sum(abs(W_tot)>0))
-                p_inh = P * (sum(W_tot<0)/sum(abs(W_tot)>0))
-                params=[p_exc,p_inh]
-                
-            W_inferred = W_inferred/float(abs(W_inferred).max())
-            W_inferred = W_inferred + np.random.rand(n,m)/100000
-            W_inferred = whiten(W_inferred)
+            ind_this_layer = 0
             
-            W_binary,centroids = beliefs_to_ternary(ternary_mode,10*W_inferred,params,dale_law_flag)
-            #--------------------------------------------------------------------------
-        
-            #--------------------------Store the Binary Matrices-----------------------
-            file_name_ending2 = file_name_ending + "_%s" %str(adj_fact_exc)
-            file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
-            file_name_ending2 = file_name_ending2 + "_B_%s" %str(ternary_mode)
+            for l_out in range(0,Network.no_layers):
+                ind = str(l_out)
+                n_o = Network.n_exc_array[l_out] + Network.n_inh_array[l_out]
                 
-            file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2
-            np.savetxt(file_name,W_binary,'%d',delimiter='\t',newline='\n')
+                W_temp = W_tot[:,ind_this_layer:ind_this_layer + n_o]
+                
+                n,m = W_temp.shape
+                fixed_entries = np.zeros([n,m])
+                
+                W_inferred_temp = W_inferred[:,ind_this_layer:ind_this_layer + n_o]
+                W_inferred_temp = W_inferred_temp[:,0:m]
+                
+                if ternary_mode == 4:
+                    params[2] = fixed_entries
+                elif ternary_mode == 2:
+                    P = sum(abs(W_temp)>0)/float(m*n)
+                    p_exc = P * (sum(W_temp>0)/sum(abs(W_temp)>0))
+                    p_inh = P * (sum(W_temp<0)/sum(abs(W_temp)>0))
+                    params=[p_exc,p_inh]
+                
+                W_inferred_temp = W_inferred_temp/float(abs(W_inferred_temp).max())
+                W_inferred_temp = W_inferred_temp + np.random.rand(n,m)/100000
+                W_inferred_temp = whiten(W_inferred_temp)
+                
+                
+            
+            
+                W_binary,centroids = beliefs_to_ternary(ternary_mode,10*W_inferred_temp,params,dale_law_flag)                
+                #--------------------------------------------------------------------------
+        
+                #--------------------------Store the Binary Matrices-----------------------
+                file_name_ending2 = file_name_ending + "_" + str(l_out)
+                file_name_ending2 = file_name_ending2 + "_%s" %str(adj_fact_exc)
+                file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
+                file_name_ending2 = file_name_ending2 + "_B_%s" %str(ternary_mode)
+                
+                file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2
+                np.savetxt(file_name,W_binary,'%d',delimiter='\t',newline='\n')
         
                 
-            file_name = file_name_base_results + "/Inferred_Graphs/Scatter_Beliefs_%s.txt" %file_name_ending2                
-            ww = W_inferred.ravel()
-            ww = np.vstack([ww,np.zeros([len(ww)])])
-            np.savetxt(file_name,ww.T,'%f',delimiter='\t',newline='\n')
+                file_name = file_name_base_results + "/Inferred_Graphs/Scatter_Beliefs_%s.txt" %file_name_ending2                
+                ww = W_inferred_temp.ravel()
+                ww = np.vstack([ww,np.zeros([len(ww)])])
+                np.savetxt(file_name,ww.T,'%f',delimiter='\t',newline='\n')
 
-            if (ternary_mode == 4):
-                file_name = file_name_base_results + "/Inferred_Graphs/Centroids_%s.txt" %file_name_ending2
-                centroids = np.vstack([centroids,np.zeros([3])])
-                np.savetxt(file_name,centroids,'%f',delimiter='\t')
-            #--------------------------------------------------------------------------
+                if (ternary_mode == 4):
+                    file_name = file_name_base_results + "/Inferred_Graphs/Centroids_%s.txt" %file_name_ending2
+                    centroids = np.vstack([centroids,np.zeros([3])])
+                    np.savetxt(file_name,centroids,'%f',delimiter='\t')
+                #--------------------------------------------------------------------------
                 
-            #---------Calculate and Display Recall & Precision for Our Method----------    
-            recal,precision = caculate_accuracy(W_binary,W_tot)
-            recall_tot[itr_T,:] = recal
-            prec_tot[itr_T,:] = precision
+                #---------Calculate and Display Recall & Precision for Our Method----------    
+                recal,precision = caculate_accuracy(W_binary,W_temp)
+                recall_tot[ind][itr_T,:] = recal
+                prec_tot[ind][itr_T,:] = precision
                 
-            print '-------------Our method performance in ensemble %d & T = %d------------' %(ensemble_count,T)
-            print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
-            print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(precision[0],precision[1],precision[2])
-            print '\n'
-            #--------------------------------------------------------------------------
+                print '-------------Our method performance in ensemble %d & T = %d------------' %(ensemble_count,T)
+                print 'Rec_+:   %f      Rec_-:  %f      Rec_0:  %f' %(recal[0],recal[1],recal[2])
+                print 'Prec_+:  %f      Prec_-: %f      Prec_0: %f' %(precision[0],precision[1],precision[2])
+                print '\n'
+                #--------------------------------------------------------------------------
+            
+                ind_this_layer = ind_this_layer + n_o
                 
         itr_T = itr_T + 1
     #======================================================================================
@@ -274,12 +296,21 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 #acc_file.write("%s \t %f \t %f \n" %(ind,prec_tot[itr_T,0],prec_tot[itr_T,1]))
                 #acc_file.close()
     else:
-        temp_ending = file_name_ending2.replace("_T_%s" %str(T),'')
-        file_name = file_name_base_results + "/Accuracies/Rec_%s.txt" %temp_ending
-        np.savetxt(file_name,np.vstack([T_range,recall_tot.T]).T,'%f',delimiter='\t',newline='\n')
+        for l_out in range(0,Network.no_layers):
+            ind = str(l_out)
+            
+            file_name_ending2 = file_name_ending + "_" + str(l_out)
+            file_name_ending2 = file_name_ending2 + "_%s" %str(adj_fact_exc)
+            file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
+            file_name_ending2 = file_name_ending2 + "_B_%s" %str(ternary_mode)
+                
+            temp_ending = file_name_ending2.replace("_T_%s" %str(T),'')
+            
+            file_name = file_name_base_results + "/Accuracies/Rec_%s.txt" %temp_ending
+            np.savetxt(file_name,np.vstack([T_range,recall_tot[ind].T]).T,'%f',delimiter='\t',newline='\n')
         
-        file_name = file_name_base_results + "/Accuracies/Prec_%s.txt" %temp_ending
-        np.savetxt(file_name,np.vstack([T_range,prec_tot.T]).T,'%f',delimiter='\t',newline='\n')
+            file_name = file_name_base_results + "/Accuracies/Prec_%s.txt" %temp_ending
+            np.savetxt(file_name,np.vstack([T_range,prec_tot[ind].T]).T,'%f',delimiter='\t',newline='\n')
         #==================================================================================
         
     #raw_input("Press a key to continue...")    
