@@ -91,13 +91,14 @@ The codes accept a few command line options to identify the specifications of th
   * `-G F`: for *stimulate-and-observe* scenario
   
 ##### Options for the inference and digitization algorithm
-* `-M xxx`: To specify the method use for inference, with `xxx` being an *integer*.
+* `-M xxx`: To specify the method use for inference, with `xxx` being an *integer*
   * `-M 3` for *STOCHASTIC NEUINF* (this paper)
   * `-M 4` for Cross Correlogram
-* `-K xxx`: To specify the method used to generate data, with `xxx` being a *character*.
+* `-K xxx`: To specify the method used to generate data, with `xxx` being a *character*
   * `-K N`: for the general case, where the topology of the network is unknown a priori
   * `-K Y`: for the *topology-aware* scenario (in *fee-forward* networks)
-* `-U xxx`: To specify if the inverse of the parameter *β* in Stochastic NeuInf algorithm , with `xxx` being an *integer* (the *β* will then be `β = 1/xxx`.)
+* `-U xxx`: To specify the inverse of the parameter *β* in Stochastic NeuInf algorithm , with `xxx` being an *integer* (the *β* will then be `β = 1/xxx`)
+* `-Z xxx`: To specify the (initial) learning rate in Stochastic NeuInf algorithm, *α*, with `xxx` being a *float* 
 * `-Y xxx`: To specify if the algorithm should reguralize for sparsity, with `xxx` being an *0/1* [not used in the current version].
 * `-X xxx`: To specify the maximum number of iterations inference algorithm is performed, with `xxx` being an *integer* [not used in the current version].
   
@@ -106,10 +107,6 @@ The codes accept a few command line options to identify the specifications of th
   * `-B 2` for thresholding-based approach
   * `-B 7` for the conservative approach of only assigning those edges that we are sure about (far from mean values)
 
-The above options are the more crucial ones. However, the ones below can also help in performing more accurate simulations:
-
-
-* 
 
 
 
