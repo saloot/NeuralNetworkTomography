@@ -39,7 +39,7 @@ help_message = help_message + "-A xxx: To specify the folder that stores the gen
 help_message = help_message + "-F xxx: To specify the ensemble index to start simulation. Default value = %s. \n" %str(ENSEMBLE_COUNT_INIT_DEFAULT)
 help_message = help_message + "-L xxx: To specify the number of layers in the network. Default value = %s. \n" %str(NO_LAYERS_DEFAULT)
 help_message = help_message + "-R xxx: To specify if the delays are fixed (R=0) or random (R=1). Default value = %s. \n" %str(RANDOM_DELAY_FLAG_DEFAULT)
-help_message = help_message + "-B xxx: To specify the binarification algorithm. Default value = %s. \n" %str(TERNARY_MODE_DEFAULT)
+help_message = help_message + "-B xxx: To specify the ternarification algorithm. Default value = %s. \n" %str(TERNARY_MODE_DEFAULT)
 help_message = help_message + "-M xxx: To specify the method use for inference, 0 for ours, 1 for Hopfield. Default value = %s. \n" %str(INFERENCE_METHOD_DEFAULT)
 help_message = help_message + "#################################################################################"
 help_message = help_message + "\n"
