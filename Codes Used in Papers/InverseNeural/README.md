@@ -1,16 +1,21 @@
 Introduction
-------
+===================
 This repository contains the code for the paper [Inverse Neural](http://rr.epfl.ch/paper/KSV2015). In what follows, we describe how to execute the code, how different options work and, more importantly, how to reproduce the results in the paper.
 
-### Executing the Code
-The codes are written in *Python*. Before getting to how to run the files, let's consider what are the required libararies for the codes to run.
+Executing the Code
+===================
+The codes are written in *Python*. The required libraries and dependencies are listed further down. Here, we discuss how to run the code. In principle, there are several to get the results shown in the paper, one of which is running the algorithm itself and the others involve generating data and evaluating the performance of the algorithm. The steps are listed below:
 
-#### Dependencies
-* A working distribution of [Python 2.7](https://www.python.org/downloads/).
-* The code relies heavily on [Numpy](http://www.numpy.org/),
-  [Scipy](http://www.scipy.org/), and [matplotlib](http://matplotlib.org).
-* To generate neural data (using the `Generate_Neural_Data.py`), the code uses [Brian simulator](http://briansimulator.org/).
-* 
+1. Generating data [★]
+2. Running the algorithm (NeuInf)
+3. Transforming the resulting *analog* association matrix to *ternary* adjaceny matrix [★★]
+4. Evaluating the performance
+
+★: if you have your own data, there is no need to the run the first step. Simply feed your data to the code. However, doing that for the files provided here could be a bit tricky. You could always contact [us](saloot@gmail.com) of course, but it is also worth checking [our other repository](https://github.com/saloot/NeuralNetworkTomography/tree/master/Network%20Tomography%20Toolbox) dedicated to a more general toolbox-like code. 
+
+★★: This step is optional. If done, the code in step 4 will calculate *precision* and *recall* as well.
+
+
 #### Spikes Times File
 We assume the spike times are stored in the following `.txt` file:  
 
@@ -33,7 +38,11 @@ The above example is showing that neurons *10*, *13* and *2* has fired at times 
 ### Running the Inference Algorithm
 
 
-
+### Dependencies
+* A working distribution of [Python 2.7](https://www.python.org/downloads/).
+* The code relies heavily on [Numpy](http://www.numpy.org/),
+  [Scipy](http://www.scipy.org/), and [matplotlib](http://matplotlib.org).
+* To generate neural data (using the `Generate_Neural_Data.py`), the code uses [Brian simulator](http://briansimulator.org/).
 
 
 ### The codes have been successfully tested on
