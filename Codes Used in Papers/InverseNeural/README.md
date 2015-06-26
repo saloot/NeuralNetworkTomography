@@ -38,6 +38,13 @@ An example is shown below:
 The above example is showing that neurons *10*, *13* and *2* has fired at times *4*ms, *12*ms and *25*ms, respectively.
 
 ### Step 2: Running the Inference Algorithm
+Assuming we have generated the data using the previous step, all we have to do is to type the folloding commands in the Terminal (within the `Codes` folder) with the same list of options. For general **recurrent** networks, we run
+
+    $ python Inference_Tomography.py [options] 
+    
+and for **feedforward** networks, we run
+
+    $ python Inference_Tomography_FF.py [options] 
 
 
 ### Options List
