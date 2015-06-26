@@ -90,7 +90,7 @@ The codes accept a few command line options to identify the specifications of th
   * `-G R`: for the general case, where all neurons in the network can be trigerred due to external traffic  
   * `-G F`: for *stimulate-and-observe* scenario
   
-##### Options for the inference and digitization algorithm
+##### Options for the inference algorithms
 * `-M xxx`: To specify the method use for inference, with `xxx` being an *integer*
   * `-M 3` for *STOCHASTIC NEUINF* (this paper)
   * `-M 4` for Cross Correlogram
@@ -100,14 +100,18 @@ The codes accept a few command line options to identify the specifications of th
 * `-U xxx`: To specify the inverse of the parameter *β* in Stochastic NeuInf algorithm , with `xxx` being an *integer* (the *β* will then be `β = 1/xxx`)
 * `-Z xxx`: To specify the (initial) learning rate in Stochastic NeuInf algorithm, *α*, with `xxx` being a *float* 
 * `-Y xxx`: To specify if the algorithm should reguralize for sparsity, with `xxx` being an *0/1* [not used in the current version].
-* `-X xxx`: To specify the maximum number of iterations inference algorithm is performed, with `xxx` being an *integer* [not used in the current version].
-  
+* `-X xxx`: To specify the maximum number of iterations inference algorithm is performed, with `xxx` being an *integer* [not used in the current version]
+
+ 
+##### Options for the digitization algorithms
 * `-B xxx`: To specify the ternarification algorithm, with `xxx` being an *integer*.
   * `-B 4` for clustering-based approach (using K-Means)
   * `-B 2` for thresholding-based approach
   * `-B 7` for the conservative approach of only assigning those edges that we are sure about (far from mean values)
 
-
+##### Options for evaluating performance and plotting the results
+* `-O xxx`: To specify the range of recorded durations to evaluate the performance upon, as a list given by `xxx`. More specifically, `xxx` has the following format:
+  * `-O "T_1,T_2,T_3"`, where `T_i` (an *integer* in miliseconds) is the duration of recording in session `i`.
 
 
 ### Dependencies
@@ -123,5 +127,22 @@ The codes accept a few command line options to identify the specifications of th
 * Linux Red Hat Enterprise Server 6.5, with Python 2.7
 * Microsoft Windows 8, with Python 2.7
 
+Licence
+===================
+Copyright (C) 2013 Laboratory of Audiovisual Communications (LCAV),
+Ecole Polytechnique Federale de Lausanne (EPFL),
+CH-1015 Lausanne, Switzerland.
+
 Credits and Contacts
 ===================
+Amin Karbasi, Amir Hesam Salvati and Martin Vetterli
+Laboratory for Audiovisual Communications ([LCAV](http://lcav.epfl.ch)) at 
+[EPFL](http://www.epfl.ch).
+<img src="http://lcav.epfl.ch/files/content/sites/lcav/files/images/Home/LCAV_anim_200.gif">
+
+
+#### Contacts and queries
+[Amir Hesam Salavati](mailto: saloot[at]gmail[dot]com) <br>
+
+
+
