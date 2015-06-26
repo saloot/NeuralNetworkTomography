@@ -460,6 +460,7 @@ def caculate_accuracy(W_binary,W):
 #------------------------------------------------------------------------------
 
 def parse_commands_ternary_algo(input_opts):
+    T_range = None
     if (input_opts):
         for opt, arg in input_opts:
             if opt == '-Q':
