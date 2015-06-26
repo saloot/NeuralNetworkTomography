@@ -133,6 +133,11 @@ Copyright (C) 2013 Laboratory of Audiovisual Communications (LCAV),
 Ecole Polytechnique Federale de Lausanne (EPFL),
 CH-1015 Lausanne, Switzerland.
 
+<a rel="license" href="https://en.wikipedia.org/wiki/GNU_General_Public_License"><img alt="GNU General Public License" style="border-width:0" src="http://rr.epfl.ch/img/GNU.png" /></a><br />
+
+This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version. This software is distributed in the hope that it will be useful, but without any warranty; without even the implied warranty of merchantability or fitness for a particular purpose. See the GNU General Public License for more details (enclosed in the file GPL).
+
+
 Credits and Contacts
 ===================
 Amin Karbasi, Amir Hesam Salvati and Martin Vetterli
@@ -140,9 +145,12 @@ Laboratory for Audiovisual Communications ([LCAV](http://lcav.epfl.ch)) at
 [EPFL](http://www.epfl.ch).
 <img src="http://lcav.epfl.ch/files/content/sites/lcav/files/images/Home/LCAV_anim_200.gif">
 
-
 #### Contacts and queries
 [Amir Hesam Salavati](mailto: saloot[at]gmail[dot]com) <br>
+
+
+
+
 
 
 
