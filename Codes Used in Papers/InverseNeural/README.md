@@ -1,4 +1,5 @@
-### Introduction
+Introduction
+------
 This repository contains the code for the paper [Inverse Neural](http://rr.epfl.ch/paper/KSV2015). In what follows, we describe how to execute the code, how different options work and, more importantly, how to reproduce the results in the paper.
 
 ### Executing the Code
