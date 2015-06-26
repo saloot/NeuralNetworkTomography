@@ -59,9 +59,16 @@ The results will be saved in the `Results/Inferred_Graphs/`. The codes uses a va
 Finally, we can evaluate the performance of the algorithm according to different criteria
 1. Quality of association matrix: we calculate the *average* of the values returned by the algorithm (i.e. it's "beliefs") for excitatiroy, inhibitory and non-existen ("void") connections. In principle, we expect the average for excitatory connections be higher than void and then higher than the inhibitory connections.
 2. Quality of adjacency matrix: after transforming the association matrix into the a ternary digital one, we can calculate *[precision and recall](https://en.wikipedia.org/wiki/Precision_and_recall)* to find out how accurately the algorithm is capable of identifying excitatory and inhibitory connections.
+3. Effect of sparisty on the performance: we can assess the performance of the algorithms in different scenarios and see how a sparser network or sparser data improves/deteriorates the performance.
 
+To perform the evaluations and plot the results, simply execute
+
+    $ python Plot_Results.py [options] 
 
 ### Options List
+The codes accept a few command line options to identify the specifications of the network and the properties of the neural data. These options are as follows
+
+* 
 
 ### Dependencies
 * A working distribution of [Python 2.7](https://www.python.org/downloads/).
@@ -75,3 +82,6 @@ Finally, we can evaluate the performance of the algorithm according to different
 * Linux Ubuntu 12.04, with Python 2.7
 * Linux Red Hat Enterprise Server 6.5, with Python 2.7
 * Microsoft Windows 8, with Python 2.7
+
+Credits and Contacts
+===================
