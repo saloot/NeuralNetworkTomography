@@ -17,10 +17,7 @@ The codes are written in *Python*. The required libraries and dependencies are l
 
 Let's start explaining each step in more details
 ### Step 1: **Generating Data**
-To generate data, we should use the file `Generate_Neural_Data.py` in the `Codes/` folder. The run the code
-
-1. Open up a Terminal (in Mac OS/Linux) or Command Prompt (in windows). 
-2. Navigate to the `Codes/` folder and execute the following command
+To generate data, we should use the file `Generate_Neural_Data.py` in the `Codes/` folder. The run the code, first open up a Terminal (in Mac OS/Linux) or Command Prompt (in windows). Then, navigate to the `Codes/` folder and execute the following command
 
     $ python Generate_Neural_Data.py [options] 
 
