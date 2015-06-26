@@ -38,13 +38,22 @@ An example is shown below:
 The above example is showing that neurons *10*, *13* and *2* has fired at times *4*ms, *12*ms and *25*ms, respectively.
 
 ### Step 2: Running the Inference Algorithm
-Assuming we have generated the data using the previous step, all we have to do is to type the folloding commands in the Terminal (within the `Codes` folder) with the same list of options. For general **recurrent** networks, we run
+Assuming we have generated the data using the previous step, all we have to do is to type the folloding commands in the Terminal (within the `Codes/` folder) with the same list of options. For general **recurrent** networks, we run
 
     $ python Inference_Tomography.py [options] 
     
 and for **feedforward** networks, we run
 
     $ python Inference_Tomography_FF.py [options] 
+
+The results of the inference algorithm will be saved in the `Results/Inferred_Graphs/` folder as analog *association matrices*.
+
+### Step 3: Getteing the Ternary Adjacency Matrix
+To transform the analog *association matrices* returned by the previous step, we can simply execute
+    
+    $ python Transform_to_Ternary.py [options] 
+
+The results will be saved in the `Results/Inferred_Graphs/`. The codes uses a variety of *standard* methods to perform the digitization task (including [K-Means](https://en.wikipedia.org/wiki/K-means_clustering) and simple thresholding techniques).
 
 
 ### Options List
