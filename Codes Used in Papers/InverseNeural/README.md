@@ -1,6 +1,15 @@
-### Reusing the algorithm for your own datasets
-In this part, we assume that you have a dataset of spike times and would like to identify the underlying neural graph using the proposed algorithm in this paper. We start by explaining the proper format of the file containing the spike times and then show you how to apply the inference algorithm, save the results and interpret them.
+### Introduction
+This repository contains the code for the paper [Inverse Neural](http://rr.epfl.ch/paper/KSV2015). In what follows, we describe how to execute the code, how different options work and, more importantly, how to reproduce the results in the paper.
 
+### Executing the Code
+The codes are written in *Python*. Before getting to how to run the files, let's consider what are the required libararies for the codes to run.
+
+#### Dependencies
+* A working distribution of [Python 2.7](https://www.python.org/downloads/).
+* The code relies heavily on [Numpy](http://www.numpy.org/),
+  [Scipy](http://www.scipy.org/), and [matplotlib](http://matplotlib.org).
+* To generate neural data (using the `Generate_Neural_Data.py`), the code uses [Brian simulator](http://briansimulator.org/).
+* 
 #### Spikes Times File
 We assume the spike times are stored in the following `.txt` file:  
 
@@ -21,3 +30,13 @@ An example is shown below:
 The above example is showing that neurons *10*, *13* and *2* has fired at times *4*ms, *12*ms and *25*ms, respectively.
 
 ### Running the Inference Algorithm
+
+
+
+
+
+### The codes have been successfully tested on
+* Mac OS 10.9.5, with Python 2.7
+* Linux Ubuntu 12.04, with Python 2.7
+* Linux Red Hat Enterprise Server 6.5, with Python 2.7
+* Microsoft Windows 8, with Python 2.7
