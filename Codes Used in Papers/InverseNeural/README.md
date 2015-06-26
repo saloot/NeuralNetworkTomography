@@ -68,7 +68,11 @@ To perform the evaluations and plot the results, simply execute
 ### Options List
 The codes accept a few command line options to identify the specifications of the network and the properties of the neural data. These options are as follows
 
-* 
+* `-E xxx`: To specify the number of excitatory neurons PER LAYER, as a list given by `xxx`. More specifically, `xxx` has the following format:
+  * `"n_1,n_2,n_3"`, with `n_i` being the number of excitatory neurons in layer `i`.
+* `-I xxx`: To specify the number of inhibitory neurons PER LAYER, as a list given by `xxx`. More specifically, `xxx` has the following format:
+  * `"m_1,m_2,m_3"`, with `m_i` being the number of inhibitory neurons in layer `i`.
+
 
 ### Dependencies
 * A working distribution of [Python 2.7](https://www.python.org/downloads/).
