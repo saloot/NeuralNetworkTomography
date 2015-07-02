@@ -3,7 +3,7 @@ Selected results for the paper can be found in more detailed at [LCAV's Reproduc
 random graph (i.e., an Erdos-Renyi model), with a connection probability of *0.2*. A short section of the graph (10 by 10) is shown below. The raster plot of generated data is shown below as well.
 
 
-<img src="https://raw.githubusercontent.com/saloot/NeuralNetworkTomography/master/Codes%20Used%20in%20Papers/InverseNeural/Paper%20Files/Selected%20Results/Actural_Graph.png/Actural_Graph.png" style="margin-bottom:5px;margin-top:5px;" >
+<img src="https://raw.githubusercontent.com/saloot/NeuralNetworkTomography/master/Codes%20Used%20in%20Papers/InverseNeural/Paper%20Files/Selected%20Results/Actural_Graph.png" style="margin-bottom:5px;margin-top:5px;" >
 <img src="https://raw.githubusercontent.com/saloot/NeuralNetworkTomography/master/Codes%20Used%20in%20Papers/InverseNeural/Paper%20Files/Selected%20Results/Raster_Plot.png" style="margin-bottom:0px;">
 
 
@@ -26,11 +26,6 @@ We can also transform the analog association matrix to the *ternary adjacency ma
 
 We can then evaluate the performance of STOCHASTIC NEUINF based on [precision and recall](https://en.wikipedia.org/wiki/Precision_and_recall), namely, how well the algorithm finds all different connection types without producing too many false positives or negatives. The following figure shows the results. In the paper, figure 6 illustrates the same results with more details and also in comparison with other similar algorithms.
 <img src="https://raw.githubusercontent.com/saloot/NeuralNetworkTomography/master/Codes%20Used%20in%20Papers/InverseNeural/Paper%20Files/Selected%20Results/Recurrent_Prec_Reca.png" style="height:400px;margin-left:7%;">
-
-#### Sparsity Helps
-We also observe another trend in our simulations: Sparsity, both in the firing patterns and network topology, improves the performance. The following figure illustrates the performance of STOCHASTIC NEUINF in differentiating connection types for different values of connection probability *p*, and probability of being triggered by outside traffic, *q*. Specifically, the bar chart represents the *gaps* between the average values of "beliefs" about excitatory and "void" (non-existent) connections as well as the *gap* between the average "beliefs" about void and inhibitory connections. The larger these gaps are, the better the performance is. The figure clearly shows that sparser network/data seems to result in better performances.
-
-<img src="https://raw.githubusercontent.com/saloot/NeuralNetworkTomography/master/Codes%20Used%20in%20Papers/InverseNeural/Paper%20Files/Selected%20Results/Recurrent_Effect_Sparsity.png" style="height:400px;margin-left:7%;">
 
 
 
