@@ -12,7 +12,8 @@ The codes are written in *Python*. The required libraries and dependencies are l
 
 
 ### Step 1: Running the Inference Algorithms
-Assuming we have generated the data using the previous step, all we have to do is to type the folloding commands in the Terminal (within the `Codes/` folder) with the same list of options. For general **recurrent** networks, we run
+#### Feed-forard case
+For the feed-forward case, simply 
 
     $ python Inference_Tomography.py [options] 
     
