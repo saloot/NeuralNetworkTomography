@@ -26,9 +26,14 @@ To run *Cross Correlogram* type
     
 For GLM, we have to switch to *MATLAB*, and use the code kindly provided by Prof. Jonathan Pillow [here](http://pillowlab.cps.utexas.edu/code_GLM.html).
 We have modified the code to adapt it for our own needs, which is in the `GLM/` folder. To run the code, please open MALTAB, navigate to the `GLM\` folder
-and perform the following collamnds
+and perform the following commands
 
-    >> 
+    For GLM, please open MALTAB, navigate to the `GLM\` folder and perform the following commands
+
+    >> run ./tools_mexcode/initialize_mexcode
+    >> run setpaths
+    >> T = Infer_GLM(2,[60,12],[15,3],0.2,0.3,'N')
+    >> compare_results_GLM(2,[60,12],[15,3],0.2,0.3,'N',T)
 
 
 #### Recurrent networks
@@ -42,8 +47,13 @@ To run *Cross Correlogram* type
 
     $ python Inference_Tomography.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -M 4
     
-    
-For GLM, please open MALTAB, navigate to the `GLM\` folder and perform the following collamnds
+
+For GLM, please open MALTAB, navigate to the `GLM\` folder and perform the following commands
+
+    >> run ./tools_mexcode/initialize_mexcode
+    >> run setpaths
+    >> T = Infer_GLM(2,[50],[11],0.4,0.1,'N')
+    >> compare_results_GLM(2,[50],[11],0.4,0.1,'N',T)
 
 
 ### Step 2: Getteing the Ternary Adjacency Matrix
