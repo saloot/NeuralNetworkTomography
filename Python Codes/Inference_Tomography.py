@@ -23,6 +23,7 @@ import os
 import sys,getopt,os
 import matplotlib.pyplot as plt
 import pdb
+from copy import deepcopy
 
 import auxiliary_functions
 reload(auxiliary_functions)
@@ -201,9 +202,10 @@ if not os.path.isdir(file_name_base_results+'/Plot_Results'):
     os.makedirs(temp)    
 #------------------------------------------------------------------------------
 
+print T_range
 t_base = time()
 t_base = t_base-t0
-alpha0 = 0.00085
+alpha0 = 0.0000095
 sparse_thr0 = 0.0001
 adj_fact_exc = 0.75
 adj_fact_inh = 0.5
@@ -211,7 +213,8 @@ adj_fact_inh = 0.5
 
 #............................Correlation-Bases Approach........................
 if (inference_method == 0):
-    inferece_params = [1,theta,generate_data_mode,[]]           
+    d_window = 0.015
+    inferece_params = [1,theta,d_window,[]]
 #..............................................................................
 
 #............................Perceptron-Based Approach.........................
@@ -223,8 +226,12 @@ elif (inference_method == 3) or (inference_method == 2):
     #~~~We Know the Location of Neurons + Continuous Stimulation~~~
     # Just give the integrated version to the inference algorithm, i.e.: sum(in_spikes[stimul_span],out_spike)
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,20,generate_data_mode,[]]
+    if delay_known_flag == 'Y':
+        d_window = 12
+    else:
+        d_window = 15
+    #inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,120,generate_data_mode,[],d_window,[]]
+    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,250,generate_data_mode,[],d_window,[],[]]
 #..............................................................................
 
 #.............................Event-Based Approach.............................
@@ -235,20 +242,20 @@ elif (inference_method == 5):
             
 #...............................CCF-Based Approach.............................
 elif (inference_method == 4):
-    d_window = 10
+    d_window = 15
     inferece_params = [d_window]            
 #..............................................................................
 
 #...............Perceptron-Based Approach for Background Traffic...............
 elif (inference_method == 6):
-    d_window = 0.012
-    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,50,d_window,[],[]]
+    d_window = 0.015
+    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,150,d_window,[],[]]
 #..............................................................................
 
 #............................Hebbian-Based Approach............................
 else:
     inferece_params = [1]
-    #W_inferred_our_tot = inference_alg_per_layer((-pow(-1,np.sign(cumulative_spikes_temp))),recorded_spikes_temp,inference_method,inferece_params)
+    #W_inferred_our_tot = inference_alg_per_layer((-pow(-1,np.sign(cumulative_spikes_temp))),recorded_spikes_temp,inference_method,inferece_params,generate_data_mode,delay_known_flag)
 #..............................................................................
 
 #------------------------------------------------------------------------------
@@ -284,10 +291,14 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
     #--------------------------Read and Sort Spikes----------------------------
     file_name_base = file_name_base_data + "/Spikes/S_times_%s" %Network.file_name_ending + "_q_%s" %str(frac_stimulated_neurons) + '_G_' + generate_data_mode
     if (generate_data_mode == 'F'):
-        Neural_Spikes = read_spikes(file_name_base,Network.no_layers,Network.n_exc_array,Network.n_inh_array,['c',no_stimul_rounds,sim_window])
+        Neural_Spikes,T_max = read_spikes(file_name_base,Network.no_layers,Network.n_exc_array,Network.n_inh_array,['c',no_stimul_rounds,sim_window])
     else:
-        Neural_Spikes = read_spikes(file_name_base,Network.no_layers,Network.n_exc_array,Network.n_inh_array,['u',int(running_period*10)])
+        Neural_Spikes,T_max = read_spikes(file_name_base,Network.no_layers,Network.n_exc_array,Network.n_inh_array,['u',int(running_period*10)])
     #--------------------------------------------------------------------------
+    
+    T_max = int(1000*T_max)
+    T_step = int(T_max/6.0)
+    T_range = range(T_step, T_max+1, T_step)
     
 #==============================================================================
 
@@ -337,7 +348,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         
         
         if inference_method == 0:
-            inferece_params = [1/float(T),theta,generate_data_mode]           
+            inferece_params = [1/float(T),theta,d_window,generate_data_mode]           
         #-------------------------If We Know the Location----------------------
         if we_know_location.lower() == 'y':
             
@@ -373,7 +384,8 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                             temp_list = Actual_Neural_Times[str(l_in)]
                         n_exc = Network.n_exc_array[l_in]
                         n_inh = Network.n_inh_array[l_in]
-                        n_tot = n_tot + n_exc + n_inh                
+                        n = n_exc + n_inh
+                        n_tot = n_tot + n_exc + n_inh
                         if len(in_spikes):
                             in_spikes_temp = temp_list
                             in_spikes_temp = in_spikes_temp[:,0:T]
@@ -399,28 +411,40 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         in_spikes_orig = in_spikes
                     else:
                         in_spikes_orig = rough_in_spikes
-                        out_spikes_tot = Actual_Neural_Times[str(l_out)]
-                        in_spikes_tot = Actual_Neural_Times[str(l_in)]
+                        out_spikes_tot = deepcopy(Actual_Neural_Times[str(l_out)])
+                        in_spikes_tot = deepcopy(Actual_Neural_Times[str(l_in)])
+                        in_spikes_tot_mat = np.zeros([n,T])
+                        out_spikes_tot_mat = np.zeros([m,T])
                         for sps in in_spikes_tot:
                             sps_times = np.array(in_spikes_tot[sps])
-                            aas = sps_times<=T/1000.0
-                            aas = np.nonzero(aas)[0]
-                            if sum(aas):
-                                aas = aas[len(aas)-1]
-                                sps_times = sps_times[0:aas]
-                            else:
-                                sps_times = []
+                            sps_times = sps_times[sps_times<T/1000.0]
+                            iik = int(sps)
+                            
+                            sps_inds = (1000*sps_times).astype(int)
+                            in_spikes_tot_mat[iik,sps_inds] = 1
+                            #aas = sps_times<=T/1000.0
+                            #aas = np.nonzero(aas)[0]
+                            #if sum(aas):
+                            #    aas = aas[len(aas)-1]
+                            #    sps_times = sps_times[0:aas]
+                            #else:
+                            #    sps_times = []
                             in_spikes_tot[sps] = sps_times
                         
                         for sps in out_spikes_tot:
                             sps_times = np.array(out_spikes_tot[sps])
-                            aas = sps_times<=T/1000.0
-                            aas = np.nonzero(aas)[0]
-                            if sum(aas):
-                                aas = aas[len(aas)-1]
-                                sps_times = sps_times[0:aas]
-                            else:
-                                sps_times = []
+                            sps_times = sps_times[sps_times<T/1000.0]
+                            iik = int(sps)
+                            
+                            sps_inds = (1000*sps_times).astype(int)
+                            out_spikes_tot_mat[iik,sps_inds] = 1
+                            #aas = sps_times<=T/1000.0
+                            #aas = np.nonzero(aas)[0]
+                            #if sum(aas):
+                            #    aas = aas[len(aas)-1]
+                            #    sps_times = sps_times[0:aas]
+                            #else:
+                            #    sps_times = []
                             out_spikes_tot[sps] = sps_times
                             
                         
@@ -441,15 +465,32 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     
                     #~~~~~~~~~~~~~~~~~~~~Perfrom Inference~~~~~~~~~~~~~~~~~~~~~
                     ind = str(l_in) + str(l_out);temp_list = Network.Neural_Connections[ind];W = temp_list[0];DD = temp_list[1]                    
-                    if inference_method == 6:
+                    if inference_method == 6 or inference_method == 3:
                         if delay_known_flag == 'Y':
-                            inferece_params[6] = DD
+                            fixed_entries = (DD >0).astype(int)
+                            d_max = np.max(Network.delay_max_matrix)
+                            Dels = np.multiply(fixed_entries,1000*DD) + np.multiply(1-fixed_entries,np.random.uniform(0,d_max,[n,m]))
+                            inferece_params[6] = Dels
+                        else:                            
+                            Dels = float('nan')*DD
+                    
+                
+                        if inference_method == 3:
+                            inferece_params[8] = Dels
                         else:
-                            inferece_params[6] = float('nan')*DD
+                            inferece_params[6] = Dels
+                            
+                    if (inference_method == 4) and (generate_data_mode == 'R'):
+                        out_spikes = out_spikes_tot_mat
+                        in_spikes = in_spikes_tot_mat
+                    
+                    if (inference_method == 3) and (generate_data_mode == 'R'):
+                        out_spikes = out_spikes_tot_mat
+                        in_spikes = in_spikes_tot_mat                        
                         
                     #pdb.set_trace()
                     for infer_itr in range(0,infer_itr_max):
-                        W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estimated,1)
+                        W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estimated,1,generate_data_mode,delay_known_flag)                        
                         # W_bin = 0.001*(W_inferred_our_tot>W_inferred_our_tot.mean()+W_inferred_our_tot.std()).astype(int) - 0.005*(W_inferred_our_tot<-W_inferred_our_tot.mean()-W_inferred_our_tot.std()).astype(int)
                         #recal,precision = calucate_accuracy(W_estimated,W)
                         #print '-------------Our method performance in ensemble %d & T = %d------------' %(ensemble_count,T)
@@ -500,7 +541,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
 
                         #~~~~~~~~~~~~~~~~~~Perfrom Inference~~~~~~~~~~~~~~~~~~~
                         for infer_itr in range(0,infer_itr_max):
-                            W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estimated,1)
+                            W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estimated,1,generate_data_mode,delay_known_flag)
                             W_inferred_our_tot = W_inferred_our_tot/(abs(W_inferred_our_tot).max())
                             W_estimated= []
                             centroids = []
@@ -524,6 +565,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     file_name_ending23 = file_name_ending23 + '_Pre_' + pre_synaptic_method
                     file_name_ending23 = file_name_ending23 + '_G_' + generate_data_mode
                     file_name_ending23 = file_name_ending23 + '_X_' + str(infer_itr_max)
+                    file_name_ending23 = file_name_ending23 + '_Q_' + str(frac_stimulated_neurons)
                     if (sparsity_flag):
                         file_name_ending23 = file_name_ending23 + '_S_' + str(sparsity_flag)
                     file_name_ending2 = file_name_ending23 +"_T_%s" %str(T)
@@ -712,7 +754,13 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 out_spikes_tot = []
             
             n_so_far = 0
-            
+            n_tot = 0
+            for l_in in range(0,Network.no_layers):
+                n_exc = Network.n_exc_array[l_in]
+                n_inh = Network.n_inh_array[l_in]
+                n = n_exc + n_inh
+                n_tot = n_tot + n
+            out_spikes_tot_mat = np.zeros([n_tot,T])
             for l_in in range(0,Network.no_layers):
                 n_exc = Network.n_exc_array[l_in]
                 n_inh = Network.n_inh_array[l_in]
@@ -725,9 +773,14 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     for i in range(0,n):
                         ind = str(n_so_far)
                         ttimes = np.array(spikes_times[str(i)])
-                        if sum(abs(ttimes)):
-                            ttimes = ttimes[ttimes<T/1000.0]
+                        ttimes = ttimes[ttimes<T/1000.0]
+                        #if sum(abs(ttimes)):
+                        #    ttimes = ttimes[ttimes<T/1000.0]
                         out_spikes_tot[ind] = ttimes
+                                                
+                            
+                        sps_inds = (1000*ttimes).astype(int)
+                        out_spikes_tot_mat[n_so_far,sps_inds] = 1
                         
                         n_so_far = n_so_far + 1
                                         
@@ -824,17 +877,40 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     non_stimul_inds[str(ttt)] = np.array(ttemp)
                 
             
-            if inference_method == 3:
-                inferece_params[len(inferece_params)-1] = non_stimul_inds
+            
                 
             #pdb.set_trace()            
-            if inference_method == 6:
-                inferece_params[6] = DD_tot
+            if inference_method == 6 or inference_method == 3:
+                if delay_known_flag == 'Y':
+                    fixedentries = (DD_tot >0).astype(int)
+                    d_max = np.max(Network.delay_max_matrix)
+                    Dels = np.multiply(fixedentries,1000*DD_tot) + np.multiply(1-fixedentries,np.random.uniform(0,d_max,[n,m]))
+                else:
+                    Dels = float('nan')*DD
+                    
+                
+                if inference_method == 3:
+                    inferece_params[8] = Dels
+                else:
+                    inferece_params[6] = Dels
+                    
+                            
+            if inference_method == 4:
+                in_spikes_tot = out_spikes_tot_mat
+                out_spikes_tot = out_spikes_tot_mat
+                
+            if (inference_method == 3) and (generate_data_mode == 'R'):
+                in_spikes_tot = out_spikes_tot_mat
+                out_spikes_tot = out_spikes_tot_mat
+                inferece_params[len(inferece_params)-4] = non_stimul_inds                
+                
+            elif inference_method == 3:
+                inferece_params[len(inferece_params)-4] = non_stimul_inds
             #........................Perfrom Inference.........................
             for infer_itr in range(0,infer_itr_max):
                 
                 #~~~~~~~~~~~~~~Classify Excitatory Neurons Only~~~~~~~~~~~~~~~~                
-                W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0)
+                W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0,generate_data_mode,delay_known_flag)
                 W_tmp = abs(np.ma.masked_array(W_inferred_our_tot,mask= (W_inferred_our_tot==float('inf')).astype(int)))
                 #W_bin = 0.001*(W_inferred_our_tot>W_inferred_our_tot.mean()+W_inferred_our_tot.std()).astype(int) - 0.005*(W_inferred_our_tot<-W_inferred_our_tot.mean()-W_inferred_our_tot.std()).astype(int)
                 
@@ -892,7 +968,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
                 #~~~~~~~~~~~~~~Classify Inhibitory Neurons Only~~~~~~~~~~~~~~~~                
-                #W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0)
+                #W_inferred_our_tot,cost,Updated_Vals = inference_alg_per_layer(in_spikes_tot,out_spikes_tot,inference_method,inferece_params,W_estimated,0,generate_data_mode,delay_known_flag)
                 #W_tmp = abs(np.ma.masked_array(W_inferred_our_tot,mask= (W_inferred_our_tot==float('inf')).astype(int)))
                 
                 #if (inference_method == 4):
@@ -931,6 +1007,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
             file_name_ending23 = file_name_ending23 + '_Pre_' + pre_synaptic_method
             file_name_ending23 = file_name_ending23 + '_G_' + generate_data_mode
             file_name_ending23 = file_name_ending23 + '_X_' + str(infer_itr_max)
+            file_name_ending23 = file_name_ending23 + '_Q_' + str(frac_stimulated_neurons)
             if (sparsity_flag):
                 file_name_ending23 = file_name_ending23 + '_S_' + str(sparsity_flag)
             file_name_ending2 = file_name_ending23 +"_T_%s" %str(T)
@@ -1136,7 +1213,7 @@ mu_std_exc = std_exc.mean(axis = 1)
 mu_std_inh = std_inh.mean(axis = 1)
 mu_std_void = std_void.mean(axis = 1)
 
-pdb.set_trace()
+#pdb.set_trace()
 
 temp = np.vstack([np.array(T_range).T,mu_mean_exc.T,mu_std_exc.T])
 file_name = file_name_base_results + "/Mean_var_exc_%s.txt" %file_name_ending2

@@ -20,14 +20,17 @@ delay_max = 1.0                         # This is done to avoid any incompatibil
 
 input_stimulus_freq = 20000             # The frequency of spikes by the neurons in the input layer (in Hz)
 
-T_range = range(10, no_cascades, 200)                  # The range of sample sizes considered to investigate the effect of sample size on the performance
+no_stimul_rounds = 1000
+T_range = range(200, no_stimul_rounds, 150)
 ensemble_count = 0                                     # The graph we use to make the movie from
 
 height = 40                             # Number of rows in the submatrix of the connectivity matrix that we consider
 width = 40                              # Number of columns in the submatrix of the connectivity matrix that we consider
 W_trunc = np.zeros([height,width])      # The consdiered submatrix
 
-file_name_base_results = "./Results/Recurrent/Inferred_Graphs/"        # The folder to store resutls
+file_name_base_results = "./Results"        # The folder to store resutls
+adj_fact_exc = 0.75
+adj_fact_inh = 0.5
 #------------------------------------------------------------------------------
 
 def image_whiten(imag,height,wdith):
@@ -51,38 +54,73 @@ def image_whiten(imag,height,wdith):
     return imagew3
 #==============================================================================
 
-#============GENERATE RANDOM INDICES TO CONSIDER THEIR EVOLUTION===============
-ind_horiz = np.random.randint(n_exc+n_inh, size=width)
-ind_vert = np.random.randint(n_exc+n_inh, size=height)
-#==============================================================================
 
 #=========================READ THE ORIGINAL GRAPH==============================
 
 #-----------------------Construct Prpoper File Names---------------------------
-file_name_ending = "n_exc_%s" %str(int(n_exc))
-file_name_ending = file_name_ending + "_n_inh_%s" %str(int(n_inh))    
-file_name_ending = file_name_ending + "_p_%s" %str(connection_prob)
-file_name_ending = file_name_ending + "_r_%s" %str(frac_input_neurons)
-#file_name_ending = file_name_ending + "_f_%s" %str(input_stimulus_freq)
-file_name_ending = file_name_ending + "_d_%s" %str(delay_max)
-file_name_ending = file_name_ending + "_T_%s" %str(no_cascades)    
-file_name_ending = file_name_ending + "_%s" %str(ensemble_count)
+Network = NeuralNet(no_layers,n_exc_array,n_inh_array,connection_prob_matrix,delay_max_matrix,random_delay_flag,'')
+Network.read_weights(0,file_name_base_data)
+file_name_ending23 = Network.file_name_ending + '_I_' + str(inference_method)
+file_name_ending23 = file_name_ending23 + '_Loc_' + we_know_location
+file_name_ending23 = file_name_ending23 + '_Pre_' + pre_synaptic_method
+file_name_ending23 = file_name_ending23 + '_G_' + generate_data_mode
+file_name_ending23 = file_name_ending23 + '_X_' + str(infer_itr_max)
+if (sparsity_flag):
+    file_name_ending23 = file_name_ending23 + '_S_' + str(sparsity_flag)
+
 #------------------------------------------------------------------------------
 
+#............Construct the Concatenated Weight Matrix..............            
+W_tot = []
+for l_in in range(0,Network.no_layers):
+    n_exc = Network.n_exc_array[l_in]
+    n_inh = Network.n_inh_array[l_in]
+    n = n_exc + n_inh
 
-file_name = "./Data/Recurrent/Graphs/We_Recurrent_Cascades_Delay_%s.txt" %file_name_ending
-We = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+    W_temp = []
+    for l_out in range(0,Network.no_layers):
+        n_exc = Network.n_exc_array[l_out]
+        n_inh = Network.n_inh_array[l_out]
+        m = n_exc + n_inh
+                        
+        if (l_out < l_in):
+            if len(W_temp):
+                W_temp = np.hstack([W_temp,np.zeros([n,m])])
+            else:
+                W_temp = np.zeros([n,m])
+        else:
+            ind = str(l_in) + str(l_out);
+            temp_list = Network.Neural_Connections[ind];
+            W = temp_list[0]
+                        
+            if len(W_temp):
+                W_temp = np.hstack([W_temp,W])
+            else:
+                W_temp = W
+                
+                
+                
+    if len(W_tot):
+        W_tot = np.vstack([W_tot,W_temp])
+    else:
+        W_tot = W_temp
+#..................................................................
+W_orig = W_tot
+
+#============GENERATE RANDOM INDICES TO CONSIDER THEIR EVOLUTION===============
+n,m = W_orig.shape
+ind_horiz = np.random.randint(m, size=width)
+ind_vert = np.random.randint(n, size=height)
+#==============================================================================
+
     
-file_name = "./Data/Recurrent/Graphs/Wi_Recurrent_Cascades_Delay_%s.txt" %file_name_ending
-Wi = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-    
-W_orig = np.vstack((We,Wi))
+
 W_orig_Trunk = W_orig[ind_vert,:]
 W_orig_Trunk = W_orig_Trunk[:,ind_horiz]
 W_orig_Trunk_W = image_whiten(W_orig_Trunk,height,width)
 W_orig_Trunk = np.sign(W_orig_Trunk)
-W_orig_Trunk = W_orig_Trunk + 1
-W_orig_Trunk = W_orig_Trunk/2.0
+#W_orig_Trunk = W_orig_Trunk + 1
+#W_orig_Trunk = W_orig_Trunk/2.0
 #==============================================================================
 
 
@@ -93,11 +131,15 @@ for T in T_range:
     #--------------------READ THE NETWORK AND SPIKE TIMINGS--------------------
 
     #.......................Construct Prpoper File Names.......................    
-    file_name_ending2 = file_name_ending + "_%s" %str(T)
+    file_name_ending2 = file_name_ending23 + "_T_%s" %str(T)
+    file_name_ending2 = file_name_ending2 + "_%s" %str(adj_fact_exc)
+    file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
+    file_name_ending2 = file_name_ending2 + "_B_%s" %str(binary_mode)
     #..........................................................................
     
-    #.......................Read the Graph from File...........................
-    file_name = file_name_base_results + "W_Recurrent_Cascades_Delay_%s.txt" %file_name_ending2
+    #.......................Read the Graph from File...........................    
+    file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2
+        
     W = np.genfromtxt(file_name, dtype=None, delimiter='\t')
     #..........................................................................
     
@@ -109,12 +151,54 @@ for T in T_range:
     W_mean[0,:] = W_trunk.mean(axis=0)
     #W_mean_orig = (n_exc-n_inh) * np.ones([1,height]) / float(n)
     #W_trunk = W_trunk - np.dot(np.ones([height,1]),W_mean) + np.dot(np.ones([height,1]),W_mean_orig)
-    W_trunk = W_trunk-W_trunk.min()
+    #W_trunk = W_trunk-W_trunk.min()
     #W_trunk = W_trunk - W_trunk.min()
     #W_trunk = W_trunk/float(W_trunk.max())
     #print W_trunk.mean(axis=0)
     #..........................................................................
-    
+    W_trunk = np.sign(W_trunk)
     file_name = './Results/Visualize_W_Movie/W_%s' %file_name_ending2
     file_name = file_name + '.png'
     scipy.misc.imsave(file_name, np.hstack([W_trunk,W_orig_Trunk]))
+    
+    #--------------Store the Error Between Actual and the Binary Image----------
+    itr_mat = 0    
+    save_matrix = np.zeros([30*40,3])
+    for ik in range(0,30):
+        for ij in range(0,40):
+            val = W_trunk[ik,ij]-W_orig_Trunk[ik,ij]
+            save_matrix[itr_mat,:] = [ij,ik,val]
+            itr_mat = itr_mat + 1
+    
+    file_name = './Results/Visualize_W_Movie/W_error_%s.txt' %file_name_ending2
+    np.savetxt(file_name,save_matrix,'%2.5f',delimiter='\t')
+    #-----------------------------------------------------
+    
+    
+#--------------------Save an image-----------------
+itr_mat = 0
+T = 950
+save_matrix = np.zeros([30*40,3])
+for ik in range(0,30):
+    for ij in range(0,40):
+        val = W_orig_Trunk[ik,ij]
+        save_matrix[itr_mat,:] = [ij,ik,val]
+        itr_mat = itr_mat + 1
+
+file_name = './Results/Visualize_W_Movie/W_orig_%s.txt' %file_name_ending2
+np.savetxt(file_name,save_matrix,'%2.5f',delimiter='\t')
+#-----------------------------------------------------
+
+#--------------------Save an image-----------------
+itr_mat = 0
+T = 950
+save_matrix = np.zeros([30*40,3])
+for ik in range(0,30):
+    for ij in range(0,40):
+        val = W_trunk[ik,ij]
+        save_matrix[itr_mat,:] = [ij,ik,val]
+        itr_mat = itr_mat + 1
+
+file_name = './Results/Visualize_W_Movie/W_binary_%s.txt' %file_name_ending2
+np.savetxt(file_name,save_matrix,'%2.5f',delimiter='\t')
+#-----------------------------------------------------

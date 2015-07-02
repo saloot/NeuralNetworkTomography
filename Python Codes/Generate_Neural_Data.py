@@ -120,9 +120,9 @@ Network = NeuralNet(None,None,None,None,None,None,None, 'command_line',input_opt
 no_samples_per_cascade = max(3.0,25*Network.no_layers*np.max(Network.delay_max_matrix)) # Number of samples that will be recorded
 if generate_data_mode == 'F':
     running_period = (no_samples_per_cascade/10.0)  # Total running time in mili seconds
-else:
+else:    
+    running_period = (no_stimul_rounds*no_samples_per_cascade/10.0)  # Total running time in mili seconds
     no_stimul_rounds = 1
-    running_period = (200*no_samples_per_cascade/10.0)  # Total running time in mili seconds
 #==============================================================================
 
 

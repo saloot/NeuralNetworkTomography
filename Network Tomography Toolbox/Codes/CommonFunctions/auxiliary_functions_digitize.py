@@ -495,6 +495,11 @@ def parse_commands_ternary_algo(input_opts):
                 beta = int(arg)                                     # Specify the update probability paramter (p = 1/beta) in STOCHASTIC NEUINF
             elif opt == '-Z': 
                 alpha0 = float(arg)                                 # Specify the update learnining rate
+            elif opt == '-f':                                       # Specify what to plot                
+                temp = (arg).split(',')                             # The number of excitatory neurons in each layer
+                plot_flags = []
+                for i in temp:                        
+                    plot_flags.append(i)                
             elif opt == '-O': 
                 temp = (arg).split(',')                             # The range of recorded durations (T_range)
                 T_range = []
@@ -562,7 +567,11 @@ def parse_commands_ternary_algo(input_opts):
     
     if 'alpha0' not in locals():
         alpha0 = ALPHA0_DEFAULT
-        print('ATTENTION: The default value of %s for alpha0 is considered.\n' %str(alpha0))    
+        print('ATTENTION: The default value of %s for alpha0 is considered.\n' %str(alpha0))
+        
+    if 'plot_flags' not in locals():
+        plot_flags = ['B','P','W','S']
+        print('ATTENTION: The default value of %s for plot_flags is considered.\n' %str(plot_flags))    
     #------------------------------------------------------------------------------
     
     #------------------Create the Necessary Directories if Necessary---------------
@@ -577,6 +586,6 @@ def parse_commands_ternary_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return frac_stimulated_neurons,T_max,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,ternary_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,beta,alpha0,infer_itr_max,T_range
+    return frac_stimulated_neurons,T_max,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,ternary_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,beta,alpha0,infer_itr_max,T_range,plot_flags
 
 

@@ -1,7 +1,7 @@
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 import math
 #from brian import *
-from scipy import sparse
+from scipy import sparse,linalg
 import pdb,os,sys
 import random
 import copy
@@ -33,6 +33,7 @@ from default_values import *
 #------------------------------------------------------------------------------
 def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estim,location_flag,data_mode):
     
+    from auxiliary_functions import soft_threshold
     
     #------------------------------Initialization------------------------------
     n,TT = in_spikes.shape
@@ -328,7 +329,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
             bin_size = inferece_params[7]
         else:
             bin_size = 0
-            
+        
         ss,TT = out_spikes.shape
         neuron_range = np.array(range(0,m))
         neuron_range = np.reshape(neuron_range,[m,1])
@@ -340,35 +341,56 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
         #......................................................................
         
         #................Iteratively Update the Connectivity Matrix............
-        if data_mode == 'R':
-    
-            for ijk in neuron_range:                
-                firing_inds = np.nonzero(out_spikes[ijk,:])
-                firing_inds = firing_inds[0]
-                
-                
-                print '-------------Neuron %s----------' %str(ijk)
-                
-                V = np.zeros([n,TT])
-                for jj in range(0,TT-1):
-                    V[:,jj] = sum(out_spikes[:,max(0,jj-d_window):jj],axis = 1)
-                
-                if sparsity_flag:
-                    V = matrix(V.T)                    
-                    for j in range(0,n):
-                        #x_temp = lsqr(V.T,out_spikes[j,:],10)
-                        #W_inferred[:,j] = x_temp[0]                        
-                        W_inferred[:,j] = array(l1regls(V,matrix(out_spikes[j,:]))).squeeze()
-                        W_inferred[j,j] = 0
-                else:
-                    E = np.linalg.pinv(V)
-                    WW2 = np.dot(out_spikes,E)
-                
-                    for iil in range(0,n):
-                        WW2[iil,iil] = 0
+        if data_mode == 'R':    
+            V = np.zeros([n,TT])
+            for jj in range(0,TT-1):
+                V[:,jj] = np.sum(out_spikes[:,max(0,jj-d_window):jj],axis = 1)
+            A = np.dot(V,V.T) + np.eye(n)
+            A_i = np.linalg.inv(A)
+            S = linalg.sqrtm(A)
+            S_i = np.linalg.inv(S)
+            B0 = np.dot(V,out_spikes.T)
+            
+            if sparsity_flag:    
+                for ijk in neuron_range:                
+                    Y = out_spikes[ijk,:]
                     
-                    W_inferred = WW2
+                    print '-------------Neuron %s----------' %str(ijk)
                 
+                    WW = W_inferred[:,ijk]
+                    U = WW.T
+                    
+                    for ttau in range_tau:
+                
+                        #~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~                        
+                        sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
+                        sparse_thr = sparse_thr_0/float(ttau+1)
+                        B = B0[:,ijk] + U.T
+                        #pdb.set_trace()
+                        D = np.dot(B.T,A_i)
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        
+                        #~~~~~~~~~Minimize with Respect to W~~~~~~~~~
+                        W = np.dot(D,S_i)
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                
+                        #~~~~~~Apply Sparsity Regularizer to W~~~~~~~
+                        U = soft_threshold(W,sparse_thr)
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        
+                    
+                    W_inferred[:,ijk] = W.T
+                    
+            else:
+                E = np.linalg.pinv(V)
+                Y = out_spikes + 0.05*np.ones([n,TT])
+                WW2 = np.dot(out_spikes,E)
+                
+                for iil in range(0,n):
+                    WW2[iil,iil] = 0
+                    
+                W_inferred = WW2
+            
 
     else:
         print('Error! Invalid inference method.')

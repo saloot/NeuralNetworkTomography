@@ -135,10 +135,10 @@ str_p = ''
 str_d = ''
 str_n_exc = ''
 str_n_inh = ''
-for i in range(0,no_layers):
+for i in range(0,Network.no_layers):
     str_n_exc = str_n_exc + '_' + str(int(n_exc_array[i]))
     str_n_inh = str_n_inh + '_' + str(int(n_inh_array[i]))
-    for j in range(i,no_layers):
+    for j in range(i,Network.no_layers):
         str_p = str_p + '_' + str(connection_prob_matrix[i,j])
         str_d = str_d + '_' + str(delay_max_matrix[i,j])
 
@@ -150,19 +150,19 @@ for i in range(0,no_layers):
 itr = 0
 
 if (network_type == 'MLF'):
-    file_name_ending = "L_%s" %str(int(no_layers))
+    file_name_ending = "L_%s" %str(int(Network.no_layers))
     file_name_ending = file_name_ending + "_n_exc" + str_n_exc
     file_name_ending = file_name_ending + "_n_inh" + str_n_inh
     file_name_ending = file_name_ending + "_p" + str_p 
     file_name_ending = file_name_ending + "_q_%s" %str(frac_input_neurons)
-    file_name_ending = file_name_ending + "_R_%s" %str(random_delay_flag)    
+    file_name_ending = file_name_ending + "_R_%s" %str(Network.random_delay_flag)
     file_name_ending = file_name_ending + "_d" + str_d
-    file_name_ending = file_name_ending + "_T_%s" %str(no_cascades)    
-    for l_in in range(0,no_layers):
-        n_exc = n_exc_array[l_in]
-        n_inh = n_inh_array[l_in]
+    file_name_ending = file_name_ending + "_T_%s" %str(no_stimul_rounds)    
+    for l_in in range(0,Network.no_layers):
+        n_exc = Network.n_exc_array[l_in]
+        n_inh = Network.n_inh_array[l_in]
         n = n_exc + n_inh
-        for l_out in range(l_in,no_layers):
+        for l_out in range(l_in,Network.no_layers):
             itr = 0
             
             B_exc_min_Det.fill(0)

@@ -185,10 +185,16 @@ def determine_binary_threshold(method,params,obs):
         res = 0
         temp= np.zeros([no_clusters])
         while success_itr<10:
-            temp,res = kmeans(obs,no_clusters,iter=30)            
+            temp,res = kmeans(obs,no_clusters,iter=30)
+            success_itr = success_itr + 1
             if len(temp) == len(centroids):
-                success_itr = success_itr + 1                
                 centroids = centroids + temp
+            else:
+                if len(temp) < len(centroids):
+                    #pdb.set_trace()
+                    centroids = centroids + np.hstack([temp,np.zeros(len(centroids)-len(temp))])
+                else:
+                    centroids = centroids + temp[0:len(centroids)]
         
         centroids = np.divide(centroids,float(success_itr))
         
@@ -1125,10 +1131,16 @@ def soft_threshold(W,thr):
 #-------------------------------Descriptions-----------------------------------
 # This function truncates performs different inference methods.
 #------------------------------------------------------------------------------
-def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estim,location_flag):
-           
+def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estim,location_flag,data_mode,delay_known_flag):
+    
+    from scipy.linalg import toeplitz
+    from scipy.sparse.linalg import lsqr
+    from l1regls import l1regls
+    from cvxopt import matrix
+    
     #------------------------------Initialization------------------------------
-    if inference_method < 6:
+    
+    if (inference_method < 6) and (data_mode !='R'):
         s = in_spikes.shape
         n = s[0]
         TT = s[1]
@@ -1178,97 +1190,356 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
         theta = inferece_params[3]
         max_itr_opt = inferece_params[4]
         not_stimul_inds = inferece_params[6]
+        d_window = inferece_params[7]
+        DD = inferece_params[8]
+        firing_prob = inferece_params[9]
+        if len(inferece_params)>10:
+            bin_size = inferece_params[10]
+        else:
+            bin_size = 0
         #......................................................................        
         
         #..............................Initializations.........................        
         range_tau = range(0,max_itr_opt)
-        
         cost = np.zeros([len(range_tau)])        
         #......................................................................
         
         #................Iteratively Update the Connectivity Matrix............
-        for ttau in range_tau:
+        if data_mode == 'R':
+            if not_stimul_inds:
+                non_stim_inds = not_stimul_inds[str(cascade_count)]
+            else:
+                non_stim_inds = range(0,m)
             
-            #~~~~~~~~~~~~~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~~~~~~~~~~~
-            temp = 0
-            alpha = alpha0/float(1+log(ttau+1))
-            sparse_thr = sparse_thr_0/float(1+log(ttau+1))
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~Randomize Runs~~~~~~~~~~~~~~~~~~~~~~~~~
-            shuffled_ind = range(0,TT)
-            random.shuffle(shuffled_ind)
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~Randomize Runs~~~~~~~~~~~~~~~~~~~~~~~~~        
             neurons_ind = range(0,m)            
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~Perform Inference~~~~~~~~~~~~~~~~~~~~~~~
-            for ttt in range(0,TT):
-                cascade_count = shuffled_ind[ttt]
-                x = in_spikes[:,cascade_count]
-                x = x.reshape(n,1)
-                if (location_flag == 1):
-                    v = (x>0).astype(int)
-                y = out_spikes[:,cascade_count]
-                y = y.reshape(m,1)
-                yy_predict = np.zeros([m,1])
+            neuron_range = np.array(range(0,m))
+            neuron_range = np.reshape(neuron_range,[m,1])
+            ss,TT = out_spikes.shape
+            for ijk2 in non_stim_inds:
+                ijk = neurons_ind[ijk2]                
+                firing_inds = np.nonzero(out_spikes[ijk,:])
+                firing_inds = firing_inds[0]
                 
-                random.shuffle(neurons_ind)
-                #~~~~~~~~~~~Upate the Incoming Weights to Each Neuron~~~~~~~~~~
-                if not_stimul_inds:
-                    non_stim_inds = not_stimul_inds[str(cascade_count)]
+                #-------------Cnsotruct the Integrating Matrices--------------
+                #fire_itr = -1
+                #int_matrices = {}
+                #for t_fire in firing_inds[:-1]:
+                #    fire_itr = fire_itr + 1
+                #    DELTA = firing_inds[fire_itr + 1] - (t_fire)
+                #    temp = np.triu(np.ones([DELTA,DELTA])).T
+                #    temp = np.vstack([np.zeros([t_fire,DELTA]),temp,np.zeros([TT-firing_inds[fire_itr + 1],DELTA])])
+                #    int_matrices[str(t_fire)] = temp
+                #-------------------------------------------------------------
+                
+                print '-------------Neuron %s----------' %str(ijk2)
+                
+                
+                
+                if delay_known_flag == 'Y':
+                    range_tau = range(0,int(max_itr_opt/5.0))
+                    for ijh in range (1,6):
+                        
+                        for ttau in range_tau:
+                            #~~~~~~~~~~~~~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~~~~~~~~~~~
+                            temp = 0
+                            alpha = alpha0/float(1+log(ttau+1))
+                            sparse_thr = sparse_thr_0/float(1+log(ttau+1))
+                        
+                            #shuffled_ind = firing_inds[:-1]
+                            #random.shuffle(shuffled_ind)
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+                            #--------------------------Update Weights----------------------
+                            tau_m=10.0
+                            tau_s=2.0
+                            fire_itr = -1
+                            for t_fire in firing_inds[:-1]:
+                                fire_itr = fire_itr + 1
+                                for ttt in range(t_fire+1,min(firing_inds[fire_itr+1]+1,TT)):
+                                
+                                    if ttt == t_fire + 1:
+                                        Int_Mat = np.ones([len(range(t_fire+1,min(firing_inds[fire_itr+1]+1,TT))),len(range(t_fire+1,min(firing_inds[fire_itr+1]+1,TT)))])
+                                        Int_Mat = np.tril(Int_Mat,0)
+                                        
+                                        v = np.zeros([n,len(range(t_fire+1,min(firing_inds[fire_itr+1]+1,TT)))])
+                                        for jjj in range(0,n):                                    
+                                            t_min = max(0,(t_fire-DD[jjj,ijk]).astype(int))
+                                            t_max = max(0,(min(firing_inds[fire_itr+1],TT)-DD[jjj,ijk]).astype(int))
+                                            #t_te = 
+                                            #t_max = max(0,ttt-(DD[jjj,ijk]).astype(int))
+                                            #v[jjj,:] = sum(in_spikes[jjj,t_min:t_max])                                        
+                                            if t_max > t_min:                                            
+                                                Int_Mat = np.tril(np.ones([t_max-t_min,t_max-t_min]),0)
+                                                Int_Mat = np.tril(toeplitz(np.array(range(1,t_max-t_min+1))))
+                                                #for j in range(0,t_max-t_min):
+                                                #    Int_Mat[j:,j] = np.array(range(0,t_max-t_min-j)).astype(int)
+                                                
+                                                Int_Mat = exp(-Int_Mat/tau_m) - exp(-Int_Mat/tau_s)
+                                                
+                                                #pdb.set_trace()
+                                                
+                                                #print (np.dot(Int_Mat,in_spikes[jjj,t_min:t_max])).shape
+                                                #print len(range(t_fire-(t_min+DD[jjj,ijk]),t_fire-(t_min+DD[jjj,ijk])+t_max-t_min))
+                                                #print t_fire-(t_min+DD[jjj,ijk])
+                                                #print t_max - t_min                                            
+                                                v[jjj,(t_min+DD[jjj,ijk])-t_fire:(t_min+DD[jjj,ijk])-t_fire+t_max-t_min] = np.dot(Int_Mat,in_spikes[jjj,t_min:t_max]).T
+                                
+                                    #pdb.set_trace()
+                                    v = np.sign(v)
+                                    y_predict = 0.5*(1+np.sign(np.dot(W_inferred[:,ijk],v[:,ttt-(t_fire+1)])-theta+0.00002))
+                                    
+                                    if y_predict:
+                                        if ttt < firing_inds[fire_itr+1]-2:
+                                            upd_val = (v[:,ttt-(t_fire+1)]).T
+                                            #upd_val = (np.multiply(v,1.1-firing_prob)).T
+                                            W_inferred[:,ijk] = W_inferred[:,ijk] - alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
+                                            
+                                            break
+                                    else:
+                                        
+                                        if ttt >= firing_inds[fire_itr+1]-2:
+                                            #upd_val = (y_predict - out_spikes[ijk,ttt])*(v[:,ttt-(t_fire+1)]).T
+                                            upd_val = -(v[:,ttt-(t_fire+1)]).T
+                                            W_inferred[:,ijk] = W_inferred[:,ijk] - alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
+                                            break
+                                    
+                                    #if abs(y_predict - out_spikes[ijk,ttt]):
+                                    #    upd_val = (y_predict - out_spikes[ijk,ttt])*(v[:,ttt-(t_fire+1)]).T
+                                    #    W_inferred[:,ijk] = W_inferred[:,ijk] - alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
+                                    #    break
+                                
+                                #~~~~~~~~~~~~~~~~~~~~~Saturate the Weights~~~~~~~~~~~~~~~~~~~~                
+                                ter = W_inferred < 0.001
+                                W_inferred = np.multiply(ter.astype(int),W_inferred) + 0.001*(1-ter.astype(int))
+                                ter = W_inferred >- 0.005
+                                W_inferred = np.multiply(ter.astype(int),W_inferred) - 0.005*(1-ter.astype(int))
+                                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            
+                            #--------------------------------------------------------------
+                        
+                        for ttau in range_tau:
+                            #~~~~~~~~~~~~~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~~~~~~~~~~~
+                            temp = 0
+                            alpha = alpha0/float(1+log(ttau+1))
+                            sparse_thr = sparse_thr_0/float(1+log(ijh*ttau+1))
+                        
+                            #shuffled_ind = firing_inds[:-1]
+                            #random.shuffle(shuffled_ind)
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            
+                            #--------------------------Update Delays-----------------------
+                            fire_itr = -1
+                            for t_fire in firing_inds[:-1]:
+                                fire_itr = fire_itr + 1                            
+                                for ttt in range(t_fire+1,min(firing_inds[fire_itr+1]+1,TT)):
+                                    if ttt == t_fire + 1:
+                                        Int_Mat = np.ones([len(range(t_fire+1,min(firing_inds[fire_itr+1]+1,TT))),len(range(t_fire+1,min(firing_inds[fire_itr+1]+1,TT)))])
+                                        Int_Mat = np.tril(Int_Mat,0)
+                                    
+                                        v = np.zeros([n,len(range(t_fire+1,min(firing_inds[fire_itr+1]+1,TT)))])
+                                        for jjj in range(0,n):                                    
+                                            t_min = max(0,(t_fire-DD[jjj,ijk]).astype(int))
+                                            t_max = max(0,(min(firing_inds[fire_itr+1],TT)-DD[jjj,ijk]).astype(int))
+                                            #t_te = 
+                                            #t_max = max(0,ttt-(DD[jjj,ijk]).astype(int))
+                                            #v[jjj,:] = sum(in_spikes[jjj,t_min:t_max])                                        
+                                            if t_max > t_min:                                            
+                                                Int_Mat = np.tril(np.ones([t_max-t_min,t_max-t_min]),0)
+                                                #pdb.set_trace()
+                                                v[jjj,(t_min+DD[jjj,ijk])-t_fire:(t_min+DD[jjj,ijk])-t_fire+t_max-t_min] = np.dot(Int_Mat,in_spikes[jjj,t_min:t_max]).T
+
+                                    v = np.sign(v)
+                                    y_predict = 0.5*(1+np.sign(np.dot(W_inferred[:,ijk],v[:,ttt-(t_fire+1)])-theta+0.00002))
+                                    if y_predict:
+                                        if ttt < firing_inds[fire_itr+1]-2:
+                                            upd_val = (v[:,ttt-(t_fire+1)]).T
+                                            #upd_val = (np.multiply(v,1.1-firing_prob)).T
+                                            DD[:,ijk] = DD[:,ijk] - 500*alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
+                                            
+                                            break
+                                    else:
+                                        
+                                        if ttt >= firing_inds[fire_itr+1]-2:
+                                            #upd_val = (y_predict - out_spikes[ijk,ttt])*(v[:,ttt-(t_fire+1)]).T
+                                            upd_val = -(v[:,ttt-(t_fire+1)]).T
+                                            DD[:,ijk] = DD[:,ijk] - 500*alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
+                                            break
+                                        
+                                    #if abs(y_predict - out_spikes[ijk,ttt]):                                    
+                                    #    upd_val = (y_predict - out_spikes[ijk,ttt])*(np.multiply(W_inferred[:,ijk],v[:,ttt-(t_fire+1)].T))
+                                    #    #pdb.set_trace()
+                                    #    DD[:,ijk] = DD[:,ijk] - alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
+                                    #    break
+                                
+                                #~~~~~~~~~~~~~~~~~~~~~Saturate the Weights~~~~~~~~~~~~~~~~~~~~                
+                                DD = DD.astype(int)
+                                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            
+                        #--------------------------------------------------------------
+                    
                 else:
-                    non_stim_inds = range(0,m)
-                for ijk2 in non_stim_inds:
-                    #ijk = neurons_ind[ijk2]
-                    ijk = ijk2
-                    yy = y[ijk]                    
-                    WW = W_inferred[:,ijk]
-                    if (location_flag == 0):
-                        if inference_method == 2:
-                            v = (x>0).astype(int)
-                        else:
-                            if yy > 0:
-                                v = (x<yy).astype(int)
-                                v = np.multiply(v,(x>0).astype(int))
-                            else:
+                    for ttau in range_tau:
+                    
+                    
+                    
+                        #~~~~~~~~~~~~~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~~~~~~~~~~~
+                        temp = 0
+                        alpha = alpha0/float(1+log(ttau+1))
+                        sparse_thr = sparse_thr_0/float(1+log(ttau+1))
+                    
+                        #shuffled_ind = firing_inds[:-1]
+                        #random.shuffle(shuffled_ind)
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    
+                        fire_itr = -1
+                        last_window = 0
+                        for t_fire in firing_inds[:-1]:
+                            fire_itr = fire_itr + 1
+                            #DELTA = firing_inds[fire_itr + 1] - (t_fire)
+                            #temp = int_matrices[str(t_fire)]
+                            #v = np.dot(in_spikes,temp)
+                            #y_predict = 0.5*(1+np.sign(np.dot(W_inferred[:,ijk],v)-theta+0.00002))
+                            ##pdb.set_trace()
+                            #upd_val = y_predict - out_spikes[ijk,t_fire+1:t_fire+DELTA+1]
+                            #if sum(upd_val[:-1]):
+                            #    upd_val = (sum(v,axis=1)).T
+                            #else:
+                            #    upd_val = upd_val[len(upd_val)-1]*(sum(v,axis=1)).T
+                                
+                            #W_inferred[:,ijk] = W_inferred[:,ijk] - alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
+                            #pdb.set_trace()
+                            
+                            for ttt in range(t_fire+1,min(firing_inds[fire_itr+1]+1,TT)):
+                            
+                                if delay_known_flag == 'Y':
+                                    #Delta_t = range(max(ttt-d_window,t_fire),ttt)
+                                    
+                                    v = np.zeros([n,1])
+                                    for jjj in range(0,n):
+                                        t_min = max(0,max(ttt-d_window,t_fire)-(DD[jjj,ijk]).astype(int))
+                                        t_max = max(0,ttt-(DD[jjj,ijk]).astype(int))
+                                        v[jjj] = sum(in_spikes[jjj,t_min:t_max])
+                                
+                                else:
+                                    #t_window = range(max(ttt-d_window,t_fire),ttt)
+                                    #v = sum(in_spikes[:,t_window],axis = 1)
+                                    t_window = range(max(t_fire-d_window,last_window),ttt)
+                                    v = np.sign(sum(in_spikes[:,t_window],axis = 1))
+                        
+                                y_predict = 0.5*(1+np.sign(np.dot(W_inferred[:,ijk],v)-theta+0.00002))
+                            
+                            
+                                if y_predict:
+                                    if (ttt < firing_inds[fire_itr+1]-bin_size-1) and ( ttt> firing_inds[fire_itr] + bin_size):
+                                        upd_val = np.multiply(v.T,np.random.randint(15, size=n))#(np.multiply(v,1.1-firing_prob)).T
+                                        W_inferred[:,ijk] = W_inferred[:,ijk] - alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
+                                        cost[ttau] = cost[ttau] + 1
+                                        last_window = ttt
+                                        break
+                                else:
+                                    
+                                    if ttt >= firing_inds[fire_itr+1]-bin_size:
+                                        upd_val = -np.multiply(v.T,np.random.randint(15, size=n)) #-v.T#-(np.multiply(v,firing_prob)).T
+                                        W_inferred[:,ijk] = W_inferred[:,ijk] - alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
+                                        cost[ttau] = cost[ttau] + 1
+                                        last_window = 0
+                                        break
+                            
+                            #pdb.set_trace()        
+                        
+                            #~~~~~~~~~~~~~~~~~~~~~Saturate the Weights~~~~~~~~~~~~~~~~~~~~                
+                            ter = W_inferred < 0.001
+                            W_inferred = np.multiply(ter.astype(int),W_inferred) + 0.001*(1-ter.astype(int))
+                            ter = W_inferred >- 0.005
+                            W_inferred = np.multiply(ter.astype(int),W_inferred) - 0.005*(1-ter.astype(int))
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+        else:
+            
+            for ttau in range_tau:
+                
+                #~~~~~~~~~~~~~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~~~~~~~~~~~
+                temp = 0
+                alpha = alpha0/float(1+log(ttau+1))
+                sparse_thr = sparse_thr_0/float(1+log(ttau+1))
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~Randomize Runs~~~~~~~~~~~~~~~~~~~~~~~~~
+                shuffled_ind = range(0,TT)
+                random.shuffle(shuffled_ind)
+                neurons_ind = range(0,m)            
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~Perform Inference~~~~~~~~~~~~~~~~~~~~~~~
+                for ttt in range(0,TT):
+                    cascade_count = shuffled_ind[ttt]
+                    x = in_spikes[:,cascade_count]
+                    x = x.reshape(n,1)
+                    if (location_flag == 1):
+                        v = (x>0).astype(int)
+                    y = out_spikes[:,cascade_count]
+                    y = y.reshape(m,1)
+                    yy_predict = np.zeros([m,1])
+                    
+                    random.shuffle(neurons_ind)
+                    #~~~~~~~~~~~Upate the Incoming Weights to Each Neuron~~~~~~~~~~
+                    if not_stimul_inds:
+                        non_stim_inds = not_stimul_inds[str(cascade_count)]
+                    else:
+                        non_stim_inds = range(0,m)
+                    for ijk2 in non_stim_inds:
+                        #ijk = neurons_ind[ijk2]
+                        ijk = ijk2
+                        yy = y[ijk]                    
+                        WW = W_inferred[:,ijk]
+                        if (location_flag == 0):
+                            if inference_method == 2:
                                 v = (x>0).astype(int)
+                            else:
+                                if yy > 0:
+                                    v = (x<yy).astype(int)
+                                    v = np.multiply(v,(x>0).astype(int))
+                                else:
+                                    v = (x>0).astype(int)
                             
                     
-                    y_predict = 0.5*(1+np.sign(np.dot(WW,v)-theta+0.00002))
-                    #if abs(y_predict):
-                    #    pdb.set_trace()
-                    upd_val = np.dot(y_predict - np.sign(yy),v.T)
-                    W_inferred[:,ijk] = W_inferred[:,ijk] - alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
-                    Updated_Vals[:,ijk] = Updated_Vals[:,ijk] + np.sign(abs(v.T))
-                    
-                    cost[ttau] = cost[ttau] + sum(pow(y_predict - (yy>0.0001).astype(int),2))
-                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        y_predict = 0.5*(1+np.sign(np.dot(WW,v)-theta+0.00002))
+                        #if abs(y_predict):
+                        #    pdb.set_trace()
+                        upd_val = np.dot(y_predict - np.sign(yy),v.T)
+                        W_inferred[:,ijk] = W_inferred[:,ijk] - alpha*np.multiply(upd_val,1-fixed_ind[:,ijk])
+                        Updated_Vals[:,ijk] = Updated_Vals[:,ijk] + np.sign(abs(v.T))
+                        
+                        cost[ttau] = cost[ttau] + sum(pow(y_predict - (yy>0.0001).astype(int),2))
+                    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
-                #~~~~~~~~~~~~~~~~~~~~~Saturate the Weights~~~~~~~~~~~~~~~~~~~~                
-                ter = W_inferred < 0.001
-                W_inferred = np.multiply(ter.astype(int),W_inferred) + 0.001*(1-ter.astype(int))
-                ter = W_inferred >- 0.001
-                W_inferred = np.multiply(ter.astype(int),W_inferred) - 0.001*(1-ter.astype(int))
-                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    #~~~~~~~~~~~~~~~~~~~~~Saturate the Weights~~~~~~~~~~~~~~~~~~~~                
+                    ter = W_inferred < 0.001
+                    W_inferred = np.multiply(ter.astype(int),W_inferred) + 0.001*(1-ter.astype(int))
+                    ter = W_inferred >- 0.005
+                    W_inferred = np.multiply(ter.astype(int),W_inferred) - 0.005*(1-ter.astype(int))
+                    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             
-            #~~~~~~~~~~~~~~~~~~~Apply Sparsity if NEcessary~~~~~~~~~~~~~~~~~~~~
-            if (sparsity_flag):
-                W_temp = soft_threshold(W_inferred.ravel(),sparse_thr)
-                W_inferred = W_temp.reshape([n,m])
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                #~~~~~~~~~~~~~~~~~~~Apply Sparsity if NEcessary~~~~~~~~~~~~~~~~~~~~
+                if (sparsity_flag):
+                    W_temp = soft_threshold(W_inferred.ravel(),sparse_thr)
+                    W_inferred = W_temp.reshape([n,m])
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-            #~~~~~~~~~~~~~~~~~~~~~~Check Stopping Conditions~~~~~~~~~~~~~~~~~~~
-            if (cost[ttau] == 0):
-                cost = cost[0:ttau+1]
-                break
-            elif (ttau>300):
-                if ( abs(cost[ttau]-cost[ttau-2])/float(cost[ttau]) < 0.0001):
+                #~~~~~~~~~~~~~~~~~~~~~~Check Stopping Conditions~~~~~~~~~~~~~~~~~~~
+                if (cost[ttau] == 0):
                     cost = cost[0:ttau+1]
                     break
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                elif (ttau>300):
+                    if ( abs(cost[ttau]-cost[ttau-2])/float(cost[ttau]) < 0.0001):
+                        cost = cost[0:ttau+1]
+                        break
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #--------------------------------------------------------------------------
     
     
@@ -1389,31 +1660,50 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
     elif (inference_method == 0):
         Delta = inferece_params[0]#/float(inferece_params[1])
         theta = inferece_params[1]
-        data_mode = inferece_params[2]
+        d_window = inferece_params[2]
         #not_stimul_inds = inferece_params[3]
-                
-        if location_flag == 1:            
-            out_spikes_estimated = np.sign((np.dot(W_inferred.T,in_spikes)>theta).astype(int))
-            out_spikes_estimated = out_spikes_estimated.astype(int)            
-            W_temp = np.dot(in_spikes,(-pow(-1,out_spikes-out_spikes_estimated)).T)*Delta
-        else:
-            m,T = out_spikes.shape
-            n,T = in_spikes.shape
+        
+        if data_mode == 'R':
             W_temp = np.zeros([n,m])
             for j in range(0,m):
-                y = out_spikes[j,:]
-                v = np.zeros([n,T])
-                for i in range(0,n):                    
-                    v[i,:] = (in_spikes[i,:]<y).astype(int)                    
-                    v[i,:] = v[i,:] + np.multiply((in_spikes[i,:]>0).astype(int),y==0)
-                    v[i,:] = np.multiply(v[i,:],(in_spikes[i,:]>0).astype(int))
-                #pdb.set_trace()
-                Updated_Vals[:,j] = Updated_Vals[:,j] + sum(abs(v),axis=1)    
-                out_spikes_estimated = np.sign((np.dot(W_inferred[:,j].T,v)>theta).astype(int))
-                out_spikes_estimated = out_spikes_estimated.astype(int)                
-                W_temp[:,j] = np.dot(v,(-pow(-1,np.sign(y)-out_spikes_estimated)).T)*Delta#,(0.0001+sum(v,axis=1)*sum(y)/float(T)))
-                #pdb.set_trace()
-        #pdb.set_trace()
+                y = out_spikes[str(j)]
+                for yy in y:
+                    for i in range(0,n):
+                        xx = in_spikes[str(i)]
+                        
+                        #-------------Update Excitatory Connections (into j)---------------
+                        ind = np.multiply((xx<yy).astype(int),(xx>=yy-d_window).astype(int))
+                        W_temp[i,j] = W_temp[i,j] + sum(ind)*Delta
+                        #------------------------------------------------------------------
+                        if location_flag == 0:
+                            #-----------Update Excitatory Connections (out of j)-----------
+                            ind = np.multiply((xx>yy).astype(int),(xx<yy+d_window).astype(int))
+                            W_temp[j,i] = W_temp[j,i] - (1-sign(sum(ind)))*Delta
+                            #--------------------------------------------------------------
+        else:
+            if location_flag == 1:            
+                out_spikes_estimated = np.sign((np.dot(W_inferred.T,in_spikes)>theta).astype(int))
+                out_spikes_estimated = out_spikes_estimated.astype(int)            
+                W_temp = np.dot(in_spikes,(-pow(-1,out_spikes-out_spikes_estimated)).T)*Delta
+            else:
+                m,T = out_spikes.shape
+                n,T = in_spikes.shape
+                W_temp = np.zeros([n,m])
+                for j in range(0,m):
+                    y = out_spikes[j,:]
+                    v = np.zeros([n,T])
+                    for i in range(0,n):                    
+                        v[i,:] = (in_spikes[i,:]<y).astype(int)                    
+                        v[i,:] = v[i,:] + np.multiply((in_spikes[i,:]>0).astype(int),y==0)
+                        v[i,:] = np.multiply(v[i,:],(in_spikes[i,:]>0).astype(int))
+                    #pdb.set_trace()
+                    Updated_Vals[:,j] = Updated_Vals[:,j] + sum(abs(v),axis=1)    
+                    out_spikes_estimated = np.sign((np.dot(W_inferred[:,j].T,v)>theta).astype(int))
+                    out_spikes_estimated = out_spikes_estimated.astype(int)                
+                    W_temp[:,j] = np.dot(v,(-pow(-1,np.sign(y)-out_spikes_estimated)).T)*Delta#,(0.0001+sum(v,axis=1)*sum(y)/float(T)))
+                    #pdb.set_trace()
+            #pdb.set_trace()
+        
         W_inferred = np.multiply(1-fixed_ind,W_temp) + np.multiply(fixed_ind,W_inferred)
     #--------------------------------------------------------------------------
     
@@ -1423,37 +1713,72 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
         d_range = range(1,d_window+1)        
         D_estimated = np.zeros([n,m])
         W_temp = np.zeros([n,m])
-        for i in range(0,n):
-            in_sp_orig = in_spikes[i,:]
-            mu_in = (in_sp_orig>0).astype(int)
-            mu_in = mu_in.mean()
-            for j in range(0,m):
-                out_sp = out_spikes[j,:]
-                mu_out = (out_sp>0).astype(int)
-                mu_out = mu_out.mean()
-                cc = np.zeros([len(d_range)])
-                c0 = abs(float(sum(np.multiply(in_sp_orig>0,in_sp_orig == out_sp))-TT*mu_in*mu_out))
-                itr = 0
-                for d in d_range:    
-                    in_sp = in_sp_orig + d/10000.0 #np.roll(in_sp_orig,d)
-                    #in_sp[0:d] = 0
-                    cc[itr] = (sum(np.multiply(in_sp_orig>0,in_sp == out_sp))-sum(np.multiply(in_sp>0,out_sp==0))-TT*mu_in*mu_out)#/float(c0) #np.dot(in_sp-mu_in,(out_sp-mu_out).T)/c0    
-                    itr = itr + 1
+        if data_mode == 'R':
+            for i in range(0,n):
+                in_sp_orig = in_spikes[i,:]
+                mu_in = (in_sp_orig>0).astype(int)
+                mu_in = mu_in.mean()
+                for j in range(0,m):
+                    out_sp = out_spikes[j,:]
+                    mu_out = (out_sp>0).astype(int)
+                    mu_out = mu_out.mean()
+                    cc = np.zeros([len(d_range)])
+                    #c0 = abs(float(sum(np.multiply(in_sp_orig>0,in_sp_orig == out_sp))-TT*mu_in*mu_out))
+                    c0 = np.dot(in_sp_orig-mu_in,(out_sp-mu_out).T)
+                    itr = 0
+                    for d in d_range:    
+                        in_sp = np.roll(in_sp_orig,d)
+                        in_sp[0:d] = 0
+                        cc[itr] = np.dot(in_sp-mu_in,(out_sp-mu_out).T)#/c0    
+                        itr = itr + 1
+                    
+                    d_estim = d_range[np.argmax(cc)-1]
+                    cd = diff(cc)
+                    ii = np.argmax(cd)
+                
+                    D_estimated[i,j] = d_estim
+                    if abs(cd).max()>0:
+                        ii = cd.argmax()
+                        if ii < len(cd)-1:
+                            if cd[ii] > cd[ii + 1]:
+                                W_temp[i,j] = abs(cc[ii+1]/abs(c0+0.001))
+                            else:
+                                W_temp[i,j] = -abs(cc[ii]/abs(c0+0.001))
+                        else:
+                            W_temp[i,j] = -abs(cc[ii]/abs(c0+0.001))
+                
+        else:
+            for i in range(0,n):
+                in_sp_orig = in_spikes[i,:]
+                mu_in = (in_sp_orig>0).astype(int)
+                mu_in = mu_in.mean()
+                for j in range(0,m):
+                    out_sp = out_spikes[j,:]
+                    mu_out = (out_sp>0).astype(int)
+                    mu_out = mu_out.mean()
+                    cc = np.zeros([len(d_range)])
+                    c0 = abs(float(sum(np.multiply(in_sp_orig>0,in_sp_orig == out_sp))-TT*mu_in*mu_out))
+                    itr = 0
+                    for d in d_range:    
+                        in_sp = in_sp_orig + d/10000.0 #np.roll(in_sp_orig,d)
+                        #in_sp[0:d] = 0
+                        cc[itr] = (sum(np.multiply(in_sp_orig>0,in_sp == out_sp))-sum(np.multiply(in_sp>0,out_sp==0))-TT*mu_in*mu_out)#/float(c0) #np.dot(in_sp-mu_in,(out_sp-mu_out).T)/c0    
+                        itr = itr + 1
                     
                 
         
-                d_estim = d_range[np.argmax(cc)-1]
-                cd = diff(cc)
-                ii = np.argmax(cd)
+                    d_estim = d_range[np.argmax(cc)-1]
+                    cd = diff(cc)
+                    ii = np.argmax(cd)
                 
-                D_estimated[i,j] = d_estim
-                if abs(cd).max()>0:
-                    ii = cd.argmax()
-                    if cd[ii] > cd[ii + 1]:
-                        W_temp[i,j] = abs(cc[ii+1]/abs(c0+0.001))
-                    else:
-                        W_temp[i,j] = -abs(cc[ii]/abs(c0+0.001))
-                #W_temp[i,j] = np.dot(in_sp_orig,out_sp.T)
+                    D_estimated[i,j] = d_estim
+                    if abs(cd).max()>0:
+                        ii = cd.argmax()
+                        if cd[ii] > cd[ii + 1]:
+                            W_temp[i,j] = abs(cc[ii+1]/abs(c0+0.001))
+                        else:
+                            W_temp[i,j] = -abs(cc[ii]/abs(c0+0.001))
+                    #W_temp[i,j] = np.dot(in_sp_orig,out_sp.T)
             
                                 
         W_inferred = np.multiply(1-fixed_ind,W_temp) + np.multiply(fixed_ind,W_inferred)
@@ -1615,11 +1940,77 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
         W_inferred = np.multiply(1-fixed_ind,W_temp) + np.multiply(fixed_ind,W_inferred)                
     #--------------------------------------------------------------------------
     
+    
+    #----------------------The MSE Cost-based Algorithm----------------------
+    elif inference_method == 7:
+        
+        #......................Get Simulation Parameters.......................
+        alpha0 = inferece_params[0]
+        sparse_thr_0 = inferece_params[1]
+        sparsity_flag = inferece_params[2]
+        theta = inferece_params[3]
+        max_itr_opt = inferece_params[4]
+        not_stimul_inds = inferece_params[6]
+        d_window = inferece_params[7]
+        DD = inferece_params[8]
+        firing_prob = inferece_params[9]
+        if len(inferece_params)>10:
+            bin_size = inferece_params[10]
+        else:
+            bin_size = 0
+        #......................................................................        
+        
+        #..............................Initializations.........................        
+        range_tau = range(0,max_itr_opt)
+        cost = np.zeros([len(range_tau)])        
+        #......................................................................
+        
+        #................Iteratively Update the Connectivity Matrix............
+        if data_mode == 'R':
+            
+            
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~Randomize Runs~~~~~~~~~~~~~~~~~~~~~~~~~        
+            neurons_ind = range(0,m)            
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            neuron_range = np.array(range(0,m))
+            neuron_range = np.reshape(neuron_range,[m,1])
+            ss,TT = out_spikes.shape
+            for ijk2 in neurons_ind:
+                ijk = neurons_ind[ijk2]                
+                firing_inds = np.nonzero(out_spikes[ijk,:])
+                firing_inds = firing_inds[0]
+                
+                
+                print '-------------Neuron %s----------' %str(ijk2)
+                
+                V = np.zeros([n,TT])
+                for jj in range(0,TT-1):
+                    V[:,jj] = sum(out_spikes[:,max(0,jj-d_window):jj],axis = 1)
+                
+                if sparsity_flag:
+                    V = matrix(V.T)                    
+                    for j in range(0,n):
+                        #x_temp = lsqr(V.T,out_spikes[j,:],10)
+                        #W_inferred[:,j] = x_temp[0]                        
+                        W_inferred[:,j] = array(l1regls(V,matrix(out_spikes[j,:]))).squeeze()
+                        W_inferred[j,j] = 0
+                else:
+                    E = np.linalg.pinv(V)
+                    WW2 = np.dot(out_spikes,E)
+                
+                    for iil in range(0,n):
+                        WW2[iil,iil] = 0
+                    
+                    W_inferred = WW2
+                
+
     else:
         print('Error! Invalid inference method.')
         sys.exit()
     
     
+    if delay_known_flag == 'Y':
+        Updated_Vals = DD
     return W_inferred,cost,Updated_Vals
     
 #==============================================================================
@@ -1666,7 +2057,7 @@ def read_spikes(file_name_base,no_layers,n_exc_array,n_inh_array,params):
                 else:
                     #tt = mod(round(10000*S_times[l,1]),sim_window)-1
                     #in_spikes[neuron_count,round(10000*S_times[l,1])/sim_window] = tt;#S_times[l,1]
-                    tt = round(10000*S_times[l,1])-1                
+                    tt = round(1000*S_times[l,1])-1   #             tt = round(10000*S_times[l,1])-1                
                     in_spikes[neuron_count,cascade_count] = S_times[l,1]
                     if (tt>0):
                         recorded_spikes[neuron_count,(cascade_count)*sim_window+sim_window-1] = 0
@@ -1699,23 +2090,27 @@ def read_spikes(file_name_base,no_layers,n_exc_array,n_inh_array,params):
             firing_times = {}
             for ii in range(0,n):                
                 firing_times[str(ii)] = []
-                
+            
+            firing_times_max = 0    
             for l in range(0,s[0]):
                 neuron_count = int(S_times[l,0])
                 
                 if (neuron_count >= 0):                    
-                    tt = round(10000*S_times[l,1])-1                
+                    tt = round(1000*S_times[l,1])-1               # tt = round(10000*S_times[l,1])-1                
                     in_spikes[neuron_count,tt] = 1
                     tot_spikes[neuron_count+n_so_far,tt] = 1
+                    if S_times[l,1] > firing_times_max:
+                        firing_times_max = S_times[l,1]
                     firing_times[str(neuron_count)].append(S_times[l,1])
                     
             n_so_far = n_so_far + n
             Neural_Spikes[str(l_in)] = list([[],[],in_spikes])
             Neural_Spikes['tot'] = tot_spikes
             print(sum(in_spikes))
+            print firing_times_max
             Neural_Spikes['act_' + str(l_in)] = firing_times
     
-    return Neural_Spikes
+    return Neural_Spikes,firing_times_max
 #==============================================================================
 #==============================================================================
 
@@ -1847,3 +2242,147 @@ def real_to_discrete_spikes(in_spikes,t_max):
     return output_spikes    
 #==============================================================================
 #==============================================================================
+
+
+#==============================================================================
+#==============COMBINE WEIGHT MATRICES FOR DIFFERENT LAYERS====================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function combines the weights matrices from different layers to create
+# a big matrix for all the layers as a single adjacency matrix.
+#------------------------------------------------------------------------------
+def combine_weight_matrix(Network,generate_data_mode):
+    W_tot = []
+    DD_tot = []
+    
+    for l_in in range(0,Network.no_layers):
+        n_exc = Network.n_exc_array[l_in]
+        n_inh = Network.n_inh_array[l_in]
+        n = n_exc + n_inh
+                
+        W_temp = []
+        D_temp = []
+        for l_out in range(0,Network.no_layers):
+            n_exc = Network.n_exc_array[l_out]
+            n_inh = Network.n_inh_array[l_out]
+            m = n_exc + n_inh
+                        
+            if (l_out < l_in):
+                if len(W_temp):
+                    W_temp = np.hstack([W_temp,np.zeros([n,m])])
+                else:
+                    W_temp = np.zeros([n,m])
+                            
+                if len(D_temp):
+                    D_temp = np.hstack([D_temp,np.zeros([n,m])])
+                else:
+                    D_temp = np.zeros([n,m])
+                            
+            else:
+                ind = str(l_in) + str(l_out);
+                temp_list = Network.Neural_Connections[ind];
+                W = temp_list[0]
+                DD = temp_list[1]
+                        
+                if len(W_temp):
+                    W_temp = np.hstack([W_temp,W])
+                else:
+                    W_temp = W
+                        
+                if len(D_temp):
+                    D_temp = np.hstack([D_temp,DD])
+                else:
+                    D_temp = DD
+                
+            
+        if len(W_tot):
+            W_tot = np.vstack([W_tot,W_temp])
+        else:
+            W_tot = W_temp
+                
+        if len(DD_tot):
+            DD_tot = np.vstack([DD_tot,D_temp])
+        else:
+            DD_tot = D_temp
+        
+    return W_tot,DD_tot
+#==============================================================================
+#==============================================================================
+
+    
+#==============================================================================
+#================COMBINE SPIKE TIMES FOR DIFFERENT LAYERS======================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function combines the spike times for the neurons in different layers in
+# a large matrix that contains spikes for all the neurons in the graph. 
+#------------------------------------------------------------------------------
+def combine_spikes_matrix(Network,generate_data_mode,T,Actual_Neural_Times,Neural_Spikes):
+        
+    if generate_data_mode == 'R':                
+        out_spikes_tot = {}
+    else:        
+        out_spikes_tot = []
+            
+    n_so_far = 0
+    n_tot = 0
+    for l_in in range(0,Network.no_layers):
+        n_exc = Network.n_exc_array[l_in]
+        n_inh = Network.n_inh_array[l_in]
+        n = n_exc + n_inh
+        n_tot = n_tot + n
+    
+    out_spikes_tot_mat = np.zeros([n_tot,T])
+    
+    for l_in in range(0,Network.no_layers):
+        n_exc = Network.n_exc_array[l_in]
+        n_inh = Network.n_inh_array[l_in]
+        n = n_exc + n_inh
+                
+                
+        if generate_data_mode == 'R':
+            spikes_times = Actual_Neural_Times[str(l_in)]
+            for i in range(0,n):
+                ind = str(n_so_far)
+                ttimes = np.array(spikes_times[str(i)])
+                ttimes = ttimes[ttimes<T/1000.0]
+                out_spikes_tot[ind] = ttimes
+                    
+                sps_inds = (1000*ttimes).astype(int)
+                out_spikes_tot_mat[n_so_far,sps_inds] = 1
+                        
+                n_so_far = n_so_far + 1
+
+        else:
+            temp_list = Neural_Spikes[str(l_in)]
+            spikes = (temp_list[2])
+                
+            if len(out_spikes_tot):
+                out_spikes_tot = np.vstack([out_spikes_tot,spikes])
+                
+            else:
+                out_spikes_tot = spikes
+    
+    
+    non_stimul_inds = {}
+    if generate_data_mode != 'R':
+        
+        n_layer_1 = Network.n_exc_array[0] + Network.n_inh_array[0]
+        n_layer_2 = Network.n_exc_array[1] + Network.n_inh_array[1]
+        out_spikes_tot = out_spikes_tot[:,0:T]
+        
+        for ttt in range(0,T):
+            temp = out_spikes_tot[0:n_layer_1,ttt]
+            ttemp = np.nonzero(temp<=0)
+            ttemp = list(ttemp[0])
+            ttemp.extend(range(n_layer_1,n_layer_1+n_layer_2))
+            non_stimul_inds[str(ttt)] = np.array(ttemp)
+        
+        
+                
+    return out_spikes_tot,out_spikes_tot_mat,non_stimul_inds
+#==============================================================================
+#==============================================================================
+
+
+

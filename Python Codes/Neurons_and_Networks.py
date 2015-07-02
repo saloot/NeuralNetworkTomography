@@ -5,14 +5,26 @@
 # with default values
 #==============================================================================
 
+
+
+
 from brian import*
 import os
+import pdb
 
-N_EXC_ARRAY_DEFAULT = [160,1]
-N_INH_ARRAY_DEFAULT = [40,0]
-CONNECTION_PROB_DEFAULT = 0.2
+#=======================DEFAULT VALUES FOR THE VARIABLES=======================
+FRAC_STIMULATED_NEURONS_DEFAULT = 0.4
+NO_STIMUL_ROUNDS_DEFAULT = 1000
+ENSEMBLE_SIZE_DEFAULT = 5
+FILE_NAME_BASE_DATA_DEFAULT = "./Data"
+FILE_NAME_BASE_RESULT_DEFAULT = "./Results"
+ENSEMBLE_COUNT_INIT_DEFAULT = 0
+
+N_EXC_ARRAY_DEFAULT = [50,40]
+N_INH_ARRAY_DEFAULT = [10,8]
+CONNECTION_PROB_DEFAULT = 0.3
 NO_LAYERS_DEFAULT = 2
-DELAY_MAX_DEFAULT = 1.0
+DELAY_MAX_DEFAULT = 10.0
 RANDOM_DELAY_FLAG_DEFAULT = 1
 
 CONNECTION_PROB_MATRIX_DEFAULT = np.zeros([2,2])
@@ -20,11 +32,81 @@ CONNECTION_PROB_MATRIX_DEFAULT[0,1] = CONNECTION_PROB_DEFAULT
 
 DELAY_MAX_MATRIX_DEFAULT = np.zeros([2,2])
 DELAY_MAX_MATRIX_DEFAULT[0,1] = 0.9
+
+INFERENCE_METHOD_DEFAULT = 3
+BINARY_MODE_DEFAULT = 4
+SPARSITY_FLAG_DEFAULT = 0
+#==============================================================================
+
+
+
+
+
+#================================INSTRUCTIONS==================================
+help_message = "\n"
+help_message = help_message + "\n"
+help_message = help_message + "###################################INSTRUCTIONS################################\n"
+help_message = help_message + "Here is how to use the code: you have to specify the option flag and"
+help_message = help_message + "the quantity right afterwards.\nExample: -E 100 for setting a network with 100 excitatory neurons. "
+help_message = help_message + "The full list of options are as follows:\n"
+help_message = help_message + "-E xxx: To specify the number of excitatory neurons PER LAYER (as a list). Default value = '%s'.\n" %str(N_EXC_ARRAY_DEFAULT)
+help_message = help_message + "-I xxx: To specify the number of inhibitory neurons. Default value = %s.\n" %str(N_INH_ARRAY_DEFAULT)
+help_message = help_message + "-P xxx: To specify the probabaility of having a connection between two neurons. Default value = %s.\n" %str(DELAY_MAX_MATRIX_DEFAULT)
+help_message = help_message + "-Q xxx: To specify the fraction of stimulated input neurons. Default value = %s.\n" %str(FRAC_STIMULATED_NEURONS_DEFAULT)
+help_message = help_message + "-T xxx: To specify the number of considered cascades. Default value = %s.\n" %str(NO_STIMUL_ROUNDS_DEFAULT)
+help_message = help_message + "-D xxx: To specify the maximum delay for the neural connections in milliseconds. Default value = %s.\n" %str(DELAY_MAX_MATRIX_DEFAULT)
+help_message = help_message + "-S xxx: To specify the number of generated random graphs. Default value = %s.\n" %str(ENSEMBLE_SIZE_DEFAULT)
+help_message = help_message + "-A xxx: To specify the folder that stores the generated data. Default value = %s. \n" %str(FILE_NAME_BASE_DATA_DEFAULT)
+help_message = help_message + "-F xxx: To specify the ensemble index to start simulation. Default value = %s. \n" %str(ENSEMBLE_COUNT_INIT_DEFAULT)
+help_message = help_message + "-L xxx: To specify the number of layers in the network. Default value = %s. \n" %str(NO_LAYERS_DEFAULT)
+help_message = help_message + "-R xxx: To specify if the delays are fixed (R=0) or random (R=1). Default value = %s. \n" %str(RANDOM_DELAY_FLAG_DEFAULT)
+help_message = help_message + "-B xxx: To specify the binarification algorithm. Default value = %s. \n" %str(BINARY_MODE_DEFAULT)
+help_message = help_message + "-M xxx: To specify the method use for inference, 0 for ours, 1 for Hopfield. Default value = %s. \n" %str(INFERENCE_METHOD_DEFAULT)
+help_message = help_message + "#################################################################################"
+help_message = help_message + "\n"
+#==============================================================================
+
+
 class NeuralNet():
     
     
     #--------------------------INITIALIZE THE CLASS----------------------------
-    def __init__(self,no_layers = None, n_exc_array = None, n_inh_array = None, connection_prob_matrix = None,delay_max_matrix = None,random_delay_flag = None,neural_model_eq=None):
+    def __init__(self,no_layers = None, n_exc_array = None, n_inh_array = None, connection_prob_matrix = None,delay_max_matrix = None,random_delay_flag = None,neural_model_eq=None,get_arg_mode='',input_opts=None,args=None):
+        
+        
+        #==========================PARSE COMMAND LINE ARGUMENTS========================        
+        if (input_opts):
+            for opt, arg in input_opts:
+                if opt == '-E':
+                    temp = (arg).split(',')                             # The number of excitatory neurons in each layer
+                    n_exc_array = []
+                    for i in temp:                        
+                        n_exc_array.append(int(i))                
+                elif opt == '-I':
+                    temp = (arg).split(',')                             # The number of excitatory neurons in each layer
+                    n_inh_array = []
+                    for i in temp:                        
+                        n_inh_array.append(int(i))
+                elif opt == '-P':
+                    connection_prob_matrix = np.matrix(str(arg))        # The probability of having a link from each layer to the other. Separate the rows with a ";"                
+                elif opt == '-D':
+                    delay_max_matrix = np.matrix(str(arg))              # The maximum amount of synaptic delay in mili seconds
+                elif opt == '-A':
+                    file_name_base_data = str(arg)                      # The folder to store results                
+                elif opt == '-L':
+                    no_layers = int(arg)                                # The number of layers in the network
+                elif opt == '-R':
+                    random_delay_flag = int(arg)                        # The ensemble to start simulations from            
+                elif opt == '-h':
+                    print(help_message)
+                    sys.exit()
+        else:
+            print('Code will be executed using default values')
+ 
+        #==============================================================================
+
+
+        
         
         #-----------------------DEFAULT VALUES FOR THE VARIABLES-----------------------
         
@@ -82,8 +164,8 @@ class NeuralNet():
                 for j in range(i+1,self.no_layers):
                     DELAY_MAX_MATRIX_DEFAULT[i,j] = DELAY_MAX_DEFAULT*(0.9*(j-i))
                     
-            N_EXC_ARRAY_DEFAULT = 160 * np.ones([self.no_layers])
-            N_INH_ARRAY_DEFAULT = 40 * np.ones([self.no_layers])
+            N_EXC_ARRAY_DEFAULT = 50 * np.ones([self.no_layers])
+            N_INH_ARRAY_DEFAULT = 10 * np.ones([self.no_layers])
             N_EXC_ARRAY_DEFAULT[self.no_layers-1] = 1
             N_INH_ARRAY_DEFAULT[self.no_layers-1] = 0
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -91,39 +173,39 @@ class NeuralNet():
         
         if (n_exc_array is None):
             self.n_exc_array = N_EXC_ARRAY_DEFAULT
-            print('ATTENTION: The default value of %s for n_exc_array is considered.\n' %str(n_exc_array))
+            print('ATTENTION: The default value of %s for n_exc_array is considered.\n' %str(self.n_exc_array))
         else:
             self.n_exc_array = n_exc_array
         
         if (n_inh_array is None):
             self.n_inh_array = N_INH_ARRAY_DEFAULT
-            print('ATTENTION: The default value of %s for n_inh_array is considered.\n' %str(n_inh_array))
+            print('ATTENTION: The default value of %s for n_inh_array is considered.\n' %str(self.n_inh_array))
         else:
             self.n_inh_array = n_inh_array
         
         if (connection_prob_matrix is None):
             self.connection_prob_matrix = CONNECTION_PROB_MATRIX_DEFAULT
-            print('ATTENTION: The default value of %s for connection_prob_matrix is considered.\n' %str(connection_prob_matrix))
+            print('ATTENTION: The default value of %s for connection_prob_matrix is considered.\n' %str(self.connection_prob_matrix))
         else:
             self.connection_prob_matrix = connection_prob_matrix
             
         if (delay_max_matrix is None):
             self.delay_max_matrix = DELAY_MAX_MATRIX_DEFAULT
-            print('ATTENTION: The default value of %s for delay_max_matrix is considered.\n' %str(delay_max_matrix))
+            print('ATTENTION: The default value of %s for delay_max_matrix is considered.\n' %str(self.delay_max_matrix))
         else:
             self.delay_max_matrix = delay_max_matrix
         
         if (random_delay_flag is None):
             self.random_delay_flag = RANDOM_DELAY_FLAG_DEFAULT
-            print('ATTENTION: The default value of %s for random_delay_flag is considered.\n' %str(random_delay_flag))
+            print('ATTENTION: The default value of %s for random_delay_flag is considered.\n' %str(self.random_delay_flag))
         else:
             self.random_delay_flag = random_delay_flag
             
         if (neural_model_eq is None):
             self.neural_model_eq = NEURAL_MODEL_DEFAULT
-            print('ATTENTION: The default value of %s for n_exc_array is considered.\n' %str(neural_model_eq))
+            print('ATTENTION: The default value of %s for n_exc_array is considered.\n' %str(self.neural_model_eq))
         else:
-            self.neural_model_eq = neural_model_eq
+            self.neural_model_eq = neural_model_eq            
         #......................................................................    
         
         #.........Check the Consistensy of the Initialized Variables...........
@@ -201,7 +283,7 @@ class NeuralNet():
     
                 if (os.path.isfile(file_name)):
                     if (os.stat(file_name)[6]):
-                        We = np.genfromtxt(file_name, dtype=None, delimiter='\t')                    
+                        We = np.genfromtxt(file_name, dtype=None, delimiter='\t')
                         We = We.reshape(n_exc_in,n_out)
                     else:
                         We = []
@@ -253,10 +335,13 @@ class NeuralNet():
                     
                 if len(De) and len(Di):
                     D = np.vstack([De,Di])
+                    D = np.multiply(D,abs(W)>0)
                 elif len(De):
                     D = De
+                    D = np.multiply(De,abs(We)>0)
                 else:
                     D = Di
+                    D = np.multiply(Di,abs(Wi)>0)
                 Neural_Connections[ind] = list([W,D,delay_max])
             
             
@@ -322,7 +407,7 @@ class NeuralNet():
             tau=10*ms
             tau_e=2*ms
             n = n_exc + n_inh
-            neurons = NeuronGroup(n,model=self.neural_model_eq[0],threshold=10*mV,reset=0*mV,refractory=1*ms)
+            neurons = NeuronGroup(n,model=self.neural_model_eq[0],threshold=5*mV,reset=0*mV,refractory=1*ms)
             
             Pe = neurons.subgroup(n_exc)
             Pi = neurons.subgroup(n_inh)
@@ -346,20 +431,31 @@ class NeuralNet():
                 delay_max = self.delay_max_matrix[l_in,l_out]
                 
                 if self.random_delay_flag:                    
-                    Ce = Connection(Pe, output_layer, weight=1*mV, sparseness=connection_prob,max_delay=delay_max * ms,delay=lambda i, j:delay_max * abs(sign(j-i))*rand(1) * ms)
-                    Ci = Connection(Pi, output_layer, weight=-1*mV, sparseness=connection_prob,max_delay=delay_max * ms,delay=lambda i, j:delay_max * abs(sign(j-i))* rand(1) * ms)                    
+                    Ce = Connection(Pe, output_layer, weight=1*mV, sparseness=connection_prob,max_delay=delay_max * ms,delay=delay_max * np.random.rand(len(Pe),len(output_layer)) * ms)
+                    if len(Pi):
+                        Ci = Connection(Pi, output_layer, weight=-(n_exc/float(n_inh))*mV, sparseness=connection_prob,max_delay=delay_max * ms,delay=delay_max * np.random.rand(len(Pi),len(output_layer)) * ms)
                 else:
-                    Ce = Connection(Pe, output_layer, weight=1*mV, sparseness=connection_prob,max_delay=delay_max * ms,delay=lambda i, j:delay_max * abs(sign(j-i)) * ms)
-                    Ci = Connection(Pi, output_layer, weight=-1*mV, sparseness=connection_prob,max_delay=delay_max * ms,delay=lambda i, j:delay_max * abs(sign(j-i)) * ms)
+                    Ce = Connection(Pe, output_layer, weight=1*mV, sparseness=connection_prob,max_delay=0 * ms,delay=0 * np.random.rand(len(Pe),len(output_layer)) * ms)
+                    if len(Pi):
+                        Ci = Connection(Pi, output_layer, weight=-(n_exc/float(n_inh))*mV, sparseness=connection_prob,max_delay=0 *ms,delay=0 * np.random.rand(len(Pe),len(output_layer)) * ms)
             
                 #............Transform Connections to Weighted Matrices............
                 We = Ce.W.todense()
-                Wi = Ci.W.todense()
+                if len(Pi):
+                    Wi = Ci.W.todense()
+                    Di = Ci.delay.todense()
+                else:
+                    Wi = []
+                    Di = []
                 De = Ce.delay.todense()
-                Di = Ci.delay.todense()
-                
-                W = np.vstack([We,Wi])
-                D = np.vstack([De,Di])
+                #Di = Ci.delay.todense()
+                if len(Pi):
+                    W = np.vstack([We,Wi])
+                    D = np.vstack([De,Di])
+                    D = np.multiply(D,abs(W)>0)
+                else:
+                    W = We
+                    D = np.multiply(De,abs(We)>0)
                 
                 ind = str(l_in) + str(l_out)
                 Neural_Connections[ind] = list([W,D,delay_max])

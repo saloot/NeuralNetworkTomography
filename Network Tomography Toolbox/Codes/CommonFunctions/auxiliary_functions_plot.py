@@ -7,6 +7,12 @@ import pdb
 import random
 import copy
 import numpy.ma as ma
+
+try: 
+    import plotly.plotly as pltly
+    from plotly.graph_objs import *    
+except:
+    print 'Plotly was not found. No problem though, life goes on ;)'    
 #==============================================================================
 
 
@@ -438,3 +444,133 @@ def initialize_plotting_variables(Network,we_know_topology,T_range,ensemble_size
     
     return mean_exc,mean_inh,mean_void,std_void_r,std_exc,std_inh,std_void,mean_void_r,Prec_exc,Prec_inh,Prec_void,Rec_exc,Rec_inh,Rec_void,std_Prec_exc,std_Prec_inh,std_Prec_void,std_Rec_exc,std_Rec_inh,std_Rec_void
 #------------------------------------------------------------------------------
+
+#==============================================================================
+#==============================================================================
+
+
+#==============================================================================
+#==============================export_to_plotly================================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function saves the plots in a format that is intreprettable by the
+# "Vis.js" javascript plugin which displays the resulting graph on the web.
+
+# INPUT:
+#    W: the actual graph
+#    W_inferred_our: the inferred graph
+#    file_name_base_results: the base (usually address to the folder) where the results should be saved
+#    file_name_ending: the filename endings
+
+# OUTPUT:
+#    None
+#------------------------------------------------------------------------------
+
+def export_to_plotly(x_array,y_array,no_plots,plot_legends,plot_type,plot_colors,x_label,y_label,plot_title,error_array=[],error_bar_colors = []):
+    
+    if len(error_array):
+        error_flag = 1
+    else:
+        error_flag = 0
+    
+    traces = []
+    
+    for i in range (0,no_plots):
+        X = x_array[i,:]
+        Y = y_array[i,:]
+        if error_flag:
+            e = error_array[i,:]
+    
+            if plot_type == 'line':
+                trace = Scatter(
+                    x=X,
+                    y=Y,
+                    name=plot_legends[i],
+                    error_y=ErrorY(
+                        type='data',
+                        array=e,
+                        visible=True,
+                        color=error_bar_colors[i],
+                        ),
+                    marker=Marker(
+                       color=plot_colors[i]
+                    ),
+                    )
+            else:
+                trace = Bar(
+                    x=X,
+                    y=Y,
+                    marker=Marker(
+                       color=plot_colors[i]
+                    ),
+                    name=plot_legends[i],
+                    error_y=ErrorY(
+                        type='data',
+                        array=e,
+                        visible=True,
+                        color=error_bar_colors[i],
+                        )
+                    )
+        else:
+            
+            if plot_type == 'line':
+                trace = Scatter(
+                    x=X,
+                    y=Y,
+                    name=plot_legends[i],
+                    marker=Marker(
+                       color=plot_colors[i],
+                    ),
+                    )
+            else:
+                trace = Bar(
+                    x=X,
+                    y=Y,
+                    name=plot_legends[i],
+                    marker=Marker(
+                       color=plot_colors[i]
+                    ),
+                    )
+            
+        
+        traces.append(trace)
+    data = Data(traces)
+    
+    
+    if plot_type == 'bar':
+        layout = Layout(
+            title=plot_title,
+            barmode='group',
+            xaxis=XAxis(
+                title=x_label,                
+            ),
+            yaxis=YAxis(
+                title=y_label,                
+            ),
+        )
+    else:
+        layout = Layout(
+            title=plot_title, 
+            xaxis=XAxis(
+                title=x_label,                
+            ),
+            yaxis=YAxis(
+                title=y_label,                
+            ),
+        )
+        
+    
+    fig = Figure(data=data, layout=layout)
+    if plot_type == 'bar':        
+        if error_flag:
+            plot_url = pltly.plot(fig, filename='error-bar-barr')
+        else:
+            plot_url = pltly.plot(fig, filename='basic-bar')
+    else:
+        if error_flag:
+            plot_url = pltly.plot(fig, filename='basic-error-bar')
+        else:
+            plot_url = pltly.plot(fig, filename='basic-line')
+    
+    
+    return plot_url

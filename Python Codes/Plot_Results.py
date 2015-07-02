@@ -1,7 +1,7 @@
 #=======================DEFAULT VALUES FOR THE VARIABLES=======================
 FRAC_STIMULATED_NEURONS_DEFAULT = 0.4
 NO_STIMUL_ROUNDS_DEFAULT = 2000
-ENSEMBLE_SIZE_DEFAULT = 5
+ENSEMBLE_SIZE_DEFAULT = 1
 FILE_NAME_BASE_DATA_DEFAULT = "./Data"
 FILE_NAME_BASE_RESULT_DEFAULT = "./Results"
 FILE_NAME_BASE_PLOT_DEFAULT = "./Plot_Results"
@@ -39,6 +39,7 @@ random_delay_flag = None; no_layers = None; delay_max_matrix = None
 
 os.system('clear')                                              # Clear the commandline window
 t0 = time()                                                # Initialize the timer
+actual_W_flag = 0                                  # If, it means that we are interested in reading the verified spikes for the actual weight matrix
 #==============================================================================
 
 #================================INITIALIZATIONS===============================
@@ -127,6 +128,7 @@ if (generate_data_mode == 'F'):
     T_range = range(200, no_stimul_rounds, 150)                 # The range of sample sizes considered to investigate the effect of sample size on the performance
 else:
     T_range = range(350, int(running_period*10), 300)
+
     
 considered_var = 'T'                                    # The variable against which we plot the performance
 
@@ -148,6 +150,7 @@ if not os.path.isdir(file_name_base_plot):
 det_Prec_exc = np.zeros([ensemble_size-ensemble_count_init,len(var_range)])                        # Detailed precision of the algorithm (per ensemble) for excitatory connections
 det_Prec_inh = np.zeros([ensemble_size-ensemble_count_init,len(var_range)])                        # Detailed precision of the algorithm (per ensemble) for inhibitory connections
 det_Prec_zero  = np.zeros([ensemble_size-ensemble_count_init,len(var_range)])                      # Detailed precision of the algorithm (per ensemble) for "void" connections
+det_Spike_Acc = np.zeros([ensemble_size-ensemble_count_init,len(var_range)])                           # Detailed spike reproduction accuracy
 
 Prec_exc = np.zeros([len(var_range)])                                          # Precision of the algorithm for excitatory connections
 Prec_inh = np.zeros([len(var_range)])                                          # Precision of the algorithm for inhibitory connections
@@ -191,49 +194,68 @@ for l_in in range(0,Network.no_layers):
     n_exc = Network.n_exc_array[l_in]
     n_inh = Network.n_inh_array[l_in]
     n = n_exc + n_inh
-    for l_out in range(l_in+1,Network.no_layers):
+    for l_out in range(l_in,Network.no_layers):
         p = Network.connection_prob_matrix[l_in,l_out]
         p_exc = p * n_exc/float(n)
         p_inh = p * n_inh/float(n)
         
         for ensemble_count in range(ensemble_count_init,ensemble_size):
-        
-            file_name_ending2 = file_name_ending1 + "_%s" %str(ensemble_count)
-            file_name_ending2 = file_name_ending2 + '_l_' + str(l_in) + '_to_' + str(l_out)
-            file_name_ending2 = file_name_ending2 + '_I_' + str(inference_method)
-            file_name_ending2 = file_name_ending2 + '_Loc_' + we_know_location
-            file_name_ending2 = file_name_ending2 + '_Pre_' + pre_synaptic_method
-            file_name_ending2 = file_name_ending2 + '_G_' + generate_data_mode
-            file_name_ending2 = file_name_ending2 + '_X_' + str(infer_itr_max)
-            if (sparsity_flag):
-                file_name_ending2 = file_name_ending2 + '_S_' + str(sparsity_flag)
+            
+            if actual_W_flag == 0:
+                file_name_ending2 = file_name_ending1 + "_%s" %str(ensemble_count)
+                if we_know_location == 'Y':
+                    file_name_ending2 = file_name_ending2 + '_l_' + str(l_in) + '_to_' + str(l_out)
+                file_name_ending2 = file_name_ending2 + '_I_' + str(inference_method)
+                file_name_ending2 = file_name_ending2 + '_Loc_' + we_know_location
+                file_name_ending2 = file_name_ending2 + '_Pre_' + pre_synaptic_method
+                file_name_ending2 = file_name_ending2 + '_G_' + generate_data_mode
+                file_name_ending2 = file_name_ending2 + '_X_' + str(infer_itr_max)
+                file_name_ending2 = file_name_ending2 + '_Q_' + str(frac_stimulated_neurons)
+                if (sparsity_flag):
+                    file_name_ending2 = file_name_ending2 + '_S_' + str(sparsity_flag)
             
             
-            file_name_ending2 = file_name_ending2 + "_%s" %str(adj_fact_exc)
-            file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
-            file_name_ending2 = file_name_ending2 + "_B_%s" %str(binary_mode)
+                file_name_ending2 = file_name_ending2 + "_%s" %str(adj_fact_exc)
+                file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
+                file_name_ending2 = file_name_ending2 + "_B_%s" %str(binary_mode)
             
-            
-            #------------------------------Read the Precisions-----------------------------
-            file_name = file_name_base_results + "/Accuracies/Prec_%s.txt" %file_name_ending2            
-            precision_tot = np.genfromtxt(file_name, dtype='float', delimiter='\t')
-            
-            var_range = precision_tot[:,0]
-            det_Prec_exc[ensemble_count-ensemble_count_init,:] = (precision_tot[:,1]).T
-            det_Prec_inh[ensemble_count-ensemble_count_init,:] = (precision_tot[:,2]).T
-            det_Prec_zero[ensemble_count-ensemble_count_init,:] = (precision_tot[:,3]).T
-            #------------------------------------------------------------------------------ 
+                #------------------------------Read the Precisions-----------------------------
+                file_name = file_name_base_results + "/Accuracies/Prec_%s.txt" %file_name_ending2            
+                precision_tot = np.genfromtxt(file_name, dtype='float', delimiter='\t')
                 
-            #--------------------------------Read the Recall-------------------------------
-            file_name = file_name_base_results + "/Accuracies/Rec_%s.txt" %file_name_ending2
-            recall_tot = np.genfromtxt(file_name, dtype='float', delimiter='\t')
+                var_range = precision_tot[:,0]
+                det_Prec_exc[ensemble_count-ensemble_count_init,:] = (precision_tot[:,1]).T
+                det_Prec_inh[ensemble_count-ensemble_count_init,:] = (precision_tot[:,2]).T
+                det_Prec_zero[ensemble_count-ensemble_count_init,:] = (precision_tot[:,3]).T
+                #------------------------------------------------------------------------------ 
+                    
+                #--------------------------------Read the Recall-------------------------------
+                file_name = file_name_base_results + "/Accuracies/Rec_%s.txt" %file_name_ending2
+                recall_tot = np.genfromtxt(file_name, dtype='float', delimiter='\t')
+                
+                det_Rec_exc[ensemble_count-ensemble_count_init,:] = (recall_tot[:,1]).T
+                det_Rec_inh[ensemble_count-ensemble_count_init,:] = (recall_tot[:,2]).T
+                det_Rec_zero[ensemble_count-ensemble_count_init,:] = (recall_tot[:,3]).T
+                #------------------------------------------------------------------------------
             
-            det_Rec_exc[ensemble_count-ensemble_count_init,:] = (recall_tot[:,1]).T
-            det_Rec_inh[ensemble_count-ensemble_count_init,:] = (recall_tot[:,2]).T
-            det_Rec_zero[ensemble_count-ensemble_count_init,:] = (recall_tot[:,3]).T
-            #------------------------------------------------------------------------------
             
-        #==============================================================================
+            #======================READ SPIKE REPRODUCTION RESULTS=========================
+                if verify_flag:
+                    file_name = file_name_base_results + "/Verified_Spikes/Spike_Acc_per_T_%s.txt" %file_name_ending2
+                    read_vals = np.genfromtxt(file_name, dtype='float', delimiter='\t')
+                    det_Spike_Acc[ensemble_count-ensemble_count_init,:] = read_vals[:,1].T
+            else:
+                file_name_ending2 = file_name_ending1 + "_%s" %str(ensemble_count)
+                if we_know_location == 'Y':
+                    file_name_ending2 = file_name_ending2 + '_l_' + str(l_in) + '_to_' + str(l_out)                
+                file_name_ending2 = file_name_ending2 + '_Loc_' + we_know_location
+                file_name_ending2 = file_name_ending2 + '_Pre_' + pre_synaptic_method
+                file_name_ending2 = file_name_ending2 + '_G_' + generate_data_mode                            
+                if verify_flag:
+                    file_name = file_name_base_results + "/Verified_Spikes/ACT_Spike_Acc_per_T_%s.txt" %file_name_ending2
+                    read_vals = np.genfromtxt(file_name, dtype='float', delimiter='\t')
+                    det_Spike_Acc[ensemble_count-ensemble_count_init,:] = read_vals[:,1].T
+            #==============================================================================
 
 
         #===================CALCULATE THE MEAN AND VAR OF RESULTS======================
@@ -251,6 +273,8 @@ for l_in in range(0,Network.no_layers):
 
         det_Prec_total = p_exc*det_Prec_exc+p_inh*det_Prec_inh+(1-p)*det_Prec_zero
         det_Rec_total = p_exc * det_Rec_exc+p_inh*det_Rec_inh+(1-p)*det_Rec_zero
+        
+        Spike_Acc = det_Spike_Acc.mean(axis=0)
         #------------------------------------------------------------------------------
 
 
@@ -264,6 +288,8 @@ for l_in in range(0,Network.no_layers):
         std_Rec_inh = det_Rec_inh.std(axis=0)
         std_Rec_zero = det_Rec_zero.std(axis=0)
         std_Rec_total = det_Rec_total.std(axis=0)
+        
+        std_Spike_Acc = det_Spike_Acc.std(axis=0)
         #------------------------------------------------------------------------------
         #==============================================================================
 
@@ -275,7 +301,7 @@ for l_in in range(0,Network.no_layers):
 
 
         #=========================WRITE THE RESULTS TO THE FILE=========================
-
+        
         #--------------------------Construct Prpoper File Names-------------------------
         if (considered_var == 'T'):
             file_name_ending = "Effect_T"
@@ -284,7 +310,9 @@ for l_in in range(0,Network.no_layers):
         elif (considered_var == 'a'):        
             file_name_ending = "Effect_a_"
         
-        file_name_ending = file_name_ending + '_l_' + str(l_in) + '_to_' + str(l_out)+'_'
+        if we_know_location == 'Y':
+            file_name_ending = file_name_ending + '_l_' + str(l_in) + '_to_' + str(l_out)+'_'
+        
         file_name_ending = file_name_ending + Network.file_name_ending
         
         if (considered_var != 'q'):
@@ -294,76 +322,87 @@ for l_in in range(0,Network.no_layers):
         if (considered_var != 'T'):
             file_name_ending = file_name_ending + "_T_%s" %str(no_stimul_rounds)    
 
-        file_name_ending = file_name_ending + '_I_' + str(inference_method)
-        if (considered_var != 'a'):
-            file_name_ending = file_name_ending + "_%s" %str(adj_fact_exc)
-            file_name_ending = file_name_ending +"_%s" %str(adj_fact_inh)
-        file_name_ending = file_name_ending + "_B_%s" %str(binary_mode)
-        if (sparsity_flag):
-            file_name_ending = file_name_ending + "_S_%s" %str(sparsity_flag)
+        if actual_W_flag == 0:
+            file_name_ending = file_name_ending + '_I_' + str(inference_method)
+            if (considered_var != 'a'):
+                file_name_ending = file_name_ending + "_%s" %str(adj_fact_exc)
+                file_name_ending = file_name_ending +"_%s" %str(adj_fact_inh)
+            file_name_ending = file_name_ending + "_B_%s" %str(binary_mode)
+            if (sparsity_flag):
+                file_name_ending = file_name_ending + "_S_%s" %str(sparsity_flag)
+            file_name_ending = file_name_ending + '_X_' + str(infer_itr_max)
             
         file_name_ending = file_name_ending + '_Loc_' + we_know_location
         file_name_ending = file_name_ending + '_Pre_' + pre_synaptic_method
         file_name_ending = file_name_ending + '_G_' + generate_data_mode
-        file_name_ending = file_name_ending + '_X_' + str(infer_itr_max)    
+        
         #-------------------------------------------------------------------------------
 
         #-----------------------Write the Results to the File---------------------------
-        temp = np.vstack([var_range,Prec_exc,std_Prec_exc])
-        file_name = file_name_base_plot + "/Prec_exc_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+        if actual_W_flag == 0:
+            temp = np.vstack([var_range,Prec_exc,std_Prec_exc])
+            file_name = file_name_base_plot + "/Prec_exc_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
 
-        temp = np.vstack([var_range,Prec_inh,std_Prec_inh])
-        file_name = file_name_base_plot + "/Prec_inh_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
-
-        temp = np.vstack([var_range,Prec_zero,std_Prec_zero])
-        file_name = file_name_base_plot + "/Prec_zero_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
-
-        temp = np.vstack([var_range,Prec_total,std_Prec_total])
-        file_name = file_name_base_plot + "/Prec_total_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
-
-        temp = np.vstack([var_range,Rec_exc,std_Rec_exc])
-        file_name = file_name_base_plot + "/Reca_exc_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
-
-        temp = np.vstack([var_range,Rec_inh,std_Rec_inh])
-        file_name = file_name_base_plot + "/Reca_inh_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
-
-        temp = np.vstack([var_range,Rec_zero,std_Rec_zero])
-        file_name = file_name_base_plot + "/Reca_zero_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
-
-        temp = np.vstack([var_range,Rec_total,std_Rec_total])
-        file_name = file_name_base_plot + "/Reca_total_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
-
-        temp = np.vstack([Rec_exc,Prec_exc,std_Rec_exc,std_Prec_exc])
-        file_name = file_name_base_plot + "/Reca_vs_Prec_exc_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
-
-        temp = np.vstack([Rec_inh,Prec_inh,std_Rec_inh,std_Prec_inh])
-        file_name = file_name_base_plot + "/Reca_vs_Prec_inh_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
+            temp = np.vstack([var_range,Prec_inh,std_Prec_inh])
+            file_name = file_name_base_plot + "/Prec_inh_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
     
-        temp = np.vstack([Rec_zero,Prec_zero,std_Rec_zero,std_Prec_zero])
-        file_name = file_name_base_plot + "/Reca_vs_Prec_zero_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
+            temp = np.vstack([var_range,Prec_zero,std_Prec_zero])
+            file_name = file_name_base_plot + "/Prec_zero_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
 
-        temp = np.vstack([Rec_total,Prec_total,std_Rec_total,std_Prec_total])
-        file_name = file_name_base_plot + "/Reca_vs_Prec_total_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
+            temp = np.vstack([var_range,Prec_total,std_Prec_total])
+            file_name = file_name_base_plot + "/Prec_total_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
 
-        temp = np.vstack([var_range,np.multiply(Prec_exc,Rec_exc)])
-        file_name = file_name_base_plot + "/Prec_mult_Rec_exc_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+            temp = np.vstack([var_range,Rec_exc,std_Rec_exc])
+            file_name = file_name_base_plot + "/Reca_exc_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
 
-        temp = np.vstack([var_range,np.multiply(Prec_inh,Rec_inh)])
-        file_name = file_name_base_plot + "/Prec_mult_Rec_inh_%s.txt" %file_name_ending
-        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+            temp = np.vstack([var_range,Rec_inh,std_Rec_inh])
+            file_name = file_name_base_plot + "/Reca_inh_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+
+            temp = np.vstack([var_range,Rec_zero,std_Rec_zero])
+            file_name = file_name_base_plot + "/Reca_zero_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+
+            temp = np.vstack([var_range,Rec_total,std_Rec_total])
+            file_name = file_name_base_plot + "/Reca_total_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+
+            temp = np.vstack([Rec_exc,Prec_exc,std_Rec_exc,std_Prec_exc])
+            file_name = file_name_base_plot + "/Reca_vs_Prec_exc_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
+
+            temp = np.vstack([Rec_inh,Prec_inh,std_Rec_inh,std_Prec_inh])
+            file_name = file_name_base_plot + "/Reca_vs_Prec_inh_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
+    
+            temp = np.vstack([Rec_zero,Prec_zero,std_Rec_zero,std_Prec_zero])
+            file_name = file_name_base_plot + "/Reca_vs_Prec_zero_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
+
+            temp = np.vstack([Rec_total,Prec_total,std_Rec_total,std_Prec_total])
+            file_name = file_name_base_plot + "/Reca_vs_Prec_total_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
+
+            temp = np.vstack([var_range,np.multiply(Prec_exc,Rec_exc)])
+            file_name = file_name_base_plot + "/Prec_mult_Rec_exc_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+
+            temp = np.vstack([var_range,np.multiply(Prec_inh,Rec_inh)])
+            file_name = file_name_base_plot + "/Prec_mult_Rec_inh_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+            
+            temp = np.vstack([var_range,Spike_Acc,std_Spike_Acc])
+            file_name = file_name_base_plot + "/Spike_Acc_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+        else:
+            temp = np.vstack([var_range,Spike_Acc])
+            file_name = file_name_base_plot + "/ACT_Spike_Acc_%s.txt" %file_name_ending
+            np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
 #-------------------------------------------------------------------------------
 
 

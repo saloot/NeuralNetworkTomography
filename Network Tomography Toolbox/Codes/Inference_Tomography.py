@@ -56,9 +56,9 @@ elif (inference_method == 4):
 #.................................MSE-based Approach...........................
 if (inference_method == 7):
     bin_size = 5                                            # The size of time bins (not relevant in this version)
-    d_window = 15                                           # The time window the algorithm considers to account for pre-synaptic spikes
-    max_itr_optimization = 2                              # This is the maximum number of iterations performed by internal optimization algorithm for inference
-    sparse_thr0 = 0.0001                                    # The initial sparsity soft-threshold (not relevant in this version)
+    d_window = 20                                           # The time window the algorithm considers to account for pre-synaptic spikes
+    max_itr_optimization = 1850                              # This is the maximum number of iterations performed by internal optimization algorithm for inference
+    sparse_thr0 = 0.075                                    # The initial sparsity soft-threshold (not relevant in this version)
     inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size]
 #..............................................................................
 
@@ -109,7 +109,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
     
         #........................Perfrom Inference.........................
         for infer_itr in range(0,infer_itr_max):
-                
+               
             #-------------------Perform the Inference Step----------------
             W_inferred_our_tot,cost,Inf_Delays = inference_alg_per_layer(out_spikes_tot_mat,out_spikes_tot_mat,inference_method,inferece_params,W_estimated,0,generate_data_mode)
             #-------------------------------------------------------------
@@ -125,4 +125,8 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         print 'Inference successfully completed for T = %s ms' %str(T/1000.0)    
     #----------------------------------------------------------------------
 
-    
+    for i in range(0,n):
+        W_inferred_our_tot[i,i] = 0
+    plt.subplot(1,2,1);plt.imshow(W_inferred_our_tot);plt.subplot(1,2,2);plt.imshow(np.sign(W));plt.show()
+
+    #pdb.set_trace()
