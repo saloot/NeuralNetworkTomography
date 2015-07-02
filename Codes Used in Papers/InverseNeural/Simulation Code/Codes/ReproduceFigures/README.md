@@ -28,8 +28,6 @@ For GLM, we have to switch to *MATLAB*, and use the code kindly provided by Prof
 We have modified the code to adapt it for our own needs, which is in the `GLM/` folder. To run the code, please open MALTAB, navigate to the `GLM\` folder
 and perform the following commands
 
-    For GLM, please open MALTAB, navigate to the `GLM\` folder and perform the following commands
-
     >> run ./tools_mexcode/initialize_mexcode
     >> run setpaths
     >> T = Infer_GLM(2,[60,12],[15,3],0.2,0.3,'N')
@@ -47,7 +45,6 @@ To run *Cross Correlogram* type
 
     $ python Inference_Tomography.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -M 4
     
-
 For GLM, please open MALTAB, navigate to the `GLM\` folder and perform the following commands
 
     >> run ./tools_mexcode/initialize_mexcode
@@ -73,7 +70,7 @@ To transform the analog *association matrices* returned by the previous step, we
 
 
 ### Step 3: Plotting the results
-Finally, we can reproduce the plots
+After performing the above steps, we can finally reproduce the plots.
 
 1. Quality of association matrix: we calculate the *average* of the values returned by the algorithm (i.e. it's "beliefs") for excitatiroy, inhibitory and non-existen ("void") connections. In principle, we expect the average for excitatory connections be higher than void and then higher than the inhibitory connections.
 2. Quality of adjacency matrix: after transforming the association matrix into the a ternary digital one, we can calculate *[precision and recall](https://en.wikipedia.org/wiki/Precision_and_recall)* to find out how accurately the algorithm is capable of identifying excitatory and inhibitory connections.
