@@ -113,11 +113,11 @@ The codes accept a few command line options to identify the specifications of th
 * `-O xxx`: To specify the range of recorded durations to evaluate the performance upon, as a list given by `xxx`. More specifically, `xxx` has the following format:
   * `-O "T_1,T_2,T_3"`, where `T_i` (an *integer* in miliseconds) is the duration of recording in session `i`.
 * `-f xxx`: To specify the type of plots that should be displayed, as a list given by `xxx`. More specifically, `xxx` has the following format:
-  * `-f "'F_1','F_2','F_3'"`, where `F_i` (a *character*) is the plot type. The flags can be
-    * 'B': for displaying the avaerage value of beliefs
-    * 'P': for displaying precision and recall
-    * 'S': for displaying scatter plots
-    * 'W': to show a sample of inferred graphs
+  * `-f "F_1,F_2,F_3"`, where `F_i` (a *character*) is the plot type. The flags can be
+    * B: for displaying the avaerage value of beliefs
+    * P: for displaying precision and recall
+    * S: for displaying scatter plots
+    * W: to show a sample of inferred graphs
   
 
 ### Dependencies
