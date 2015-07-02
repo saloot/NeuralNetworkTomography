@@ -46,7 +46,7 @@ theta = 0.005                                               # The update thresho
 if (inference_method == 3) or (inference_method == 2):    
     bin_size = 5                                            # The size of time bins (not relevant in this version)
     d_window = 15                                           # The time window the algorithm considers to account for pre-synaptic spikes
-    max_itr_optimization = 250                              # This is the maximum number of iterations performed by internal optimization algorithm for inference
+    max_itr_optimization = 2                              # This is the maximum number of iterations performed by internal optimization algorithm for inference
     sparse_thr0 = 0.0001                                    # The initial sparsity soft-threshold (not relevant in this version)
     inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size]
 #..............................................................................

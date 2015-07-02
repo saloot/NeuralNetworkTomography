@@ -12,18 +12,42 @@ The codes are written in *Python*. The required libraries and dependencies are l
 
 
 ### Step 1: Running the Inference Algorithms
-#### Feed-forard case
-For the feed-forward case, simply 
+#### Feed-forard networks
+For the feed-forward case, open up a Terminal (in Mac OS/Linux) or Command Prompt (in Windows), navigate to the `Codes/` folder and type the following commands.
 
-    $ python Inference_Tomography.py [options] 
+To run *Stochastic NeuInf* type
+
+    $ python Inference_Tomography_FF.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3
+
+To run *Cross Correlogram* type
+
+    $ python Inference_Tomography_FF.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 4
     
-and for **feedforward** networks, we run
+    
+For GLM, we have to switch to *MATLAB*, and use the code kindly provided by Prof. Jonathan Pillow [here](http://pillowlab.cps.utexas.edu/code_GLM.html).
+We have modified the code to adapt it for our own needs, which is in the `GLM/` folder. To run the code, please open MALTAB, navigate to the `GLM\` folder
+and perform the following collamnds
 
-    $ python Inference_Tomography_FF.py [options] 
+    >> 
 
-The results of the inference algorithm will be saved in the `Results/Inferred_Graphs/` folder as analog *association matrices*.
 
-### Step 3: Getteing the Ternary Adjacency Matrix
+#### Recurrent networks
+For the recurrent case, open up a Terminal (in Mac OS/Linux) or Command Prompt (in Windows), navigate to the `Codes/` folder and type the following commands.
+
+To run *Stochastic NeuInf* type
+
+    $ python Inference_Tomography.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -M 3
+
+To run *Cross Correlogram* type
+
+    $ python Inference_Tomography.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -M 4
+    
+    
+For GLM, please open MALTAB, navigate to the `GLM\` folder and perform the following collamnds
+
+
+
+### Step 2: Getteing the Ternary Adjacency Matrix
 To transform the analog *association matrices* returned by the previous step, we can simply execute
     
     $ python Transform_to_Ternary.py [options] 
