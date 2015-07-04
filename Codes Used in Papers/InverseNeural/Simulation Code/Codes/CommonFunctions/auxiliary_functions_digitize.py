@@ -54,6 +54,7 @@ def determine_binary_threshold(method,params,obs):
         gamma_neg_range = -np.array(range(0,abs(int(1000*obs.min()))))/1000.0
         
         itr_e = 0
+        
         for gamma_pos in gamma_pos_range:
             W = (obs>gamma_pos).astype(int)
             if sum(W)/float(n) < p_exc:
@@ -78,6 +79,7 @@ def determine_binary_threshold(method,params,obs):
             thr_inh = float('nan')
         #......................................................................
         
+        thr_zero = thr_exc -(thr_exc - thr_inh)/2
     #--------------------------------------------------------------------------
     
     #---------------------The Clustering Based Approach------------------------

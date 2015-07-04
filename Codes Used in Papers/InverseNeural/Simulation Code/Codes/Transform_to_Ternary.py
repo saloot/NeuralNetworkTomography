@@ -206,9 +206,9 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 if ternary_mode == 4:
                     params[2] = fixed_entries
                 elif ternary_mode == 2:
-                    P = sum(abs(W_temp)>0)/float(m*n)
-                    p_exc = P * (sum(W_temp>0)/sum(abs(W_temp)>0))
-                    p_inh = P * (sum(W_temp<0)/sum(abs(W_temp)>0))
+                    P = np.sum(abs(W_temp)>0)/float(m*n)
+                    p_exc = P * (np.sum(W_temp>0)/float(sum(abs(W_temp)>0)))
+                    p_inh = P * (np.sum(W_temp<0)/float(sum(abs(W_temp)>0)))
                     params=[p_exc,p_inh]
                 
                 W_inferred_temp = W_inferred_temp/float(abs(W_inferred_temp).max())
