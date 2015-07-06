@@ -102,8 +102,38 @@ For **Figure 6**
 
     $ python Figure6.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -G R -Q 0.1 -K N -O "6246,6250,6246"
 
+For **Figure 7a**, first execute the following commands (it will take quite long though!)
 
-  
+    $ python Inference_Tomography_FF.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3
+    $ python Inference_Tomography_FF.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.4 -M 3
+    $ python Inference_Tomography_FF.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.5 -M 3
+    
+    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3 -B 4 -O "1041,2082,3123,4164,5205,6246" -f "B"
+    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.4 -M 3 -B 4 -O "1041,2082,3123,4164,5205,6246" -f "B"
+    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.5 -M 3 -B 4 -O "1041,2082,3123,4164,5205,6246" -f "B"
+    
+    
+and then
+
+    $ python Figure7a.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13494,13500,13500,13495"
+
+
+For **Figure 7b**, first execute the following commands (it will take quite long though!)
+
+    $ python Inference_Tomography.py -E "40" -I "10" -L 1 -P "0.25" -D "10" -Q 0.4 -M 3    
+    $ python Inference_Tomography.py -E "40" -I "10" -L 1 -P "0.4" -D "10" -Q 0.25 -M 3
+    $ python Inference_Tomography.py -E "40" -I "10" -L 1 -P "0.45" -D "10" -Q 0.3 -M 3    
+    $ python Inference_Tomography.py -E "40" -I "10" -L 1 -P "0.3" -D "10" -Q 0.5 -M 3
+    $ python Inference_Tomography.py -E "40" -I "10" -L 1 -P "0.3" -D "10" -Q 0.6 -M 3
+
+    $ python Plot_Results.py -E "40" -I "10" -L 1 -P "0.25" -D "10" -Q 0.4 -B 4 -M 3 -f "B" -O "41,82,123,164,205,246"
+    $ python Plot_Results.py -E "40" -I "10" -L 1 -P "0.4" -D "10" -Q 0.25 -B 4 -M 3 -f "B" -O "41,82,123,164,205,246"
+    $ python Plot_Results.py -E "40" -I "10" -L 1 -P "0.45" -D "10" -Q 0.3 -B 4 -M 3 -f "B" -O "41,82,123,164,205,246"  
+    $ python Plot_Results.py -E "40" -I "10" -L 1 -P "0.3" -D "10" -Q 0.5 -B 4 -M 3 -f "B" -O "41,82,123,164,205,246"
+    $ python Plot_Results.py -E "40" -I "10" -L 1 -P "0.3" -D "10" -Q 0.6 -B 4 -M 3 -f "B" -O "41,82,123,164,205,246"
+    
+    $ python Figure7b.py -E "40" -I "10" -L 1 -D "10" -p "0.25,0.3,0.4,0.45" -q "0.4,0.5,0.25,0.3" -B 4 -M 3 -O "246,246,246,246"
+    
 
 ### Dependencies
 * A working distribution of [Python 2.7](https://www.python.org/downloads/).
