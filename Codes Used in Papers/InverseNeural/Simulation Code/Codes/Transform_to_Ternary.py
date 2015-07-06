@@ -129,7 +129,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                         p_inh = P * (n_inh/n)
                         params=[p_exc,p_inh]
                         
-                    W_inferred = W_inferred/float(abs(W_inferred).max())
+                    W_inferred = W_inferred/float(abs(W_inferred).max()+0.00001)
                     W_inferred = W_inferred + np.random.rand(n,m)/100000                    # This is done to keep the whitening process screwing up all-zero columns
                     W_inferred = whiten(W_inferred)
                     #--------------------------------------------------------------------------
@@ -144,6 +144,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     file_name_ending2 = file_name_ending2 + "_B_%s" %str(ternary_mode)
                 
                     file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2
+                    
                     np.savetxt(file_name,W_binary,'%d',delimiter='\t',newline='\n')
                 
                     file_name = file_name_base_results + "/Inferred_Graphs/Scatter_Beliefs_%s.txt" %file_name_ending2                
@@ -207,17 +208,14 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                     params[2] = fixed_entries
                 elif ternary_mode == 2:
                     P = np.sum(abs(W_temp)>0)/float(m*n)
-                    p_exc = P * (np.sum(W_temp>0)/float(sum(abs(W_temp)>0)))
-                    p_inh = P * (np.sum(W_temp<0)/float(sum(abs(W_temp)>0)))
+                    p_exc = P * (np.sum(W_temp>0)/(np.sum(abs(W_temp)>0)+0.00001))
+                    p_inh = P * (np.sum(W_temp<0)/(np.sum(abs(W_temp)>0)+0.00001))
                     params=[p_exc,p_inh]
                 
-                W_inferred_temp = W_inferred_temp/float(abs(W_inferred_temp).max())
+                W_inferred_temp = W_inferred_temp/float(abs(W_inferred_temp).max()+0.00001)
                 W_inferred_temp = W_inferred_temp + np.random.rand(n,m)/100000
                 W_inferred_temp = whiten(W_inferred_temp)
                 
-                
-            
-            
                 W_binary,centroids = beliefs_to_ternary(ternary_mode,10*W_inferred_temp,params,dale_law_flag)                
                 #--------------------------------------------------------------------------
         
@@ -226,6 +224,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
                 file_name_ending2 = file_name_ending2 + "_%s" %str(adj_fact_exc)
                 file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
                 file_name_ending2 = file_name_ending2 + "_B_%s" %str(ternary_mode)
+                
                 
                 file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2
                 np.savetxt(file_name,W_binary,'%d',delimiter='\t',newline='\n')

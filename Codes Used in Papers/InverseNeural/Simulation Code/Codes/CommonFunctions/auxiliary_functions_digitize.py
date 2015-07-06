@@ -227,7 +227,7 @@ def beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag):
     
     #--------------Binary Mode 4: Clustering-Based Thresholding----------------
     elif (ternary_mode == 4):
-
+        
         #......................Determine the Thresholds........................
         fixed_inds = params[2]
         for i in range(0,m):            
@@ -253,7 +253,6 @@ def beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag):
                 else:
                     W_temp = np.zeros(masked_vals.shape)    
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
             
             #~~~~~~~~~~~~~~~Role Back Values to Unmasked Indices~~~~~~~~~~~~~~~
             mask_counter = 0

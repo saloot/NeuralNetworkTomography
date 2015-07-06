@@ -43,7 +43,7 @@ def calculate_belief_quality(Network,W_inferred,W_orig,l_out,whiten_flag,zero_di
     
     #----------------------------Polish the Weights----------------------------
     W_inferred_our_tot = copy.deepcopy(W_inferred)
-    W_inferred_our_tot = W_inferred_our_tot/float(abs(W_inferred_our_tot).max())
+    W_inferred_our_tot = W_inferred_our_tot/float(abs(W_inferred_our_tot).max()+0.00001)
     n,m = W_inferred_our_tot.shape
     if zero_diagonals_flag:
         for i in range(0,min(n,m)):

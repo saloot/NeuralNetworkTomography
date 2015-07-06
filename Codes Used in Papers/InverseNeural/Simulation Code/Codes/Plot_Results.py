@@ -161,7 +161,7 @@ for ensemble_count in range(0,ensemble_size):
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     
                     if found_file:
-                        #~~~~~~~~~~~Update Precision and Recall Variables~~~~~~~~~~~                    
+                        #~~~~~~~~~~~Update Precision and Recall Variables~~~~~~~~~~~                        
                         Prec_exc[ind][:,ensemble_count-ensemble_count_init] = (precision_tot[:,1]).T
                         Prec_inh[ind][:,ensemble_count-ensemble_count_init] = (precision_tot[:,2]).T
                         Prec_void[ind][:,ensemble_count-ensemble_count_init] = (precision_tot[:,3]).T
@@ -216,7 +216,7 @@ for ensemble_count in range(0,ensemble_size):
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     
                 if found_file:
-                    #~~~~~~~~~~~Update Precision and Recall Variables~~~~~~~~~~~
+                    #~~~~~~~~~~~Update Precision and Recall Variables~~~~~~~~~~~                    
                     Prec_exc[ind][:,ensemble_count-ensemble_count_init] = (precision_tot[:,1]).T
                     Prec_inh[ind][:,ensemble_count-ensemble_count_init] = (precision_tot[:,2]).T
                     Prec_void[ind][:,ensemble_count-ensemble_count_init] = (precision_tot[:,3]).T
@@ -281,7 +281,7 @@ for l_out in range(Network.no_layers-1,Network.no_layers):
                 plt.title('Average belief qualities from layer %s to layer %s, for %s algorithm' %(str(l_in),str(l_out),algorithm_name))
                 plt.xlabel('T(s)', fontsize=16)
                 plt.ylabel('Average of beliefs', fontsize=16)
-                plt.legend(loc='lower left')
+                plt.legend(loc='lower left')                
                 plt.show();            
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
@@ -411,6 +411,7 @@ for l_out in range(Network.no_layers-1,Network.no_layers):
             plt.xlabel('T(s)', fontsize=16)
             plt.ylabel('Average of beliefs', fontsize=16)
             plt.legend(loc='lower left')
+            
             plt.show();
             #pdb.set_trace()
         
