@@ -80,13 +80,27 @@ For **Figure 3a**, execute the following command
 
     $ python Figure3a.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13494,13500,13500,13495"
 
-To reproduce **Figures 4a** and **4b**, run
+To reproduce **Figures 4a**
 
     $ python Figure4a.py
-    
-and
+
+For **Figure 4b**, we have to first run
+
+    $ python Plot_Results.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -B 4 -M 3 -O "1041,2082,3123,4164,5205,6246"
+    $ python Plot_Results.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -B 4 -M 4 -O "1041,2082,3123,4164,5205,6246"
+    $ python Plot_Results.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -B 4 -M 8 -O "100,1330,2560,3790,5020,6250" 
+
+and then
 
     $ python Figure4b.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -G R -Q 0.1 -K N -O "6246,6250,6246"
+    
+For **Figure 5**
+
+    $ python Figure5.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -G R -Q 0.1 -K N -T 6246
+    
+For **Figure 6**
+
+    $ python Figure6.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -G R -Q 0.1 -K N -O "6246,6250,6246"
 
 
   

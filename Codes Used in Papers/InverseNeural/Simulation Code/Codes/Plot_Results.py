@@ -481,7 +481,8 @@ for l_out in range(Network.no_layers-1,Network.no_layers):
         if found_file:
         #~~~~~~~~~~~~~~Plot the Scatter of Beliefs~~~~~~~~~~~~~~~~
             if whiten_flag:
-                n,m = W_inferred_our.shape
+                n,m = W.shape
+                W_inferred_our = W_inferred_our[:,0:m]
                 W_inferred_our = W_inferred_our + np.random.rand(n,m)/100000
                 W_inferred_our  = whiten(W_inferred_our)
         
@@ -501,7 +502,7 @@ for l_out in range(Network.no_layers-1,Network.no_layers):
                           std_void[ind],mean_void_r[ind],std_void_r[ind],file_name_base_results,
                           file_name_ending_temp,in_recurrent_flag,W_inferred_our,W)
         
-        file_name_ending_temp = file_name_ending_temp.replace('_T_%s'%str(T),'')        
+        file_name_ending_temp = file_name_ending_temp.replace('_T_%s'%str(T),'')
         save_precision_recall_results(T_range,file_name_base_results,file_name_ending_temp,adj_fact_exc,adj_fact_inh,ternary_mode,
                                       Prec_exc[ind],std_Prec_exc[ind],Prec_inh[ind],std_Prec_inh[ind],Prec_void[ind],
                                       std_Prec_void[ind],Rec_exc[ind],std_Rec_exc[ind],Rec_inh[ind],std_Rec_inh[ind],Rec_void[ind],std_Rec_void[ind])

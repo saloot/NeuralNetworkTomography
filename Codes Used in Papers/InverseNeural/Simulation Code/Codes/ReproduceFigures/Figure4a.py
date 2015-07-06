@@ -10,4 +10,3 @@ proc = subprocess.Popen(query_str,stdout=subprocess.PIPE, stderr=subprocess.STDO
 #==============================================================================
 
 
-
