@@ -136,7 +136,16 @@ For **Figure 7b**, first execute the following commands (it will take quite long
     $ python Plot_Results.py -E "40" -I "10" -L 1 -P "0.3" -D "10" -Q 0.6 -B 4 -M 3 -f "B" -O "41,82,123,164,205,246"
     
     $ python Figure7b.py -E "40" -I "10" -L 1 -D "10" -p "0.25,0.3,0.4,0.45,0.3,0.3" -q "0.4,0.5,0.25,0.3,0.5,0.6" -B 4 -M 3 -O "246,246,246,246,246,246" -c "b,g,orange,r,b,orange" -l "4,2"
+
+For **Figure 8**
+
+    $ python Figure8.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13500,13500,13495"
     
+For **Figure 9**
+
+    $ python Figure9.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -G R -Q 0.1 -K N -O "6246,6250"
+    
+
 
 ### Dependencies
 * A working distribution of [Python 2.7](https://www.python.org/downloads/).
