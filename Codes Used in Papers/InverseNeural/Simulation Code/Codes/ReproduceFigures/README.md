@@ -149,7 +149,10 @@ For **Figure 10**
 
     $ python Figure10.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13500,13495"
 
+Finally, for **Figure 11**
 
+    $ python Figure11.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13500,13500"
+    
 ### Dependencies
 * A working distribution of [Python 2.7](https://www.python.org/downloads/).
 * The code relies heavily on [Numpy](http://www.numpy.org/),
