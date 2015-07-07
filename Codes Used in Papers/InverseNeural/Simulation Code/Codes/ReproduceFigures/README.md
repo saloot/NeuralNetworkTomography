@@ -145,6 +145,9 @@ For **Figure 9**
 
     $ python Figure9.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -G R -Q 0.1 -K N -O "6246,6250"
     
+For **Figure 10**
+
+    $ python Figure10.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13500,13495"
 
 
 ### Dependencies
