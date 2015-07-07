@@ -160,6 +160,10 @@ Finally, for **Figure 11**
 * The [Brian simulator](http://briansimulator.org/).
 
 
+### Some Possible Issues
+* In Microsoft Windows, you might get *IO Error* due to long file names. To resolve this issue, make sure the `Simulation Code/`
+is copied in a folder not far from the main dirve (e.g. `C:\Simulation Code` sounds like a very good option ;) ).
+
 
 Credits and Contacts
 ===================
