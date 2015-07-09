@@ -46,6 +46,13 @@ whiten_flag = 1                     # If 1, the algorithm whitens the inferred g
 zero_diagonals_flag = 1             # If 1, the diagonal elements (self feedback-loops) will be set to 0 before calculating belief qualities
 adj_fact_exc = 0.75                 # This is the adjustment factor for clustering algorithms (between 0 and infinity).
 adj_fact_inh = 0.5                  # This is the adjustment factor for clustering algorithms (between 0 and infinity).
+
+if inference_method == 3:
+    algorithm_name = 'Stochastic NeuInf'
+elif inference_method == 4:        
+    algorithm_name = 'Cross Correlogram'
+elif inference_method == 8:
+    algorithm_name = 'GLM'
 #------------------------------------------------------------------------------
 
 #---------------------Initialize Simulation Variables--------------------------
@@ -53,7 +60,7 @@ mean_exc,mean_inh,mean_void,std_void_r,std_exc,std_inh,std_void,mean_void_r,Prec
 #------------------------------------------------------------------------------
 
 #-----------------------------Signin to Plotly---------------------------------
-plotly_flag = 1                     # If '1', figures will be exported to PlotLy (https://plot.ly/) as well
+plotly_flag = 0                     # If '1', figures will be exported to PlotLy (https://plot.ly/) as well
 if not plotly_import:               # If PlotLy was not installed, there is no need to consider its plottings
     plotly_flag = 0
     
@@ -271,7 +278,7 @@ for l_out in range(0,Network.no_layers):
                 plt.errorbar(T_range,mean_inh[ind],std_inh[ind],color='b',label='Inhibitory');
                 plt.errorbar(T_range,mean_void[ind],std_void[ind],color='g',label='Void');
             
-                plt.title('Average belief qualities from layer %s to layer %s' %(str(l_in),str(l_out)))
+                plt.title('Average belief qualities from layer %s to layer %s, for %s algorithm' %(str(l_in),str(l_out),algorithm_name))
                 plt.xlabel('t(s)', fontsize=16)
                 plt.ylabel('Average of beliefs', fontsize=16)
                 plt.legend(loc='lower left')
@@ -288,7 +295,7 @@ for l_out in range(0,Network.no_layers):
                 plt.bar(T_range + 4*bar_width,Rec_inh[ind],bar_width,color='blue',edgecolor='black',hatch='//',label='Inh. Recall');
                 plt.bar(T_range + 5*bar_width,Rec_void[ind],bar_width,color='green',edgecolor='black',hatch='//',label='Void Recall');
             
-                plt.title('Precision and recall from layer %s to layer %s' %(str(l_in),str(l_out)))
+                plt.title('Precision and recall from layer %s to layer %s for %s algorithm' %(str(l_in),str(l_out),algorithm_name))
                 plt.xlabel('t(s)', fontsize=16)
                 plt.ylabel('Precision/Recall', fontsize=16)
                 plt.legend(loc='lower left')
@@ -321,7 +328,7 @@ for l_out in range(0,Network.no_layers):
                     W_inferred_our  = whiten(W_inferred_our)
             
                 if 'S' in plot_flags:
-                    plt.title('Scatter plot of belief from layer %s to layer %s' %(str(l_in),str(l_out)))
+                    plt.title('Scatter plot of belief from layer %s to layer %s for %s algorithm' %(str(l_in),str(l_out),algorithm_name))
                     plt.scatter(np.sign(W.ravel()),W_inferred_our.ravel())
                     plt.xlabel('G (actual)', fontsize=16)
                     plt.ylabel('W (inferred)', fontsize=16)
@@ -400,12 +407,12 @@ for l_out in range(0,Network.no_layers):
             if Network.no_layers > 1:
                 ax.errorbar(T_range,mean_void_r[ind],std_void_r[ind],color='k',label='Void, Recurrent');
             
-            ax.set_title('Average belief qualities for layer %s' %str(l_out))
+            ax.set_title('Average belief qualities for layer %s using %s algorithm' %(str(l_out),algorithm_name))
             plt.xlabel('t(s)', fontsize=16)
             plt.ylabel('Average of beliefs', fontsize=16)
             plt.legend(loc='lower left')
             plt.show();
-            pdb.set_trace()
+            #pdb.set_trace()
         
             if plotly_flag:
                 plot_legends = ['Excitatory','Inhibitory','Void']
@@ -426,7 +433,7 @@ for l_out in range(0,Network.no_layers):
                     error_array = np.vstack([std_exc[ind],std_inh[ind],std_void[ind]])                
                     no_plots = 3
                 
-                plot_title = 'Average belief qualities for layer %s' %str(l_out)
+                plot_title = 'Average belief qualities for layer %s using %s algorithm' %(str(l_out),algorithm_name)
                 plot_url = export_to_plotly(x_array,y_array,no_plots,plot_legends,'line',plot_colors,'t(s)','Average of beliefs',plot_title,error_array,error_bar_colors)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
@@ -440,7 +447,7 @@ for l_out in range(0,Network.no_layers):
             plt.bar(T_range + 4*bar_width,Rec_inh[ind],bar_width,color='blue',edgecolor='black',hatch='//',label='Inh. Recall');
             plt.bar(T_range + 5*bar_width,Rec_void[ind],bar_width,color='green',edgecolor='black',hatch='//',label='Void Recall');
             
-            plt.title('Precision and recall for layer %s' %str(l_out))    
+            plt.title('Precision for layer %s using %s algorithm ' %(str(l_out),algorithm_name))
             plt.xlabel('t(s)', fontsize=16)
             plt.ylabel('Precision/Recall', fontsize=16)
             plt.legend(loc='upper left')
@@ -456,7 +463,7 @@ for l_out in range(0,Network.no_layers):
                 #error_array = np.vstack([std_exc[ind],std_inh[ind],std_void[ind]])                
                 no_plots = 3
                 
-                plot_title = 'Precision for layer %s' %str(l_out)
+                plot_title = 'Precision for layer %s using %s algorithm ' %(str(l_out),algorithm_name)
                 plot_url = export_to_plotly(x_array,y_array,no_plots,plot_legends,'bar',plot_colors,'t(s)','Precision',plot_title)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
@@ -479,7 +486,7 @@ for l_out in range(0,Network.no_layers):
                 W_inferred_our  = whiten(W_inferred_our)
         
             if 'S' in plot_flags:
-                plt.title('Scatter plot of beliefs %s' %str(l_out))
+                plt.title('Scatter plot of beliefs %s for %s algorithm' %(str(l_out),algorithm_name))
                 plt.scatter(np.sign(W.ravel()),W_inferred_our.ravel())
                 plt.xlabel('G (actual)', fontsize=16)
                 plt.ylabel('W (inferred)', fontsize=16)
