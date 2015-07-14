@@ -58,8 +58,8 @@ To transform the analog *association matrices* returned by the previous step, we
     
 **Feed-forward Networks**
 
-    $ python Transform_to_Ternary.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -B 4 -M 3
-    $ python Transform_to_Ternary.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -B 4 -M 4
+    $ python Transform_to_Ternary.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -B 4 -M 3 -T 13499
+    $ python Transform_to_Ternary.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -B 4 -M 4 -T 13499
     $ python Transform_to_Ternary.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -B 4 -M 8
 
 **Recurrent Networks**
@@ -102,26 +102,27 @@ For **Figure 6**
 
     $ python Figure6.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -G R -Q 0.1 -K N -O "6246,6250,6246"
 
-For **Figure 7a**, first execute the following commands (it will take quite long though!)
+For **Figure 7a**, first execute the following commands in the `Codes/` folder (it will take quite long though!)
 
     $ python Inference_Tomography_FF.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3
     $ python Inference_Tomography_FF.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.4 -M 3
     $ python Inference_Tomography_FF.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.5 -M 3
     
-    $ python Transform_to_Ternary.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3 -B 4 -O "100,2779,5458"
+    $ python Transform_to_Ternary.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3 -B 4 -O "2249,4498,6747"
     
-    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3 -B 4 -O "100,2779,5458" -f "B"
-    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3 -B 4 -O "100,2779,5458" -f "B"
-    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.4 -M 3 -B 4 -O "100,2779,5458" -f "B"
-    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.5 -M 3 -B 4 -O "100,2779,5458" -f "B"
+    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3 -B 4 -O "2249,4498,6747" -f "B"
+    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3 -B 4 -O "2249,4498,6747" -f "B"
+    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.4 -M 3 -B 4 -O "2249,4498,6747" -f "B"
+    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.5 -M 3 -B 4 -O "2249,4498,6747" -f "B"
     
     
 and then
+    
+    $ cd ReproduceFigures
+    $ python Figure7a.py -E "60,12" -I "15,3" -L 2 -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -p "0.2,0.3,0.3,0.3,0.3" -q "0.3,0.3,0.3,0.4,0.5" -B 4 -M 3 -O "6747,6747,6747,6747,6747" -c "b,orange,b,g,orange" -l "2,3"
 
-    $ python Figure7a.py -E "60,12" -I "15,3" -L 2 -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -p "0.2,0.3,0.3,0.3,0.3" -q "0.3,0.3,0.3,0.4,0.5" -B 4 -M 3 -O "5458,5458,5458,5458,5458" -c "b,orange,b,g,orange" -l "2,3"
 
-
-For **Figure 7b**, first execute the following commands (it will take quite long though!)
+For **Figure 7b**, first execute the following commands in the `Codes/` folder (it will take quite long though!)
 
     $ python Inference_Tomography.py -E "40" -I "10" -L 1 -P "0.25" -D "10" -Q 0.4 -M 3    
     $ python Inference_Tomography.py -E "40" -I "10" -L 1 -P "0.4" -D "10" -Q 0.25 -M 3
@@ -135,6 +136,7 @@ For **Figure 7b**, first execute the following commands (it will take quite long
     $ python Plot_Results.py -E "40" -I "10" -L 1 -P "0.3" -D "10" -Q 0.5 -B 4 -M 3 -f "B" -O "41,82,123,164,205,246"
     $ python Plot_Results.py -E "40" -I "10" -L 1 -P "0.3" -D "10" -Q 0.6 -B 4 -M 3 -f "B" -O "41,82,123,164,205,246"
     
+    $ cd ReproduceFigures
     $ python Figure7b.py -E "40" -I "10" -L 1 -D "10" -p "0.25,0.3,0.4,0.45,0.3,0.3" -q "0.4,0.5,0.25,0.3,0.5,0.6" -B 4 -M 3 -O "246,246,246,246,246,246" -c "b,g,orange,r,b,orange" -l "4,2"
 
 For **Figure 8**

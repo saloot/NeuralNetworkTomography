@@ -262,7 +262,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                         itr = itr + 1
                     
                     d_estim = d_range[np.argmax(cc)-1]
-                    cd = diff(cc)
+                    cd = np.diff(cc)
                     ii = np.argmax(cd)
                 
                     D_estimated[i,j] = d_estim
@@ -297,7 +297,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                 
         
                     d_estim = d_range[np.argmax(cc)-1]
-                    cd = diff(cc)
+                    cd = np.diff(cc)
                     ii = np.argmax(cd)
                 
                     D_estimated[i,j] = d_estim
