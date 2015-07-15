@@ -124,28 +124,28 @@ except:
 
 
 #=================================PLOT THE RESULTS=============================
-if (found_file_tot) and (found_file_glm) and (found_file_tot_Y):
-
-    fig, axs = plt.subplots(nrows=1, ncols=3)
-
+fig, axs = plt.subplots(nrows=1, ncols=3)
+if found_file_tot_Y:
     ax = axs[0]
     ax.scatter(np.sign(W_Y.ravel()),W_inferred_neuinf_Y.ravel())
     ax.set_title('NeuInf, topology-type known')
     ax.set_xlabel('G (actual)', fontsize=16)
     ax.set_ylabel('W (inferred)', fontsize=16)
-    
+
+if found_file_tot:
     ax = axs[1]
     ax.scatter(np.sign(W.ravel()),W_inferred_neuinf.ravel())
     ax.set_title('NeuInf, topology-type unknown')
     ax.set_xlabel('G (actual)', fontsize=16)
     ax.set_ylabel('W (inferred)', fontsize=16)
 
+if found_file_glm:
     ax = axs[2]
     ax.scatter(np.sign(W_Y.ravel()),W_inferred_glm.ravel())
     ax.set_title('GLM, topology-type known')
     ax.set_xlabel('G (actual)', fontsize=16)
     ax.set_ylabel('W (inferred)', fontsize=16)
 
-    plt.show();
+plt.show();
 #==============================================================================
 

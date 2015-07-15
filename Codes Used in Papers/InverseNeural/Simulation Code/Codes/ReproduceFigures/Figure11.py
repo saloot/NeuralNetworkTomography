@@ -106,22 +106,22 @@ except:
 
 
 #=================================PLOT THE RESULTS=============================
-if (found_file_glm) and (found_file_tot_Y):
+fig, axs = plt.subplots(nrows=1, ncols=3)
+ax = axs[0]
+ax.imshow(np.sign(W))
+ax.set_title('Actual connectivity matrix')
 
-    fig, axs = plt.subplots(nrows=1, ncols=3)
-
-    ax = axs[0]
-    ax.imshow(np.sign(W))
-    ax.set_title('Actual connectivity matrix')
+if (found_file_tot_Y):
     
     ax = axs[1]
     ax.imshow(W_inferred_neuinf)
     ax.set_title('NeuInf')
-    
+
+if found_file_glm:  
     ax = axs[2]
     ax.imshow(W_inferred_glm)
     ax.set_title('GLM')
     
-    plt.show();
+plt.show();
 #==============================================================================
 

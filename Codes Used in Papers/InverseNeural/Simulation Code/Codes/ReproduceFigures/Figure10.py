@@ -63,12 +63,13 @@ Network.read_weights(0,file_name_base_data)
 #----------------------Get the Inferred Graph for GLM--------------------------
 T = T_range[0]
 temp = Network.file_name_ending + '_l_0_to_1'
+temp_list = Network.Neural_Connections['01']
+W_Y = temp_list[0]
+    
 file_name_ending = generate_file_name(temp,8,'Y','A',generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,'N')
 file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending
 try:
     W_inferred_glm = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-    temp_list = Network.Neural_Connections['01']
-    W_Y = temp_list[0]
     n,m = W_Y.shape
     
     W_inferred_glm = W_inferred_glm[:,0:m]
@@ -89,8 +90,6 @@ file_name = file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_endi
 
 try:
     W_inferred_neuinf_Y = np.genfromtxt(file_name, dtype=None, delimiter='\t')        
-    temp_list = Network.Neural_Connections['01']
-    W_Y = temp_list[0]
     n,m = W_Y.shape
     
     W_inferred_neuinf_Y = W_inferred_neuinf_Y[:,0:m]
@@ -108,22 +107,22 @@ except:
 
 
 #=================================PLOT THE RESULTS=============================
-if (found_file_glm) and (found_file_tot_Y):
+fig, axs = plt.subplots(nrows=3, ncols=1)
 
-    fig, axs = plt.subplots(nrows=3, ncols=1)
+ax = axs[0]
+ax.imshow(np.sign(W_Y.T))
+ax.set_title('Actual connectivity matrix')
 
-    ax = axs[0]
-    ax.imshow(np.sign(W_Y.T))
-    ax.set_title('Actual connectivity matrix')
-    
+if (found_file_tot_Y):    
     ax = axs[1]
     ax.imshow(W_inferred_neuinf_Y.T)
     ax.set_title('NeuInf')
-    
+
+if found_file_glm: 
     ax = axs[2]
     ax.imshow(W_inferred_glm.T)
     ax.set_title('GLM')
     
-    plt.show();
+plt.show();
 #==============================================================================
 

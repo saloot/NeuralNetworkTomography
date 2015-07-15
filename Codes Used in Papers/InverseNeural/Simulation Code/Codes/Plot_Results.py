@@ -53,6 +53,8 @@ elif inference_method == 4:
     algorithm_name = 'Cross Correlogram'
 elif inference_method == 8:
     algorithm_name = 'GLM'
+elif inference_method == 7:
+    algorithm_name = 'MSE'
 #------------------------------------------------------------------------------
 
 #---------------------Initialize Simulation Variables--------------------------
@@ -413,8 +415,10 @@ for l_out in range(Network.no_layers-1,Network.no_layers):
             plt.legend(loc='lower left')
             
             plt.show();
-            #pdb.set_trace()
-        
+            pdb.set_trace()
+            plt.plot(mean_exc[ind]-mean_void[ind],'r');plt.show()
+            
+            
             if plotly_flag:
                 plot_legends = ['Excitatory','Inhibitory','Void']
                 plot_colors = ['#F62817','#1569C7','#4CC552']

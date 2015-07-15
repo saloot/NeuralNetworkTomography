@@ -116,14 +116,18 @@ temp = Network.file_name_ending + '_l_0_to_1'
 file_name_ending = generate_file_name(temp,3,'Y','A',generate_data_mode,infer_itr_max,frac_stimulated_neurons,sparsity_flag,T,'N')
 
 file_name = file_name_base_results + "/Plot_Results/Gap_mean_exc_void_%s.txt" %file_name_ending
+try:
+    gap_exc_void_neuinf_loc_y = np.genfromtxt(file_name, dtype='float', delimiter='\t')
+    gap_exc_void_neuinf_loc_y = gap_exc_void_neuinf_loc_y[:,1]
 
-gap_exc_void_neuinf_loc_y = np.genfromtxt(file_name, dtype='float', delimiter='\t')
-gap_exc_void_neuinf_loc_y = gap_exc_void_neuinf_loc_y[:,1]
+    file_name = file_name_base_results + "/Plot_Results/Gap_mean_void_inh_%s.txt" %file_name_ending
+    gap_void_inh_neuinf_loc_y = np.genfromtxt(file_name, dtype='float', delimiter='\t')
 
-file_name = file_name_base_results + "/Plot_Results/Gap_mean_void_inh_%s.txt" %file_name_ending
-gap_void_inh_neuinf_loc_y = np.genfromtxt(file_name, dtype='float', delimiter='\t')
-
-gap_void_inh_neuinf_loc_y = gap_void_inh_neuinf_loc_y[:,1]
+    gap_void_inh_neuinf_loc_y = gap_void_inh_neuinf_loc_y[:,1]
+except:
+    print ('Sorry I could not find the file for the topology-aware-scenario')
+    gap_exc_void_neuinf_loc_y = np.zeros(gap_exc_void_neuinf.shape)
+    gap_void_inh_neuinf_loc_y = np.zeros(gap_exc_void_neuinf.shape)
 #------------------------------------------------------------------------------
 
 #==============================================================================

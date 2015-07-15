@@ -1,7 +1,7 @@
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 import math
 #from brian import *
-from scipy import sparse
+from scipy import sparse,linalg
 import pdb,os,sys
 import random
 import copy
@@ -33,6 +33,8 @@ from default_values import *
 #------------------------------------------------------------------------------
 def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estim,location_flag,data_mode):
     
+    
+    from auxiliary_functions import soft_threshold
     
     #------------------------------Initialization------------------------------
     n,TT = in_spikes.shape
@@ -313,6 +315,95 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
         W_inferred = np.multiply(1-fixed_ind,W_temp) + np.multiply(fixed_ind,W_inferred)
     #--------------------------------------------------------------------------
     
+    #----------------------The MSE Cost-based Algorithm----------------------
+    elif inference_method == 7:
+        
+        #......................Get Simulation Parameters.......................
+        alpha0 = inferece_params[0]
+        sparse_thr_0 = inferece_params[1]
+        sparsity_flag = inferece_params[2]
+        theta = inferece_params[3]
+        max_itr_opt = inferece_params[4]        
+        d_window = inferece_params[5]
+        beta = inferece_params[6]
+        if len(inferece_params)>7:
+            bin_size = inferece_params[7]
+        else:
+            bin_size = 0
+        
+        ss,TT = out_spikes.shape
+        neuron_range = np.array(range(0,m))
+        neuron_range = np.reshape(neuron_range,[m,1])
+        #......................................................................        
+        
+        #..............................Initializations.........................        
+        range_tau = range(0,max_itr_opt)
+        cost = np.zeros([len(range_tau)])        
+        #......................................................................
+        
+        #................Iteratively Update the Connectivity Matrix............
+        if data_mode == 'R':    
+            V = np.zeros([n,TT])
+            for jj in range(0,TT-1):
+                V[:,jj] = np.sum(out_spikes[:,max(0,jj-d_window):jj],axis = 1)
+            #V = out_spikes
+            
+            
+            A = np.dot(V,V.T) + np.eye(n)
+            A_i = np.linalg.inv(A)
+            S = linalg.sqrtm(A)
+            S_i = np.linalg.inv(S)
+            B0 = np.dot(V,out_spikes.T)
+            #pdb.set_trace()
+            
+            if sparsity_flag:    
+                for ijk in neuron_range:                
+                    Y = out_spikes[ijk,:]
+                    
+                    print '-------------Neuron %s----------' %str(ijk)
+                
+                    WW = W_inferred[:,ijk]
+                    U = WW.T
+                    
+                    for ttau in range_tau:
+                
+                        #~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~                        
+                        sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
+                        sparse_thr = sparse_thr_0/float(ttau+1)
+                        B = B0[:,ijk] + U.T
+                        #pdb.set_trace()
+                        D = np.dot(B.T,A_i)
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        
+                        #~~~~~~~~~Minimize with Respect to W~~~~~~~~~
+                        W = np.dot(D,S_i)
+                        #pdb.set_trace()
+                        #W = W - W.mean()
+                        #W = np.divide(W,abs(W).max()+0.0001)
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                                
+                        #~~~~~~Apply Sparsity Regularizer to W~~~~~~~
+                        U = soft_threshold(W,sparse_thr)
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        
+                    
+                    W_inferred[:,ijk] = W.T
+                    
+            else:
+                V = V.T
+                out_spikes = out_spikes.T
+                
+                E = np.linalg.pinv(V)
+                Y = out_spikes #+ 0.00*np.ones([n,TT])
+                #WW2 = np.dot(out_spikes,E)
+                #pdb.set_trace()
+                WW2 = np.dot(E,out_spikes)
+                
+                for iil in range(0,n):
+                    WW2[iil,iil] = 0
+                    
+                W_inferred = WW2
+                
     return  W_inferred,cost,Updated_Vals
 #==============================================================================
 #==============================================================================

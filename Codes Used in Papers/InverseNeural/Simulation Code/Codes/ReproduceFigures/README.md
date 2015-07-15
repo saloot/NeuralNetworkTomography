@@ -60,37 +60,42 @@ To transform the analog *association matrices* returned by the previous step, we
 
     $ python Transform_to_Ternary.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -B 4 -M 3 -T 13499
     $ python Transform_to_Ternary.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -B 4 -M 4 -T 13499
-    $ python Transform_to_Ternary.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -B 4 -M 8
+    $ python Transform_to_Ternary.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -B 4 -M 8 -T 13499
 
 **Recurrent Networks**
 
-    $ python Transform_to_Ternary.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -B 4 -M 3
-    $ python Transform_to_Ternary.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -B 4 -M 4
-    $ python Transform_to_Ternary.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -B 4 -M 8
+    $ python Transform_to_Ternary.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -B 4 -M 3 -T 6246
+    $ python Transform_to_Ternary.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -B 4 -M 4 -T 6246
+    $ python Transform_to_Ternary.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -B 4 -M 8 -T 6246
 
 
 ### Step 3: Plotting the results
 After performing the above steps, we can finally reproduce the plots.
 
-For **Figure 2**, simply type
+For **Figure 2**, simply type (in the `ReproduceFigures/` folder)
 
     $ python Figure2.py
 
-For **Figure 3a**, execute the following command
+For **Figure 3a**, first execute the following command
 
-    $ python Figure3a.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13494,13500,13500,13495"
+    $ python Inference_Tomography_FF.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3 -K Y
+    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3 -B 4 -O "2249,4498,6747,8996,11245,13494" -f "B"
+
+and then in the `ReproduceFigures/` folder type
+
+    $ python Figure3a.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13494,13500,13494,13494"
 
 To reproduce **Figures 4a**
 
     $ python Figure4a.py
 
-For **Figure 4b**, we have to first run
+For **Figure 4b**, we have to first run (in the `Codes/` folder)
 
     $ python Plot_Results.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -B 4 -M 3 -O "1041,2082,3123,4164,5205,6246"
     $ python Plot_Results.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -B 4 -M 4 -O "1041,2082,3123,4164,5205,6246"
     $ python Plot_Results.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -Q 0.1 -B 4 -M 8 -O "100,1330,2560,3790,5020,6250" 
 
-and then
+and then run (in the `ReproduceFigures/` folder)
 
     $ python Figure4b.py -E "50" -I "10" -L 1 -P "0.4" -D "10" -G R -Q 0.1 -K N -O "6246,6250,6246"
     
@@ -116,9 +121,8 @@ For **Figure 7a**, first execute the following commands in the `Codes/` folder (
     $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.3;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.5 -M 3 -B 4 -O "2249,4498,6747" -f "B"
     
     
-and then
+and then (in the `Codes/` folder)
     
-    $ cd ReproduceFigures
     $ python Figure7a.py -E "60,12" -I "15,3" -L 2 -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -p "0.2,0.3,0.3,0.3,0.3" -q "0.3,0.3,0.3,0.4,0.5" -B 4 -M 3 -O "6747,6747,6747,6747,6747" -c "b,orange,b,g,orange" -l "2,3"
 
 
@@ -141,7 +145,7 @@ For **Figure 7b**, first execute the following commands in the `Codes/` folder (
 
 For **Figure 8**
 
-    $ python Figure8.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13500,13500,13495"
+    $ python Figure8.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13494,13500,13494"
     
 For **Figure 9**
 
@@ -149,11 +153,11 @@ For **Figure 9**
     
 For **Figure 10**
 
-    $ python Figure10.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13500,13495"
+    $ python Figure10.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13500,13494"
 
 Finally, for **Figure 11**
 
-    $ python Figure11.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13500,13500"
+    $ python Figure11.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -K N -O "13500,13494"
     
 ### Dependencies
 * A working distribution of [Python 2.7](https://www.python.org/downloads/).

@@ -10,6 +10,7 @@ from CommonFunctions.auxiliary_functions import read_spikes,combine_weight_matri
 from CommonFunctions.auxiliary_functions_inference import *
 from CommonFunctions.Neurons_and_Networks import *
 
+from scipy.cluster.vq import whiten
 os.system('clear')                                              # Clear the commandline window
 #==============================================================================
 
@@ -53,6 +54,14 @@ elif (inference_method == 4):
     inferece_params = [d_window]            
 #..............................................................................
 
+#.................................MSE-based Approach...........................
+elif (inference_method == 7):
+    bin_size = 5                                            # The size of time bins (not relevant in this version)
+    d_window = 15                                           # The time window the algorithm considers to account for pre-synaptic spikes
+    max_itr_optimization = 1850                              # This is the maximum number of iterations performed by internal optimization algorithm for inference
+    sparse_thr0 = 0.85                                    # The initial sparsity soft-threshold (not relevant in this version)
+    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size]
+#..............................................................................
 #------------------------------------------------------------------------------
 
 #==============================================================================
@@ -78,6 +87,7 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
     T_range = range(T_step, T_max+1, T_step)
     #--------------------------------------------------------------------------
     
+    print T_range
 #==============================================================================
 
 #============================INFER THE CONNECTIONS=============================
@@ -116,4 +126,5 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
         print 'Inference successfully completed for T = %s ms' %str(T/1000.0)    
     #----------------------------------------------------------------------
 
+    pdb.set_trace()
     

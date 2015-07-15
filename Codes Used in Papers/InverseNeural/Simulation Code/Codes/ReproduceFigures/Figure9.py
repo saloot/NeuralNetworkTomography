@@ -97,22 +97,21 @@ except:
 
 
 #=================================PLOT THE RESULTS=============================
-if (found_file_tot) and (found_file_glm):
-
-    fig, axs = plt.subplots(nrows=1, ncols=2)
-
+fig, axs = plt.subplots(nrows=1, ncols=2)
+if (found_file_tot):
     ax = axs[0]
     ax.scatter(np.sign(W.ravel()),W_inferred_neuinf.ravel())
     ax.set_title('Stochastic NeuInf')
     ax.set_xlabel('G (actual)', fontsize=16)
     ax.set_ylabel('W (inferred)', fontsize=16)
 
+if found_file_glm:
     ax = axs[1]
     ax.scatter(np.sign(W.ravel()),W_inferred_glm.ravel())
     ax.set_title('GLM')
     ax.set_xlabel('G (actual)', fontsize=16)
     ax.set_ylabel('W (inferred)', fontsize=16)
 
-    plt.show();
+plt.show();
 #==============================================================================
 
