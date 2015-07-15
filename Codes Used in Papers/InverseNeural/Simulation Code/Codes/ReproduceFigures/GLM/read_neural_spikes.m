@@ -4,7 +4,7 @@ t_max = 0;
 
 %------------------------Read the Spikes from File-------------------------
 for l = 1:no_layers
-    fid = fopen(['../../Data/Spikes/S_times_L_',num2str(no_layers),'_n_exc_',file_name_ending,num2str(l-1),'.txt'],'r');
+    fid = fopen(['../../../Data/Spikes/S_times_L_',num2str(no_layers),'_n_exc_',file_name_ending,num2str(l-1),'.txt'],'r');
     if (fid > -1)
         eval(['s_l',num2str(l-1),' = fscanf(fid, ''%f'',[2,inf]);']);        
         fclose(fid);
