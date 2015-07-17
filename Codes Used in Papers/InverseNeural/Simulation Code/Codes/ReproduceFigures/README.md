@@ -79,7 +79,7 @@ For **Figure 2**, simply type (in the `ReproduceFigures/` folder)
 For **Figure 3a**, first execute the following command
 
     $ python Inference_Tomography_FF.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3 -K Y
-    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3 -B 4 -O "2249,4498,6747,8996,11245,13494" -f "B"
+    $ python Plot_Results.py -E "60,12" -I "15,3" -L 2 -P "0.0,0.2;0.0,0.0" -D "0.0,9.0;0.0,0.0" -G R -Q 0.3 -M 3 -B 4 -O "2249,4498,6747,8996,11245,13494" -f "B" -K Y
 
 and then in the `ReproduceFigures/` folder type
 
