@@ -87,6 +87,9 @@ for ensemble_count in range(ensemble_count_init,ensemble_size):
     m,n = W.shape
     #--------------------------------------------------------------------------           
     
+    #np.savetxt('./Connectivity_Matrix.txt',W,'%1.5f',delimiter='\t')
+    #np.savetxt('./Delay_Matrix.txt',DD_tot,'%1.5f',delimiter='\t')
+    #pdb.set_trace()
     #------------------------Infer the Graph For Each T------------------------
     for T in T_range:
         
