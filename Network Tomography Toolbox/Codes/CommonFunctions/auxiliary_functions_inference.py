@@ -862,6 +862,11 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
         neuron_range = np.array(range(0,m))
         
     dl = 0#
+    
+    T_temp = TT-1 #min(2000,TT-1) #TT-1#            # Decide if the algorithm should divide the spike times into several smaller blocks and merge the results
+    range_T = range(T_temp,TT,T_temp)
+    W_total = {}
+    D_total = {}
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -876,7 +881,7 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
     #---------------Preprocess Spike Times and the Integration Effect----------
     #CC = np.roll(spikes_times,1, axis=1)           # Shift the spikes time one ms to account for causality and minimum propagation delay
     CC = spikes_times
-    R = np.zeros([n,TT])
+    
     V = np.zeros([n,TT])
     X = np.zeros([n,TT])
     
@@ -886,18 +891,14 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
     
     
     for jj in range(dl,TT-1):
-        R[:,jj] = np.sum(CC[:,max(0,jj-d_window):jj-dl],axis = 1)
         DD = AA[:,max(0,jj-d_window):jj]
         
         V[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_d)),axis = 1)
         X[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_s)),axis = 1)
     #--------------------------------------------------------------------------    
     
-    T_temp = TT-1 #min(2000,TT-1) #TT-1#
-    range_T = range(T_temp,TT,T_temp)
-    W_total = {}
-    D_total = {}
     
+    #---------Identify Incoming Connections to Each Neuron in the List---------
     for ijk in neuron_range:
         Y = spikes_times[ijk,:]
         t_fire = np.nonzero(Y)
