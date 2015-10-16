@@ -832,51 +832,66 @@ def parse_commands_inf_algo(input_opts):
 # exponential whose time constants are specified within the code.
 
 # INPUTS:
-#    spikes_times: the matrix containing the firing activity of neurons
+#   spikes_times: the matrix containing the firing activity of neurons
+#   d_window: the time window to perform integration over
+#   max_itr_opt: the maximum number of iterations to perform the optimization
+#   sparse_thr_0: the initial sparsity threshold
+#   theta: the firing threshold
+#   W_act: the actual connectivity matrxi (for the DEVELOPMENT PHASE)
+#   D_act: the actual delay matrxi (for the DEVELOPMENT PHASE)
+#   neuron_range: the range of neurons to find the (incoming) connections of.
+#                 If left empty ([]), the optimization will be performed for all neurons.
 
+# OUTPUTS:
+#   W_inferred: the inferred connectivity matrix
+#   D_inferred: the inferred delay matrix
 #------------------------------------------------------------------------------
 def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0,theta,W_act,D_act,neuron_range):
     
+    #----------------------------Initilizations--------------------------------    
     from auxiliary_functions import soft_threshold
     
     n,TT = spikes_times.shape
     m = n
     W_inferred = np.zeros([n,m])
     D_inferred = np.zeros([n,m])
-    tau_d = 20.0
-    tau_s = 2.0
-    h0 = 0.0
-    CC = np.roll(spikes_times,1, axis=1)
     
+    range_tau = range(0,max_itr_opt)
     
-    CC = spikes_times
+    if len(neuron_range) == 0:
+        neuron_range = np.array(range(0,m))
+        
+    dl = 0#
+    #--------------------------------------------------------------------------
     
+    #---------------------------Neural Parameters------------------------------
+    tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
+    tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
+    h0 = 0.0                                        # The reset membrane voltage (in mV)
     t0 = log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
-    U0 = 1/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))
-    #U0 = 1.0/tau_d
-    #tau_s = 0.0
+    U0 = 1/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
+    #--------------------------------------------------------------------------
+    
+    
+    #---------------Preprocess Spike Times and the Integration Effect----------
+    #CC = np.roll(spikes_times,1, axis=1)           # Shift the spikes time one ms to account for causality and minimum propagation delay
+    CC = spikes_times
     R = np.zeros([n,TT])
     V = np.zeros([n,TT])
     X = np.zeros([n,TT])
-    dl = 0#
     
     AA = np.reshape(np.array(range(1,TT+1)),[TT,1])
     AA = np.dot(AA,np.ones([1,n]))
     AA = np.multiply(CC,AA.T)
     
-    range_tau = range(0,max_itr_opt)
-    if len(neuron_range) == 0:
-        neuron_range = np.array(range(0,m))
     
-    
-
     for jj in range(dl,TT-1):
         R[:,jj] = np.sum(CC[:,max(0,jj-d_window):jj-dl],axis = 1)
         DD = AA[:,max(0,jj-d_window):jj]
         
         V[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_d)),axis = 1)
         X[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_s)),axis = 1)
-        
+    #--------------------------------------------------------------------------    
     
     T_temp = TT-1 #min(2000,TT-1) #TT-1#
     range_T = range(T_temp,TT,T_temp)
@@ -1183,4 +1198,3 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
                 #pdb.set_trace()
             
     return W_inferred,D_inferred
-                    #pdb.set_trace()
