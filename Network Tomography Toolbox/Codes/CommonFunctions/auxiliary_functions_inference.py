@@ -6,9 +6,13 @@ import pdb,os,sys
 import random
 import copy
 import numpy.ma as ma
+import matplotlib.pyplot as plt
 import numpy as np
 import math
 from default_values import *
+#from scipy.optimize import minimize,linprog
+from cvxopt import solvers, matrix, spdiag, log
+
 #==============================================================================
 
 
@@ -31,7 +35,29 @@ from default_values import *
 #               'F' for the stimulate-and-observe case
 
 #------------------------------------------------------------------------------
-def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estim,location_flag,data_mode):
+
+def F(x=None,z=None,n=201):
+    if x is None:
+        return 0, matrix(np.zeros([n,1]))
+    else:
+        f = 0#np.sum(abs(x))
+        Df = matrix(np.zeros([1,n]))#matrix(200*np.multiply(x.T,1-pow(np.tanh(100*pow(x.T,2)),2)))
+        
+        if z is None:  
+            return f,Df
+        else:
+            #bb = 200*(1-pow(np.tanh(100*pow(x,2)),2))
+            #aa = matrix(np.multiply(bb,1-200*np.multiply(pow(x,2),np.tanh(100*pow(x,2)))))
+            aa = matrix(np.zeros([1,n]))
+            H = spdiag(z[0] * aa)
+            return f, Df, H
+    #return np.linalg.norm(x)
+
+def func_deriv(x):
+    """ Derivative of objective function """
+    return 2*x
+
+def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_params,W_estim,location_flag,data_mode,range_neuron):
     
     from auxiliary_functions import soft_threshold
     
@@ -263,7 +289,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                         itr = itr + 1
                     
                     d_estim = d_range[np.argmax(cc)-1]
-                    cd = diff(cc)
+                    cd = np.diff(cc)
                     ii = np.argmax(cd)
                 
                     D_estimated[i,j] = d_estim
@@ -298,7 +324,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
                 
         
                     d_estim = d_range[np.argmax(cc)-1]
-                    cd = diff(cc)
+                    cd = np.diff(cc)
                     ii = np.argmax(cd)
                 
                     D_estimated[i,j] = d_estim
@@ -331,8 +357,11 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
             bin_size = 0
         
         ss,TT = out_spikes.shape
-        neuron_range = np.array(range(0,m))
-        neuron_range = np.reshape(neuron_range,[m,1])
+        if len(range_neuron):
+            neuron_range = range_neuron
+        else:
+            neuron_range = np.array(range(0,m))
+            neuron_range = np.reshape(neuron_range,[m,1])
         #......................................................................        
         
         #..............................Initializations.........................        
@@ -341,55 +370,286 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
         #......................................................................
         
         #................Iteratively Update the Connectivity Matrix............
-        if data_mode == 'R':    
+        if data_mode == 'R':
+            ##CC = np.roll(out_spikes[:,],1, axis=1)
+            CC = np.roll(out_spikes,1, axis=1)
+            CC[:,0] = 0
             V = np.zeros([n,TT])
-            for jj in range(0,TT-1):
-                V[:,jj] = np.sum(out_spikes[:,max(0,jj-d_window):jj],axis = 1)
-            A = np.dot(V,V.T) + np.eye(n)
-            A_i = np.linalg.inv(A)
-            S = linalg.sqrtm(A)
-            S_i = np.linalg.inv(S)
-            B0 = np.dot(V,out_spikes.T)
+            for jj in range(1,TT-1):
+                V[:,jj] = np.sum(CC[:,max(0,jj-d_window):jj-1],axis = 1)
+                
+            #V = np.sign(V)
+            #pdb.set_trace()
+            #V = CC
             
-            if sparsity_flag:    
-                for ijk in neuron_range:                
-                    Y = out_spikes[ijk,:]
-                    
-                    print '-------------Neuron %s----------' %str(ijk)
+            
+            
                 
-                    WW = W_inferred[:,ijk]
-                    U = WW.T
+            #A = np.dot(V,V.T) + np.eye(n)
+            #A_i = np.linalg.inv(A)
+            #S = linalg.sqrtm(A)
+            #S_i = np.linalg.inv(S)
+            #B0 = np.dot(V,out_spikes.T)
+            #pdb.set_trace()
+            
+            if sparsity_flag == 1:
+                T_temp = TT-1
+                range_T = range(T_temp,TT,T_temp)
+                for T_T in range_T:
+                    #Vv = np.zeros([n,T_temp])
+                    #itr_j = 0
+                    #for jj in range(T_T-T_temp,T_T):
+                    #    Vv[:,itr_j] = np.sum(out_spikes[:,max(0,jj-d_window):jj],axis = 1)
+                    #    itr_j = itr_j + 1
+                    #pdb.set_trace()
                     
-                    for ttau in range_tau:
-                
-                        #~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~                        
-                        sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
-                        sparse_thr = sparse_thr_0/float(ttau+1)
-                        B = B0[:,ijk] + U.T
+            
+                    Vv = V[:,T_T-T_temp:T_T]
+                    
+                    A = np.dot(Vv,Vv.T) + np.eye(n)
+                    A_i = np.linalg.inv(A)
+                    S = linalg.sqrtm(A)
+                    #S_i = np.linalg.inv(S)
+                    B0 = np.dot(Vv,out_spikes[:,T_T-T_temp:T_T].T)
+                    
+                    print 'We are at %s' %str(T_T)
+                    
+                    for ijk in neuron_range:                
+                        #Y = 10*out_spikes[ijk,T_T-T_temp:T_T] + 5 * np.ones([1,T_temp])
+                        Y = out_spikes[ijk,T_T-T_temp:T_T]
+                        
+                        
+                        print '-------------Neuron %s----------' %str(ijk)
+                    
+                        WW = W_inferred[:,ijk]
+                        U = WW.T
+                        
+                        
+                        for ttau in range_tau:
+                    
+                            #~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~                        
+                            sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
+                            #sparse_thr = sparse_thr_0/float(ttau+1)
+                            
+                            B = B0[:,ijk] + U.T#B_temp + U.T
+                            #D = np.dot(B.T,S_i)
+                            D = B.T
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            
+                            #~~~~~~~~~Minimize with Respect to W~~~~~~~~~
+                            W = np.dot(D,A_i)
+                            
+                            #W = np.linalg.lstsq(A,D.T)
+                            #W = np.array(W[0])
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+                            #~~~~~~Apply Sparsity Regularizer to W~~~~~~~
+                            U = soft_threshold(W,sparse_thr)
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            
+                            #pdb.set_trace()
+                            
                         #pdb.set_trace()
-                        D = np.dot(B.T,A_i)
-                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        
-                        #~~~~~~~~~Minimize with Respect to W~~~~~~~~~
-                        W = np.dot(D,S_i)
-                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                                                
-                        #~~~~~~Apply Sparsity Regularizer to W~~~~~~~
-                        U = soft_threshold(W,sparse_thr)
-                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        
+                        W_inferred[:,ijk] = W.T#np.vstack([W[0:ijk],0,W[ijk:]])
                     
-                    W_inferred[:,ijk] = W.T
                     
-            else:
-                E = np.linalg.pinv(V)
-                Y = out_spikes + 0.05*np.ones([n,TT])
-                WW2 = np.dot(out_spikes,E)
+            elif sparsity_flag == 0 :
                 
-                for iil in range(0,n):
-                    WW2[iil,iil] = 0
+                T_temp = 2000
+                #..............................Initializations.........................        
+                range_tau = range(0,2)
+                range_T = range(T_temp,TT,T_temp)
+                #......................................................................
+                
+                for T_T in range_T:
+                    #pdb.set_trace()     
+                    Vv = V[:,T_T-T_temp:T_T].T
+                    #--------
+                    for ijk in neuron_range:                
+                        print '-------------Neuron %s----------' %str(ijk)
+                        
+                        Y = out_spikes[ijk,T_T-T_temp:T_T].T
+                        EE = np.delete(Vv.T,ijk,0).T
+                        WW = np.linalg.lstsq(EE,Y)
+                        WW = np.array(WW[0])
+                        #pdb.set_trace()
+                        W_inferred[:,ijk] = W_inferred[:,ijk] + np.vstack([WW[0:ijk],0,WW[ijk:]])
+                    #--------
+            
+            elif sparsity_flag == 3 :
+                T_temp = 1000
+                #..............................Initializations.........................        
+                range_tau = range(0,2)
+                range_T = range(T_temp,TT,T_temp)
+                #......................................................................
+                
+                for T_T in range_T:
+                    Vv = V[:,T_T-T_temp:T_T]
+                                    
+                    for ijk in neuron_range:
+                        Y = out_spikes[ijk,T_T-T_temp:T_T]
+                        theta = 0.5
+                        #aa = np.sum(np.multiply(Vv,np.dot(np.ones([n,1]),np.sign(Y-0.5))),axis=1)
+                        #aa = np.reshape(aa,[n,1])
+                        
+                        #cons = ({'type': 'ineq',
+                        #         'fun' : lambda x: np.multiply(np.sign(Y.T-0.5),(np.dot(Vv.T,x)-theta*np.ones([T_temp,1]))),
+                        #         'jac' : lambda x: aa})
+                        
+                        
+                        #res = minimize(func, np.zeros([n,1]), args=(), jac=func_deriv,constraints=cons, method='SLSQP', options={'disp': True})
+                        c = np.zeros([n])
+                        
+                        A = np.dot(Vv,np.dot(np.ones([T_temp,1]),np.sign(Y-0.5)))
+                        b = np.multiply(np.sign(Y-0.5).T,theta*np.ones([T_temp,1]))
+                        
+                        
+                        res = linprog(c, A_ub=A.T, b_ub=b, bounds=(),options={"disp": True})
+                        pdb.set_trace()
+                        if res.success == 'True':
+                            W_inferred[:,ijk] = W_inferred[:,ijk] + np.reshape(res.x,[n,1])
+                        elif res.status<2:
+                            W_inferred[:,ijk] = W_inferred[:,ijk] + np.reshape(res.x,[n,1])
                     
-                W_inferred = WW2
+        
+            
+            
+            elif sparsity_flag == 5:
+                T_temp = TT-1#min(5000,TT-1)#TT-1
+                range_T = range(T_temp,TT,T_temp)
+                W_total = {}
+                #print 'We are at %s' %str(T_T)
+                if len(range_neuron) > 0:
+                    neurons_range = range_neuron
+                    
+                for ijk in neuron_range:
+                    print '-------------Neuron %s----------' %str(ijk)
+                    for T_T in range_T:
+                        Vv = V[:,T_T-T_temp:T_T]
+                    
+                        
+                        Y = out_spikes[ijk,T_T-T_temp:T_T]
+                        bb = np.nonzero(Y)
+                        EE = Vv
+                        if len(bb)>1:
+                            bb = bb[1]
+                        else:
+                            bb = bb[0]
+                            
+                        
+                        T1 = len(bb)
+                        bb = np.reshape(bb,[1,T1])
+                        V1 = EE[:,bb]
+                        
+                        bb = np.nonzero(1-Y)
+                        if len(bb)>1:
+                            bb = bb[1]
+                        else:
+                            bb = bb[0]
+                        T2 = len(bb)
+                        bb = np.reshape(bb,[1,T2])
+                        V2 = EE[:,bb]
+                        
+                        
+                        A = np.vstack([V1.T,-V2.T])
+                        ff = theta*np.vstack([np.ones([T1,1]),-np.ones([T2,1])]) + 2.25*np.ones([T1+T2,1])
+                        gamm = 1.25
+                        
+                        
+                        C = np.eye(n) - gamm * np.dot(A.T,A)
+                        C_i = np.linalg.inv(C)
+                        #S = linalg.sqrtm(A)
+                    
+                        WW = W_inferred[:,ijk]
+                        WW = np.reshape(WW,[n,1])
+                        U = WW + np.random.rand(n,1)
+                        b = np.dot(A.T,ff)
+                        
+                        for ttau in range_tau:
+                    
+                            #~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~                        
+                            sparse_thr = sparse_thr_0/float(1+math.log(0.1*ttau+1))
+                            #sparse_thr = sparse_thr_0/float(1+1*ttau)
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            
+                            #~~~~~~~~~Minimize with Respect to W~~~~~~~~~
+                            W = np.dot(C_i,(U-gamm*b))
+                            #W = np.multiply(W,(W>0).astype(int))
+                            #W = W/np.linalg.norm(W)
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+                            #~~~~~~Apply Sparsity Regularizer to W~~~~~~~
+                            U = soft_threshold(W,sparse_thr)
+                            #pdb.set_trace()
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            
+                        if 0:
+                            if (T_T == range_T[0]):
+                                W_total[str(ijk)] = [U]
+                            else:
+                                #pdb.set_trace()
+                                W_total[str(ijk)].append(U)
+                    
+                        
+                        W_inferred[:,ijk] = W_inferred[:,ijk] + U.ravel()
+                    
+                    if 0 :
+                        WW = W_total[str(ijk)]
+                        W_a = []
+                        for i in range(0,len(range_T)):
+                            We = WW[i]
+                            if i == 0:
+                                Wa = We
+                            else:
+                                Wa = np.hstack([Wa,We])
+                        
+                        if min(Wa.shape)>1:
+                            ee = Wa.mean(axis = 1)
+                            ss = Wa.std(axis = 1)
+                        else:
+                            ee = Wa
+                            ss = np.zeros([len(ee),1])
+                        if ijk == 0:
+                            pdb.set_trace()
+                            
+                        W_inferred[0:len(ee),ijk] = W_inferred[0:len(ee),ijk] + (np.multiply((ss<0.5*ss.mean()).astype(int),ee)).ravel()
+                    #pdb.set_trace()
+            
+            else:
+                
+                T_temp = 1000
+                #..............................Initializations.........................        
+                range_tau = range(0,2)
+                range_T = range(T_temp,TT,T_temp)
+                #......................................................................
+        
+                #for ttau in range_tau:
+                if 1:
+                    for T_T in range_T:
+                        Vv = np.zeros([n,T_temp])
+                        itr_j = 0
+                        for jj in range(T_T-T_temp,T_T):
+                            Vv[:,itr_j] = np.sum(out_spikes[:,max(0,jj-d_window):jj],axis = 1)
+                            itr_j = itr_j + 1
+                        
+                        #Vv = out_spikes[:,T_T-T_temp:T_T]
+                        #pdb.set_trace()
+                        print 'We are at %s' %str(T_T)
+                        
+                        E = np.linalg.pinv(Vv.T)
+                        Y = out_spikes[:,T_T-T_temp:T_T].T #+ 0.00*np.ones([n,TT])                
+                        WW2 = np.dot(E,Y)
+                        #WW = np.linalg.lstsq(E.T,Y)
+                        #pdb.set_trace()
+                        for iil in range(0,n):
+                            WW2[iil,iil] = 0
+                        
+                        
+                        W_inferred = W_inferred + WW2
+                        
+                        
+
+
             
 
     else:
@@ -413,6 +673,7 @@ def inference_alg_per_layer(in_spikes,out_spikes,inference_method,inferece_param
 #------------------------------------------------------------------------------
 
 def parse_commands_inf_algo(input_opts):
+    neuron_range = []
     if (input_opts):
         for opt, arg in input_opts:
             if opt == '-Q':
@@ -446,7 +707,18 @@ def parse_commands_inf_algo(input_opts):
             elif opt == '-U': 
                 beta = int(arg)                                     # Specify the update probability paramter (p = 1/beta) in STOCHASTIC NEUINF
             elif opt == '-Z': 
-                alpha0 = float(arg)                                 # Specify the update learnining rate 
+                alpha0 = float(arg)                                 # Specify the update learnining rate
+            elif opt == '-p': 
+                p_miss = float(arg)                                 # The probability of missing a spike
+            elif opt == '-j': 
+                jitt = int(arg)                                     # Maximum  amount of randomjitter added to spike times (in miliseconds)
+            elif opt == '-b': 
+                bin_size = int(arg)                                 # If it is nonzero, the spikes will be placed within bins of size "bin_size"
+            elif opt == '-o': 
+                temp = (arg).split(',')                             # The range of neurons to identify the connections
+                neuron_range = []
+                for i in temp:                        
+                    neuron_range.append(int(i))
             elif opt == '-h':
                 print(help_message)
                 sys.exit()
@@ -514,8 +786,20 @@ def parse_commands_inf_algo(input_opts):
     if 'alpha0' not in locals():
         alpha0 = ALPHA0_DEFAULT
         print('ATTENTION: The default value of %s for alpha0 is considered.\n' %str(alpha0))
-    #------------------------------------------------------------------------------
+        
+    if 'p_miss' not in locals():
+        p_miss = P_MISS_DEFAULT
+        print('ATTENTION: The default value of %s for p_miss is considered.\n' %str(p_miss))
     
+    if 'jitt' not in locals():
+        jitt = JITTER_DEFAULT
+        print('ATTENTION: The default value of %s for jitt is considered.\n' %str(jitt))
+        
+    if 'bin_size' not in locals():
+        bin_size = BIN_SIZE_DEFAULT
+        print('ATTENTION: The default value of %s for bin_size is considered.\n' %str(bin_size))
+    #------------------------------------------------------------------------------
+
     #------------------Create the Necessary Directories if Necessary---------------
     if not os.path.isdir(file_name_base_results):
         os.makedirs(file_name_base_results)    
@@ -531,5 +815,372 @@ def parse_commands_inf_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,verify_flag,beta,alpha0,infer_itr_max
+    return frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,verify_flag,beta,alpha0,infer_itr_max,p_miss,jitt,bin_size,neuron_range
 
+
+#==============================================================================
+#==============================================================================
+
+
+#==============================================================================
+#=======================delayed_inference_constraints==========================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function runs the inference algorithm for the algorithm where delay and
+# connectivity are co-optimized together. The model is based on the LIF neural
+# model and approximates the membrane voltage kernel function as a double
+# exponential whose time constants are specified within the code.
+
+# INPUTS:
+#    spikes_times: the matrix containing the firing activity of neurons
+
+#------------------------------------------------------------------------------
+def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0,theta,W_act,D_act,neuron_range):
+    
+    from auxiliary_functions import soft_threshold
+    
+    n,TT = spikes_times.shape
+    m = n
+    W_inferred = np.zeros([n,m])
+    D_inferred = np.zeros([n,m])
+    tau_d = 20.0
+    tau_s = 2.0
+    h0 = 0.0
+    CC = np.roll(spikes_times,1, axis=1)
+    
+    
+    CC = spikes_times
+    
+    t0 = log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
+    U0 = 1/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))
+    #U0 = 1.0/tau_d
+    #tau_s = 0.0
+    R = np.zeros([n,TT])
+    V = np.zeros([n,TT])
+    X = np.zeros([n,TT])
+    dl = 0#
+    
+    AA = np.reshape(np.array(range(1,TT+1)),[TT,1])
+    AA = np.dot(AA,np.ones([1,n]))
+    AA = np.multiply(CC,AA.T)
+    
+    range_tau = range(0,max_itr_opt)
+    if len(neuron_range) == 0:
+        neuron_range = np.array(range(0,m))
+    
+    
+
+    for jj in range(dl,TT-1):
+        R[:,jj] = np.sum(CC[:,max(0,jj-d_window):jj-dl],axis = 1)
+        DD = AA[:,max(0,jj-d_window):jj]
+        
+        V[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_d)),axis = 1)
+        X[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_s)),axis = 1)
+        
+    
+    T_temp = TT-1 #min(2000,TT-1) #TT-1#
+    range_T = range(T_temp,TT,T_temp)
+    W_total = {}
+    D_total = {}
+    
+    for ijk in neuron_range:
+        Y = spikes_times[ijk,:]
+        t_fire = np.nonzero(Y)
+        t_fire = t_fire[0]
+        t_last = 0
+        
+        if len(D_act):
+            dd = D_act[:,ijk]
+            CC = np.zeros([n,TT])
+            for i in range(0,n):
+                CC[i,:] = np.roll(spikes_times[i,:],int(dd[i]*1000)+1)
+                CC[i,0:int(dd[i]*1000)+1] = 0
+            
+            AA = np.reshape(np.array(range(1,TT+1)),[TT,1])
+            AA = np.dot(AA,np.ones([1,n]))
+            AA = np.multiply(CC,AA.T)
+            d_window = 0
+        if 0:
+            for jj in range(dl,TT-1):
+                if jj in t_fire:
+                    t_last = jj
+                t_min = max(0,t_last-d_window)
+                R[:,jj] = np.sum(CC[:,t_min:jj-dl],axis = 1)
+                DD = AA[:,t_min:jj-dl]
+                
+                V[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_d)),axis = 1)
+                X[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_s)),axis = 1)
+            
+            
+        
+        if len(W_act) and len(D_act):            
+            dd = np.reshape(dd,[n,1])
+            dd1 = np.multiply(np.sign(dd),np.exp(dd/(0.001*tau_d)))
+            dd2 = np.multiply(np.sign(dd),np.exp(dd/(0.001*tau_s)))
+            
+            DD1 = np.diag(dd1[:,0])
+            DD2 = np.diag(dd2[:,0])
+            w = W_act[:,ijk]
+            w = np.reshape(w,[n,1])
+            
+            #tau_d = 0.001*tau_d
+            #tau_s = 0.001*tau_s
+            U = np.dot(V.T,DD1) - np.dot(X.T,DD2)
+            
+            U = np.multiply(U,(U>0).astype(int))
+            U = np.multiply(U,(U<1/U0).astype(int)) + np.multiply(1/U0,(U>1/U0).astype(int))
+            
+            U = V.T-X.T
+            
+            H = U0*np.dot(U,w)
+            
+            hh = (H>theta*.001).astype(int)
+            pdb.set_trace()
+            #plt.plot(hh[0:100]);plt.plot(Y[0:100],'r');plt.show()
+            #plt.plot(H[0:300]);plt.plot(0.1*Y[0:300],'r');plt.show()
+
+        
+        if 1:
+            print '-------------Neuron %s----------' %str(ijk)
+            for T_T in range_T:
+                Rr = R[:,T_T-T_temp:T_T]
+
+                Y = spikes_times[ijk,T_T-T_temp:T_T]
+                bb = np.nonzero(Y)
+                
+                #pdb.set_trace()
+                VV = V[:,T_T-T_temp:T_T]
+                XX = X[:,T_T-T_temp:T_T]
+                
+                R1 = Rr[:,bb[0]]
+                V1 = VV[:,bb[0]]
+                X1 = XX[:,bb[0]]
+                T1 = len(bb[0])
+                bb = np.nonzero(1-Y)
+                R2 = Rr[:,bb[0]]
+                V2 = VV[:,bb[0]]
+                X2 = XX[:,bb[0]]
+                T2 = len(bb[0])
+                
+    
+                #Q = (tau_d - tau_s) * np.vstack([R1.T,-R2.T])
+                U = np.vstack([V1.T,-V2.T])
+                XX = np.vstack([X1.T,-X2.T])
+                B = np.hstack([U,-XX])
+                B_i = np.linalg.pinv(B)
+                
+                #pdb.set_trace()
+                
+                g = ((theta-h0)*np.vstack([np.ones([T1,1]),-np.ones([T2,1])]) + 5.05*np.ones([T1+T2,1]))/U0
+                gamm = 10
+                
+                DD1 = exp(1.5/tau_d)*np.eye(n)
+                DD2 = exp(1.5/tau_s)*np.eye(n)
+                
+                WW = W_inferred[:,ijk]
+                Z = WW
+                Z = np.reshape(Z,[n,1])
+                    
+                #pdb.set_trace()
+                U_i =  np.linalg.pinv(U)
+                
+                if (len(W_act) == 0) and (len(D_act) == 0):
+                    if 0:
+                        for iau in range(0,500):
+                            
+                            aa = np.vstack([DD1,DD2])
+                            A = np.dot(B,aa)
+                            #pdb.set_trace()
+                            C = gamm * np.eye(n) - np.dot(A.T,A)
+                            #pdb.set_trace()
+                            C_i = np.linalg.inv(C)
+                            
+                            for ttau in range(0,1):
+                            
+                                #~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~                        
+                                sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
+                                b = gamm * Z - np.dot(A.T,g)
+                                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                    
+                                #~~~~~~~~~Minimize with Respect to W~~~~~~~~~
+                                W = np.dot(C_i,b)
+                                #W = np.multiply(W,(W>0).astype(int))
+                                #W = W/np.linalg.norm(W)
+                                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+                                #~~~~~~Apply Sparsity Regularizer to W~~~~~~~
+                                Z = soft_threshold(W,sparse_thr)
+                                #pdb.set_trace()
+                                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            #pdb.set_trace()
+                            zz = np.multiply(np.sign(Z[:,0]),np.divide(1,Z[:,0] + 1e-10))
+                            
+                            zz = np.reshape(zz,[n,1])
+                            zz = np.vstack([zz,zz])
+                            WW = np.diag(zz[:,0])
+                            #pdb.set_trace()
+                            #WW = np.vstack([zz,zz])
+                            
+                            dd = -np.dot(np.dot(WW.T,B_i),g)
+                            dd = 1e-15 + np.multiply(dd,dd>0)
+                            dd1 = tau_d*np.log(dd[0:n,0])
+                            dd2 = tau_s*np.log(dd[n:,0])
+                            dd1 = np.multiply(dd1,dd1>0)+1
+                            dd2 = np.multiply(dd2,dd2>0)+1
+                            
+                            #plt.plot(dd1);plt.plot(dd2,'r');plt.plot(de,'g');plt.show()
+                            #pdb.set_trace()
+                            #U_i = np.linalg.pinv(np.dot(U-XX,np.diag(Z[:,0])))
+                            #aa = np.dot(np.dot(U-XX,np.diag(W[:,0])),np.ones([n,1]))
+                            #dd = np.dot(U_i,g+1*aa)
+                            
+                            #for i in range(0,n):
+                            #    if abs(W[i]) > 0:
+                            #        dd[i] =dd[i]/W[i]
+                            #    else:
+                            #        dd[i] = 0
+                            #dd = np.multiply(dd,pow(W+0.00001*np.random.rand(n,1),-1))
+                            
+                            #dd = np.multiply(dd,(dd>0).astype(int))
+                            #dd = np.multiply(dd>10,10) + np.multiply(dd<=10,dd)
+                            #DD1 = np.diag(dd[:,0])
+                            
+                            #dd = (dd1 + dd2)/2.0
+                            DD1 = np.diag(np.exp(dd1/tau_d))
+                            DD2 = np.diag(np.exp(dd2/tau_s))
+                            dd = np.reshape(dd2+dd1,[n,1])
+                        if (T_T == range_T[0]):
+                            W_total[str(ijk)] = [W]
+                            D_total[str(ijk)] = [dd]
+                        else:
+                            #pdb.set_trace()
+                            W_total[str(ijk)].append(W)
+                            D_total[str(ijk)].append(dd1)
+                    
+                    else:
+
+                        C = np.eye(n) - gamm * np.dot(U.T,U)
+                        #pdb.set_trace()
+                        C_i = np.linalg.inv(C)
+                        pdb.set_trace()
+                        
+                        for ttau in range_tau:
+                        
+                            #~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~                        
+                            sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
+                            b = Z - gamm *  np.dot(U.T,g)
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                
+                            #~~~~~~~~~Minimize with Respect to W~~~~~~~~~
+                            W = np.dot(C_i,b)
+                            #W = W/np.linalg.norm(W)
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+                            #~~~~~~Apply Sparsity Regularizer to W~~~~~~~
+                            Z = np.reshape(soft_threshold(W,sparse_thr),[n,1])
+                            #pdb.set_trace()
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        
+                        
+                        if (T_T == range_T[0]):
+                            W_total[str(ijk)] = [W]
+                            D_total[str(ijk)] = [W]
+                        else:
+                            #pdb.set_trace()
+                            W_total[str(ijk)].append(W)
+                            D_total[str(ijk)].append(W)
+                    
+                else:
+                    
+                    if len(W_act):
+                        W = 1000*(np.reshape(W_act[:,ijk],[n,1]))
+                        U_i = np.linalg.pinv(np.dot(XX-U,np.diag(W[:,0])))
+                        #U_i = np.linalg.pinv(np.dot(U,np.diag(W[:,0])))
+                        
+                        aa = np.dot(np.dot(U-XX,np.diag(W[:,0])),np.ones([n,1]))
+                        
+                        dd = np.dot(U_i,g+1*aa)
+                            
+                        #for i in range(0,n):
+                        #    if abs(W[i]) > 0:
+                        #        dd[i] =dd[i]/W[i]
+                        #    else:
+                        #        dd[i] = 0
+                        #dd = np.multiply(dd,pow(W+0.00001*np.random.rand(n,1),-1))
+                        #dd = np.multiply(dd,(dd>0).astype(int))
+                        #pdb.set_trace()
+                        #D_inferred[:,ijk] = dd[:,0]
+                        if (T_T == range_T[0]):
+                            D_total[str(ijk)] = [dd]
+                        else:
+                            D_total[str(ijk)].append(dd)
+                    else:
+                        dd = D_act[:,ijk]
+                        dd1 = np.multiply(np.sign(dd),np.exp(dd/(0.001*tau_d)))
+                        dd2 = np.multiply(np.sign(dd),np.exp(dd/(0.001*tau_s)))
+                        DD1 = np.diag(dd1)
+                        DD2 = np.diag(dd2)
+                        A = (np.dot(U,DD1)-np.dot(XX,DD2))#np.dot(C,np.dot(UU,DD))
+                        gamm = 0.1
+                        C = gamm * np.eye(n) - np.dot(A.T,A)
+                        C_i = np.linalg.inv(C)
+                        for ttau in range(0,10):#range_tau:
+                        
+                            #~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~                        
+                            sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
+                            b = gamm * Z - np.dot(A.T,g)
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                
+                            #~~~~~~~~~Minimize with Respect to W~~~~~~~~~
+                            W = np.dot(C_i,b)
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+                            #~~~~~~Apply Sparsity Regularizer to W~~~~~~~
+                            Z = soft_threshold(W,sparse_thr)
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        
+                        if (T_T == range_T[0]):
+                            W_total[str(ijk)] = [W]
+                        else:
+                            W_total[str(ijk)].append(W)
+                    
+            
+            if len(W_act)  == 0:           
+                WW = W_total[str(ijk)]
+                W_a = []
+                for i in range(0,len(range_T)):
+                    We = WW[i]
+                    if i == 0:
+                        Wa = We
+                    else:
+                        Wa = np.hstack([Wa,We])
+                                
+                ee = Wa.mean(axis = 1)
+                ss = Wa.std(axis = 1)
+                uu = pow(ss,2)-pow(ee,2)
+                #pdb.set_trace()           
+                #W_inferred[:,ijk] = W_inferred[:,ijk] + np.multiply((abs(uu)>abs(uu.mean())+uu.mean()).astype(int),ee)
+                W_inferred[:,ijk] = W_inferred[:,ijk] + ee 
+            
+            if len(D_act)  == 0:
+                DD = D_total[str(ijk)]
+                D_a = []
+                for i in range(0,len(range_T)):
+                    De = DD[i]
+                    if i == 0:
+                        Da = De
+                    else:
+                        Da = np.hstack([Da,De])
+                
+                
+                ee = Da.mean(axis = 1)
+                ss = Da.std(axis = 1)
+                uu = pow(ss,2)-pow(ee,2)
+                #D_inferred[:,ijk] = D_inferred[:,ijk] + np.multiply((uu>0.0001).astype(int),ee)
+                
+                D_inferred[:,ijk] = D_inferred[:,ijk] + ee
+                #if ijk == 0:
+                #pdb.set_trace()
+            
+    return W_inferred,D_inferred
+                    #pdb.set_trace()
