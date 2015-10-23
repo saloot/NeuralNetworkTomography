@@ -62,10 +62,10 @@ if (inference_method == 7):
     
 #----------------------------Read and Sort Spikes------------------------------
 #file_name = '../Data/Spikes/fluorescence_mocktest_adapted.txt'
-file_name = '../Data/Spikes/Spike_Times2.txt'
+#file_name = '../Data/Spikes/Spike_Times2.txt'
 #file_name = '../Data/Spikes/HC3_ec013_198_processed.txt'
 #file_name = '../Data/Spikes/Spikes_exc.txt'
-#file_name = '../Data/Spikes/Moritz_Spike_Times_Reduced.txt'
+file_name = '../Data/Spikes/Moritz_Spike_Times_Reduced.txt'
 Neural_Spikes,T_max = read_spikes(file_name)
 #------------------------------------------------------------------------------
     
@@ -82,11 +82,12 @@ T_range = [T_max]
 
 #====================READ THE GROUND TRUTH IF POSSIBLE=========================
 #file_name = '../Data/Graphs/network_mocktest_adapted.txt'
-file_name = '../Data/Graphs/Connectivity_Matrix2.txt'
+#file_name = '../Data/Graphs/Connectivity_Matrix2.txt'
 #file_name = '../Data/Graphs/Matrix_Accurate.txt'
-#file_name = '../Data/Graphs/Moritz_Actual_Connectivity.txt'
+file_name = '../Data/Graphs/Moritz_Actual_Connectivity.txt'
 W_act = np.genfromtxt(file_name, dtype=None, delimiter='\t')
 n,m = W_act.shape
+DD_act = 1.5 * abs(np.sign(W_act))
 #file_name = '../Data/Graphs/Delay_Matrix2.txt'
 #D_act = np.genfromtxt(file_name, dtype=None, delimiter='\t')
 #DD_act = np.multiply(np.sign(abs(W_act)),D_act)
@@ -147,8 +148,11 @@ for T in T_range:
         W_estimated = np.zeros([n,m])    
         fixed_entries = np.zeros([n,m])
             
+        W_act = W_act[0:n,0:n]              # This line should be changed later
+        DD_act = DD_act[0:n,0:n]            # This lineshould be chaged later
+        pdb.set_trace()
         #W_inferred,cost,Inf_Delays = inference_alg_per_layer(out_spikes_tot_mat,out_spikes_tot_mat,inference_method,inferece_params,W_estimated,0,'R',neuron_range)
-        W_inferred,Inf_Delays = delayed_inference_constraints(out_spikes_tot_mat,d_window,max_itr_optimization,sparse_thr0,theta,[],[],neuron_range)
+        W_inferred,Inf_Delays = delayed_inference_constraints(out_spikes_tot_mat,d_window,max_itr_optimization,sparse_thr0,theta,W_act,DD_act,neuron_range)
         
     #--------------Post-Process the Inferred Matrix---------------
     if len(non_zero_neurons) != n:
