@@ -47,6 +47,7 @@ def determine_binary_threshold(method,params,obs):
         n = len(obs)
         p_exc = params[0]
         p_inh = params[1]
+        thr_zero = 0
         #......................................................................
         
         #.....................Calculate the Thresholds.........................
@@ -460,7 +461,9 @@ def caculate_accuracy(W_binary,W):
 #------------------------------------------------------------------------------
 
 def parse_commands_ternary_algo(input_opts):
-    T_range = None
+    T_range = []
+    Var_range = []
+    plot_vars = ['T']
     if (input_opts):
         for opt, arg in input_opts:
             if opt == '-Q':
@@ -499,12 +502,29 @@ def parse_commands_ternary_algo(input_opts):
                 temp = (arg).split(',')                             # The number of excitatory neurons in each layer
                 plot_flags = []
                 for i in temp:                        
-                    plot_flags.append(i)                
+                    plot_flags.append(i)
+            elif opt == '-V':                                       # Specify what to plot                
+                temp = (arg).split(',')                             # The number of excitatory neurons in each layer
+                plot_vars = []
+                for i in temp:                        
+                    plot_vars.append(i)                
             elif opt == '-O': 
-                temp = (arg).split(',')                             # The range of recorded durations (T_range)
+                temp = (arg).split(',')                             # The range of first plotting var
                 T_range = []
                 for i in temp:                        
                     T_range.append(int(i))
+            elif opt == '-o': 
+                temp = (arg).split(',')                             # The range of recorded durations (T_range)other var
+                Var_range = []
+                for i in temp:                        
+                    Var_range.append(int(i))
+            elif opt == '-p': 
+                p_miss = float(arg)                                 # The probability of missing a spike
+            elif opt == '-j': 
+                jitt = int(arg)                                     # Maximum  amount of randomjitter added to spike times (in miliseconds)
+            elif opt == '-b': 
+                bin_size = int(arg)                                 # If it is nonzero, the spikes will be placed within bins of size "bin_size"
+                
             elif opt == '-h':
                 print(help_message)
                 sys.exit()
@@ -571,7 +591,23 @@ def parse_commands_ternary_algo(input_opts):
         
     if 'plot_flags' not in locals():
         plot_flags = ['B','P','W','S']
-        print('ATTENTION: The default value of %s for plot_flags is considered.\n' %str(plot_flags))    
+        print('ATTENTION: The default value of %s for plot_flags is considered.\n' %str(plot_flags))
+    
+    if 'plot_vars' not in locals():
+        plot_vars = ['T']
+        print('ATTENTION: The default value of %s for plot_vars is considered.\n' %str(plot_vars))
+    
+    if 'p_miss' not in locals():
+        p_miss = P_MISS_DEFAULT
+        print('ATTENTION: The default value of %s for p_miss is considered.\n' %str(p_miss))
+    
+    if 'jitt' not in locals():
+        jitt = JITTER_DEFAULT
+        print('ATTENTION: The default value of %s for jitt is considered.\n' %str(jitt))
+        
+    if 'bin_size' not in locals():
+        bin_size = BIN_SIZE_DEFAULT
+        print('ATTENTION: The default value of %s for bin_size is considered.\n' %str(bin_size))
     #------------------------------------------------------------------------------
     
     #------------------Create the Necessary Directories if Necessary---------------
@@ -586,6 +622,6 @@ def parse_commands_ternary_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return frac_stimulated_neurons,T_max,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,ternary_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,beta,alpha0,infer_itr_max,T_range,plot_flags
+    return frac_stimulated_neurons,T_max,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,ternary_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,beta,alpha0,infer_itr_max,T_range,plot_flags,Var_range,plot_vars,p_miss,jitt,bin_size
 
 

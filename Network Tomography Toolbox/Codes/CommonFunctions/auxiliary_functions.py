@@ -94,96 +94,30 @@ def soft_threshold(W,thr):
 # This function reads spikes for a multi-layer neural network and returns the
 # results in the form of a dictionary for each layer.
 #------------------------------------------------------------------------------
-def read_spikes(file_name_base,no_layers,n_exc_array,n_inh_array,params):
-    Neural_Spikes = {}
-    store_method = params[0]
+def read_spikes(file_name):
+    Neural_Spikes = {}    
+    
     firing_times_max = 0
     
-    if store_method == 'c':
-        no_stimul_rounds = params[1]
-        sim_window = params[2]
-        
-        for l_in in range(0,no_layers):        
-            file_name = file_name_base + '_l_' + str(l_in) +'.txt'        
-            S_times = np.genfromtxt(file_name, dtype=float, delimiter='\t')
-            
-            n_exc = n_exc_array[l_in]
-            n_inh = n_inh_array[l_in]
-            n = n_exc + n_inh
+    S_times = np.genfromtxt(file_name, dtype=float, delimiter='\t')
+    s = S_times.shape
+    
+    for l in range(0,s[0]):        
+        neuron_count = int(S_times[l,0])
                 
-            in_spikes = np.zeros([n,no_stimul_rounds])
-            in_spikes.fill(0)
-    
-            recorded_spikes = np.zeros([n,no_stimul_rounds*sim_window])                      # This matrix captures the time slot in which each neuron has fired in each step
-            cumulative_recorded_spikes = np.zeros([n,no_stimul_rounds*sim_window])               # This matrix takes into account the effect of neural history 
-            recorded_spikes.fill(0)
-            for i in range(0,no_stimul_rounds):            
-                recorded_spikes[:,i*sim_window+sim_window-1] = -1
-    
-            s = S_times.shape
-            cascade_count = 0
-            for l in range(0,s[0]):
-                neuron_count = int(S_times[l,0])        
-                if (neuron_count == -2.0):            
-                    cascade_count = cascade_count + 1
-                else:
-                    #tt = mod(round(10000*S_times[l,1]),sim_window)-1
-                    #in_spikes[neuron_count,round(10000*S_times[l,1])/sim_window] = tt;#S_times[l,1]
-                    tt = round(1000*S_times[l,1])-1   #             tt = round(10000*S_times[l,1])-1                
-                    in_spikes[neuron_count,cascade_count] = S_times[l,1]
-                    if (tt>0):
-                        recorded_spikes[neuron_count,(cascade_count)*sim_window+sim_window-1] = 0
-                    
-                    recorded_spikes[neuron_count,(cascade_count)*sim_window+tt] = 1
-                    cumulative_recorded_spikes[neuron_count,(cascade_count)*sim_window+tt+1:(cascade_count+1)*sim_window] = cumulative_recorded_spikes[neuron_count,(cascade_count)*sim_window+tt+1:(cascade_count+1)*sim_window] + np.divide(np.ones([sim_window-tt-1]),range(1,int(sim_window-tt)))
-                    #cumulative_recorded_spikes[neuron_count,(cascade_count)*sim_window+tt+1:(cascade_count+1)*sim_window] = np.ones([sim_window-tt-1])
+        if (neuron_count >= 0):
+            if str(neuron_count) in Neural_Spikes:
+                Neural_Spikes[str(neuron_count)].append(S_times[l,1])
+            else:
+                Neural_Spikes[str(neuron_count)] = []
+                Neural_Spikes[str(neuron_count)].append(S_times[l,1])
+            
+            if S_times[l,1] > firing_times_max:
+                firing_times_max = S_times[l,1] 
 
-            print(sum((S_times>0)))        
-            Neural_Spikes[str(l_in)] = list([recorded_spikes,cumulative_recorded_spikes,in_spikes]) #in_spikes
+
+    print(s[0])
             
-            if cascade_count > firing_times_max:
-                firing_times_max = cascade_count
-    else:
-        no_stimul_rounds = params[1]
-        n_tot = sum(n_exc_array)+sum(n_inh_array)
-        tot_spikes = np.zeros([n_tot,no_stimul_rounds])
-        tot_spikes.fill(0)
-        n_so_far = 0
-        for l_in in range(0,no_layers):        
-            file_name = file_name_base + '_l_' + str(l_in) +'.txt'        
-            S_times = np.genfromtxt(file_name, dtype=float, delimiter='\t')
-            
-            n_exc = n_exc_array[l_in]
-            n_inh = n_inh_array[l_in]
-            n = n_exc + n_inh
-                
-            in_spikes = np.zeros([n,no_stimul_rounds])
-            in_spikes.fill(0)
-    
-            s = S_times.shape
-            
-            firing_times = {}
-            for ii in range(0,n):                
-                firing_times[str(ii)] = []
-            
-            firing_times_max = 0    
-            for l in range(0,s[0]):
-                neuron_count = int(S_times[l,0])
-                
-                if (neuron_count >= 0):                    
-                    tt = round(1000*S_times[l,1])-1               # tt = round(10000*S_times[l,1])-1                
-                    in_spikes[neuron_count,tt] = 1
-                    tot_spikes[neuron_count+n_so_far,tt] = 1
-                    if S_times[l,1] > firing_times_max:
-                        firing_times_max = S_times[l,1]
-                    firing_times[str(neuron_count)].append(S_times[l,1])
-                    
-            n_so_far = n_so_far + n
-            Neural_Spikes[str(l_in)] = list([[],[],in_spikes])
-            Neural_Spikes['tot'] = tot_spikes
-            print(sum(sum(in_spikes)))
-            
-            Neural_Spikes['act_' + str(l_in)] = firing_times
     
     print firing_times_max
     return Neural_Spikes,firing_times_max
@@ -283,67 +217,58 @@ def combine_weight_matrix(Network):
 #    out_spikes_tot_mat: a matrix of size T*n, where a 1 in entry (t,i) means neuron i has fired at time t (in miliseconds)
 #------------------------------------------------------------------------------
 
-def combine_spikes_matrix(Network,T,generate_data_mode,Actual_Neural_Times):
-        
-    if generate_data_mode == 'R':                
-        out_spikes_tot = {}
-    else:        
-        out_spikes_tot = []
+def combine_spikes_matrix(Neural_Spikes,T,jitter=0,del_prob=0):
             
-    n_so_far = 0
+    
+    spikes = {}    
+    n = len(Neural_Spikes)
+    spikes_mat_nonzero = np.zeros([n,T])
+    non_zero_neurons = []
     n_tot = 0
-    for l_in in range(0,Network.no_layers):
-        n_exc = Network.n_exc_array[l_in]
-        n_inh = Network.n_inh_array[l_in]
-        n = n_exc + n_inh
-        n_tot = n_tot + n
     
-    out_spikes_tot_mat = np.zeros([n_tot,T])
-    
-    for l_in in range(0,Network.no_layers):
-        n_exc = Network.n_exc_array[l_in]
-        n_inh = Network.n_inh_array[l_in]
-        n = n_exc + n_inh
-        
-        if generate_data_mode == 'R':    
-            spikes_times = Actual_Neural_Times['act_'+str(l_in)]
-            for i in range(0,n):
-                ind = str(n_so_far)
-                ttimes = np.array(spikes_times[str(i)])
-                ttimes = ttimes[ttimes<T/1000.0]
-                out_spikes_tot[ind] = ttimes
-                        
-                sps_inds = (1000*ttimes).astype(int)
-                out_spikes_tot_mat[n_so_far,sps_inds] = 1
-                            
-                n_so_far = n_so_far + 1
-        else:
-            temp_list = Actual_Neural_Times[str(l_in)]
-            spikes = (temp_list[2])
-                
-            if len(out_spikes_tot):
-                out_spikes_tot = np.vstack([out_spikes_tot,spikes])
-                
-            else:
-                out_spikes_tot = spikes
-    
-    
-    non_stimul_inds = {}
-    if generate_data_mode != 'R':
-        
-        n_layer_1 = Network.n_exc_array[0] + Network.n_inh_array[0]
-        n_layer_2 = Network.n_exc_array[1] + Network.n_inh_array[1]
-        out_spikes_tot = out_spikes_tot[:,0:T]
-        
-        for ttt in range(0,T):
-            temp = out_spikes_tot[0:n_layer_1,ttt]
-            ttemp = np.nonzero(temp<=0)
-            ttemp = list(ttemp[0])
-            ttemp.extend(range(n_layer_1,n_layer_1+n_layer_2))
-            non_stimul_inds[str(ttt)] = np.array(ttemp)
+    i = 0
+    for item in Neural_Spikes:
+        ttimes = np.array(Neural_Spikes[item])
+        tt = ttimes.shape[0]
+        if jitter>0:
+            ttimes = ttimes + jitter*(np.random.rand(tt)-0.5)
+            ttimes = np.multiply(ttimes,(ttimes>0).astype(int))
             
-
-    return out_spikes_tot,out_spikes_tot_mat,non_stimul_inds
+        if del_prob:                
+            inds = np.random.randint(del_prob,size=tt)
+            inds = (inds > 0).astype(int)
+            ttimes = np.multiply(ttimes,inds)
+                
+        ttimes = ttimes[ttimes<T/1000.0]
+        spikes[item] = ttimes        
+        
+        sps_inds = (1000*ttimes).astype(int)
+        spikes_mat_nonzero[i,sps_inds] = 1
+        
+        non_zero_neurons.append(int(item))
+        if int(item) > n_tot:
+            n_tot = int(item)
+          
+        i = i + 1
+        
+    spikes_mat = np.zeros([n_tot+1,T])
+    
+    for i in range(0,len(non_zero_neurons)):
+        j = non_zero_neurons[i]
+        spikes_mat[j,:] = spikes_mat_nonzero[i,:]
+        
+    spikes_mat_nonzero_s = np.zeros([n,T])
+    itr = 0
+    for i in range(0,n_tot):
+        if i in non_zero_neurons:
+            spikes_mat_nonzero_s[itr,:] = spikes_mat[i,:]
+            itr = itr + 1
+        else:
+            if sum(spikes_mat[i,:]) > 0:
+                print 'Oops! There is something wrong here!'
+    
+    non_zero_neurons.sort()
+    return spikes_mat,spikes_mat_nonzero_s,non_zero_neurons
 #==============================================================================
 #==============================================================================
 
@@ -453,6 +378,32 @@ def combine_spikes_matrix_FF(Network,l_out,generate_data_mode,T,Neural_Spikes):
     
     return in_spikes, out_spikes
     
+#==============================================================================
+#==============================================================================
+
+
+
+#==============================================================================
+#=============================ADD NOISE TO SPIKES==============================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function adds some noise to neural spikes. The noise is of two different
+# natrues: 1) Missing spikes
+#          2) Jitter
+#------------------------------------------------------------------------------
+def spike_binning(spikes_mat,bin_size):
+    
+    #~~~~~~~~~~~~~~~Initilizations~~~~~~~~~~~~~~~
+    n,T = spikes_mat.shape
+    L = int(T/float(bin_size))
+    out_spikes = np.zeros([n,L])
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    for l in range(0,L):
+        out_spikes[:,l] = np.sum(spikes_mat[:,l*bin_size:(l+1)*bin_size],axis = 1)
+        #pdb.set_trace()
+        
+    return out_spikes
 #==============================================================================
 #==============================================================================
 

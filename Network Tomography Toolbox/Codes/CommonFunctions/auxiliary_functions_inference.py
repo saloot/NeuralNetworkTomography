@@ -873,10 +873,10 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
     
     #---------------------------Neural Parameters------------------------------
     tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
-    tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
+    tau_s = 0.5                                     # The rise time coefficient of the neural membrane (in the LIF model)
     h0 = 0.0                                        # The reset membrane voltage (in mV)
     t0 = log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
-    U0 = 1/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
+    U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
     #--------------------------------------------------------------------------
     
     
@@ -886,6 +886,7 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
     
     V = np.zeros([n,TT])
     X = np.zeros([n,TT])
+    H = np.zeros([n,TT])
     
     AA = np.reshape(np.array(range(1,TT+1)),[TT,1])
     AA = np.dot(AA,np.ones([1,n]))
@@ -913,60 +914,70 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Experimental Block~~~~~~~~~~~~~~~~~~~~~~~~
         #~~~~~~~~~~~~~~~~~Shift the Spikes When Delays Are Known~~~~~~~~~~~~~~~
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if len(D_act):
+        if (len(D_act)) and (0):
             dd = D_act[:,ijk]
             CC = np.zeros([n,TT])
             for i in range(0,n):
-                CC[i,:] = np.roll(spikes_times[i,:],int(dd[i]*1000)+1)
-                CC[i,0:int(dd[i]*1000)+1] = 0
+                CC[i,:] = np.roll(spikes_times[i,:],int(dd[i])+1)
+                CC[i,0:int(dd[i])+1] = 0
             
             AA = np.reshape(np.array(range(1,TT+1)),[TT,1])
             AA = np.dot(AA,np.ones([1,n]))
             AA = np.multiply(CC,AA.T)
             d_window = 0
+        if len(W_act) and len(D_act):    
+            w = W_act[:,ijk]
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Experimental Block~~~~~~~~~~~~~~~~~~~~~~~~
         #~~~~~~~~~~~~Extent the Integration Window to the Last Reset~~~~~~~~~~~
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if 0:
+        if 1:
             for jj in range(dl,TT-1):
-                if jj in t_fire:
-                    t_last = jj
-                t_min = max(0,t_last-d_window)
-                R[:,jj] = np.sum(CC[:,t_min:jj-dl],axis = 1)
+                
+                t_min = max(0,t_last-d_window)                
                 DD = AA[:,t_min:jj-dl]
                 
                 V[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_d)),axis = 1)
                 X[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_s)),axis = 1)
+                #U[:,jj] = V[:,jj]-X[:,jj]
+                #if len(W_act) and len(D_act):
+                #    H[ijk,jj] = U0*np.dot(V[:,jj]-X[:,jj],w)
+                if jj in t_fire:
+                    t_last = jj
+                    
+                
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
             
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Experimental Block~~~~~~~~~~~~~~~~~~~~~~~~
         #~~~~~Some Tests to Verify the Algorithm When Connectivity Is Known~~~~
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if len(W_act) and len(D_act):            
-            dd = np.reshape(dd,[n,1])
-            dd1 = np.multiply(np.sign(dd),np.exp(dd/(0.001*tau_d)))
-            dd2 = np.multiply(np.sign(dd),np.exp(dd/(0.001*tau_s)))
+        if len(W_act) and len(D_act):
+            dd = D_act[:,ijk]
+            #pdb.set_trace()
+            #dd = np.reshape(dd,[n,1])
+            dd1 = np.multiply(np.sign(dd),np.exp(dd/(tau_d)))
+            dd2 = np.multiply(np.sign(dd),np.exp(dd/(tau_s)))
             
-            DD1 = np.diag(dd1[:,0])
-            DD2 = np.diag(dd2[:,0])
-            w = W_act[:,ijk]
-            w = np.reshape(w,[n,1])
+            DD1 = np.diag(dd1)
+            DD2 = np.diag(dd2)
+            #w = W_act[:,ijk]
+            #w = np.reshape(w,[n,1])
             
-            U = np.dot(V.T,DD1) - np.dot(X.T,DD2)
+            #pdb.set_trace()
+            #U = np.dot(V.T,DD1) - np.dot(X.T,DD2)
             
-            U = np.multiply(U,(U>0).astype(int))
-            U = np.multiply(U,(U<1/U0).astype(int)) + np.multiply(1/U0,(U>1/U0).astype(int))
+            #U = np.multiply(U,(U>0).astype(int))
+            #U = np.multiply(U,(U<1/U0).astype(int)) + np.multiply(1/U0,(U>1/U0).astype(int))
             
             U = V.T-X.T
             
             H = U0*np.dot(U,w)
             
-            hh = (H>theta*.001).astype(int)
-            pdb.set_trace()
+            hh = (H>theta).astype(int)
+            #pdb.set_trace()
             #plt.plot(hh[0:100]);plt.plot(Y[0:100],'r');plt.show()
             #plt.plot(H[0:300]);plt.plot(0.1*Y[0:300],'r');plt.show()
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -978,8 +989,8 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
             #...................In-loop Initializations........................
             Y = spikes_times[ijk,T_T-T_temp:T_T]                    # Output firing pattern
             
-            DD1 = exp(1.5/tau_d)*np.eye(n)                          # The first diagona delay matrix (corresponding to the decay coefficient)
-            DD2 = exp(1.5/tau_s)*np.eye(n)                          # The second diagona delay matrix (corresponding to the rise coefficient)
+            DD1 = math.exp(1.5/tau_d)*np.eye(n)                          # The first diagona delay matrix (corresponding to the decay coefficient)
+            DD2 = math.exp(1.5/tau_s)*np.eye(n)                          # The second diagona delay matrix (corresponding to the rise coefficient)
             
             WW = W_inferred[:,ijk]
             Z = np.reshape(WW,[n,1])                                # The auxiliary optimization variable 
@@ -1024,7 +1035,7 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
                         C_i = np.linalg.inv(C)
                         
                         #=============Optimize for Weight First================                        
-                        for ttau in range(0,range_tau):
+                        for ttau in range_tau:
                             
                             #~~~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~~~~
                             sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
@@ -1076,6 +1087,7 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
                     
                 #=================Optimize Only for Weights====================
                 else:
+                    print 'hello!'
                     C = gamm * np.eye(n) - np.dot(U.T,U)
                     C_i = np.linalg.inv(C)
                         
@@ -1113,57 +1125,59 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
             #..................................................................
             else:
                     
-                    if len(W_act):
-                        W = 1000*(np.reshape(W_act[:,ijk],[n,1]))
-                        U_i = np.linalg.pinv(np.dot(XX-U,np.diag(W[:,0])))
-                        #U_i = np.linalg.pinv(np.dot(U,np.diag(W[:,0])))
+                if 0:#len(W_act):
+                    W = 1*(np.reshape(W_act[:,ijk],[n,1]))
+                    #U_i = np.linalg.pinv(np.dot(XX-U,np.diag(W[:,0])))
+                    U_i = np.linalg.pinv(np.dot(U,np.diag(W[:,0])))
                         
-                        aa = np.dot(np.dot(U-XX,np.diag(W[:,0])),np.ones([n,1]))
+                    aa = np.dot(np.dot(U-XX,np.diag(W[:,0])),np.ones([n,1]))
                         
-                        dd = np.dot(U_i,g+1*aa)
+                    #dd = np.dot(U_i,g+1*aa)
+                    dd = -np.dot(B_i,g)
                             
-                        #for i in range(0,n):
-                        #    if abs(W[i]) > 0:
-                        #        dd[i] =dd[i]/W[i]
-                        #    else:
-                        #        dd[i] = 0
-                        #dd = np.multiply(dd,pow(W+0.00001*np.random.rand(n,1),-1))
-                        #dd = np.multiply(dd,(dd>0).astype(int))
-                        #pdb.set_trace()
-                        #D_inferred[:,ijk] = dd[:,0]
-                        if (T_T == range_T[0]):
-                            D_total[str(ijk)] = [dd]
-                        else:
-                            D_total[str(ijk)].append(dd)
+                    #for i in range(0,n):
+                    #    if abs(W[i]) > 0:
+                    #        dd[i] =dd[i]/W[i]
+                    #    else:
+                    #        dd[i] = 0
+                    #dd = np.multiply(dd,pow(W+0.00001*np.random.rand(n,1),-1))
+                    #dd = np.multiply(dd,(dd>0).astype(int))
+                    pdb.set_trace()
+                    #D_inferred[:,ijk] = dd[:,0]
+                    if (T_T == range_T[0]):
+                        D_total[str(ijk)] = [dd]
                     else:
-                        dd = D_act[:,ijk]
-                        dd1 = np.multiply(np.sign(dd),np.exp(dd/(0.001*tau_d)))
-                        dd2 = np.multiply(np.sign(dd),np.exp(dd/(0.001*tau_s)))
-                        DD1 = np.diag(dd1)
-                        DD2 = np.diag(dd2)
-                        A = (np.dot(U,DD1)-np.dot(XX,DD2))#np.dot(C,np.dot(UU,DD))
-                        gamm = 0.1
-                        C = gamm * np.eye(n) - np.dot(A.T,A)
-                        C_i = np.linalg.inv(C)
-                        for ttau in range(0,10):#range_tau:
+                        D_total[str(ijk)].append(dd)
+                else:
+                    dd = D_act[:,ijk]
+                    dd1 = np.multiply(np.sign(dd),np.exp(dd/(tau_d)))
+                    dd2 = np.multiply(np.sign(dd),np.exp(dd/(tau_s)))
+                    DD1 = np.diag(dd1)
+                    DD2 = np.diag(dd2)
+                    #A = (np.dot(U,DD1)-np.dot(XX,DD2))#np.dot(C,np.dot(UU,DD))
+                    A = np.dot(U,DD1)
+                    gamm = 5
+                    C = gamm * np.eye(n) - np.dot(A.T,A)
+                    C_i = np.linalg.inv(C)
+                    for ttau in range(0,100):#range_tau:
                         
-                            #~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~                        
-                            sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
-                            b = gamm * Z - np.dot(A.T,g)
-                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        #~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~                        
+                        sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
+                        b = gamm * Z - np.dot(A.T,g)
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                 
-                            #~~~~~~~~~Minimize with Respect to W~~~~~~~~~
-                            W = np.dot(C_i,b)
-                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        #~~~~~~~~~Minimize with Respect to W~~~~~~~~~
+                        W = np.dot(C_i,b)
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
-                            #~~~~~~Apply Sparsity Regularizer to W~~~~~~~
-                            Z = soft_threshold(W,sparse_thr)
-                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        
-                        if (T_T == range_T[0]):
-                            W_total[str(ijk)] = [W]
-                        else:
-                            W_total[str(ijk)].append(W)
+                        #~~~~~~Apply Sparsity Regularizer to W~~~~~~~
+                        Z = soft_threshold(W,sparse_thr)
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    #pdb.set_trace()    
+                    if (T_T == range_T[0]):
+                        W_total[str(ijk)] = [W]
+                    else:
+                        W_total[str(ijk)].append(W)
                     
             #..................................................................
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -27,8 +27,8 @@ frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensem
 #================================INITIALIZATIONS===============================
 
 #---------------------Initialize Simulation Variables--------------------------
-theta = 5.005                                               # The update threshold of the neurons in the network
-d_window = 10                                           # The time window the algorithm considers to account for pre-synaptic spikes
+theta = 20.005                                               # The update threshold of the neurons in the network
+d_window = 2                                          # The time window the algorithm considers to account for pre-synaptic spikes
 sparse_thr0 = 0.15                                    # The initial sparsity soft-threshold (not relevant in this version)
 max_itr_optimization = 2250                              # This is the maximum number of iterations performed by internal optimization algorithm for inference    
 #------------------------------------------------------------------------------
@@ -36,6 +36,9 @@ max_itr_optimization = 2250                              # This is the maximum n
 #-------------------------Initialize Inference Parameters----------------------
 inference_method = 7
 sparsity_flag = 5
+if len(neuron_range)>1:
+    neuron_range = range(neuron_range[0],neuron_range[1])
+print neuron_range
 #...........................SOTCHASTIC NEUINF Approach.........................
 if (inference_method == 3) or (inference_method == 2):        
     beta = 10
@@ -65,7 +68,7 @@ if (inference_method == 7):
 #file_name = '../Data/Spikes/Spike_Times2.txt'
 #file_name = '../Data/Spikes/HC3_ec013_198_processed.txt'
 #file_name = '../Data/Spikes/Spikes_exc.txt'
-file_name = '../Data/Spikes/Moritz_Spike_Times_Reduced.txt'
+file_name = '../Data/Spikes/Moritz_Spike_Times_Reduced_More.txt'
 Neural_Spikes,T_max = read_spikes(file_name)
 #------------------------------------------------------------------------------
     
@@ -150,7 +153,9 @@ for T in T_range:
             
         W_act = W_act[0:n,0:n]              # This line should be changed later
         DD_act = DD_act[0:n,0:n]            # This lineshould be chaged later
-        pdb.set_trace()
+        W_act = W_act.T                     # This lineshould be chaged later
+        DD_act = DD_act.T                   # This lineshould be chaged later
+        
         #W_inferred,cost,Inf_Delays = inference_alg_per_layer(out_spikes_tot_mat,out_spikes_tot_mat,inference_method,inferece_params,W_estimated,0,'R',neuron_range)
         W_inferred,Inf_Delays = delayed_inference_constraints(out_spikes_tot_mat,d_window,max_itr_optimization,sparse_thr0,theta,W_act,DD_act,neuron_range)
         
@@ -175,8 +180,9 @@ for T in T_range:
     
     W_inferred = np.array(W_inferred)        
     #WW = W_inferred + np.random.rand(n,n)/1000000000.0
-    WW = whiten(W_inferred)
-    
+    #WW = whiten(W_inferred)
+    WW = (W_inferred)
+    pdb.set_trace()
     #W_region = np.zeros([n,n])
     #for i in range(0,n):
     #    for j in range(i,n):

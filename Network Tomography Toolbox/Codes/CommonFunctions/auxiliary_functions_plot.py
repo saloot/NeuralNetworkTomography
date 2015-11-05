@@ -36,7 +36,7 @@ except:
 #    mean_beliefs:    the avaerage beliefs for inhibitory, non-existent and excitatory connections
 #    max_min_beliefs: the maximum and minimul value of beliefs for inhibitory, non-existent and excitatory connections
 #------------------------------------------------------------------------------
-def calculate_belief_quality(Network,W_inferred,W_orig,l_out,whiten_flag,zero_diagonals_flag,we_know_topology):
+def calculate_belief_quality(W_inferred,W_orig,whiten_flag,zero_diagonals_flag,we_know_topology):
 
 
     from scipy.cluster.vq import whiten
@@ -54,58 +54,22 @@ def calculate_belief_quality(Network,W_inferred,W_orig,l_out,whiten_flag,zero_di
         W_inferred_our_tot = whiten(W_inferred_our_tot)
     #--------------------------------------------------------------------------
     
-    #---------Calculate Beleif Qualities for Topology Aware Algorithm----------
-    if we_know_topology.lower() == 'y':
-        W_inferred_our_tot = W_inferred_our_tot[:,0:m]
-        W_e = np.ma.masked_array(W_inferred_our_tot,mask= (W_orig<=0).astype(int))
-        mean_exc = W_e.mean(axis = 0).data
-        std_exc = W_e.std(axis = 0).data
+    #--------Calculate Beleif Qualities for Topology Unaware Algorithm---------        
+    W_e = np.ma.masked_array(W_inferred_our_tot,mask= (W_orig<=0).astype(int))        
+    mean_exc = W_e.mean(axis = 0).data
+    std_exc = W_e.std(axis = 0).data
                 
-        W_i = np.ma.masked_array(W_inferred_our_tot,mask= (W_orig>=0).astype(int))
-        mean_inh = W_i.mean(axis = 0).data
-        std_inh = W_i.std(axis = 0).data
-                    
-        W_v = np.ma.masked_array(W_inferred_our_tot,mask= (W_orig!=0).astype(int))
-        mean_void = W_v.mean(axis = 0).data
-        std_void = W_v.std(axis = 0).data
-        
-        std_void_r = 0
-        mean_void_r = 0
+    W_i = np.ma.masked_array(W_inferred_our_tot,mask= (W_orig>=0).astype(int))
+    mean_inh = W_i.mean(axis = 0).data
+    std_inh = W_i.std(axis = 0).data
+                
+    W_v = np.ma.masked_array(W_inferred_our_tot,mask= (W_orig!=0).astype(int))
+    mean_void = W_v.mean(axis = 0).data
+    std_void = W_v.std(axis = 0).data
     #--------------------------------------------------------------------------
     
-    
-    #--------Calculate Beleif Qualities for Topology Unaware Algorithm---------
-    else:
-        ind_this_layer = 0
-        n_o = ind_this_layer + Network.n_exc_array[l_out] + Network.n_inh_array[l_out]
-        for l in range (0,l_out):
-            ind_this_layer = ind_this_layer + Network.n_exc_array[l] + Network.n_inh_array[l]
-        
-        W_e = np.ma.masked_array(W_inferred_our_tot[:,ind_this_layer:ind_this_layer + n_o],mask= (W_orig[:,ind_this_layer:ind_this_layer + n_o]<=0).astype(int))        
-        mean_exc = W_e.mean(axis = 0).data
-        std_exc = W_e.std(axis = 0).data
-                
-        W_i = np.ma.masked_array(W_inferred_our_tot[:,ind_this_layer:ind_this_layer + n_o],mask= (W_orig[:,ind_this_layer:ind_this_layer + n_o]>=0).astype(int))
-        mean_inh = W_i.mean(axis = 0).data
-        std_inh = W_i.std(axis = 0).data
-                
-        W_v = np.ma.masked_array(W_inferred_our_tot[:,ind_this_layer:ind_this_layer + n_o],mask= (W_orig[:,ind_this_layer:ind_this_layer + n_o]!=0).astype(int))
-        mean_void = W_v.mean(axis = 0).data
-        std_void = W_v.std(axis = 0).data
-        
-        if Network.no_layers > 1:
-            #.......Recurrent Connections in the Post-Syanptic Layer.......
-            W_v_r = np.ma.masked_array(W_inferred_our_tot[ind_this_layer:ind_this_layer + n_o,ind_this_layer:ind_this_layer + n_o],mask= (W_orig[ind_this_layer:ind_this_layer + n_o,ind_this_layer:ind_this_layer + n_o]!=0).astype(int))
-            mean_void_r = W_v_r.mean(axis = 0).data
-            std_void_r = W_v_r.std(axis = 0).data
-            #..............................................................                
-        else:
-            std_void_r = 0
-            mean_void_r = 0
-    #--------------------------------------------------------------------------
-    
-    means_vector = [mean_exc,mean_inh,mean_void,mean_void_r]
-    std_vector = [std_exc,std_inh,std_void,std_void_r]
+    means_vector = [mean_exc,mean_inh,mean_void]
+    std_vector = [std_exc,std_inh,std_void]
     
     return means_vector,std_vector
 #==============================================================================
@@ -186,9 +150,10 @@ def save_plot_results(T_range,mean_exc,std_exc,mean_inh,std_inh,mean_void,std_vo
     B_void_inh = mean_void - mean_inh
         
     B_tot_ind = [0,1]
-    B_tott = [B_void_inh[1],B_exc_void[1]]
+    B_tott = [B_void_inh[-1,0],B_exc_void[-1,0]]
     
     file_name = file_name_base_results + "/Plot_Results/Gap_final_e_v_i_%s.txt" %file_name_ending
+    #pdb.set_trace()
     ww = np.vstack([B_tot_ind,B_tott])
     np.savetxt(file_name,ww.T,'%f',delimiter='\t',newline='\n')
     #-----------------------------------------------------------------------------------------------
@@ -298,6 +263,7 @@ def save_precision_recall_results(T_range,file_name_base_result,file_name_ending
     #---------------------------------------------------------------------------
         
     #--------------------------Store Precision and Recall-----------------------    
+    pdb.set_trace()
     temp = np.vstack([T_range,Prec_exc,std_Prec_exc])
     file_name = file_name_base_plot + "/Prec_exc_%s.txt" %file_name_ending
     np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
@@ -376,70 +342,33 @@ def save_precision_recall_results(T_range,file_name_base_result,file_name_ending
 #    std_Rec_void: a dictionary containing the standard deviation of recall for "void" connections in each instance of the graphs ensemble
 #------------------------------------------------------------------------------
 
-def initialize_plotting_variables(Network,we_know_topology,T_range,ensemble_size,ensemble_count_init):
-    mean_exc = {};mean_inh = {};mean_void = {};std_void_r = {};
-    std_exc = {};std_inh = {};std_void = {};mean_void_r = {}    
-    Prec_exc = {};Prec_inh = {}; Prec_void = {};
-    Rec_exc = {};Rec_inh = {}; Rec_void = {};
-    std_Prec_exc = {};std_Prec_inh = {}; std_Prec_void = {};
-    std_Rec_exc = {};std_Rec_inh = {}; std_Rec_void = {};
+def initialize_plotting_variables(T_range,n):
     
-    for l_out in range(0,Network.no_layers):    
-        n_layer = Network.n_exc_array[l_out]+Network.n_inh_array[l_out]
-        if we_know_topology.lower() == 'n':
-            ind = str(l_out)
-            std_exc[ind] = np.zeros([len(T_range),n_layer])             # The standard deviation of beliefs for excitatory connections
-            std_inh[ind] = np.zeros([len(T_range),n_layer])             # The standard deviation of beliefs for inhibitory connections
-            std_void[ind] = np.zeros([len(T_range),n_layer])            # The standard deviation of beliefs for "void" connections
-            mean_exc[ind] = np.zeros([len(T_range),n_layer])            # The average value of beliefs for excitatory connections
-            mean_inh[ind] = np.zeros([len(T_range),n_layer])            # The average value of beliefs for inhibitory connections
-            mean_void[ind] = np.zeros([len(T_range),n_layer])           # The average value of beliefs for "void" connections
-            std_void_r[ind] = np.zeros([len(T_range),n_layer])
-            mean_void_r[ind] = np.zeros([len(T_range),n_layer])
+    std_exc = np.zeros([len(T_range),n])             # The standard deviation of beliefs for excitatory connections
+    std_inh = np.zeros([len(T_range),n])             # The standard deviation of beliefs for inhibitory connections
+    std_void = np.zeros([len(T_range),n])            # The standard deviation of beliefs for "void" connections
+    mean_exc = np.zeros([len(T_range),n])            # The average value of beliefs for excitatory connections
+    mean_inh = np.zeros([len(T_range),n])            # The average value of beliefs for inhibitory connections
+    mean_void = np.zeros([len(T_range),n])           # The average value of beliefs for "void" connections
+    std_void_r = np.zeros([len(T_range),n])
+    mean_void_r = np.zeros([len(T_range),n])
         
-            Prec_exc[ind] = np.zeros([len(T_range),ensemble_size-ensemble_count_init])                        # Detailed precision of the algorithm (per ensemble) for excitatory connections
-            Prec_inh[ind] = np.zeros([len(T_range),ensemble_size-ensemble_count_init])                        # Detailed precision of the algorithm (per ensemble) for inhibitory connections
-            Prec_void[ind]  = np.zeros([len(T_range),ensemble_size-ensemble_count_init])                      # Detailed precision of the algorithm (per ensemble) for "void" connections
+    Prec_exc = np.zeros([len(T_range)])              # Detailed precision of the algorithm (per ensemble) for excitatory connections
+    Prec_inh = np.zeros([len(T_range)])              # Detailed precision of the algorithm (per ensemble) for inhibitory connections
+    Prec_void  = np.zeros([len(T_range)])            # Detailed precision of the algorithm (per ensemble) for "void" connections
         
-            Rec_exc[ind] = np.zeros([len(T_range),ensemble_size-ensemble_count_init])                         # Detailed recall of the algorithm for (per ensemble) excitatory connections
-            Rec_inh[ind] = np.zeros([len(T_range),ensemble_size-ensemble_count_init])                         # Detailed recall of the algorithm for (per ensemble) inhibitory connections
-            Rec_void[ind]  = np.zeros([len(T_range),ensemble_size-ensemble_count_init])                       # Detailed recall of the algorithm for (per ensemble) "void" connections
+    Rec_exc = np.zeros([len(T_range)])               # Detailed recall of the algorithm for (per ensemble) excitatory connections
+    Rec_inh = np.zeros([len(T_range)])               # Detailed recall of the algorithm for (per ensemble) inhibitory connections
+    Rec_void  = np.zeros([len(T_range)])             # Detailed recall of the algorithm for (per ensemble) "void" connections
         
-            std_Prec_exc[ind] = np.zeros([len(T_range)])                                      # Standard Deviation of precision of the algorithm for excitatory connections
-            std_Prec_inh[ind] = np.zeros([len(T_range)])                                      # Standard Deviation of precision of the algorithm for inhibitory connections
-            std_Prec_void[ind]  = np.zeros([len(T_range)])                                    # Standard Deviation of precision of the algorithm for "void" connections
+    std_Prec_exc = np.zeros([len(T_range)])          # Standard Deviation of precision of the algorithm for excitatory connections
+    std_Prec_inh = np.zeros([len(T_range)])          # Standard Deviation of precision of the algorithm for inhibitory connections
+    std_Prec_void  = np.zeros([len(T_range)])        # Standard Deviation of precision of the algorithm for "void" connections
         
-            std_Rec_exc[ind] = np.zeros([len(T_range)])                                       # Standard Deviation of recall of the algorithm for excitatory connections
-            std_Rec_inh[ind] = np.zeros([len(T_range)])                                       # Standard Deviation of recall of the algorithm for excitatory connections
-            std_Rec_void[ind]  = np.zeros([len(T_range)])                                     # Standard Deviation of recall of the algorithm for excitatory connections
+    std_Rec_exc = np.zeros([len(T_range)])           # Standard Deviation of recall of the algorithm for excitatory connections
+    std_Rec_inh = np.zeros([len(T_range)])           # Standard Deviation of recall of the algorithm for excitatory connections
+    std_Rec_void  = np.zeros([len(T_range)])         # Standard Deviation of recall of the algorithm for excitatory connections
 
-        else:
-            for l_in in range (0,l_out + 1):
-                ind = str(l_in) + str(l_out)
-                std_exc[ind] = np.zeros([len(T_range),n_layer])
-                std_inh[ind] = np.zeros([len(T_range),n_layer])
-                std_void[ind] = np.zeros([len(T_range),n_layer])
-                mean_exc[ind] = np.zeros([len(T_range),n_layer])
-                mean_inh[ind] = np.zeros([len(T_range),n_layer])
-                mean_void[ind] = np.zeros([len(T_range),n_layer])
-                std_void_r[ind] = np.zeros([len(T_range),n_layer])
-                mean_void_r[ind] = np.zeros([len(T_range),n_layer])
-                
-                Prec_exc[ind] = np.zeros([len(T_range),ensemble_size-ensemble_count_init])                        # Detailed precision of the algorithm (per ensemble) for excitatory connections
-                Prec_inh[ind] = np.zeros([len(T_range),ensemble_size-ensemble_count_init])                        # Detailed precision of the algorithm (per ensemble) for inhibitory connections
-                Prec_void[ind]  = np.zeros([len(T_range),ensemble_size-ensemble_count_init])                      # Detailed precision of the algorithm (per ensemble) for "void" connections
-            
-                Rec_exc[ind] = np.zeros([len(T_range),ensemble_size-ensemble_count_init])                         # Detailed recall of the algorithm for (per ensemble) excitatory connections
-                Rec_inh[ind] = np.zeros([len(T_range),ensemble_size-ensemble_count_init])                         # Detailed recall of the algorithm for (per ensemble) inhibitory connections
-                Rec_void[ind]  = np.zeros([len(T_range),ensemble_size-ensemble_count_init])                       # Detailed recall of the algorithm for (per ensemble) "void" connections
-                
-                std_Prec_exc[ind] = np.zeros([len(T_range)])                                      # Standard Deviation of precision of the algorithm for excitatory connections
-                std_Prec_inh[ind] = np.zeros([len(T_range)])                                      # Standard Deviation of precision of the algorithm for inhibitory connections
-                std_Prec_void[ind]  = np.zeros([len(T_range)])                                    # Standard Deviation of precision of the algorithm for "void" connections
-            
-                std_Rec_exc[ind] = np.zeros([len(T_range)])                                       # Standard Deviation of recall of the algorithm for excitatory connections
-                std_Rec_inh[ind] = np.zeros([len(T_range)])                                       # Standard Deviation of recall of the algorithm for excitatory connections
-                std_Rec_void[ind]  = np.zeros([len(T_range)])                                     # Standard Deviation of recall of the algorithm for excitatory connections
                 
     
     return mean_exc,mean_inh,mean_void,std_void_r,std_exc,std_inh,std_void,mean_void_r,Prec_exc,Prec_inh,Prec_void,Rec_exc,Rec_inh,Rec_void,std_Prec_exc,std_Prec_inh,std_Prec_void,std_Rec_exc,std_Rec_inh,std_Rec_void
