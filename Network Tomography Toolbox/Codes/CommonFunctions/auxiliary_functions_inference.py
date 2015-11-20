@@ -11,7 +11,10 @@ import numpy as np
 import math
 from default_values import *
 #from scipy.optimize import minimize,linprog
-from cvxopt import solvers, matrix, spdiag, log
+try:
+    from cvxopt import solvers, matrix, spdiag, log
+except:
+    print 'CVXOpt is not installed. No biggie!'
 
 #==============================================================================
 
@@ -816,8 +819,140 @@ def parse_commands_inf_algo(input_opts):
 
 
     return frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,verify_flag,beta,alpha0,infer_itr_max,p_miss,jitt,bin_size,neuron_range
+#==============================================================================
+#==============================================================================
 
+#==============================================================================
+#=============================extract_high_SNR_t===============================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function ideintifies the time instances with possibly high SNR values
+# which we can use in the inference algorithm.
 
+#*******ISSUE TO FIX******
+# These high SNR values should in principle be "consecutive"!
+# Thus we need some sort of solution, may be randomly sample some of them?
+#*************************
+
+# INPUTS:
+#   spikes_times_mat: the matrix containing the firing activity of neurons
+#   output_spikes_times: the output spiking times (for the post-synaptic neuron)
+#   max_no_values: maximum number of high SNR values to return
+
+# OUTPUTS:
+#   spikes_SNR: high SNR values
+#   ind_t: the index of time instances where SNR was high
+#------------------------------------------------------------------------------
+
+def extract_high_SNR_t(spikes_times_mat,max_no_values,output_spikes_times):
+    
+    #--------------Sort the Incoming Signals and Pick the Best-----------------
+    ind_t = np.argsort(np.sum(spikes_times_mat,axis = 1)    )
+    ind_t = ind_t[-max_no_values:]
+    spikes_SNR = spikes_times_mat[ind_t,:]
+    #--------------------------------------------------------------------------
+    
+    
+    #--Include the Entries Corresponding to When Output Neuron Fired As Well---
+    bb = np.nonzero(output_spikes_times)
+    bb = bb[0]
+    
+    spikes_SNR = np.vstack([spikes_SNR,spikes_times_mat[bb,:]])
+    
+    bb = np.reshape(bb,[len(bb),1])
+    ind_t = np.reshape(ind_t,[len(ind_t),1])
+    
+    ind_t = np.vstack([ind_t,bb])
+    ind_t = ind_t.ravel()
+    #--------------------------------------------------------------------------
+    
+    return spikes_SNR,ind_t
+#==============================================================================
+#==============================================================================
+
+#==============================================================================
+#=============================perform_integration==============================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function applies leaky integrations to a set of given spikes and saves
+# them to the specified files for later use.
+# To be able to handle large matrices, it divides the matrix into blocks of 
+# size 'block_size' and perform integration on each block one at a time.
+
+# INPUTS:
+#   spikes_times: the matrix containing the firing activity of neurons
+#   tau_d: the first leak constant (the membrane decay time constant)
+#   tau_s: the first leak constant (the membrane rise time constant)
+#   d_window: the time window to perform integration over
+#   t_fire: the firing times of the neuron which we want to infer its incoming connections
+#   file_name_base: the file name identifier which will be used to store the integration results
+
+# OUTPUTS:
+#   None
+#------------------------------------------------------------------------------
+
+def perform_integration(spikes_times,tau_d,tau_s,d_window,t_fire,file_name_base):
+    
+    #-----------------------------Initializations------------------------------
+    T = spikes_times.shape[1]
+    n = spikes_times.shape[0]
+    dl = 0
+    block_size = 40000
+    TT_last = 0
+    range_T = range(block_size,T,block_size)
+    if T not in range_T:
+        range_T.append(T)
+    #--------------------------------------------------------------------------
+    
+    #-----------------Divide Into Smaller Blocks and Inetgrate-----------------
+    for TT in range_T:
+        
+        #~~~~~~~~~~~~~~~~~~~~~~~~~Read the Current Block~~~~~~~~~~~~~~~~~~~~~~~
+        CC = spikes_times[:,TT_last:TT]
+        V = np.zeros([n,TT-TT_last])
+        X = np.zeros([n,TT-TT_last])
+        t_last = 0
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        #~~~~~~~~~~~~~~~~~~~~Create the Integration Window~~~~~~~~~~~~~~~~~~~~~
+        AA = np.reshape(np.array(range(1,TT-TT_last+1)),[TT-TT_last,1])
+        AA = np.dot(AA,np.ones([1,n]))
+        AA = np.multiply(CC,AA.T)
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        #~~~~~~~~~~~~~~~~~~~~~~Perform the Integration~~~~~~~~~~~~~~~~~~~~~~~~~
+        for jj in range(0,TT-TT_last):
+            
+            t_min = max(0,t_last-d_window)                
+            DD = AA[:,t_min:jj-dl]
+                
+            V[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_d)),axis = 1)
+            X[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_s)),axis = 1)
+            if jj in t_fire:
+                t_last = jj
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        #~~~~~~~~~~~~~~~~~~Write the Matrices Onto the File~~~~~~~~~~~~~~~~~~~~
+        file_name_v = file_name_base + '_tau_d_' + str(int(tau_d)) + '.txt'
+        integrate_file = open(file_name_v,'a+')
+        for i in range(0,TT-TT_last):
+            aa = np.reshape(V[:,i],[1,n])
+            np.savetxt(integrate_file,aa)
+        integrate_file.close()
+        
+        file_name_x = file_name_base + '_tau_s_' + str(int(tau_s)) + '.txt'
+        integrate_file = open(file_name_x,'a+')
+        for i in range(0,TT-TT_last):
+            aa = np.reshape(X[:,i],[1,n])
+            np.savetxt(integrate_file,aa)
+        integrate_file.close()
+
+        TT_last = TT
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+    #--------------------------------------------------------------------------    
+
+    return 1
 #==============================================================================
 #==============================================================================
 
@@ -850,7 +985,9 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
     
     #----------------------------Initilizations--------------------------------    
     from auxiliary_functions import soft_threshold
-    
+    import os.path
+        
+        
     n,TT = spikes_times.shape
     m = n
     W_inferred = np.zeros([n,m])
@@ -861,43 +998,28 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
     if len(neuron_range) == 0:
         neuron_range = np.array(range(0,m))
     
-    gamm = 10                                       # Determine how much sparsity is important for the algorithm (the higher the more important)
+    gamm = 1                                       # Determine how much sparsity is important for the algorithm (the higher the more important)
     
     dl = 0#
     
-    T_temp = TT-1 #min(2000,TT-1) #TT-1#            # Decide if the algorithm should divide the spike times into several smaller blocks and merge the results
-    range_T = range(T_temp,TT,T_temp)
+    T_temp = min(25000,TT-1) #TT-1#            # Decide if the algorithm should divide the spike times into several smaller blocks and merge the results
+    range_T = range(2*T_temp,TT,T_temp)
     W_total = {}
     D_total = {}
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
     tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
-    tau_s = 0.5                                     # The rise time coefficient of the neural membrane (in the LIF model)
+    tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
     h0 = 0.0                                        # The reset membrane voltage (in mV)
-    t0 = log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
+    t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
+    file_name_integrated_spikes_base = '../Data/Spikes/Moritz_Integrated_Reduced' 
     #--------------------------------------------------------------------------
     
     
     #---------------Preprocess Spike Times and the Integration Effect----------
-    #CC = np.roll(spikes_times,1, axis=1)           # Shift the spikes time one ms to account for causality and minimum propagation delay
-    CC = spikes_times
-    
-    V = np.zeros([n,TT])
-    X = np.zeros([n,TT])
-    H = np.zeros([n,TT])
-    
-    AA = np.reshape(np.array(range(1,TT+1)),[TT,1])
-    AA = np.dot(AA,np.ones([1,n]))
-    AA = np.multiply(CC,AA.T)
-    
-    
-    for jj in range(dl,TT-1):
-        DD = AA[:,max(0,jj-d_window):jj]
-        
-        V[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_d)),axis = 1)
-        X[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_s)),axis = 1)
+    CC = np.roll(spikes_times,1, axis=1)           # Shift the spikes time one ms to account for causality and minimum propagation delay
     #--------------------------------------------------------------------------    
     
     
@@ -933,74 +1055,98 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Experimental Block~~~~~~~~~~~~~~~~~~~~~~~~
         #~~~~~~~~~~~~Extent the Integration Window to the Last Reset~~~~~~~~~~~
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if 1:
-            for jj in range(dl,TT-1):
+        file_name_integrated_spikes = file_name_integrated_spikes_base + '_' + str(ijk) + '_tau_d_' + str(int(tau_d)) + '.txt'
+        file_name_integrated_spikes_base_ij = file_name_integrated_spikes_base + '_' + str(ijk)
+        
+        if not os.path.isfile(file_name_integrated_spikes):
+            perform_integration(CC,tau_d,tau_s,d_window,t_fire,file_name_integrated_spikes_base_ij)
+        
+        file_name = file_name_integrated_spikes_base_ij + '_tau_d_' + str(int(tau_d)) + '.txt'
+        V = (np.genfromtxt(file_name, dtype=float)).T
+            
+        file_name = file_name_integrated_spikes_base_ij + '_tau_s_' + str(int(tau_s)) + '.txt'
+        X = (np.genfromtxt(file_name, dtype=float)).T
+        
+        
+        #if 1:
+            #for jj in range(dl,TT-1):
                 
-                t_min = max(0,t_last-d_window)                
-                DD = AA[:,t_min:jj-dl]
+            #    t_min = max(0,t_last-d_window)                
+            #    DD = AA[:,t_min:jj-dl]
                 
-                V[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_d)),axis = 1)
-                X[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_s)),axis = 1)
-                #U[:,jj] = V[:,jj]-X[:,jj]
-                #if len(W_act) and len(D_act):
-                #    H[ijk,jj] = U0*np.dot(V[:,jj]-X[:,jj],w)
-                if jj in t_fire:
-                    t_last = jj
+            #    V[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_d)),axis = 1)
+            #    X[:,jj] = np.sum(np.multiply(np.sign(DD),np.exp(-(jj-DD-dl)/tau_s)),axis = 1)
+            #    #U[:,jj] = V[:,jj]-X[:,jj]
+            #    #if len(W_act) and len(D_act):
+            #    #    H[ijk,jj] = U0*np.dot(V[:,jj]-X[:,jj],w)
+            #    if jj in t_fire:
+            #        t_last = jj
                     
-                
+        
+            
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
             
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Experimental Block~~~~~~~~~~~~~~~~~~~~~~~~
-        #~~~~~Some Tests to Verify the Algorithm When Connectivity Is Known~~~~
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        if len(W_act) and len(D_act):
-            dd = D_act[:,ijk]
-            #pdb.set_trace()
-            #dd = np.reshape(dd,[n,1])
-            dd1 = np.multiply(np.sign(dd),np.exp(dd/(tau_d)))
-            dd2 = np.multiply(np.sign(dd),np.exp(dd/(tau_s)))
-            
-            DD1 = np.diag(dd1)
-            DD2 = np.diag(dd2)
-            #w = W_act[:,ijk]
-            #w = np.reshape(w,[n,1])
-            
-            #pdb.set_trace()
-            #U = np.dot(V.T,DD1) - np.dot(X.T,DD2)
-            
-            #U = np.multiply(U,(U>0).astype(int))
-            #U = np.multiply(U,(U<1/U0).astype(int)) + np.multiply(1/U0,(U>1/U0).astype(int))
-            
-            U = V.T-X.T
-            
-            H = U0*np.dot(U,w)
-            
-            hh = (H>theta).astype(int)
-            #pdb.set_trace()
-            #plt.plot(hh[0:100]);plt.plot(Y[0:100],'r');plt.show()
-            #plt.plot(H[0:300]);plt.plot(0.1*Y[0:300],'r');plt.show()
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
         
         #~~~~~~~~~~~~~~~~~Infer the Connections for Each Block~~~~~~~~~~~~~~~~~
         for T_T in range_T:
             
             #...................In-loop Initializations........................
             Y = spikes_times[ijk,T_T-T_temp:T_T]                    # Output firing pattern
-            
+            t_fire = np.nonzero(Y)
+            t_fire = t_fire[0]
+                        
             DD1 = math.exp(1.5/tau_d)*np.eye(n)                          # The first diagona delay matrix (corresponding to the decay coefficient)
             DD2 = math.exp(1.5/tau_s)*np.eye(n)                          # The second diagona delay matrix (corresponding to the rise coefficient)
             
             WW = W_inferred[:,ijk]
-            Z = np.reshape(WW,[n,1])                                # The auxiliary optimization variable 
+            Z = np.reshape(WW,[n,1])                                # The auxiliary optimization variable
+            
+            
+            #IM = create_integration_matrix(t_fire,IM_base_2,d_i)
+            #IM2 = create_integration_matrix(t_fire,IM_base_3,d_i)
+            #CC_2 = CC[:,T_T-T_temp:T_T]
+            #V = (np.dot(IM,CC_2.T)).T
+            #X = (np.dot(IM2,CC_2.T)).T
             #..................................................................
+            
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Experimental Block~~~~~~~~~~~~~~~~~~~~~~~~
+            #~~~~~Some Tests to Verify the Algorithm When Connectivity Is Known~~~~
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if len(W_act) and len(D_act):
+                dd = D_act[:,ijk]
+                #pdb.set_trace()
+                #dd = np.reshape(dd,[n,1])
+                dd1 = np.multiply(np.sign(dd),np.exp(dd/(tau_d)))
+                dd2 = np.multiply(np.sign(dd),np.exp(dd/(tau_s)))
+                
+                DD1 = np.diag(dd1)
+                DD2 = np.diag(dd2)
+                #w = W_act[:,ijk]
+                #w = np.reshape(w,[n,1])
+                
+                #pdb.set_trace()
+                #U = np.dot(V.T,DD1) - np.dot(X.T,DD2)
+                
+                #U = np.multiply(U,(U>0).astype(int))
+                #U = np.multiply(U,(U<1/U0).astype(int)) + np.multiply(1/U0,(U>1/U0).astype(int))
+                
+                U = V.T-X.T
+                
+                H = U0*np.dot(U,w)
+                
+                hh = (H>theta).astype(int)
+                #pdb.set_trace()
+                #plt.plot(hh[0:100]);plt.plot(Y[0:100],'r');plt.show()
+                #plt.plot(H[0:300]);plt.plot(0.1*Y[0:300],'r');plt.show()
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
             
             #..........Construct the Positive and Zero State Matrices..........            
             bb = np.nonzero(Y)
             
-            VV = V[:,T_T-T_temp:T_T]
-            XX = X[:,T_T-T_temp:T_T]
+            VV = V#[:,T_T-T_temp:T_T]
+            XX = X#[:,T_T-T_temp:T_T]
             
             V1 = VV[:,bb[0]]
             X1 = XX[:,bb[0]]
@@ -1018,7 +1164,7 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
             #........Pre-compute Some of Matrices to Speed Up the Process......
             B = np.hstack([U,-XX])
             B_i = np.linalg.pinv(B)
-            g = ((theta-h0)*np.vstack([np.ones([T1,1]),-np.ones([T2,1])]) + 5.05*np.ones([T1+T2,1]))/U0
+            g = ((theta-h0)*np.vstack([np.ones([T1,1]),-np.ones([T2,1])]) + .55*np.ones([T1+T2,1]))/U0
             U_i =  np.linalg.pinv(U)
             #..................................................................
                 
@@ -1088,7 +1234,10 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
                 #=================Optimize Only for Weights====================
                 else:
                     print 'hello!'
-                    C = gamm * np.eye(n) - np.dot(U.T,U)
+                    AA = np.dot(U.T,U)
+                    #for i in range(0,n):
+                    #    AA[i,i] = 0
+                    C = gamm * np.eye(n) - AA
                     C_i = np.linalg.inv(C)
                         
                     for ttau in range_tau:
@@ -1183,7 +1332,8 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         #~~~~~~~~~~~~~~~~Merge the Results of Different Blocks~~~~~~~~~~~~~~~~~
-        if len(W_act)  == 0:           
+        
+        if 1:#len(W_act)  == 0:           
             WW = W_total[str(ijk)]
             W_a = []
             for i in range(0,len(range_T)):
@@ -1198,8 +1348,9 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
             uu = pow(ss,2)-pow(ee,2)
             #pdb.set_trace()           
             #W_inferred[:,ijk] = W_inferred[:,ijk] + np.multiply((abs(uu)>abs(uu.mean())+uu.mean()).astype(int),ee)
+            W_inferred[:,ijk] = W_inferred[:,ijk] + np.multiply((ss<0.25*uu.mean()).astype(int),ee)
             W_inferred[:,ijk] = W_inferred[:,ijk] + ee 
-
+            #pdb.set_trace()
         if len(D_act)  == 0:
             DD = D_total[str(ijk)]
             D_a = []
