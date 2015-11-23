@@ -957,6 +957,35 @@ def perform_integration(spikes_times,tau_d,tau_s,d_window,t_fire,file_name_base)
 #==============================================================================
 
 
+
+def read_integration_matrix(file_name,start_line,end_line):
+    
+    import linecache
+    
+    V = []
+    
+    for i in range(start_line,end_line):
+        a = linecache.getline(file_name, i)
+        if a:
+            a = (a[:-2]).split(' ')
+            a = np.array(a)
+            a = a.astype(float)
+            a = np.reshape(a,[len(a),1])
+            if i == start_line:
+                V = a
+            else:
+                V = np.vstack([V,a])
+        else:
+            break
+    
+    return V
+
+#==============================================================================
+#==============================================================================
+
+
+
+
 #==============================================================================
 #=======================delayed_inference_constraints==========================
 #==============================================================================
@@ -1061,11 +1090,12 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
         if not os.path.isfile(file_name_integrated_spikes):
             perform_integration(CC,tau_d,tau_s,d_window,t_fire,file_name_integrated_spikes_base_ij)
         
-        file_name = file_name_integrated_spikes_base_ij + '_tau_d_' + str(int(tau_d)) + '.txt'
-        V = (np.genfromtxt(file_name, dtype=float)).T
+        file_name_V = file_name_integrated_spikes_base_ij + '_tau_d_' + str(int(tau_d)) + '.txt'
+        
+        #V = (np.genfromtxt(file_name, dtype=float)).T
             
-        file_name = file_name_integrated_spikes_base_ij + '_tau_s_' + str(int(tau_s)) + '.txt'
-        X = (np.genfromtxt(file_name, dtype=float)).T
+        file_name_X = file_name_integrated_spikes_base_ij + '_tau_s_' + str(int(tau_s)) + '.txt'
+        #X = (np.genfromtxt(file_name, dtype=float)).T
         
         
         #if 1:
@@ -1141,6 +1171,11 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
                 #plt.plot(H[0:300]);plt.plot(0.1*Y[0:300],'r');plt.show()
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
+            
+            #.................Read Integration Chunks from File....................
+            V = read_integration_matrix(file_name_V,T_T-T_temp,T_T)
+            X = read_integration_matrix(file_name_X,T_T-T_temp,T_T)
+            #......................................................................
             
             #..........Construct the Positive and Zero State Matrices..........            
             bb = np.nonzero(Y)
