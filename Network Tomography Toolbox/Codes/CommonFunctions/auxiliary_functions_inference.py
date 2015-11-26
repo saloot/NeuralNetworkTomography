@@ -984,6 +984,30 @@ def read_integration_matrix(file_name,start_line,end_line,n):
 #==============================================================================
 
 
+def read_spike_matrix(file_name,start_line,end_line,n,ijk):
+    
+    import linecache
+    
+    V = np.zeros([end_line - start_line,1])
+    
+    for i in range(start_line,end_line):
+        a = linecache.getline(file_name, i)
+        if a:
+            a = (a[:-2]).split(' ')
+            a = np.array(a)
+            a = a.astype(float)
+            #a = np.reshape(a,[len(a),1])
+            
+            V[i-start_line] = a[ijk]
+            
+        else:
+            break
+    
+    return V
+
+#==============================================================================
+#==============================================================================
+
 
 
 #==============================================================================
@@ -1414,3 +1438,140 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
             
     return W_inferred,D_inferred
+
+
+
+#==============================================================================
+#=======================delayed_inference_constraints==========================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function runs the inference algorithm for the algorithm where delay and
+# connectivity are co-optimized together. The model is based on the LIF neural
+# model and approximates the membrane voltage kernel function as a double
+# exponential whose time constants are specified within the code.
+
+# INPUTS:
+#   spikes_times: the matrix containing the firing activity of neurons
+#   d_window: the time window to perform integration over
+#   max_itr_opt: the maximum number of iterations to perform the optimization
+#   sparse_thr_0: the initial sparsity threshold
+#   theta: the firing threshold
+#   W_act: the actual connectivity matrxi (for the DEVELOPMENT PHASE)
+#   D_act: the actual delay matrxi (for the DEVELOPMENT PHASE)
+#   neuron_range: the range of neurons to find the (incoming) connections of.
+#                 If left empty ([]), the optimization will be performed for all neurons.
+
+# OUTPUTS:
+#   W_inferred: the inferred connectivity matrix
+#   D_inferred: the inferred delay matrix
+#------------------------------------------------------------------------------
+def delayed_inference_constraints_memory(out_spikes_tot_mat_file,TT,n,file_name_integrated_spikes_base,max_itr_opt,sparse_thr_0,theta,neuron_range):
+    
+    #----------------------------Initilizations--------------------------------    
+    from auxiliary_functions import soft_threshold
+    import os.path
+        
+        
+    n,TT = spikes_times.shape
+    m = n
+    W_inferred = np.zeros([n,m])
+    D_inferred = np.zeros([n,m])
+    
+    range_tau = range(0,max_itr_opt)
+    
+    if len(neuron_range) == 0:
+        neuron_range = np.array(range(0,m))
+    
+    gamm = 1                                       # Determine how much sparsity is important for the algorithm (the higher the more important)
+    
+    dl = 0#
+    
+    T0 = 60000                                  # It is the offset, i.e. the time from which on we will consider the firing activity
+    T_temp = 10000                              # The size of the initial batch to calculate the initial inverse matrix
+    range_T = range(T_temp+T0,TT)
+    #--------------------------------------------------------------------------
+    
+    #---------------------------Neural Parameters------------------------------
+    tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
+    tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
+    h0 = 0.0                                        # The reset membrane voltage (in mV)
+    lamda = 0.95                                    # This is the "forgetting" factor
+    lamda_i = 1.0/lamda
+    t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
+    U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
+    #--------------------------------------------------------------------------
+    
+    #---------Identify Incoming Connections to Each Neuron in the List---------
+    for ijk in neuron_range:
+        
+        print '-------------Neuron %s----------' %str(ijk)
+    
+        #DD1 = math.exp(1.5/tau_d)*np.eye(n)                          # The first diagona delay matrix (corresponding to the decay coefficient)
+        #DD2 = math.exp(1.5/tau_s)*np.eye(n)                          # The second diagona delay matrix (corresponding to the rise coefficient)
+        Z = np.reshape(W_inferred[:,ijk],[n,1])                                # The auxiliary optimization variable
+    
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Experimental Block~~~~~~~~~~~~~~~~~~~~~~~~
+        #~~~~~~~~~~~~Extent the Integration Window to the Last Reset~~~~~~~~~~~
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        file_name_integrated_spikes = file_name_integrated_spikes_base + '_' + str(ijk) + '_tau_d_' + str(int(tau_d)) + '.txt'
+        file_name_integrated_spikes_base_ij = file_name_integrated_spikes_base + '_' + str(ijk)
+        
+        file_name_V = file_name_integrated_spikes_base_ij + '_tau_d_' + str(int(tau_d)) + '.txt'
+        file_name_X = file_name_integrated_spikes_base_ij + '_tau_s_' + str(int(tau_s)) + '.txt'
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+        
+        #~~~~~~~~~~~~~~~~~Calculate The Initial Inverse Matrix~~~~~~~~~~~~~~~~~
+        V = (read_integration_matrix(file_name_V,T0,T0 + T_temp,n)).T
+        X = (read_integration_matrix(file_name_X,T0,T0 + T_temp,n)).T
+        
+        Y = read_spike_matrix(out_spikes_tot_mat_file,T0,T0 + T_temp,n,ijk)
+        
+        bb = np.nonzero(Y)
+        V1 = V[:,bb[0]]
+        X1 = X[:,bb[0]]
+        T1 = len(bb[0])
+        bb = np.nonzero(1-Y)
+        
+        V2 = V[:,bb[0]]
+        X2 = X[:,bb[0]]
+        T2 = len(bb[0])
+                
+        U = np.vstack([V1.T,-V2.T])
+        XX = np.vstack([X1.T,-X2.T])
+        
+        #B = np.hstack([U,-XX])
+        #B_i = np.linalg.pinv(B)
+        g = ((theta-h0)*np.vstack([np.ones([T1,1]),-np.ones([T2,1])]) + 5.55*np.ones([T1+T2,1]))/U0
+        
+        #U_i =  np.linalg.pinv(U)
+        A = U
+        gg = np.dot(A.T,g)
+        C = gamm * np.eye(n) - np.dot(A.T,A)
+        C_i = np.linalg.inv(C)
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        #~~~~~~~~~~~~~~~~~Infer the Connections for Each Block~~~~~~~~~~~~~~~~~
+        for t in range_T:
+            
+            #........Pre-compute Some of Matrices to Speed Up the Process......
+            x = (read_integration_matrix(file_name_X,t,t+1,n)).T
+            y = read_spike_matrix(out_spikes_tot_mat_file,t,t+1,n,ijk)
+            C_i = lamda_i * C_i - (lamda_i * np.dot(np.dot(C_i,np.dot(x,x.T)),C_i))/float(lamda +np.dot(np.dot(x.T,C_i),x) )
+            gg = lamda * gg + y * x
+            #..................................................................
+    
+            #................Infer the Connections for This Block..............            
+            sparse_thr = sparse_thr_0/float(1+math.log(t-range_T[0]+1))
+            b = Z - gamm *  gg
+            W = np.dot(C_i,b)
+            #W = W/np.linalg.norm(W)
+            Z = np.reshape(soft_threshold(W,sparse_thr),[n,1])
+            #..................................................................    
+
+        W_inferred[:,ijk] = W
+        #D_inferred[:,ijk] = D_inferred[:,ijk] + ee
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+            
+    return W_inferred,D_inferred
+

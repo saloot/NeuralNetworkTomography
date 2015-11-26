@@ -7,6 +7,7 @@ import pdb
 from copy import deepcopy
 from scipy.cluster.vq import whiten
 from scipy.signal import find_peaks_cwt
+import os.path
 
 from CommonFunctions.auxiliary_functions import read_spikes,combine_weight_matrix,combine_spikes_matrix,generate_file_name,spike_binning
 from CommonFunctions.auxiliary_functions_inference import *
@@ -27,10 +28,12 @@ frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensem
 #================================INITIALIZATIONS===============================
 
 #---------------------Initialize Simulation Variables--------------------------
-theta = 20.005                                               # The update threshold of the neurons in the network
+theta = 5.005                                               # The update threshold of the neurons in the network
 d_window = 2                                          # The time window the algorithm considers to account for pre-synaptic spikes
 sparse_thr0 = 0.15                                    # The initial sparsity soft-threshold (not relevant in this version)
-max_itr_optimization = 2250                              # This is the maximum number of iterations performed by internal optimization algorithm for inference    
+max_itr_optimization = 250                              # This is the maximum number of iterations performed by internal optimization algorithm for inference
+tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
+tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
 #------------------------------------------------------------------------------
 
 #-------------------------Initialize Inference Parameters----------------------
@@ -68,8 +71,11 @@ if (inference_method == 7):
 #file_name = '../Data/Spikes/Spike_Times2.txt'
 #file_name = '../Data/Spikes/HC3_ec013_198_processed.txt'
 #file_name = '../Data/Spikes/Spikes_exc.txt'
-file_name = '../Data/Spikes/Moritz_Spike_Times_Reduced_More.txt'
-Neural_Spikes,T_max = read_spikes(file_name)
+file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_Reduced_More.txt'
+file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_Reduced.txt'
+file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_750.txt'
+file_name_integrated_spikes_base = '../Data/Spikes/Moritz_Integrated_750' 
+Neural_Spikes,T_max = read_spikes(file_name_spikes)
 #------------------------------------------------------------------------------
     
 #--------Calculate the Range to Assess the Effect of Recording Duration--------
@@ -156,8 +162,35 @@ for T in T_range:
         W_act = W_act.T                     # This lineshould be chaged later
         DD_act = DD_act.T                   # This lineshould be chaged later
         
+        
+        
+        CC = np.roll(out_spikes_tot_mat,1, axis=1)           # Shift the spikes time one ms to account for causality and minimum propagation delay
         #W_inferred,cost,Inf_Delays = inference_alg_per_layer(out_spikes_tot_mat,out_spikes_tot_mat,inference_method,inferece_params,W_estimated,0,'R',neuron_range)
-        W_inferred,Inf_Delays = delayed_inference_constraints(out_spikes_tot_mat,d_window,max_itr_optimization,sparse_thr0,theta,W_act,DD_act,neuron_range)
+        #W_inferred,Inf_Delays = delayed_inference_constraints(out_spikes_tot_mat,d_window,max_itr_optimization,sparse_thr0,theta,[],[],neuron_range)
+        
+        file_name_spikes = file_name_spikes[:-4] + '_file.txt'
+        if not os.path.isfile(file_name_spikes):
+            spike_file = open(file_name_spikes,'w')
+            
+            for i in range(0,T):
+                aa = np.reshape(out_spikes_tot_mat[:,i],[1,n])
+                np.savetxt(spike_file,aa)
+            spike_file.close()
+        
+        for ijk in neuron_range:
+            file_name_integrated_spikes = file_name_integrated_spikes_base + '_' + str(ijk) + '_tau_d_' + str(int(tau_d)) + '.txt'
+            file_name_integrated_spikes_base_ij = file_name_integrated_spikes_base + '_' + str(ijk)
+            
+            
+            if not os.path.isfile(file_name_integrated_spikes):
+                Y = out_spikes_tot_mat[ijk,:]
+                t_fire = np.nonzero(Y)
+                t_fire = t_fire[0]
+                
+                perform_integration(CC,tau_d,tau_s,d_window,t_fire,file_name_integrated_spikes_base_ij)
+            
+        
+        W_inferred,Inf_Delays = delayed_inference_constraints_memory(out_spikes_tot_mat_file,T,n,file_name_integrated_spikes_base,max_itr_optimization,sparse_thr0,theta,neuron_range)
         
     #--------------Post-Process the Inferred Matrix---------------
     if len(non_zero_neurons) != n:
