@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 from default_values import *
+import time
 #from scipy.optimize import minimize,linprog
 try:
     from cvxopt import solvers, matrix, spdiag, log
@@ -958,11 +959,11 @@ def perform_integration(spikes_times,tau_d,tau_s,d_window,t_fire,file_name_base)
 
 
 
-def read_integration_matrix(file_name,start_line,end_line):
+def read_integration_matrix(file_name,start_line,end_line,n):
     
     import linecache
     
-    V = []
+    V = np.zeros([end_line - start_line,n])
     
     for i in range(start_line,end_line):
         a = linecache.getline(file_name, i)
@@ -970,11 +971,10 @@ def read_integration_matrix(file_name,start_line,end_line):
             a = (a[:-2]).split(' ')
             a = np.array(a)
             a = a.astype(float)
-            a = np.reshape(a,[len(a),1])
-            if i == start_line:
-                V = a
-            else:
-                V = np.vstack([V,a])
+            #a = np.reshape(a,[len(a),1])
+            
+            V[i-start_line,:] = a
+            
         else:
             break
     
@@ -1031,7 +1031,7 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
     
     dl = 0#
     
-    T_temp = min(25000,TT-1) #TT-1#            # Decide if the algorithm should divide the spike times into several smaller blocks and merge the results
+    T_temp = min(40000,TT-1) #TT-1#            # Decide if the algorithm should divide the spike times into several smaller blocks and merge the results
     range_T = range(2*T_temp,TT,T_temp)
     W_total = {}
     D_total = {}
@@ -1043,7 +1043,7 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
     h0 = 0.0                                        # The reset membrane voltage (in mV)
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
-    file_name_integrated_spikes_base = '../Data/Spikes/Moritz_Integrated_Reduced' 
+    file_name_integrated_spikes_base = '../Data/Spikes/Moritz_Integrated_750' 
     #--------------------------------------------------------------------------
     
     
@@ -1092,8 +1092,10 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
         
         file_name_V = file_name_integrated_spikes_base_ij + '_tau_d_' + str(int(tau_d)) + '.txt'
         
-        #V = (np.genfromtxt(file_name, dtype=float)).T
-            
+        
+        #V = (np.genfromtxt(file_name_V, dtype=float)).T
+        
+           
         file_name_X = file_name_integrated_spikes_base_ij + '_tau_s_' + str(int(tau_s)) + '.txt'
         #X = (np.genfromtxt(file_name, dtype=float)).T
         
@@ -1173,15 +1175,15 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
             
             
             #.................Read Integration Chunks from File....................
-            V = read_integration_matrix(file_name_V,T_T-T_temp,T_T)
-            X = read_integration_matrix(file_name_X,T_T-T_temp,T_T)
+            V = read_integration_matrix(file_name_V,T_T-T_temp,T_T,n)
+            X = read_integration_matrix(file_name_X,T_T-T_temp,T_T,n)
             #......................................................................
             
             #..........Construct the Positive and Zero State Matrices..........            
             bb = np.nonzero(Y)
             
-            VV = V#[:,T_T-T_temp:T_T]
-            XX = X#[:,T_T-T_temp:T_T]
+            VV = V.T#[:,T_T-T_temp:T_T]
+            XX = X.T#[:,T_T-T_temp:T_T]
             
             V1 = VV[:,bb[0]]
             X1 = XX[:,bb[0]]
@@ -1198,9 +1200,9 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
             
             #........Pre-compute Some of Matrices to Speed Up the Process......
             B = np.hstack([U,-XX])
-            B_i = np.linalg.pinv(B)
-            g = ((theta-h0)*np.vstack([np.ones([T1,1]),-np.ones([T2,1])]) + .55*np.ones([T1+T2,1]))/U0
-            U_i =  np.linalg.pinv(U)
+            #B_i = np.linalg.pinv(B)
+            g = ((theta-h0)*np.vstack([np.ones([T1,1]),-np.ones([T2,1])]) + 5.55*np.ones([T1+T2,1]))/U0
+            #U_i =  np.linalg.pinv(U)
             #..................................................................
                 
     
@@ -1269,21 +1271,27 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
                 #=================Optimize Only for Weights====================
                 else:
                     print 'hello!'
-                    AA = np.dot(U.T,U)
+                    #AA = np.dot(U.T,U)
                     #for i in range(0,n):
                     #    AA[i,i] = 0
-                    C = gamm * np.eye(n) - AA
+                    #C = gamm * np.eye(n) - AA
+                    #aa = np.vstack([DD1,DD2])
+                    #A = np.dot(B,aa)
+                    A = U
+                    C = gamm * np.eye(n) - np.dot(A.T,A)
                     C_i = np.linalg.inv(C)
                         
                     for ttau in range_tau:
                         
                         #~~~~~~~~~~~~~In-Loop Initializations~~~~~~~~~~~~                    
                         sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
-                        b = Z - gamm *  np.dot(U.T,g)
+                        #b = Z - gamm *  np.dot(U.T,g)
+                        b = Z - gamm *  np.dot(A.T,g)
                         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                 
                         #~~~~~~~~~~~Minimize with Respect to W~~~~~~~~~~~
                         W = np.dot(C_i,b)
+                        W = W/np.linalg.norm(W)
                         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
                         #~~~~~~~~Apply Sparsity Regularizer to W~~~~~~~~~
@@ -1385,7 +1393,7 @@ def delayed_inference_constraints(spikes_times,d_window,max_itr_opt,sparse_thr_0
             #W_inferred[:,ijk] = W_inferred[:,ijk] + np.multiply((abs(uu)>abs(uu.mean())+uu.mean()).astype(int),ee)
             W_inferred[:,ijk] = W_inferred[:,ijk] + np.multiply((ss<0.25*uu.mean()).astype(int),ee)
             W_inferred[:,ijk] = W_inferred[:,ijk] + ee 
-            #pdb.set_trace()
+            pdb.set_trace()
         if len(D_act)  == 0:
             DD = D_total[str(ijk)]
             D_a = []
