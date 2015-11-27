@@ -938,14 +938,14 @@ def perform_integration(spikes_times,tau_d,tau_s,d_window,t_fire,file_name_base)
         integrate_file = open(file_name_v,'a+')
         for i in range(0,TT-TT_last):
             aa = np.reshape(V[:,i],[1,n])
-            np.savetxt(integrate_file,aa)
+            np.savetxt(integrate_file,aa,fmt="2.3%f")
         integrate_file.close()
         
         file_name_x = file_name_base + '_tau_s_' + str(int(tau_s)) + '.txt'
         integrate_file = open(file_name_x,'a+')
         for i in range(0,TT-TT_last):
             aa = np.reshape(X[:,i],[1,n])
-            np.savetxt(integrate_file,aa)
+            np.savetxt(integrate_file,aa,fmt="2.3%f")
         integrate_file.close()
 
         TT_last = TT
@@ -1472,7 +1472,7 @@ def delayed_inference_constraints_memory(out_spikes_tot_mat_file,TT,n,file_name_
     import os.path
         
         
-    n,TT = spikes_times.shape
+    #n,TT = spikes_times.shape
     m = n
     W_inferred = np.zeros([n,m])
     D_inferred = np.zeros([n,m])
