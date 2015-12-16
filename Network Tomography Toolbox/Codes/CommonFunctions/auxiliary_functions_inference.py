@@ -2283,7 +2283,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     delta = 0.25                                       # The tanh coefficient to approximate the sign function
     d_max = 10
     t_gap = 25                                     # The gap between samples to consider
-    t_avg = 5
+    t_avg = 2
     block_size = 8000
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
@@ -2355,14 +2355,22 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         X = X[:,0:t_tot]
         Y = Y[0:t_tot]
         
+        
+        g_der = np.nonzero(Y)[0]
+        
         g = (Y>0).astype(int) - (Y<=0).astype(int)
         A = (V-X).T
         #A = (V).T
         
-        
         AA = np.dot(np.diag(g.ravel()),A)
+        
+        #--------------Go For Derviative Maximization--------------
+        B = A[g_der,:]-A[g_der-1,:]
+        #----------------------------------------------------------
+        
+        AA = np.vstack([AA,B])
         AA = np.delete(AA.T,ijk,0).T
-        TcT = len(g)
+        TcT = AA.shape[0]#len(g)
         
         bc = delta*np.ones([TcT])
         
@@ -2406,7 +2414,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         u = v-x
         
         prng = RandomState(int(time()))
-        
+
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         #~~~~~~~~~~~~~~~~~Infer the Connections for Each Block~~~~~~~~~~~~~~~~~
@@ -2438,16 +2446,24 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     s = prng.randint(0,4,[n+1,1])
                     s = (s>=3).astype(int)
 
-                    
-                    
                     t_init = np.random.randint(0,t_gap)
                     t_inds = np.array(range(t_init,ell,t_gap))
+                    
+                    Y = YY + np.ones(YY.shape)
+                    
+                    g_der = np.nonzero(Y)[0]
+                    
+                    #--------------Go For Derviative Maximization--------------
+                    B = AA[g_der,:]-AA[g_der-1,:]
+                    #----------------------------------------------------------
                     
                     AA = AA[t_inds,:]
                     YY = YY[t_inds,0]
                     AA = np.dot(np.diag(YY.ravel()),AA)
+                    AA = np.vstack([AA,B])
                     AA = np.delete(AA.T,ijk,0).T
-                    TcT = len(YY)
+                    
+                    TcT = AA.shape[0]
                     
                     bc = delta*np.ones([TcT])
                     FF = np.dot(AA,AA.T)
