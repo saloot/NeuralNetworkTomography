@@ -1477,14 +1477,16 @@ def jac(x):
     return 2 * np.sign(x)
 
 
-def loss_func_lambda(x,FF,delta):
+def loss_func_lambda(x,FF,delta,AA,Z):
     
-    E = 0.25 * np.dot(np.dot(x.T,FF),x) - delta *sum(x)
+    #E = 0.25 * np.dot(np.dot(x.T,FF),x) - delta *sum(x)
+    E = 0.25 * np.dot(np.dot(x.T,FF),x) - delta *sum(x) + np.dot(np.dot(x.T,AA),Z)
     return E
     
     
-def jac_lambda(x,FF,delta):
-    return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)])
+def jac_lambda(x,FF,delta,AA,Z):
+    #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)])
+    return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)]) + np.dot(AA,Z).ravel()
 
 #==============================================================================
 #=======================delayed_inference_constraints==========================
@@ -1999,7 +2001,7 @@ def delayed_inference_constraints_cvxopt(out_spikes_tot_mat_file,TT,n,max_itr_op
     tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
     tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
     h0 = 0.0                                        # The reset membrane voltage (in mV)
-    delta = 0.05                                       # The tanh coefficient to approximate the sign function
+    delta = 0.25                                       # The tanh coefficient to approximate the sign function
     d_max = 10
     
     t_avg = 5
@@ -2140,13 +2142,14 @@ def delayed_inference_constraints_cvxopt(out_spikes_tot_mat_file,TT,n,max_itr_op
             AA = np.zeros([ell,n+1])
             
             prng = RandomState(int(time()))
+            #t_avg = 1
             #II = eta * np.eye(n+1)
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
             if ttau > 0:
                 range_T = range(T0,TT)
                 t_last = T0 
-                
+            
             for t in range_T:
                 #........Pre-compute Some of Matrices to Speed Up the Process......
                 fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
@@ -2162,55 +2165,56 @@ def delayed_inference_constraints_cvxopt(out_spikes_tot_mat_file,TT,n,max_itr_op
                     xx = xx/float(t_counter)
                     yy = yy/float(t_counter)
                     
-                    u = vv-xx
+                    uu = vv-xx
                     #u[-1] = 1
-                    uu = u
-                    TcT = 1
                     
-                    pdb.set_trace()
+                    TcT = 1
                     
                     AA = np.reshape(uu,[TcT,n])
                     YY = yy * np.ones([1,1])
                     
                     AA = np.dot(np.diag(YY.ravel()),AA)
-                    
-                    AA = np.delete(AA.T,ijk,0).T
-                    
-                    temp1 = np.zeros([n,1])
-                    temp2 = np.ones([n,1])
-                    c = matrix(np.vstack([temp1,temp2]))
-                    
-                    temp1 = np.zeros([TcT,n])
-                    A_p = np.hstack([AA,temp1])
-                    
-                    temp1 = np.eye(n)
-                    temp2 = np.hstack([temp1,-temp1])
-                    temp3 = np.hstack([-temp1,-temp1])
-                    B = np.vstack([temp2,temp3])
-                    
-                    G = matrix(np.vstack([-A_p,B]))
-                    
-                    temp1 = delta*np.ones([TcT,1])
-                    temp2 = np.zeros([2*n,1])
-                    
-                    hh = matrix(np.vstack([-temp1,temp2]))
-                    
-                    sol = solvers.lp(c,G,hh)
-                    
-                    #------Print Costs------
                     cc = np.dot(AA,ww2)
-                    #print sum(sum(cc<0))
-                    #------------------------
-                    
-                    ww = np.array(sol['x'])
-                    ww2 = ww[0:n]
-                    
-                    WW = np.zeros([n+1,1])
-                    WW[0:ijk,0] = ww2[0:ijk,0]
-                    WW[ijk+1:,0] = ww2[ijk:,0]
-                    
-                    W = W + alpha * WW
-                    W = soft_threshold(W,sparse_thr)
+                    if sum(cc < delta):
+                        #AA = np.delete(AA.T,ijk,0).T
+                        
+                        temp1 = np.zeros([n,1])
+                        temp2 = np.ones([n,1])
+                        cc = matrix(np.vstack([temp1,temp2]))
+                        
+                        temp1 = np.zeros([TcT,n])
+                        A_p = np.hstack([AA,temp1])
+                        
+                        temp1 = np.eye(n)
+                        temp2 = np.hstack([temp1,-temp1])
+                        temp3 = np.hstack([-temp1,-temp1])
+                        B = np.vstack([temp2,temp3])
+                        
+                        G = matrix(np.vstack([-A_p,B]))
+                        
+                        temp1 = delta*np.ones([TcT,1])
+                        temp2 = np.zeros([2*n,1])
+                        
+                        hh = matrix(np.vstack([-temp1,temp2]))
+                        
+                        sol = solvers.lp(cc,G,hh)
+                        
+                        #------Print Costs------
+                        #cc = np.dot(AA,ww2)
+                        #print sum(sum(cc<0))
+                        #------------------------
+                        if 'optimal' in sol['status']:
+                            ww = np.array(sol['x'])
+                            ww2 = ww[0:n]
+                            
+                            WW = np.zeros([n+1,1])
+                            WW[0:ijk,0] = ww2[0:ijk,0]
+                            WW[ijk+1:,0] = ww2[ijk:,0]
+                            
+                            W = W + alpha * WW
+                            W = soft_threshold(W,sparse_thr)
+                        else:
+                            print 'dman %s' %str(t)
                     
                     xx = np.zeros([n,1])
                     vv = np.zeros([n,1])
@@ -2240,15 +2244,355 @@ def delayed_inference_constraints_cvxopt(out_spikes_tot_mat_file,TT,n,max_itr_op
                 
                 u = v-x
                 
-                if (t % 5000) == 0:
-                    pdb.set_trace()
+                #if (t % 50002) == 0:
+                #    pdb.set_trace()
                 #..................................................................
                
-                    
-            W_inferred[:,ijk] = W
+            pdb.set_trace()
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+            W_inferred[:,ijk] = W
             
     return W_inferred
 
 
+
+#------------------------------------------------------------------------------
+def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
+    
+    #----------------------------Initilizations--------------------------------    
+    from auxiliary_functions import soft_threshold
+    import os.path
+    m = n
+    W_inferred = np.zeros([n,m])
+    
+    range_tau = range(0,max_itr_opt)
+    
+    if len(neuron_range) == 0:
+        neuron_range = np.array(range(0,m))
+    
+    T0 = 20000                                  # It is the offset, i.e. the time from which on we will consider the firing activity
+    T_temp = 20000                              # The size of the initial batch to calculate the initial inverse matrix
+    range_T = range(T_temp+T0,TT)
+    #--------------------------------------------------------------------------
+    
+    #---------------------------Neural Parameters------------------------------
+    tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
+    tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
+    h0 = 0.0                                        # The reset membrane voltage (in mV)
+    delta = 0.25                                       # The tanh coefficient to approximate the sign function
+    d_max = 10
+    t_gap = 25                                     # The gap between samples to consider
+    t_avg = 5
+    block_size = 8000
+    
+    t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
+    U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
+    #--------------------------------------------------------------------------
+    
+    #---------Identify Incoming Connections to Each Neuron in the List---------
+    for ijk in neuron_range:
+        
+        print '-------------Neuron %s----------' %str(ijk)
+    
+    
+        Z = np.reshape(W_inferred[:,ijk],[n,1])                                # The auxiliary optimization variable
+        Z = Z[1:,0]
+    
+        
+        #~~~~~~~~~~~~~~~~~Calculate The Initial Inverse Matrix~~~~~~~~~~~~~~~~~
+        X = np.zeros([n+1,1+int(T_temp/float(t_avg))])
+        V = np.zeros([n+1,1+int(T_temp/float(t_avg))])
+        x = np.zeros([n+1,1])
+        v = np.zeros([n+1,1])
+        xx = np.zeros([n+1,1])
+        vv = np.zeros([n+1,1])
+        Y = np.zeros([1+int(T_temp/float(t_avg))])
+        
+        yy = 0
+        
+        t_counter = 0
+        t_tot = 0
+        for t in range(T0,T0 + T_temp):
+            
+            #........Pre-compute Some of Matrices to Speed Up the Process......
+            #fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+            if (ijk in fire_t):                
+                yy = yy + 1
+                x = np.zeros([n+1,1])
+                v = np.zeros([n+1,1])
+            
+            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
+            x = math.exp(-1/tau_s) * x
+            x[fire_t] = x[fire_t] + 1
+            
+            v = math.exp(-1/tau_d) * v
+            v[fire_t] = v[fire_t] + 1
+            
+            if ((t % t_avg) == 0) and (t_counter):
+                vv = vv/float(t_counter)
+                xx = xx/float(t_counter)
+                
+                V[:,t_tot] = vv.ravel()
+                X[:,t_tot] = xx.ravel()
+                Y[t_tot] = yy
+                
+                xx = np.zeros([n+1,1])
+                vv = np.zeros([n+1,1])
+                yy = 0
+                t_counter = 0
+                t_tot = t_tot + 1
+            else:
+                vv = vv + v
+                xx = xx + x
+                vv[-1,0] = 1
+                t_counter = t_counter + 1
+        
+        Y = np.array(Y)
+        
+        V = V[:,0:t_tot]
+        X = X[:,0:t_tot]
+        Y = Y[0:t_tot]
+        
+        g = (Y>0).astype(int) - (Y<=0).astype(int)
+        A = (V-X).T
+        #A = (V).T
+        
+        
+        AA = np.dot(np.diag(g.ravel()),A)
+        AA = np.delete(AA.T,ijk,0).T
+        TcT = len(g)
+        
+        bc = delta*np.ones([TcT])
+        
+        cons = ({'type':'ineq','fun':lambda x: np.dot(AA,x).ravel() - bc })
+
+                
+        lambda_0 = np.zeros([TcT,1])
+        FF = np.dot(AA,AA.T)
+        
+        cons = ({'type':'ineq','fun':lambda x: np.dot(AA,x).ravel() - bc })
+
+        #opt = {'disp':False,'maxiter':500}
+        
+        
+        lambda_0 = np.zeros([TcT,1])
+        FF = np.dot(AA,AA.T)
+        Z = np.zeros([n,1])
+        aa = np.ones([TcT,2])
+        aa[:,0] = 0
+        aa[:,1] = 100000
+        bns = list(aa)
+        opt = {'disp':False,'maxiter':2500}
+            
+        for i in range(0,2):
+            res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,AA,Z),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+            lam = np.reshape(res_cons['x'],[TcT,1])
+            ww = np.dot(AA.T,lam)
+            ww2 = Z + 0.5*ww[0:n]
+            Z = soft_threshold(ww2,sparse_thr_0)
+            Z = Z/np.linalg.norm(Z)
+        
+        #cc = np.dot(AA,Z)
+        #print sum(cc>0)
+        
+        W = np.zeros([n+1,1])
+        W[0:ijk,0] = Z[0:ijk,0]
+        W[ijk+1:,0] = Z[ijk:,0]
+        
+        t_last = T0 + T_temp
+        
+        u = v-x
+        
+        prng = RandomState(int(time()))
+        
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        #~~~~~~~~~~~~~~~~~Infer the Connections for Each Block~~~~~~~~~~~~~~~~~
+        xx = np.zeros([n+1,1])
+        vv = np.zeros([n+1,1])
+        yy = 0
+        t_counter = 0
+        ell =  int(block_size/float(t_avg))
+        r_count = 0
+        YY = np.zeros([ell,1]) 
+        AA = np.zeros([ell,n+1])
+        
+        for ttau in range(0,500):
+            alpha = alpha0/float(1+math.log(ttau+1))
+            sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
+            
+            for t in range_T:
+                
+                #........Pre-compute Some of Matrices to Speed Up the Process......
+                fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+                if (ijk in fire_t):
+                    t_last = t
+                    y = 1
+                else:
+                    y = -1
+                
+                
+                if (r_count == ell):
+                    s = prng.randint(0,4,[n+1,1])
+                    s = (s>=3).astype(int)
+
+                    
+                    
+                    t_init = np.random.randint(0,t_gap)
+                    t_inds = np.array(range(t_init,ell,t_gap))
+                    
+                    AA = AA[t_inds,:]
+                    YY = YY[t_inds,0]
+                    AA = np.dot(np.diag(YY.ravel()),AA)
+                    AA = np.delete(AA.T,ijk,0).T
+                    TcT = len(YY)
+                    
+                    bc = delta*np.ones([TcT])
+                    FF = np.dot(AA,AA.T)
+                    
+                    aa = np.ones([TcT,2])
+                    aa[:,0] = 0
+                    aa[:,1] = 100000
+                    bns = list(aa)
+                    lambda_0 = np.zeros([TcT,1])
+                    for i in range(0,10):
+                        res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,AA,Z),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+                        lam = np.reshape(res_cons['x'],[TcT,1])
+                        ww = np.dot(AA.T,lam)
+                        ww2 = Z + 0.5*ww[0:n]
+                        Z = soft_threshold(ww2,sparse_thr)
+                        Z = Z/np.linalg.norm(Z)
+                        if sum(Z) == 0:
+                            pdb.set_trace()
+                
+                    WW = np.zeros([n+1,1])
+                    WW[0:ijk,0] = Z[0:ijk,0]
+                    WW[ijk+1:,0] = Z[ijk:,0]
+                    
+                    #W = W + alpha * soft_threshold(WW,sparse_thr)
+                    W = W - alpha * WW
+                    W = W/np.linalg.norm(W)
+                    cc = np.dot(AA,Z)
+                    print sum(sum(cc<0))
+                    
+                    YY = np.zeros([ell,1]) 
+                    AA = np.zeros([ell,n+1])
+                    r_count = 0
+                
+                    
+                
+                if (t_counter == t_avg):
+                    vv = vv/float(t_counter)
+                    xx = xx/float(t_counter)
+                    yy = yy/float(t_counter)
+                    
+                    u = vv-xx
+                    #u[-1] = 1
+                    #s = prng.randint(0,4,[n+1,1])
+                    #s = (s>=3).astype(int)
+                    #uu = np.multiply(u,s)
+                    uu = u
+                    
+                    AA[r_count,:] = uu.ravel()
+                    YY[r_count,0] = yy
+                    r_count = r_count + 1
+                    xx = np.zeros([n+1,1])
+                    vv = np.zeros([n+1,1])
+                    yy = 0
+                    t_counter = 0
+                    
+                else:
+                    vv = vv + v
+                    xx = xx + x
+                    yy = yy + y
+                    #vv[-1,0] = 1
+                    t_counter = t_counter + 1
+                
+                if t_last == t:
+                    x = np.zeros([n+1,1])
+                    v = np.zeros([n+1,1])
+                
+                
+                #fire_t = read_spikes_lines_delayed(out_spikes_tot_mat_file,t,n,d_max,dd)
+                fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
+                v = math.exp(-1/tau_d) * v
+                v[fire_t] = v[fire_t] + 1
+                
+                x = math.exp(-1/tau_s) * x
+                x[fire_t] = x[fire_t] + 1
+                
+                u = v-x
+                #..................................................................
+            
+            
+            Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
+            #pdb.set_trace()
+            
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Predict Spikes~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        X = np.zeros([n+1,1+int(T_temp/float(t_avg))])
+        V = np.zeros([n+1,1+int(T_temp/float(t_avg))])
+        x = np.zeros([n+1,1])
+        v = np.zeros([n+1,1])
+        xx = np.zeros([n+1,1])
+        vv = np.zeros([n+1,1])
+        Y = np.zeros([1+int(T_temp/float(t_avg))])
+        
+        yy = 0
+        
+        t_counter = 0
+        t_tot = 0
+        for t in range(T0,T0 + T_temp):
+            
+            #........Pre-compute Some of Matrices to Speed Up the Process......
+            #fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+            if (ijk in fire_t):                
+                yy = yy + 1
+                x = np.zeros([n+1,1])
+                v = np.zeros([n+1,1])
+            
+            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
+            x = math.exp(-1/tau_s) * x
+            x[fire_t] = x[fire_t] + 1
+            
+            v = math.exp(-1/tau_d) * v
+            v[fire_t] = v[fire_t] + 1
+            
+            if ((t % t_avg) == 0) and (t_counter):
+                vv = vv/float(t_counter)
+                xx = xx/float(t_counter)
+                
+                V[:,t_tot] = vv.ravel()
+                X[:,t_tot] = xx.ravel()
+                Y[t_tot] = yy
+                
+                xx = np.zeros([n+1,1])
+                vv = np.zeros([n+1,1])
+                yy = 0
+                t_counter = 0
+                t_tot = t_tot + 1
+            else:
+                vv = vv + v
+                xx = xx + x
+                vv[-1,0] = 1
+                t_counter = t_counter + 1
+        
+        Y = np.array(Y)
+        
+        V = V[:,0:t_tot]
+        X = X[:,0:t_tot]
+        Y = Y[0:t_tot]
+        
+        g = (Y>0).astype(int) - (Y<=0).astype(int)
+        A = (V-X).T
+        
+        Y_predict = np.dot(A,W)
+        pdb.set_trace()
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        W_inferred[:,ijk] = W
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+            
+    return W_inferred
