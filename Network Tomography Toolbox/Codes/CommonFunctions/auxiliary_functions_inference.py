@@ -2491,6 +2491,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     W = W - alpha * WW
                     W = W/np.linalg.norm(W)
                     cc = np.dot(AA,Z)
+                    print 'salam'
                     print sum(sum(cc<0))
                     
                     YY = np.zeros([ell,1]) 
@@ -2545,6 +2546,343 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
             Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
             #pdb.set_trace()
+            
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Predict Spikes~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        X = np.zeros([n+1,1+int(T_temp/float(t_avg))])
+        V = np.zeros([n+1,1+int(T_temp/float(t_avg))])
+        x = np.zeros([n+1,1])
+        v = np.zeros([n+1,1])
+        xx = np.zeros([n+1,1])
+        vv = np.zeros([n+1,1])
+        Y = np.zeros([1+int(T_temp/float(t_avg))])
+        
+        yy = 0
+        
+        t_counter = 0
+        t_tot = 0
+        for t in range(T0,T0 + T_temp):
+            
+            #........Pre-compute Some of Matrices to Speed Up the Process......
+            #fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+            if (ijk in fire_t):                
+                yy = yy + 1
+                x = np.zeros([n+1,1])
+                v = np.zeros([n+1,1])
+            
+            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
+            x = math.exp(-1/tau_s) * x
+            x[fire_t] = x[fire_t] + 1
+            
+            v = math.exp(-1/tau_d) * v
+            v[fire_t] = v[fire_t] + 1
+            
+            if ((t % t_avg) == 0) and (t_counter):
+                vv = vv/float(t_counter)
+                xx = xx/float(t_counter)
+                
+                V[:,t_tot] = vv.ravel()
+                X[:,t_tot] = xx.ravel()
+                Y[t_tot] = yy
+                
+                xx = np.zeros([n+1,1])
+                vv = np.zeros([n+1,1])
+                yy = 0
+                t_counter = 0
+                t_tot = t_tot + 1
+            else:
+                vv = vv + v
+                xx = xx + x
+                vv[-1,0] = 1
+                t_counter = t_counter + 1
+        
+        Y = np.array(Y)
+        
+        V = V[:,0:t_tot]
+        X = X[:,0:t_tot]
+        Y = Y[0:t_tot]
+        
+        g = (Y>0).astype(int) - (Y<=0).astype(int)
+        A = (V-X).T
+        
+        Y_predict = np.dot(A,W)
+        pdb.set_trace()
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        W_inferred[:,ijk] = W
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+            
+    return W_inferred
+
+
+
+#------------------------------------------------------------------------------
+def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
+    
+    #---------------------------------------------------------------------------
+    from sklearn import svm
+    from sklearn.ensemble import AdaBoostClassifier
+    
+    #clf = svm.LinearSVC()
+    clf = AdaBoostClassifier()
+    clf.base_estimator=svm.SVC(kernel = 'linear')
+    clf.algorithm = 'SAMME'
+    clf.kernel = 'linear'
+    
+    #clf.C = 5000
+    #clf.tol = 1e-3
+    #clf.decision_function_shape = 'ovo'
+    #clf.multi_class = 'crammer_singer'
+    #clf.kernel = 'rbf'
+    #clf.degree = 3
+    #clf.random_state = RandomState(int(time()))
+    #---------------------------------------------------------------------------
+    
+    #----------------------------Initilizations--------------------------------    
+    from auxiliary_functions import soft_threshold
+    import os.path
+    m = n
+    W_inferred = np.zeros([n,m])
+    
+    range_tau = range(0,max_itr_opt)
+    
+    if len(neuron_range) == 0:
+        neuron_range = np.array(range(0,m))
+    
+    T0 = 20000                                  # It is the offset, i.e. the time from which on we will consider the firing activity
+    T_temp = 10000                              # The size of the initial batch to calculate the initial inverse matrix
+    range_T = range(T_temp+T0,TT)
+    #--------------------------------------------------------------------------
+    
+    #---------------------------Neural Parameters------------------------------
+    tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
+    tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
+    h0 = 0.0                                        # The reset membrane voltage (in mV)
+    delta = 0.25                                       # The tanh coefficient to approximate the sign function
+    d_max = 10
+    t_gap = 15                                     # The gap between samples to consider
+    t_avg = 1
+    block_size = 10000
+    
+    t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
+    U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
+    #--------------------------------------------------------------------------
+    
+    #---------Identify Incoming Connections to Each Neuron in the List---------
+    for ijk in neuron_range:
+        
+        print '-------------Neuron %s----------' %str(ijk)
+    
+    
+        Z = np.reshape(W_inferred[:,ijk],[n,1])                                # The auxiliary optimization variable
+        Z = Z[1:,0]
+    
+        
+        #~~~~~~~~~~~~~~~~~Calculate The Initial Inverse Matrix~~~~~~~~~~~~~~~~~
+        X = np.zeros([n+1,1+int(T_temp/float(t_avg))])
+        V = np.zeros([n+1,1+int(T_temp/float(t_avg))])
+        x = np.zeros([n+1,1])
+        v = np.zeros([n+1,1])
+        xx = np.zeros([n+1,1])
+        vv = np.zeros([n+1,1])
+        Y = np.zeros([1+int(T_temp/float(t_avg))])
+        
+        yy = 0
+        
+        t_counter = 0
+        t_tot = 0
+        for t in range(T0,T0 + T_temp):
+            
+            #........Pre-compute Some of Matrices to Speed Up the Process......
+            #fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+            if (ijk in fire_t):                
+                yy = yy + 1
+                x = np.zeros([n+1,1])
+                v = np.zeros([n+1,1])
+            
+            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
+            x = math.exp(-1/tau_s) * x
+            x[fire_t] = x[fire_t] + 1
+            
+            v = math.exp(-1/tau_d) * v
+            v[fire_t] = v[fire_t] + 1
+            
+            V[:,t_tot] = v.ravel()
+            X[:,t_tot] = x.ravel()
+            Y[t_tot] = yy
+            t_tot = t_tot + 1
+            yy = 0
+        
+        Y = np.array(Y)
+        
+        V = V[:,0:t_tot]
+        X = X[:,0:t_tot]
+        Y = Y[0:t_tot]
+        
+        
+        g_der = np.nonzero(Y)[0]
+        
+        g = (Y>0).astype(int) - (Y<=0).astype(int)
+        A = (V-X).T
+        #A = (V).T
+        A = (A>0.65).astype(int)
+        
+        ell = int(T_temp/float(t_avg))
+        t_init = np.random.randint(0,t_gap)
+        t_inds = np.array(range(t_init,ell,t_gap))
+        
+        #A = A[t_inds,:]
+        #g = g[t_inds]
+        A = np.delete(A.T,ijk,0).T
+        
+        #------------------Train the Classifier--------------------
+        features_projected_train = A
+        actual_vals_train = g
+        
+        clf.sample_weight = {1:10,-1:1}
+        clf.fit(features_projected_train, actual_vals_train.ravel())
+        
+        
+        #sc = clf.score(features_projected_train, actual_vals_train.ravel(), sample_weight=None)
+        
+        sc = clf.score(features_projected_train, actual_vals_train.ravel())
+        print sc
+        #----------------------------------------------------------
+        
+        pdb.set_trace()
+        est = clf.estimators_
+        est_w = clf.estimator_weights_
+        ww = np.zeros([n,1])
+        for ili in range(0,len(est)):
+            aa = est[ili];bb = aa.coef_;ww = ww + est_w[ili] * bb.T
+        
+        W = np.zeros([n+1,1])
+        W[0:ijk,0] = ww[0:ijk,0]
+        W[ijk+1:,0] = ww[ijk:,0]
+        
+        t_last = T0 + T_temp
+        
+        u = v-x
+        
+        prng = RandomState(int(time()))
+
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        #~~~~~~~~~~~~~~~~~Infer the Connections for Each Block~~~~~~~~~~~~~~~~~
+        xx = np.zeros([n+1,1])
+        vv = np.zeros([n+1,1])
+        yy = 0
+        t_counter = 0
+        ell =  int(block_size/float(t_avg))
+        r_count = 0
+        YY = np.zeros([ell,1]) 
+        AA = np.zeros([ell,n+1])
+        
+        for ttau in range(0,500):
+            alpha = alpha0/float(1+math.log(ttau+1))
+            sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
+            
+            for t in range_T:
+                
+                #........Pre-compute Some of Matrices to Speed Up the Process......
+                fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+                if (ijk in fire_t):
+                    t_last = t
+                    y = 1
+                else:
+                    y = -1
+                
+                
+                if (r_count == ell):
+                    s = prng.randint(0,4,[n+1,1])
+                    s = (s>=3).astype(int)
+
+                    t_init = np.random.randint(0,t_gap)
+                    t_inds = np.array(range(t_init,ell,t_gap))
+                    
+                    Y = YY + np.ones(YY.shape)
+                    Y = (Y>0).astype(int) - (Y<=0).astype(int)
+                    g_der = np.nonzero(Y)[0]
+                    
+                    
+                    AA = AA[t_inds,:]
+                    Y = Y[t_inds,0]
+                    
+                    features_projected_train = AA
+                    actual_vals_train = Y
+                    
+                    if (1 in Y) and (-1 in Y):
+                        clf.fit(features_projected_train, actual_vals_train.ravel())
+                        
+                        sc = clf.score(features_projected_train, actual_vals_train.ravel(), sample_weight=None)
+                        print sc
+                        #----------------------------------------------------------
+            
+            
+                        Z = clf.coef_
+                        
+                        WW = np.zeros([n+1,1])
+                        WW[0:ijk,0] = Z[0:ijk,0]
+                        WW[ijk+1:,0] = Z[ijk:,0]
+                        
+                        #W = W + alpha * soft_threshold(WW,sparse_thr)
+                        W = W - alpha * soft_threshold(WW,sparse_thr)
+                        W = W/np.linalg.norm(W)
+                    
+                    
+                    YY = np.zeros([ell,1]) 
+                    AA = np.zeros([ell,n+1])
+                    r_count = 0
+                
+                    
+                
+                if (t_counter == t_avg):
+                    vv = vv/float(t_counter)
+                    xx = xx/float(t_counter)
+                    yy = yy/float(t_counter)
+                    
+                    u = vv-xx
+                    #u[-1] = 1
+                    #s = prng.randint(0,4,[n+1,1])
+                    #s = (s>=3).astype(int)
+                    #uu = np.multiply(u,s)
+                    uu = u
+                    
+                    AA[r_count,:] = uu.ravel()
+                    YY[r_count,0] = yy
+                    r_count = r_count + 1
+                    xx = np.zeros([n+1,1])
+                    vv = np.zeros([n+1,1])
+                    yy = 0
+                    t_counter = 0
+                    
+                else:
+                    vv = vv + v
+                    xx = xx + x
+                    yy = yy + y
+                    #vv[-1,0] = 1
+                    t_counter = t_counter + 1
+                
+                if t_last == t:
+                    x = np.zeros([n+1,1])
+                    v = np.zeros([n+1,1])
+                
+                
+                #fire_t = read_spikes_lines_delayed(out_spikes_tot_mat_file,t,n,d_max,dd)
+                fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
+                v = math.exp(-1/tau_d) * v
+                v[fire_t] = v[fire_t] + 1
+                
+                x = math.exp(-1/tau_s) * x
+                x[fire_t] = x[fire_t] + 1
+                
+                u = v-x
+                #..................................................................
+            
+            pdb.set_trace()
+            Z = (Z>4*sparse_thr).astype(int) - (Z<-4*sparse_thr).astype(int)   
+            
             
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Predict Spikes~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         X = np.zeros([n+1,1+int(T_temp/float(t_avg))])
