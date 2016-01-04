@@ -2491,7 +2491,6 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     W = W - alpha * WW
                     W = W/np.linalg.norm(W)
                     cc = np.dot(AA,Z)
-                    print 'salam'
                     print sum(sum(cc<0))
                     
                     YY = np.zeros([ell,1]) 
@@ -2650,7 +2649,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         neuron_range = np.array(range(0,m))
     
     T0 = 20000                                  # It is the offset, i.e. the time from which on we will consider the firing activity
-    T_temp = 10000                              # The size of the initial batch to calculate the initial inverse matrix
+    T_temp = 4000                              # The size of the initial batch to calculate the initial inverse matrix
     range_T = range(T_temp+T0,TT)
     #--------------------------------------------------------------------------
     
@@ -2662,7 +2661,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
     d_max = 10
     t_gap = 15                                     # The gap between samples to consider
     t_avg = 1
-    block_size = 10000
+    block_size = 2000
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
@@ -2726,7 +2725,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         g = (Y>0).astype(int) - (Y<=0).astype(int)
         A = (V-X).T
         #A = (V).T
-        A = (A>0.65).astype(int)
+        A = (A>0.85).astype(int)
         
         ell = int(T_temp/float(t_avg))
         t_init = np.random.randint(0,t_gap)
@@ -2750,7 +2749,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         print sc
         #----------------------------------------------------------
         
-        pdb.set_trace()
+        
         est = clf.estimators_
         est_w = clf.estimator_weights_
         ww = np.zeros([n,1])
@@ -2764,6 +2763,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         t_last = T0 + T_temp
         
         u = v-x
+        pdb.set_trace()
         
         prng = RandomState(int(time()))
 
@@ -2815,16 +2815,20 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                     if (1 in Y) and (-1 in Y):
                         clf.fit(features_projected_train, actual_vals_train.ravel())
                         
-                        sc = clf.score(features_projected_train, actual_vals_train.ravel(), sample_weight=None)
+                        sc = clf.score(features_projected_train, actual_vals_train.ravel())
+                        
                         print sc
                         #----------------------------------------------------------
             
-            
-                        Z = clf.coef_
+                        est = clf.estimators_
+                        est_w = clf.estimator_weights_
+                        ww = np.zeros([n,1])
+                        for ili in range(0,len(est)):
+                            aa = est[ili];bb = aa.coef_;ww = ww + est_w[ili] * bb.T
                         
                         WW = np.zeros([n+1,1])
-                        WW[0:ijk,0] = Z[0:ijk,0]
-                        WW[ijk+1:,0] = Z[ijk:,0]
+                        WW[0:ijk,0] = ww[0:ijk,0]
+                        WW[ijk+1:,0] = ww[ijk:,0]
                         
                         #W = W + alpha * soft_threshold(WW,sparse_thr)
                         W = W - alpha * soft_threshold(WW,sparse_thr)
