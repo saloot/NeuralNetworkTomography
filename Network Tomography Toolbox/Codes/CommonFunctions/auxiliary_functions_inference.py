@@ -2739,6 +2739,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         features_projected_train = A
         actual_vals_train = g
         
+        pdb.set_trace()
         clf.sample_weight = {1:10,-1:1}
         clf.fit(features_projected_train, actual_vals_train.ravel())
         
