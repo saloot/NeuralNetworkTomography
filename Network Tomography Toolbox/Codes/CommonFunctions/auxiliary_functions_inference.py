@@ -2828,7 +2828,6 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                         est_w = clf.estimator_weights_
                         ww = np.zeros([n,1])
                         for ili in range(0,len(est)):
-                            pdb.set_trace()
                             aa = est[ili];bb = aa.coef_;ww = ww + est_w[ili] * bb.T
                         
                         WW = np.zeros([n+1,1])
@@ -2890,7 +2889,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                 #..................................................................
             
             pdb.set_trace()
-            Z = (Z>4*sparse_thr).astype(int) - (Z<-4*sparse_thr).astype(int)   
+            #Z = (Z>4*sparse_thr).astype(int) - (Z<-4*sparse_thr).astype(int)   
             
             
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Predict Spikes~~~~~~~~~~~~~~~~~~~~~~~~~~~~
