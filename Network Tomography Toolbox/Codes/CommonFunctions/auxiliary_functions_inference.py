@@ -2514,7 +2514,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     #-------------Make Sure the Solution Is Valid--------------
                     cc = np.dot(AA,Z)
-                    if cc>0:
+                    if sum(sum(cc<0))>0:
                         print sum(sum(cc<0))
                         pdb.set_trace()
                     #----------------------------------------------------------
