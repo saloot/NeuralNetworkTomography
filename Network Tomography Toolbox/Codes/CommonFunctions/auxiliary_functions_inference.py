@@ -2753,6 +2753,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         
         est = clf.estimators_
         est_w = clf.estimator_weights_
+        pdb.set_trace()
         ww = np.zeros([n,1])
         for ili in range(0,len(est)):
             aa = est[ili];bb = aa.coef_;ww = ww + est_w[ili] * bb.T
