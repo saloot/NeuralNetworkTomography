@@ -2576,10 +2576,10 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 u = v-x
                 #..................................................................
             
-                pdb.set_trace()
+                #pdb.set_trace()
                 
             pdb.set_trace()
-            Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
+            #Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
             
             
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Predict Spikes~~~~~~~~~~~~~~~~~~~~~~~~~~~~
