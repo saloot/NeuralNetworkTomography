@@ -2660,7 +2660,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
     delta = 0.25                                       # The tanh coefficient to approximate the sign function
     d_max = 10
     t_gap = 15                                     # The gap between samples to consider
-    t_avg = 2
+    t_avg = 1
     block_size = 4000
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
@@ -2706,6 +2706,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
             
             v = math.exp(-1/tau_d) * v
             v[fire_t] = v[fire_t] + 1
+            
             
             V[:,t_tot] = v.ravel()
             X[:,t_tot] = x.ravel()
