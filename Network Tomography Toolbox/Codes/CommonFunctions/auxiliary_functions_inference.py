@@ -2722,7 +2722,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         
         g_der = np.nonzero(Y)[0]
         
-        g = (Y>0).astype(int) - (Y<=0).astype(int)
+        g = (Y>0).astype(int) - (t<=0).astype(int)
         A = (V-X).T
         #A = (V).T
         A = (A>0.85).astype(int)
@@ -2739,7 +2739,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         features_projected_train = A
         actual_vals_train = g
         
-        pdb.set_trace()
+        
         clf.sample_weight = {1:10,-1:1}
         clf.fit(features_projected_train, actual_vals_train.ravel())
         
@@ -2764,7 +2764,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         t_last = T0 + T_temp
         
         u = v-x
-        pdb.set_trace()
+        
         
         prng = RandomState(int(time()))
 
