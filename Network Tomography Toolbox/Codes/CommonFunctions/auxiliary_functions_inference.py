@@ -2722,7 +2722,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         
         g_der = np.nonzero(Y)[0]
         
-        g = (Y>0).astype(int) - (t<=0).astype(int)
+        g = (Y>0).astype(int) - (Y<=0).astype(int)
         A = (V-X).T
         #A = (V).T
         A = (A>0.85).astype(int)
