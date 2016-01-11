@@ -2840,17 +2840,18 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                         est = clf.estimators_
                         est_w = clf.estimator_weights_
                         ww = np.zeros([n,1])
-                        for ili in range(0,len(est)):
-                            aa = est[ili];bb = aa.coef_;ww = ww + est_w[ili] * bb.T
-                        
-                        
-                        WW = np.zeros([n+1,1])
-                        WW[0:ijk,0] = ww[0:ijk,0]
-                        WW[ijk+1:,0] = ww[ijk:,0]
-                        
-                        #W = W + alpha * soft_threshold(WW,sparse_thr)
-                        W = W - alpha * soft_threshold(WW,sparse_thr)
-                        W = W/np.linalg.norm(W)
+                        if sc > len(aa)/len(actual_vals_train):
+                            for ili in range(0,len(est)):
+                                aa = est[ili];bb = aa.coef_;ww = ww + est_w[ili] * bb.T
+                            
+                            
+                            WW = np.zeros([n+1,1])
+                            WW[0:ijk,0] = ww[0:ijk,0]
+                            WW[ijk+1:,0] = ww[ijk:,0]
+                            
+                            #W = W + alpha * soft_threshold(WW,sparse_thr)
+                            W = W - alpha * soft_threshold(WW,sparse_thr)
+                            W = W/np.linalg.norm(W)
                     
                     
                     YY = np.zeros([ell,1]) 
