@@ -2818,6 +2818,17 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                     actual_vals_train = Y
                     
                     if (1 in Y) and (-1 in Y):
+                        aa = np.nonzero(actual_vals_train>0)[0]
+                        ll = 2*len(aa)
+                        bb = np.random.randint(0,len(actual_vals_train),ll)
+                        temp1 = np.reshape(actual_vals_train[aa],[len(actual_vals_train[aa]),1])
+                        
+                        actual_vals_train = -1*np.ones([len(aa)+len(bb)])
+                        actual_vals_train[0:len(aa)] = 1
+                        
+                        features_projected_train = np.zeros([len(aa)+len(bb),n])
+                        features_projected_train[0:len(aa),:] = AA[aa,:]
+                        features_projected_train[len(aa):len(aa)+len(bb),:] = AA[bb,:]
                         clf.fit(features_projected_train, actual_vals_train.ravel())
                         
                         sc = clf.score(features_projected_train, actual_vals_train.ravel())
@@ -2837,7 +2848,6 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                         WW[0:ijk,0] = ww[0:ijk,0]
                         WW[ijk+1:,0] = ww[ijk:,0]
                         
-                        pdb.set_trace()
                         #W = W + alpha * soft_threshold(WW,sparse_thr)
                         W = W - alpha * soft_threshold(WW,sparse_thr)
                         W = W/np.linalg.norm(W)
