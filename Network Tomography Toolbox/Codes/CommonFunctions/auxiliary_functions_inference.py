@@ -2840,7 +2840,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                         est = clf.estimators_
                         est_w = clf.estimator_weights_
                         ww = np.zeros([n,1])
-                        if sc > len(aa)/len(actual_vals_train):
+                        if sc > (1.01*len(aa)/len(actual_vals_train)):
                             print sc
                             for ili in range(0,len(est)):
                                 aa = est[ili];bb = aa.coef_;ww = ww + est_w[ili] * bb.T
