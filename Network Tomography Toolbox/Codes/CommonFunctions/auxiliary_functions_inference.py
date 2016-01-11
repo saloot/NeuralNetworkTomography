@@ -2495,10 +2495,11 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         ww = np.dot(AA.T,lam)
                         ww2 = Z + 0.5*ww[0:n]
                         Z = soft_threshold(ww2,sparse_thr)
-                        if sum(Z) == 0:
-                            pdb.set_trace()
-                        else:
-                            Z = Z/np.linalg.norm(Z)
+                        #if sum(Z) == 0:
+                        #    pdb.set_trace()
+                        #else:
+                        #    Z = Z/np.linalg.norm(Z)
+                            
                     #----------------------------------------------------------
                 
                     #--------------------Store the Solution--------------------
