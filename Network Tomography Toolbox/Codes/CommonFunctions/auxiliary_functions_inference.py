@@ -2659,9 +2659,9 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
     h0 = 0.0                                        # The reset membrane voltage (in mV)
     delta = 0.25                                       # The tanh coefficient to approximate the sign function
     d_max = 10
-    t_gap = 15                                     # The gap between samples to consider
+    t_gap = 5                                     # The gap between samples to consider
     t_avg = 1
-    block_size = 4000
+    block_size = 10000
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
@@ -2741,7 +2741,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         actual_vals_train = g
         
         
-        clf.sample_weight = {1:10,-1:1}
+        clf.sample_weight = {1:50,-1:1}
         clf.fit(features_projected_train, actual_vals_train.ravel())
         
         
@@ -2812,6 +2812,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                     AA = AA[t_inds,:]
                     Y = Y[t_inds,0]
                     AA = np.delete(AA.T,ijk,0).T
+                    AA = (AA>0.85).astype(int)
                     
                     features_projected_train = AA
                     actual_vals_train = Y
@@ -2822,6 +2823,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                         sc = clf.score(features_projected_train, actual_vals_train.ravel())
                         
                         print sc
+                        
                         #----------------------------------------------------------
             
                         est = clf.estimators_
@@ -2830,10 +2832,12 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                         for ili in range(0,len(est)):
                             aa = est[ili];bb = aa.coef_;ww = ww + est_w[ili] * bb.T
                         
+                        
                         WW = np.zeros([n+1,1])
                         WW[0:ijk,0] = ww[0:ijk,0]
                         WW[ijk+1:,0] = ww[ijk:,0]
                         
+                        pdb.set_trace()
                         #W = W + alpha * soft_threshold(WW,sparse_thr)
                         W = W - alpha * soft_threshold(WW,sparse_thr)
                         W = W/np.linalg.norm(W)
