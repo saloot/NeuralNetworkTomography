@@ -2833,7 +2833,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                         
                         sc = clf.score(features_projected_train, actual_vals_train.ravel())
                         
-                        print sc
+                        
                         
                         #----------------------------------------------------------
             
@@ -2841,6 +2841,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                         est_w = clf.estimator_weights_
                         ww = np.zeros([n,1])
                         if sc > len(aa)/len(actual_vals_train):
+                            print sc
                             for ili in range(0,len(est)):
                                 aa = est[ili];bb = aa.coef_;ww = ww + est_w[ili] * bb.T
                             
