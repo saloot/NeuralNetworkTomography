@@ -2398,7 +2398,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         FF_2 = np.dot(FF,FF)
         FF_A = np.dot(FF,AA)
         Z = np.zeros([n,1])    # The "sparse" solution
-        eta = 0.25             # The constraint maximizaition penalty
+        eta = 0.05             # The constraint maximizaition penalty
         C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
         #----------------------------------------------------------
         
@@ -2492,7 +2492,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     Z = np.zeros([n,1])    # The "sparse" solution
                     FF_2 = np.dot(FF,FF)
                     FF_A = np.dot(FF,AA)
-                    eta = 0.25             # The constraint maximizaition penalty
+                    eta = 0.05             # The constraint maximizaition penalty
                     C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
                     #----------------------------------------------------------
         
