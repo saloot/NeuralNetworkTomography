@@ -2580,10 +2580,10 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
                 #pdb.set_trace()
                 
-            pdb.set_trace()
+            
             #Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
             
-            
+        pdb.set_trace()    
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Predict Spikes~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         X = np.zeros([n+1,1+int(T_temp/float(t_avg))])
         V = np.zeros([n+1,1+int(T_temp/float(t_avg))])
