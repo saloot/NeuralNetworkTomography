@@ -2288,7 +2288,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     h0 = 0.0                                        # The reset membrane voltage (in mV)
     delta = 0.25                                       # The tanh coefficient to approximate the sign function
     d_max = 10
-    t_gap = 25                                     # The gap between samples to consider
+    t_gap = 12                                     # The gap between samples to consider
     t_avg = 2
     block_size = 8000
     
@@ -2398,7 +2398,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         FF_2 = np.dot(FF,FF)
         FF_A = np.dot(FF,AA)
         Z = np.zeros([n,1])    # The "sparse" solution
-        eta = 0.0001             # The constraint maximizaition penalty
+        eta = 0.01             # The constraint maximizaition penalty
         C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
         #----------------------------------------------------------
         
@@ -2492,7 +2492,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     Z = np.zeros([n,1])    # The "sparse" solution
                     FF_2 = np.dot(FF,FF)
                     FF_A = np.dot(FF,AA)
-                    eta = 0.0001             # The constraint maximizaition penalty
+                    eta = 0.01             # The constraint maximizaition penalty
                     C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
                     #----------------------------------------------------------
         
