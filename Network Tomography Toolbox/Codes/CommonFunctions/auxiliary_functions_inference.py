@@ -2398,7 +2398,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         FF_2 = np.dot(FF,FF)
         FF_A = np.dot(FF,AA)
         Z = np.zeros([n,1])    # The "sparse" solution
-        eta = 0.0             # The constraint maximizaition penalty
+        eta = 0.0001             # The constraint maximizaition penalty
         C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
         #----------------------------------------------------------
         
@@ -2408,8 +2408,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             lam = np.reshape(res_cons['x'],[TcT,1])
             ww = np.dot(AA.T,lam)
             ww2 = np.dot(C_i,Z + 0.5*ww[0:n])
+            ww2 = ww2/np.linalg.norm(ww2)
             Z = soft_threshold(ww2,sparse_thr_0)
-            Z = Z/np.linalg.norm(Z)
         #----------------------------------------------------------
         
         #-----------------Store the Solution-----------------------
@@ -2492,7 +2492,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     Z = np.zeros([n,1])    # The "sparse" solution
                     FF_2 = np.dot(FF,FF)
                     FF_A = np.dot(FF,AA)
-                    eta = 0.00             # The constraint maximizaition penalty
+                    eta = 0.0001             # The constraint maximizaition penalty
                     C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
                     #----------------------------------------------------------
         
@@ -2502,6 +2502,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         lam = np.reshape(res_cons['x'],[TcT,1])
                         ww = np.dot(AA.T,lam)
                         ww2 = np.dot(C_i,Z + 0.5*ww[0:n])
+                        ww2 = ww2/np.linalg.norm(ww2)
                         Z = soft_threshold(ww2,sparse_thr)
                         #if sum(Z) == 0:
                         #    pdb.set_trace()
@@ -2518,7 +2519,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     #---------------Update the Current Estimate----------------
                     #W = W + alpha * soft_threshold(WW,sparse_thr)
-                    W = W - alpha * WW
+                    #W = W - alpha * WW
+                    W = W + WW
                     W = W/np.linalg.norm(W)
                     #----------------------------------------------------------
                     
