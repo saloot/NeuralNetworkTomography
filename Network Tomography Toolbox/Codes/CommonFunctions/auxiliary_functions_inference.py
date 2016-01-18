@@ -2506,7 +2506,6 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #FF = np.dot(np.dot(AA,C_i),AA.T)
                     #AB = np.dot(AA,np.eye(n)+C_i)
                     AB = AA
-                    AB = AA
                     FF = np.dot(AA,AA.T)
                     Cc = np.dot(AA.T,AA)
                     C_i = eta*(np.eye(n)+eta*Cc)
@@ -2522,6 +2521,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         lam = np.reshape(res_cons['x'],[TcT,1])
                         ww = np.dot(AA.T,lam)
                         ww2 = np.dot(C_i,Z + 0.5*ww[0:n])
+                        pdb.set_trace()
                         ww2 = ww2/(0.0001+np.linalg.norm(ww2))
                         Z = soft_threshold(ww2,sparse_thr)
                         #if sum(Z) == 0:
@@ -2609,8 +2609,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #..................................................................
             
                 #pdb.set_trace()
-                
-            pdb.set_trace()
+            if not ((ttau+1) % 5):    
+                pdb.set_trace()
             #Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
             
             
@@ -2673,8 +2673,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         A = (V-X).T
         
         Y_predict = np.dot(A,W)
-        if not ((ttau+1) % 5):
-            pdb.set_trace()
+        
+        pdb.set_trace()
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         W_inferred[:,ijk] = W
