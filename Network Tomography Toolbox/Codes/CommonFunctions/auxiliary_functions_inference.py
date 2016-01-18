@@ -2290,7 +2290,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     d_max = 10
     t_gap = 12                                     # The gap between samples to consider
     t_avg = 2
-    block_size = 8000
+    block_size = 20000
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
@@ -2673,7 +2673,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         A = (V-X).T
         
         Y_predict = np.dot(A,W)
-        pdb.set_trace()
+        if not ((ttau+1) % 5):
+            pdb.set_trace()
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         W_inferred[:,ijk] = W
