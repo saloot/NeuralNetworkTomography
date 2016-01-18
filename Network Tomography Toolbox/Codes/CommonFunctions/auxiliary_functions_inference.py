@@ -1477,16 +1477,16 @@ def jac(x):
     return 2 * np.sign(x)
 
 
-def loss_func_lambda(x,FF,delta,AA,Z,eta,FF_2,FF_A):
+def loss_func_lambda(x,FF,delta,AB,Z):
     
     #E = 0.25 * np.dot(np.dot(x.T,FF),x) - delta *sum(x)
-    E = 0.25 * np.dot(np.dot(x.T,FF-eta*FF_2),x) - delta *sum(x) + np.dot(np.dot(x.T,AA-eta*FF_A),Z)
+    E = 0.25 * np.dot(np.dot(x.T,FF),x) - delta *sum(x) + 0.5*np.dot(np.dot(x.T,AB),Z)
     return E
     
     
-def jac_lambda(x,FF,delta,AA,Z,eta,FF_2,FF_A):
+def jac_lambda(x,FF,delta,AB,Z):
     #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)])
-    return 0.5 * np.dot(FF-eta*FF_2,x) - delta * np.ones([len(x)]) + np.dot(AA-eta*FF_A,Z).ravel()
+    return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)]) + 0.5*np.dot(AB,Z).ravel()
 
 #==============================================================================
 #=======================delayed_inference_constraints==========================
@@ -2394,17 +2394,17 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
         #-------------Create Hessian and Initial Point-------------
         lambda_0 = np.zeros([TcT,1])
-        FF = np.dot(AA,AA.T)
-        FF_2 = np.dot(FF,FF)
-        FF_A = np.dot(FF,AA)
+        #FF = np.dot(AA,AA.T)
         Z = np.zeros([n,1])    # The "sparse" solution
         eta = 0.01             # The constraint maximizaition penalty
         C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
+        FF = np.dot(np.dot(AA,C_i),AA.T)
+        AB = np.dot(AA,np.eye(n)+C_i)
         #----------------------------------------------------------
         
         #---------Find the Solution with Sparsity in Mind----------
         for i in range(0,2):
-            res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,AA,Z,eta,FF_2,FF_A),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+            res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,AB,Z),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
             lam = np.reshape(res_cons['x'],[TcT,1])
             ww = np.dot(AA.T,lam)
             ww2 = np.dot(C_i,Z + 0.5*ww[0:n])
@@ -2488,17 +2488,17 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
                     #-------------Create Hessian and Initial Point-------------
                     lambda_0 = np.zeros([TcT,1])
-                    FF = np.dot(AA,AA.T)
+                    #FF = np.dot(AA,AA.T)
                     Z = np.zeros([n,1])    # The "sparse" solution
-                    FF_2 = np.dot(FF,FF)
-                    FF_A = np.dot(FF,AA)
                     eta = 0.01             # The constraint maximizaition penalty
                     C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
+                    FF = np.dot(np.dot(AA,C_i),AA.T)
+                    AB = np.dot(AA,np.eye(n)+C_i)
                     #----------------------------------------------------------
         
                     #---------Find the Solution with Sparsity in Mind----------
                     for i in range(0,10):
-                        res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,AA,Z,eta,FF_2,FF_A),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+                        res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,AB,Z),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                         lam = np.reshape(res_cons['x'],[TcT,1])
                         ww = np.dot(AA.T,lam)
                         ww2 = np.dot(C_i,Z + 0.5*ww[0:n])
