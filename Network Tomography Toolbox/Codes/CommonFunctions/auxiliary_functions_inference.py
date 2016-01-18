@@ -2423,7 +2423,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         W = np.zeros([n+1,1])
         W[0:ijk,0] = Z[0:ijk,0]
         W[ijk+1:,0] = Z[ijk:,0]
-        pdb.set_trace()
+        #pdb.set_trace()
         #----------------------------------------------------------
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
