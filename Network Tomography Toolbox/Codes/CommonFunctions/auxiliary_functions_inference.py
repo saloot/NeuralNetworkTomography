@@ -2289,7 +2289,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     delta = 0.25                                       # The tanh coefficient to approximate the sign function
     d_max = 10
     t_gap = 12                                     # The gap between samples to consider
-    t_avg = 2
+    t_avg = 1
     block_size = 20000
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
@@ -2325,7 +2325,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             #fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
             fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
             if (ijk in fire_t):                
-                yy = yy + 1
+                yy = 1
                 x = np.zeros([n+1,1])
                 v = np.zeros([n+1,1])
             
@@ -2336,25 +2336,14 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             v = math.exp(-1/tau_d) * v
             v[fire_t] = v[fire_t] + 1
             
-            if ((t % t_avg) == 0) and (t_counter):
-                vv = vv/float(t_counter)
-                xx = xx/float(t_counter)
+            v[-1,0] = 1
                 
-                V[:,t_tot] = vv.ravel()
-                X[:,t_tot] = xx.ravel()
-                Y[t_tot] = yy
+            V[:,t_tot] = v.ravel()
+            X[:,t_tot] = x.ravel()
+            Y[t_tot] = yy
                 
-                xx = np.zeros([n+1,1])
-                vv = np.zeros([n+1,1])
-                yy = 0
-                t_counter = 0
-                t_tot = t_tot + 1
-            else:
-                vv = vv + v
-                xx = xx + x
-                vv[-1,0] = 1
-                t_counter = t_counter + 1
-        
+            t_tot = t_tot + 1
+            
         Y = np.array(Y)
         
         V = V[:,0:t_tot]
@@ -2398,7 +2387,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         lambda_0 = np.zeros([TcT,1])
         #FF = np.dot(AA,AA.T)
         Z = np.zeros([n,1])    # The "sparse" solution
-        eta = 0.00001             # The constraint maximizaition penalty
+        eta = 1             # The constraint maximizaition penalty
         gamm = 10000             # The norm-2 penalty
         #C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
         #FF = np.dot(np.dot(AA,C_i),AA.T)
@@ -2408,7 +2397,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         Cc = np.dot(AA.T,AA)
         gamm = 1+gamm
         #C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
-        C_i = (np.eye(n) + Cc/float(gamm))/float(gamm)
+        C_i = (np.eye(n) + eta*Cc/float(gamm))/float(gamm)
         FF = np.dot(np.dot(AA,C_i),AA.T)
         #----------------------------------------------------------
         
@@ -2429,7 +2418,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         W = np.zeros([n+1,1])
         W[0:ijk,0] = Z[0:ijk,0]
         W[ijk+1:,0] = Z[ijk:,0]
-        #pdb.set_trace()
+        pdb.set_trace()
         #----------------------------------------------------------
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2449,7 +2438,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             vv = np.zeros([n+1,1])
             yy = 0
             t_counter = 0
-            ell =  int(block_size/float(t_avg))
+            ell =  block_size
             r_count = 0
             YY = np.zeros([ell,1]) 
             AA = np.zeros([ell,n+1])
@@ -2508,7 +2497,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     FF_2 = np.dot(FF,FF)
                     FF = eta* (FF + eta * FF_2)
                     Z = np.zeros([n,1])    # The "sparse" solution
-                    eta = 0.00001             # The constraint maximizaition penalty
+                    eta = 1             # The constraint maximizaition penalty
                     gamm = 10000
                     #C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
                     
@@ -2521,7 +2510,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     gamm = 1+gamm
                     #la = np.linalg.eig((gamm * np.eye(n) - Cc))
                     #C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
-                    C_i = (np.eye(n) + Cc/float(gamm))/float(gamm)
+                    C_i = (np.eye(n) + eta*Cc/float(gamm))/float(gamm)
                     FF = np.dot(np.dot(AA,C_i),AA.T)
                 
                     #----------------------------------------------------------
@@ -2556,8 +2545,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     W = W/np.linalg.norm(W)
                     
                     Y_predict = np.dot(AA_orig,W)
-                    Y_predict = (Y_predict>0).astype(int)                    
-                    opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig)
+                    Y_predict = (Y_predict>0).astype(int)
+                    Y_orig = (Y_orig>-1).astype(int)
+                    opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
                     pdb.set_trace()
                     #----------------------------------------------------------
                     
@@ -2571,6 +2561,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #--------------------Reset the Counters--------------------
                     YY = np.zeros([ell,1]) 
                     AA = np.zeros([ell,n+1])
+                    
                     r_count = 0
                     #----------------------------------------------------------
                     
@@ -2581,33 +2572,18 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 else:
                     y = -1
                     
-                if (t_counter == t_avg):
-                    vv = vv/float(t_counter)
-                    xx = xx/float(t_counter)
-                    yy = yy/float(t_counter)
+                u = v-x
                     
-                    u = vv-xx
-                    #u[-1] = 1
-                    if sketch_flag:
-                        s = prng.randint(0,4,[n+1,1])
-                        s = (s>=3).astype(int)
-                        uu = np.multiply(u,s)
-                    uu = u
+                if sketch_flag:
+                    s = prng.randint(0,4,[n+1,1])
+                    s = (s>=3).astype(int)
+                    uu = np.multiply(u,s)
+                uu = u
                     
-                    AA[r_count,:] = uu.ravel()
-                    YY[r_count,0] = yy
-                    r_count = r_count + 1
-                    xx = np.zeros([n+1,1])
-                    vv = np.zeros([n+1,1])
-                    yy = 0
-                    t_counter = 0
-                    
-                else:
-                    vv = vv + v
-                    xx = xx + x
-                    yy = yy + y
-                    #vv[-1,0] = 1
-                    t_counter = t_counter + 1
+                AA[r_count,:] = uu.ravel()
+                YY[r_count,0] = y
+                
+                r_count = r_count + 1
                 
                 if t_last == t:
                     x = np.zeros([n+1,1])
