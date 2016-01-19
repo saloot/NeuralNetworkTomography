@@ -2397,20 +2397,22 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         #FF = np.dot(AA,AA.T)
         Z = np.zeros([n,1])    # The "sparse" solution
         eta = 0.00001             # The constraint maximizaition penalty
+        gamm = 10             # The norm-2 penalty
         #C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
         #FF = np.dot(np.dot(AA,C_i),AA.T)
         #AB = np.dot(AA,np.eye(n)+C_i)
-        AB = AA
-        FF = np.dot(AA,AA.T)
+        #AB = AA
+        #FF = np.dot(AA,AA.T)
         Cc = np.dot(AA.T,AA)
-        C_i = eta*(np.eye(n)+eta*Cc)
-        FF_2 = np.dot(FF,FF)
-        FF = eta* (FF + eta * FF_2)
+        gamm = 1+gamm
+        C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
+        FF = np.dot(np.dot(AA,C_i),AA.T)
         #----------------------------------------------------------
         
         #---------Find the Solution with Sparsity in Mind----------
         for i in range(0,2):
-            BB = eta * (np.dot(AA,Z) + eta * np.dot(np.dot(AA,Cc),Z))
+            #BB = eta * (np.dot(AA,Z) + eta * np.dot(np.dot(AA,Cc),Z))
+            BB = np.dot(AA,np.dot(C_i,Z))
             res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
             lam = np.reshape(res_cons['x'],[TcT,1])
             ww = np.dot(AA.T,lam)
@@ -2501,22 +2503,23 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     FF = eta* (FF + eta * FF_2)
                     Z = np.zeros([n,1])    # The "sparse" solution
                     eta = 0.00001             # The constraint maximizaition penalty
+                    gamm = 10
                     #C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
                     
                     #FF = np.dot(np.dot(AA,C_i),AA.T)
                     #AB = np.dot(AA,np.eye(n)+C_i)
-                    AB = AA
-                    FF = np.dot(AA,AA.T)
+                    #AB = AA
+                    #FF = np.dot(AA,AA.T)
                     Cc = np.dot(AA.T,AA)
-                    C_i = eta*(np.eye(n)+eta*Cc)
-                    FF_2 = np.dot(FF,FF)
-                    FF = eta* (FF + eta * FF_2)
-        
+                    gamm = 1+gamm
+                    C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
+                    FF = np.dot(np.dot(AA,C_i),AA.T)
+                
                     #----------------------------------------------------------
         
                     #---------Find the Solution with Sparsity in Mind----------
                     for i in range(0,10):
-                        BB = eta * (np.dot(AA,Z) + eta * np.dot(np.dot(AA,Cc),Z))
+                        BB = np.dot(AA,np.dot(C_i,Z))
                         res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                         lam = np.reshape(res_cons['x'],[TcT,1])
                         ww = np.dot(AA.T,lam)
