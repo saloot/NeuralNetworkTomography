@@ -2405,7 +2405,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         #FF = np.dot(AA,AA.T)
         Cc = np.dot(AA.T,AA)
         gamm = 1+gamm
-        C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
+        #C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
+        C_i = (np.eye(n) + Cc/float(gamm))/float(gamm)
         FF = np.dot(np.dot(AA,C_i),AA.T)
         #----------------------------------------------------------
         
@@ -2503,7 +2504,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     FF = eta* (FF + eta * FF_2)
                     Z = np.zeros([n,1])    # The "sparse" solution
                     eta = 0.00001             # The constraint maximizaition penalty
-                    gamm = 10
+                    gamm = 10000
                     #C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
                     
                     #FF = np.dot(np.dot(AA,C_i),AA.T)
@@ -2511,8 +2512,11 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #AB = AA
                     #FF = np.dot(AA,AA.T)
                     Cc = np.dot(AA.T,AA)
+                    Cc_nor = np.linalg.norm(Cc)
                     gamm = 1+gamm
-                    C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
+                    #la = np.linalg.eig((gamm * np.eye(n) - Cc))
+                    #C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
+                    C_i = (np.eye(n) + Cc/float(gamm))/float(gamm)
                     FF = np.dot(np.dot(AA,C_i),AA.T)
                 
                     #----------------------------------------------------------
