@@ -2364,7 +2364,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         g = (Y>0).astype(int) - (Y<=0).astype(int)
         A = (V-X).T
         A_orig = copy.deepcopy(A)
-        Y_orig = copy.deepcopy(y)
+        Y_orig = copy.deepcopy(Y)
         #A = (V).T
         
         AA = np.dot(np.diag(g.ravel()),A)
