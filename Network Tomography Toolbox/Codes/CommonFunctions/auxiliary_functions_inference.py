@@ -2363,6 +2363,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
         g = (Y>0).astype(int) - (Y<=0).astype(int)
         A = (V-X).T
+        A_orig = copy.deepcopy(A)
+        Y_orig = copy.deepcopy(y)
         #A = (V).T
         
         AA = np.dot(np.diag(g.ravel()),A)
@@ -2422,11 +2424,12 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             Z = soft_threshold(ww2,sparse_thr_0)
         #----------------------------------------------------------
         
+        
         #-----------------Store the Solution-----------------------
         W = np.zeros([n+1,1])
         W[0:ijk,0] = Z[0:ijk,0]
         W[ijk+1:,0] = Z[ijk:,0]
-        #pdb.set_trace()
+        pdb.set_trace()
         #----------------------------------------------------------
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2679,7 +2682,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         g = (Y>0).astype(int) - (Y<=0).astype(int)
         A = (V-X).T
         
-        Y_predict = np.dot(A,W)
+        #Y_predict = np.dot(A,W)
+        Y_predict = np.dot(A_orig,W)
         
         pdb.set_trace()
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
