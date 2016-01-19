@@ -2307,13 +2307,13 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     
         
         #~~~~~~~~~~~~~~~~~Calculate The Initial Inverse Matrix~~~~~~~~~~~~~~~~~
-        X = np.zeros([n+1,1+int(T_temp/float(t_avg))])
-        V = np.zeros([n+1,1+int(T_temp/float(t_avg))])
+        X = np.zeros([n+1,int(T_temp/float(t_avg))])
+        V = np.zeros([n+1,int(T_temp/float(t_avg))])
         x = np.zeros([n+1,1])
         v = np.zeros([n+1,1])
         xx = np.zeros([n+1,1])
         vv = np.zeros([n+1,1])
-        Y = np.zeros([1+int(T_temp/float(t_avg))])
+        Y = np.zeros([int(T_temp/float(t_avg))])
         
         yy = 0
         
@@ -2328,6 +2328,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 yy = 1
                 x = np.zeros([n+1,1])
                 v = np.zeros([n+1,1])
+            else:
+                yy = 0
             
             fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
             x = math.exp(-1/tau_s) * x
@@ -2668,7 +2670,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         #Y_predict = np.dot(A,W)
         Y_predict = np.dot(A_orig,W)
         Y_predict = (Y_predict>0).astype(int)
-        np.linalg.norm(Y_predict-Y_orig)
+        #np.linalg.norm(Y_predict-Y_orig)
         opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig)
         pdb.set_trace()
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
