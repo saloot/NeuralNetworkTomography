@@ -2433,7 +2433,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         Y_predict = (Y_predict>=0).astype(int)
         #Y_orig = (Y_orig>-1).astype(int)
         opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
-        pdb.set_trace()
+        #pdb.set_trace()
         #----------------------------------------------------------
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2563,10 +2563,14 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     W = W + WW
                     W = W/np.linalg.norm(W)
                     
+                    Y_predict2 = np.dot(AA_orig,WW)
                     Y_predict = np.dot(AA_orig,W)
-                    Y_predict = (Y_predict>=0).astype(int)
+                    Y_predict = (Y_predict>0).astype(int)
                     Y_orig = (Y_orig>-1).astype(int)
-                    opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
+                    
+                    opt_score = np.linalg.norm(Y_predict[t_inds].ravel()-Y_orig[t_inds].ravel())
+                    opt_score2 = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
+                    print opt_score,opt_score2
                     pdb.set_trace()
                     #----------------------------------------------------------
                     
