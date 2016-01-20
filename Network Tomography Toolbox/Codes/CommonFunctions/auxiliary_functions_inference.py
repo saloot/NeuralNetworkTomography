@@ -2358,6 +2358,12 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         Y_orig = copy.deepcopy(Y)
         #A = (V).T
         
+        
+        #--------Shift Post-Synaptic Spike One to the Left---------
+        g = np.roll(g,-1)
+        g[-1] = -1
+        #----------------------------------------------------------
+        
         AA = np.dot(np.diag(g.ravel()),A)
         
         #--------------Go For Derviative Maximization--------------
@@ -2420,6 +2426,11 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         W = np.zeros([n+1,1])
         W[0:ijk,0] = Z[0:ijk,0]
         W[ijk+1:,0] = Z[ijk:,0]
+        
+        Y_predict = np.dot(A_orig,W)
+        Y_predict = (Y_predict>=0).astype(int)
+        #Y_orig = (Y_orig>-1).astype(int)
+        opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
         pdb.set_trace()
         #----------------------------------------------------------
         
@@ -2547,7 +2558,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     W = W/np.linalg.norm(W)
                     
                     Y_predict = np.dot(AA_orig,W)
-                    Y_predict = (Y_predict>0).astype(int)
+                    Y_predict = (Y_predict>=0).astype(int)
                     Y_orig = (Y_orig>-1).astype(int)
                     opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
                     pdb.set_trace()
