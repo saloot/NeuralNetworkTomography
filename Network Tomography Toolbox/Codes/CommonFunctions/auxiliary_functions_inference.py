@@ -2361,6 +2361,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
         #--------Shift Post-Synaptic Spike One to the Left---------
         g = np.roll(g,-1)
+        Y_orig = np.roll(Y_orig,-1)
+        Y_orig[-1] = -1
         g[-1] = -1
         #----------------------------------------------------------
         
@@ -2477,8 +2479,12 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                         AA_orig = AA
                         Y_orig = YY
+                        
+                        Y_orig = np.roll(Y_orig,-1)
+                        Y_orig[-1] = -1
+
                         AA = AA[t_inds,:]
-                        YY = YY[t_inds,0]
+                        YY = Y_orig[t_inds,0]
                     #----------------------------------------------------------
 
                     AA = np.dot(np.diag(YY.ravel()),AA)
@@ -2506,9 +2512,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
                     #-------------Create Hessian and Initial Point-------------
                     lambda_0 = np.zeros([TcT,1])
-                    FF = np.dot(AA,AA.T)
-                    FF_2 = np.dot(FF,FF)
-                    FF = eta* (FF + eta * FF_2)
+                    #FF = np.dot(AA,AA.T)
+                    #FF_2 = np.dot(FF,FF)
+                    #FF = eta* (FF + eta * FF_2)
                     Z = np.zeros([n,1])    # The "sparse" solution
                     eta = 1             # The constraint maximizaition penalty
                     gamm = 10000
