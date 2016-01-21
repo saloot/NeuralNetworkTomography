@@ -2288,7 +2288,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     h0 = 0.0                                        # The reset membrane voltage (in mV)
     delta = 0.25                                       # The tanh coefficient to approximate the sign function
     d_max = 10
-    t_gap = 12                                     # The gap between samples to consider
+    t_gap = 2                                     # The gap between samples to consider
     t_avg = 1
     block_size = 20000
     
@@ -2353,7 +2353,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         Y = Y[0:t_tot]
         
         g = (Y>0).astype(int) - (Y<=0).astype(int)
-        A = (V-X).T
+        #A = (V-X).T
+        A = (V).T
         A_orig = copy.deepcopy(A)
         Y_orig = copy.deepcopy(Y)
         #A = (V).T
@@ -2433,7 +2434,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         Y_predict = (Y_predict>=0).astype(int)
         #Y_orig = (Y_orig>-1).astype(int)
         opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
-        #pdb.set_trace()
+        pdb.set_trace()
         #----------------------------------------------------------
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2597,7 +2598,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 else:
                     y = -1
                     
-                u = v-x
+                u = v#-x
                     
                 if sketch_flag:
                     s = prng.randint(0,4,[n+1,1])
@@ -2623,7 +2624,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 x = math.exp(-1/tau_s) * x
                 x[fire_t] = x[fire_t] + 1
                 
-                u = v-x
+                u = v#-x
                 #..................................................................
             
                 #pdb.set_trace()
