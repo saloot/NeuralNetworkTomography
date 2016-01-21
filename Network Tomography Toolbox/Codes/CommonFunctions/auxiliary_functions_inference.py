@@ -2338,7 +2338,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             v = math.exp(-1/tau_d) * v
             v[fire_t] = v[fire_t] + 1
             
-            v[-1,0] = 1
+            #v[-1,0] = 1
                 
             V[:,t_tot] = v.ravel()
             X[:,t_tot] = x.ravel()
@@ -2464,6 +2464,40 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             #------------------------------------------------------------------
             
             for t in range_T:
+                fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+                if (ijk in fire_t):
+                    t_last = t
+                    y = 1
+                else:
+                    y = -1
+                    
+                u = v#-x
+                    
+                if sketch_flag:
+                    s = prng.randint(0,4,[n+1,1])
+                    s = (s>=3).astype(int)
+                    uu = np.multiply(u,s)
+                uu = u
+                    
+                AA[r_count,:] = uu.ravel()
+                YY[r_count,0] = y
+                
+                r_count = r_count + 1
+                
+                if t_last == t:
+                    x = np.zeros([n+1,1])
+                    v = np.zeros([n+1,1])
+                
+                
+                #fire_t = read_spikes_lines_delayed(out_spikes_tot_mat_file,t,n,d_max,dd)
+                fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
+                v = math.exp(-1/tau_d) * v
+                v[fire_t] = v[fire_t] + 1
+                
+                x = math.exp(-1/tau_s) * x
+                x[fire_t] = x[fire_t] + 1
+                
+                u = v#-x
                 
                 if (r_count == ell):
                     
@@ -2591,40 +2625,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     r_count = 0
                     #----------------------------------------------------------
                     
-                fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
-                if (ijk in fire_t):
-                    t_last = t
-                    y = 1
-                else:
-                    y = -1
-                    
-                u = v#-x
-                    
-                if sketch_flag:
-                    s = prng.randint(0,4,[n+1,1])
-                    s = (s>=3).astype(int)
-                    uu = np.multiply(u,s)
-                uu = u
-                    
-                AA[r_count,:] = uu.ravel()
-                YY[r_count,0] = y
                 
-                r_count = r_count + 1
-                
-                if t_last == t:
-                    x = np.zeros([n+1,1])
-                    v = np.zeros([n+1,1])
-                
-                
-                #fire_t = read_spikes_lines_delayed(out_spikes_tot_mat_file,t,n,d_max,dd)
-                fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
-                v = math.exp(-1/tau_d) * v
-                v[fire_t] = v[fire_t] + 1
-                
-                x = math.exp(-1/tau_s) * x
-                x[fire_t] = x[fire_t] + 1
-                
-                u = v#-x
                 #..................................................................
             
                 #pdb.set_trace()
