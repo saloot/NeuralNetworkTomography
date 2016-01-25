@@ -2257,6 +2257,16 @@ def delayed_inference_constraints_cvxopt(out_spikes_tot_mat_file,TT,n,max_itr_op
 
 
 
+
+def merge_W(W_matr):
+    T,n = W_matr.shape
+    W_mean = W_matr(axis = 0)
+    W_std = W_matr.std(axis = 0)
+    
+    W2 = np.multiply(W_mean,(W_std<0.01).astype(int))
+    return W2
+
+
 #------------------------------------------------------------------------------
 def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
     
@@ -2291,6 +2301,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     t_gap = 5                                     # The gap between samples to consider
     t_avg = 1
     block_size = 20000
+    
+    W_infer = np.zeros([int(len(range_T)/float(block_size))+1,n+1])
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
@@ -2461,6 +2473,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
             alpha = alpha0/float(1+math.log(ttau+1))
             sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
+            itr_W = 0
             #------------------------------------------------------------------
             
             for t in range_T:
@@ -2600,9 +2613,12 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     if sum(sum(cc<0))>0:
                         print sum(sum(cc<0))
                     else:
+                        
                         W = W + (cc.mean()) * WW
                         #W = W/np.linalg.norm(W)
                         W = W/(np.abs(W)).max()
+                        W_infer[itr_W,:] = WW.ravel()
+                        itr_W = itr_W + 1
                     
                     Y_predict2 = np.dot(AA_orig,WW)
                     Y_predict = np.dot(AA_orig,W)
@@ -2636,7 +2652,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #..................................................................
             
                 #pdb.set_trace()
-            if not ((ttau+1) % 5):    
+            if not ((ttau+1) % 5):
+                W2 = merge_W(W_infer[0:itr_W,:])
                 pdb.set_trace()
             #Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
             
