@@ -2288,7 +2288,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     h0 = 0.0                                        # The reset membrane voltage (in mV)
     delta = 0.25                                       # The tanh coefficient to approximate the sign function
     d_max = 10
-    t_gap = 2                                     # The gap between samples to consider
+    t_gap = 5                                     # The gap between samples to consider
     t_avg = 1
     block_size = 20000
     
@@ -2595,8 +2595,13 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #---------------Update the Current Estimate----------------
                     #W = W + alpha * soft_threshold(WW,sparse_thr)
                     #W = W - alpha * WW
-                    W = W + WW
-                    W = W/np.linalg.norm(W)
+                    cc = np.dot(AA,ww2)
+                    if sum(sum(cc<0))>0:
+                        print sum(sum(cc<0))
+                    else:
+                        W = W + (cc.mean()) * WW
+                        #W = W/np.linalg.norm(W)
+                        W = W/(np.abs(W)).max()
                     
                     Y_predict2 = np.dot(AA_orig,WW)
                     Y_predict = np.dot(AA_orig,W)
@@ -2612,10 +2617,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #----------------------------------------------------------
                     
                     #-------------Make Sure the Solution Is Valid--------------
-                    cc = np.dot(AA,ww2)
-                    if sum(sum(cc<0))>0:
-                        print sum(sum(cc<0))
-                        pdb.set_trace()
+                    
+                    
                     #----------------------------------------------------------
                     
                     #--------------------Reset the Counters--------------------
