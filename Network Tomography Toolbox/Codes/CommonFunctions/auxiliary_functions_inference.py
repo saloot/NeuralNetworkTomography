@@ -2496,6 +2496,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 x = math.exp(-1/tau_s) * x
                 x[fire_t] = x[fire_t] + 1
+                v[-1,0] = 1
                 
                 u = v#-x
                 
@@ -2608,6 +2609,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     Y_predict = (Y_predict>0).astype(int)
                     Y_predict2 = (Y_predict2>0).astype(int)
                     Y_orig = (Y_orig>-1).astype(int)
+                    # np.nonzero(Y_orig)
+                    # Y_orig[].T
+                    # Y_predict[].T
                     
                     opt_score = np.linalg.norm(Y_predict2[t_inds].ravel()-Y_orig[t_inds].ravel())                    
                     opt_score2 = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
