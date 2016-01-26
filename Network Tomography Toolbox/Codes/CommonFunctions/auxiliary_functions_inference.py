@@ -2652,7 +2652,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #..................................................................
             
                 #pdb.set_trace()
-            if not ((ttau+1) % 5):
+            if not ((ttau+1) % 1):
                 W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 pdb.set_trace()
             #Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
