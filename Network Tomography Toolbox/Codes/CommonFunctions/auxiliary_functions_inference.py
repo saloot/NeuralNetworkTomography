@@ -2393,7 +2393,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             t_inds = np.array(range(t_init,T_temp,t_gap))
 
             AA = AA[t_inds,:]
-            YY = Y_orig[t_inds,0]
+            YY = Y_orig[t_inds]
             
         #---Ignore the Spikes Corresponding to the Current Neuron--
         AA = np.delete(AA.T,ijk,0).T
@@ -2435,7 +2435,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         for i in range(0,2):
             #BB = eta * (np.dot(AA,Z) + eta * np.dot(np.dot(AA,Cc),Z))
             BB = np.dot(AA,np.dot(C_i,Z))
-            res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+            res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
             # res_cons['status']
             # res_cons['message']
             lam = np.reshape(res_cons['x'],[TcT,1])
@@ -2547,7 +2547,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         Y_orig[-1] = -1
 
                         AA = AA[t_inds,:]
-                        YY = Y_orig[t_inds,0]
+                        YY = Y_orig[t_inds]
                     #----------------------------------------------------------
 
                     AA = np.dot(np.diag(YY.ravel()),AA)
@@ -2600,7 +2600,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #---------Find the Solution with Sparsity in Mind----------
                     for i in range(0,10):
                         BB = np.dot(AA,np.dot(C_i,Z))
-                        res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+                        res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
                         lam = np.reshape(res_cons['x'],[TcT,1])
                         ww = np.dot(AA.T,lam)
                         ww2 = np.dot(C_i,Z + 0.5*ww[0:n])
