@@ -2260,7 +2260,7 @@ def delayed_inference_constraints_cvxopt(out_spikes_tot_mat_file,TT,n,max_itr_op
 
 def merge_W(W_matr,std_thr):
     T,n = W_matr.shape
-    W_mean = W_matr(axis = 0)
+    W_mean = W_matr.mean(axis = 0)
     W_std = W_matr.std(axis = 0)
     
     W2 = np.multiply(W_mean,(W_std<std_thr).astype(int))
@@ -2388,6 +2388,13 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             AA = np.vstack([AA,B])
         #----------------------------------------------------------
         
+        if rand_sample_flag:
+            t_init = np.random.randint(0,t_gap)
+            t_inds = np.array(range(t_init,T_temp,t_gap))
+
+            AA = AA[t_inds,:]
+            YY = Y_orig[t_inds,0]
+            
         #---Ignore the Spikes Corresponding to the Current Neuron--
         AA = np.delete(AA.T,ijk,0).T
         #----------------------------------------------------------
@@ -2428,7 +2435,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         for i in range(0,2):
             #BB = eta * (np.dot(AA,Z) + eta * np.dot(np.dot(AA,Cc),Z))
             BB = np.dot(AA,np.dot(C_i,Z))
-            res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
+            res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TCN', options=opt)
+            # res_cons['status']
+            # res_cons['message']
             lam = np.reshape(res_cons['x'],[TcT,1])
             ww = np.dot(AA.T,lam)
             ww2 = np.dot(C_i,Z + 0.5*ww[0:n])
@@ -2439,14 +2448,19 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
         #-----------------Store the Solution-----------------------
         W = np.zeros([n+1,1])
-        W[0:ijk,0] = Z[0:ijk,0]
-        W[ijk+1:,0] = Z[ijk:,0]
-        
-        Y_predict = np.dot(A_orig,W)
-        Y_predict = (Y_predict>=0).astype(int)
-        #Y_orig = (Y_orig>-1).astype(int)
-        opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
-        pdb.set_trace()
+        cc = np.dot(AA,ww2)
+        if not sum(cc<0):
+            W[0:ijk,0] = Z[0:ijk,0]
+            W[ijk+1:,0] = Z[ijk:,0]
+            
+            Y_predict = np.dot(A_orig,W)
+            Y_predict = (Y_predict>=0).astype(int)
+            #Y_orig = (Y_orig>-1).astype(int)
+            opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
+            print 'Good! first time lucky!'
+        else:
+            print 'Oops! Optimization not successful!'
+            pdb.set_trace()
         #----------------------------------------------------------
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
