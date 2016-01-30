@@ -2471,6 +2471,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         t_last = T0 + T_temp
         u = v-x
         prng = RandomState(int(time()))
+        W2 = np.zeros([n+1,1])
         #----------------------------------------------------------------------
         
         for ttau in range(0,500):
@@ -2631,7 +2632,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         W = W + (cc.mean()) * WW
                         #W = W/np.linalg.norm(W)
                         W = W/(np.abs(W)).max()
-                        W_infer[itr_W,:] = WW.ravel()
+                        W_infer[itr_W,:] = (cc.mean()) * WW.ravel()
                         itr_W = itr_W + 1
                     
                     Y_predict2 = np.dot(AA_orig,WW)
@@ -2666,79 +2667,82 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #..................................................................
             
                 #pdb.set_trace()
-            if not ((ttau+1) % 1):
-                W2 = merge_W(W_infer[0:itr_W,:],0.01)
+            if not ((ttau+1) % 10):
+                W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[n+1,1])
+                #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 pdb.set_trace()
             #Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
             
             
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Predict Spikes~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        X = np.zeros([n+1,1+int(T_temp/float(t_avg))])
-        V = np.zeros([n+1,1+int(T_temp/float(t_avg))])
-        x = np.zeros([n+1,1])
-        v = np.zeros([n+1,1])
-        xx = np.zeros([n+1,1])
-        vv = np.zeros([n+1,1])
-        Y = np.zeros([1+int(T_temp/float(t_avg))])
-        
-        yy = 0
-        
-        t_counter = 0
-        t_tot = 0
-        for t in range(T0,T0 + T_temp):
+        if 0:
+            X = np.zeros([n+1,1+int(T_temp/float(t_avg))])
+            V = np.zeros([n+1,1+int(T_temp/float(t_avg))])
+            x = np.zeros([n+1,1])
+            v = np.zeros([n+1,1])
+            xx = np.zeros([n+1,1])
+            vv = np.zeros([n+1,1])
+            Y = np.zeros([1+int(T_temp/float(t_avg))])
             
-            #........Pre-compute Some of Matrices to Speed Up the Process......
-            #fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
-            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
-            if (ijk in fire_t):                
-                yy = yy + 1
-                x = np.zeros([n+1,1])
-                v = np.zeros([n+1,1])
+            yy = 0
             
-            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
-            x = math.exp(-1/tau_s) * x
-            x[fire_t] = x[fire_t] + 1
-            
-            v = math.exp(-1/tau_d) * v
-            v[fire_t] = v[fire_t] + 1
-            
-            if ((t % t_avg) == 0) and (t_counter):
-                vv = vv/float(t_counter)
-                xx = xx/float(t_counter)
+            t_counter = 0
+            t_tot = 0
+            for t in range(T0,T0 + T_temp):
                 
-                V[:,t_tot] = vv.ravel()
-                X[:,t_tot] = xx.ravel()
-                Y[t_tot] = yy
+                #........Pre-compute Some of Matrices to Speed Up the Process......
+                #fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+                fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+                if (ijk in fire_t):                
+                    yy = yy + 1
+                    x = np.zeros([n+1,1])
+                    v = np.zeros([n+1,1])
                 
-                xx = np.zeros([n+1,1])
-                vv = np.zeros([n+1,1])
-                yy = 0
-                t_counter = 0
-                t_tot = t_tot + 1
-            else:
-                vv = vv + v
-                xx = xx + x
-                vv[-1,0] = 1
-                t_counter = t_counter + 1
+                fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
+                x = math.exp(-1/tau_s) * x
+                x[fire_t] = x[fire_t] + 1
+                
+                v = math.exp(-1/tau_d) * v
+                v[fire_t] = v[fire_t] + 1
+                
+                if ((t % t_avg) == 0) and (t_counter):
+                    vv = vv/float(t_counter)
+                    xx = xx/float(t_counter)
+                    
+                    V[:,t_tot] = vv.ravel()
+                    X[:,t_tot] = xx.ravel()
+                    Y[t_tot] = yy
+                    
+                    xx = np.zeros([n+1,1])
+                    vv = np.zeros([n+1,1])
+                    yy = 0
+                    t_counter = 0
+                    t_tot = t_tot + 1
+                else:
+                    vv = vv + v
+                    xx = xx + x
+                    vv[-1,0] = 1
+                    t_counter = t_counter + 1
+            
+            Y = np.array(Y)
+            
+            V = V[:,0:t_tot]
+            X = X[:,0:t_tot]
+            Y = Y[0:t_tot]
+            
+            g = (Y>0).astype(int) - (Y<=0).astype(int)
+            A = (V-X).T
+            
+            #Y_predict = np.dot(A,W)
+            Y_predict = np.dot(A_orig,W)
+            Y_predict = (Y_predict>0).astype(int)
+            #np.linalg.norm(Y_predict-Y_orig)
+            opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig)
+            pdb.set_trace()
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
-        Y = np.array(Y)
-        
-        V = V[:,0:t_tot]
-        X = X[:,0:t_tot]
-        Y = Y[0:t_tot]
-        
-        g = (Y>0).astype(int) - (Y<=0).astype(int)
-        A = (V-X).T
-        
-        #Y_predict = np.dot(A,W)
-        Y_predict = np.dot(A_orig,W)
-        Y_predict = (Y_predict>0).astype(int)
-        #np.linalg.norm(Y_predict-Y_orig)
-        opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig)
         pdb.set_trace()
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
-        W_inferred[:,ijk] = W
+        W_inferred[:,ijk] = W2.ravel()
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
             
     return W_inferred

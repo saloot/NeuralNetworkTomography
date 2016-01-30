@@ -85,7 +85,7 @@ file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
 #------------------------------------------------------------------------------
     
 #--------Calculate the Range to Assess the Effect of Recording Duration--------
-T_max = 7199000
+T_max = 500000
 #T_max = 100000
 #T_max = int(1000*T_max)
 #T_step = int(T_max/6.0)
