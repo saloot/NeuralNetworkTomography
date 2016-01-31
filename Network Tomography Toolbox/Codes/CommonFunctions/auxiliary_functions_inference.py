@@ -2870,12 +2870,10 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind):
         temp = np.multiply((Y_predict==0).astype(int),(Y_orig==0).astype(int))
         opt_score_true_neg = sum(temp)/(sum(Y_orig==0)+0.0001)
         #opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
-        
-        pdb.set_trace()
         #----------------------------------------------------------
         
                     
-    return opt_score_true_pos,opt_score_tru_neg
+    return opt_score_true_pos,opt_score_true_neg
 
 
 
