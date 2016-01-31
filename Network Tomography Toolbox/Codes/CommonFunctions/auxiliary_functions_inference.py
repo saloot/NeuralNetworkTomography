@@ -2785,7 +2785,6 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind):
     #---------Identify Incoming Connections to Each Neuron in the List---------
     for T_pair in T_array:
         
-        pdb.set_trace()
         range_T = range(T_pair[0],T_pair[1])
         T_temp = T_pair[1] - T_pair[0]
         T0 = T_pair[0]

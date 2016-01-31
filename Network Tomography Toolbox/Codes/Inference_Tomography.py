@@ -188,7 +188,7 @@ for T in T_range:
         n = 999
         #W_inferred,Inf_Delays = delayed_inference_constraints_memory(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,W_act,DD_act)
         #W_inferred, = delayed_inference_constraints_cvxopt(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
-        T_array = [20000,30000]
+        T_array = [[20000,30000]]
         W_act = W_act.T
         n_ind = 0
         Accur = spike_pred_accuracy(file_name_spikes2,T_array,W_act[:,n_ind],n_ind)
