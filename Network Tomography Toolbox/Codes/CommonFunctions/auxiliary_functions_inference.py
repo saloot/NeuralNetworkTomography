@@ -2758,9 +2758,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
 #------------------------------------------------------------------------------
 def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind):
     
-    #----------------------------Initilizations--------------------------------
-    pdb.set_trace()
-    n = np.shape(W).max() -1 
+    #----------------------------Initilizations--------------------------------    
+    n = max(np.shape(W)) -1 
     #--------------------------------------------------------------------------
     
     #-----------------------------Behavior Flags-------------------------------
