@@ -2811,7 +2811,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind):
             #........Pre-compute Some of Matrices to Speed Up the Process......
             #fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
             fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
-            if (ijk in fire_t):                
+            if (n_ind in fire_t):                
                 yy = 1
                 x = np.zeros([n+1,1])
                 v = np.zeros([n+1,1])
