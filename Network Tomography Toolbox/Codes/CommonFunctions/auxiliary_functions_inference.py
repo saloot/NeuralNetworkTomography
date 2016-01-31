@@ -2777,6 +2777,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind):
     t_gap = 5                                     # The gap between samples to consider
     t_avg = 1
     block_size = 20000
+    bin_size = 10
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
@@ -2863,16 +2864,32 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind):
         #--------------Calculate Prediction Accuracy----------------
         Y_predict = np.dot(A_orig,W)
         Y_predict = (Y_predict>=0).astype(int)
+        if bin_size > 1:
+            ll = int(len(Y_predict)/float(bin_size))
+            Y_predict_binned = np.reshape(Y_predict,[ll,bin_size])
+            Y_predict_binned = Y_predict_binned.mean(axis = 1)
+            Y_predict_binned = (Y_predict_binned>0).astype(int)
+            
+            Y_orig_binned = np.reshape(Y_orig,[ll,bin_size])
+            Y_orig_binned = Y_orig_binned.mean(axis = 1)
+            Y_orig_binned = (Y_orig_binned>0).astype(int)
         
-        temp = np.multiply((Y_predict==1).astype(int),(Y_orig==1).astype(int))
-        opt_score_true_pos = sum(temp)/(sum(Y_orig==1)+0.0001)
-        
-        temp = np.multiply((Y_predict==0).astype(int),(Y_orig==0).astype(int))
-        opt_score_true_neg = sum(temp)/(sum(Y_orig==0)+0.0001)
-        #opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
+            temp = np.multiply((Y_predict_binned==1).astype(int),(Y_orig_binned==1).astype(int))
+            opt_score_true_pos = sum(temp)/(sum(Y_orig_binned==1)+0.0001)
+            
+            temp = np.multiply((Y_predict_binned==0).astype(int),(Y_orig_binned==0).astype(int))
+            opt_score_true_neg = sum(temp)/(sum(Y_orig_binned==0)+0.0001)
+            
+        else:    
+            temp = np.multiply((Y_predict==1).astype(int),(Y_orig==1).astype(int))
+            opt_score_true_pos = sum(temp)/(sum(Y_orig==1)+0.0001)
+            
+            temp = np.multiply((Y_predict==0).astype(int),(Y_orig==0).astype(int))
+            opt_score_true_neg = sum(temp)/(sum(Y_orig==0)+0.0001)
+            #opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
         #----------------------------------------------------------
         
-        pdb.set_trace()
+        #pdb.set_trace()
                     
     return opt_score_true_pos,opt_score_true_neg
 
