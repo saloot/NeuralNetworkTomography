@@ -97,10 +97,22 @@ DD_act = 1.5 * abs(np.sign(W_act))
 itr_T = 0
 for T in T_range:
     
+    file_name_ending = 'I_' + str(inference_method) + '_S_' + str(sparsity_flag) + '_T_' + str(T)
+    if p_miss:
+        file_name_ending = file_name_ending + '_pM_' + str(p_miss)
+    if jitt:
+        file_name_ending = file_name_ending + '_jt_' + str(jitt)
+    if bin_size:
+        file_name_ending = file_name_ending + '_bS_' + str(bin_size)
+   
+    file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_ending,str(n_ind))
+    #W = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+    W = W_act[:,n_ind]
+    
     T_test = int(0.2*T)
     T_array = [[T+100,T+100+T_test]]
         
-    Accur_ture_pos,Accur_true_neg = spike_pred_accuracy(file_name_spikes2,T_array,W_act[:,n_ind],n_ind)
+    Accur_ture_pos,Accur_true_neg = spike_pred_accuracy(file_name_spikes2,T_array,W,n_ind)
     Prediction_true_pos[itr_T,0] = Accur_ture_pos
     Prediction_true_neg[itr_T,0] = Accur_true_neg
     itr_T = itr_T + 1    
@@ -130,18 +142,13 @@ np.savetxt(file_name,temp,'%2.5f',delimiter='\t')
 
 pdb.set_trace()
 #==============================================================================
-    #--------------------------Calculate Accuracy-------------------------
-    #WW = (W>0).astype(int)
-    #fpr, tpr, thresholds = metrics.roc_curve(WW.ravel(),whiten(W_inferred).ravel())    
-    #print('\n==> AUC = '+ str(metrics.auc(fpr,tpr))+'\n');
-    #----------------------------------------------------------------------
+
+#--------------------------Calculate Accuracy-------------------------
+#fpr, tpr, thresholds = metrics.roc_curve(WW.ravel(),whiten(W_inferred).ravel())    
+#print('\n==> AUC = '+ str(metrics.auc(fpr,tpr))+'\n');
+#----------------------------------------------------------------------
     
     
-#for i in range(0,n):
-#    W_inferred[i,i] = 0
-#plt.subplot(1,2,1);plt.imshow(whiten(W_inferred));plt.subplot(1,2,2);plt.imshow(np.sign(W));plt.show()
-#pdb.set_trace()
-#plt.plot(fpr,tpr)
 
 
 
