@@ -100,9 +100,9 @@ for T in T_range:
     T_test = int(0.2*T)
     T_array = [[T+100,T+100+T_test]]
         
-    Accu_ture_pos,Accur_true_neg = spike_pred_accuracy(file_name_spikes2,T_array,W_act[:,n_ind],n_ind)
-    Prediction_true_pos[itr_T,0] = Accu_ture_pos
-    Prediction_true_neg[itr_T,0] = Accu_ture_neg
+    Accur_ture_pos,Accur_true_neg = spike_pred_accuracy(file_name_spikes2,T_array,W_act[:,n_ind],n_ind)
+    Prediction_true_pos[itr_T,0] = Accur_ture_pos
+    Prediction_true_neg[itr_T,0] = Accur_true_neg
     itr_T = itr_T + 1    
     
     print 'Evaluation is successfully completed for T = %s ms' %str(T/1000.0)
