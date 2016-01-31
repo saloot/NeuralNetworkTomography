@@ -2778,8 +2778,6 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind):
     t_avg = 1
     block_size = 20000
     
-    W_infer = np.zeros([int(len(range_T)/float(block_size))+1,n+1])
-    
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
     #--------------------------------------------------------------------------
