@@ -2636,9 +2636,11 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         itr_W = itr_W + 1
                     
                     Y_predict2 = np.dot(AA_orig,WW)
+                    Y_predict3 = np.dot(AA_orig,W2)
                     Y_predict = np.dot(AA_orig,W)
                     Y_predict = (Y_predict>0).astype(int)
                     Y_predict2 = (Y_predict2>0).astype(int)
+                    Y_predict3 = (Y_predict3>0).astype(int)
                     Y_orig = (Y_orig>-1).astype(int)
                     # np.nonzero(Y_orig)
                     # Y_orig[].T
@@ -2647,7 +2649,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     opt_score = np.linalg.norm(Y_predict2[t_inds].ravel()-Y_orig[t_inds].ravel())                    
                     opt_score2 = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
                     opt_score3 = np.linalg.norm(Y_predict[t_inds].ravel()-Y_orig[t_inds].ravel())
-                    print opt_score,opt_score2,opt_score3
+                    opt_score4 = np.linalg.norm(Y_predict3.ravel()-Y_orig.ravel())
+                    print opt_score,opt_score2,opt_score3,opt_score4
                     #pdb.set_trace()
                     #----------------------------------------------------------
                     
@@ -2745,6 +2748,130 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         W_inferred[:,ijk] = W2.ravel()
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
             
+    return W_inferred
+
+
+
+#------------------------------------------------------------------------------
+
+
+#------------------------------------------------------------------------------
+def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind):
+    
+    #----------------------------Initilizations--------------------------------
+    n = np.shape(W).max() -1 
+    #--------------------------------------------------------------------------
+    
+    #-----------------------------Behavior Flags-------------------------------
+    der_flag = 0                                # If 1, the derivative criteria will also be taken into account
+    rand_sample_flag = 1                        # If 1, the samples will be wide apart to reduce correlation
+    sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
+    #--------------------------------------------------------------------------
+    
+    #---------------------------Neural Parameters------------------------------
+    tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
+    tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
+    h0 = 0.0                                        # The reset membrane voltage (in mV)
+    delta = 0.25                                       # The tanh coefficient to approximate the sign function
+    d_max = 10
+    t_gap = 5                                     # The gap between samples to consider
+    t_avg = 1
+    block_size = 20000
+    
+    W_infer = np.zeros([int(len(range_T)/float(block_size))+1,n+1])
+    
+    t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
+    U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
+    #--------------------------------------------------------------------------
+    
+    #---------Identify Incoming Connections to Each Neuron in the List---------
+    for T_pair in T_array:
+        
+        
+        range_T = range(T_pair[0],T_pair[1])
+        T_temp = T_pair[1] - T_pair[0]
+        T0 = T_pair[0]
+        
+        print '-------------T is from %s to %s----------' %(str(T_pair[0]),str(T_pair[1]))
+    
+    
+        
+        #~~~~~~~~~~~~~~~~~Calculate The Initial Inverse Matrix~~~~~~~~~~~~~~~~~
+        X = np.zeros([n+1,int(T_temp/float(t_avg))])
+        V = np.zeros([n+1,int(T_temp/float(t_avg))])
+        x = np.zeros([n+1,1])
+        v = np.zeros([n+1,1])
+        xx = np.zeros([n+1,1])
+        vv = np.zeros([n+1,1])
+        Y = np.zeros([int(T_temp/float(t_avg))])
+        
+        yy = 0
+        
+        t_counter = 0
+        t_tot = 0
+        for t in range_T:
+            
+            #........Pre-compute Some of Matrices to Speed Up the Process......
+            #fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+            if (ijk in fire_t):                
+                yy = 1
+                x = np.zeros([n+1,1])
+                v = np.zeros([n+1,1])
+            else:
+                yy = 0
+            
+            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
+            x = math.exp(-1/tau_s) * x
+            x[fire_t] = x[fire_t] + 1
+            
+            v = math.exp(-1/tau_d) * v
+            v[fire_t] = v[fire_t] + 1
+            
+            #v[-1,0] = 1
+                
+            V[:,t_tot] = v.ravel()
+            X[:,t_tot] = x.ravel()
+            Y[t_tot] = yy
+                
+            t_tot = t_tot + 1
+            
+        Y = np.array(Y)
+        
+        V = V[:,0:t_tot]
+        X = X[:,0:t_tot]
+        Y = Y[0:t_tot]
+        
+        
+        A = (V).T
+        A_orig = copy.deepcopy(A)
+        Y_orig = copy.deepcopy(Y)
+        
+        
+        
+        #--------Shift Post-Synaptic Spike One to the Left---------
+        Y_orig = np.roll(Y_orig,-1)
+        Y_orig[-1] = -1
+        #----------------------------------------------------------
+        
+        if rand_sample_flag:
+            t_init = np.random.randint(0,t_gap)
+            t_inds = np.array(range(t_init,T_temp,t_gap))
+
+            A = A[t_inds,:]
+            Y = Y_orig[t_inds]
+            
+        
+        #--------------Calculate Prediction Accuracy----------------
+        Y_predict = np.dot(A_orig,W)
+        Y_predict = (Y_predict>=0).astype(int)
+        
+        opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
+        
+        pdb.set_trace()
+        #----------------------------------------------------------
+        
+                    
     return W_inferred
 
 
