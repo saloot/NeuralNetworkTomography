@@ -78,8 +78,8 @@ if (inference_method == 7):
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_Reduced_More.txt'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_Reduced.txt'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_750.txt'
-file_name_integrated_spikes_base = '../Data/Spikes/Moritz_Integrated_750'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
+#file_name_spikes = '../Data/Spikes/S_times_n_80_20.txt'
 #file_name_spikes = '../Data/Spikes/Spike_Times2.txt'
 #Neural_Spikes,T_max = read_spikes(file_name_spikes)
 #------------------------------------------------------------------------------
@@ -87,13 +87,14 @@ file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
 #--------Calculate the Range to Assess the Effect of Recording Duration--------
 T_max = 7199000
 T_max = 500000
+#T_max = 5000
 #T_max = 100000
 #T_max = int(1000*T_max)
 #T_step = int(T_max/6.0)
 #T_range = range(T_step, T_max+1, T_step)
 #print T_range
 
-T_range = [T_max]
+T_range = [no_stimul_rounds]
 #------------------------------------------------------------------------------
     
 #==============================================================================
@@ -104,6 +105,7 @@ T_range = [T_max]
 #file_name = '../Data/Graphs/Matrix_Accurate.txt'
 file_name = '../Data/Graphs/Moritz_Actual_Connectivity.txt'
 #file_name = '../Data/Graphs/Connectivity_Matrix2.txt'
+#file_name = '../Data/Graphs/W_n_80_20.txt'
 W_act = np.genfromtxt(file_name, dtype=None, delimiter='\t')
 n,m = W_act.shape
 DD_act = 1.5 * abs(np.sign(W_act))
@@ -166,7 +168,7 @@ for T in T_range:
             
             spike_file = open(file_name_spikes2,'w')
             #aa = np.nonzero(out_spikes_tot_mat)
-            pdb.set_trace()
+            #pdb.set_trace()
             fire_times = (1000*out_spikes[:,1]).astype(int)
             fire_inds = out_spikes[:,0]
             fire_inds = fire_inds[:-1]
@@ -213,7 +215,7 @@ for T in T_range:
     #WW = W_inferred + np.random.rand(n,n)/1000000000.0
     #WW = whiten(W_inferred)
     WW = (W_inferred)
-    pdb.set_trace()
+    #pdb.set_trace()
     #W_region = np.zeros([n,n])
     #for i in range(0,n):
     #    for j in range(i,n):

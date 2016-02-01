@@ -2281,8 +2281,12 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if len(neuron_range) == 0:
         neuron_range = np.array(range(0,m))
     
-    T0 = 20000                                  # It is the offset, i.e. the time from which on we will consider the firing activity
-    T_temp = 20000                              # The size of the initial batch to calculate the initial inverse matrix
+    if TT > 40000:
+        T0 = 20000                                  # It is the offset, i.e. the time from which on we will consider the firing activity
+        T_temp = 20000                              # The size of the initial batch to calculate the initial inverse matrix
+    else:
+        T0 = 0
+        T_temp = 1000
     range_T = range(T_temp+T0,TT)
     #--------------------------------------------------------------------------
     
@@ -2298,9 +2302,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     h0 = 0.0                                        # The reset membrane voltage (in mV)
     delta = 0.25                                       # The tanh coefficient to approximate the sign function
     d_max = 10
-    t_gap = 5                                     # The gap between samples to consider
+    t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
-    block_size = 20000
+    block_size = 200
     
     W_infer = np.zeros([int(len(range_T)/float(block_size))+1,n+1])
     
@@ -2524,7 +2528,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 x = math.exp(-1/tau_s) * x
                 x[fire_t] = x[fire_t] + 1
-                v[-1,0] = 1
+                #v[-1,0] = 1
                 
                 u = v#-x
                 
@@ -2651,6 +2655,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     opt_score3 = np.linalg.norm(Y_predict[t_inds].ravel()-Y_orig[t_inds].ravel())
                     opt_score4 = np.linalg.norm(Y_predict3.ravel()-Y_orig.ravel())
                     print opt_score,opt_score2,opt_score3,opt_score4
+                    #plt.plot(Y_orig);plt.plot(Y_predict3,'r');plt.show()
                     #pdb.set_trace()
                     #----------------------------------------------------------
                     
@@ -2670,8 +2675,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #..................................................................
             
                 #pdb.set_trace()
-            if not ((ttau+1) % 10):
-                W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[n+1,1])
+            W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[n+1,1])
+            if 0:#not ((ttau+1) % 10):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 pdb.set_trace()
             #Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
@@ -2744,7 +2749,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             pdb.set_trace()
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
-        pdb.set_trace()
+        #pdb.set_trace()
         W_inferred[:,ijk] = W2.ravel()
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
             
