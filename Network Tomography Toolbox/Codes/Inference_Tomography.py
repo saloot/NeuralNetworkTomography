@@ -73,13 +73,16 @@ if (inference_method == 7):
 #----------------------------Read and Sort Spikes------------------------------
 #file_name = '../Data/Spikes/fluorescence_mocktest_adapted.txt'
 
-#file_name = '../Data/Spikes/HC3_ec013_198_processed.txt'
+
 #file_name = '../Data/Spikes/Spikes_exc.txt'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_Reduced_More.txt'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_Reduced.txt'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_750.txt'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
 file_name_prefix = 'Moritz'
+
+#file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
+#file_name_prefix = 'HC3'
 #file_name_spikes = '../Data/Spikes/S_times_n_80_20.txt'
 #file_name_spikes = '../Data/Spikes/Spike_Times2.txt'
 #Neural_Spikes,T_max = read_spikes(file_name_spikes)
@@ -88,10 +91,11 @@ file_name_prefix = 'Moritz'
 #--------Calculate the Range to Assess the Effect of Recording Duration--------
 T_max = 7199000
 T_max = 500000
+#no_stimul_rounds = 50000
 #T_max = 5000
 #T_max = 100000
 #T_max = int(1000*T_max)
-#T_step = int(T_max/6.0)
+#T_step = int(T_max/6.0)if len(non_zero_neurons) != n:
 #T_range = range(T_step, T_max+1, T_step)
 #print T_range
 
@@ -163,6 +167,7 @@ for T in T_range:
         #DD_act = DD_act.T                   # This lineshould be chaged later
         
         file_name_spikes2 = file_name_spikes[:-4] + '_file.txt'
+        #pdb.set_trace()
         if not os.path.isfile(file_name_spikes2):
             
             out_spikes = np.genfromtxt(file_name_spikes, dtype=float, delimiter='\t')
@@ -189,12 +194,13 @@ for T in T_range:
             
             spike_file.close()
         
+        n = 93
         n = 999
         #W_inferred,Inf_Delays = delayed_inference_constraints_memory(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,W_act,DD_act)
         #W_inferred, = delayed_inference_constraints_cvxopt(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
         W_inferred = delayed_inference_constraints_numpy(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
     #--------------Post-Process the Inferred Matrix---------------
-    if len(non_zero_neurons) != n:
+    if 0:#len(non_zero_neurons) != n:
         m,c = W_inferred.shape
         W = np.zeros([n,m])
         itr = 0
