@@ -79,6 +79,7 @@ file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_Reduced_More.txt'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_Reduced.txt'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_750.txt'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
+file_name_prefix = 'Moritz'
 #file_name_spikes = '../Data/Spikes/S_times_n_80_20.txt'
 #file_name_spikes = '../Data/Spikes/Spike_Times2.txt'
 #Neural_Spikes,T_max = read_spikes(file_name_spikes)
@@ -246,7 +247,7 @@ for T in T_range:
         np.savetxt(file_name,WW,'%2.5f',delimiter='\t')
     else:        
         for ik in neuron_range:
-            file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_ending,str(ik))
+            file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(ik))
             np.savetxt(file_name,WW[:,ik].T,'%2.5f',delimiter='\t')
 
     #..........................................................................
