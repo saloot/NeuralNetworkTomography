@@ -15,7 +15,7 @@ import os.path
 from CommonFunctions.auxiliary_functions import read_spikes,combine_weight_matrix,combine_spikes_matrix,generate_file_name,spike_binning
 from CommonFunctions.auxiliary_functions_inference import *
 from CommonFunctions.Neurons_and_Networks import *
-
+# reload(CommonFunctions.auxiliary_functions_inference)
 #from sklearn import metrics
 
 os.system('clear')                                              # Clear the commandline window
@@ -198,8 +198,8 @@ for T in T_range:
             
             spike_file.close()
         
-        #n = 93
-        n = 999
+        #n = 94
+        #n = 999
         #W_inferred,Inf_Delays = delayed_inference_constraints_memory(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,W_act,DD_act)
         #W_inferred, = delayed_inference_constraints_cvxopt(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
         W_inferred = delayed_inference_constraints_numpy(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
@@ -262,7 +262,6 @@ for T in T_range:
 
     #..........................................................................
     
-    pdb.set_trace()
     print 'Inference successfully completed for T = %s ms' %str(T/1000.0)    
     #----------------------------------------------------------------------
 
