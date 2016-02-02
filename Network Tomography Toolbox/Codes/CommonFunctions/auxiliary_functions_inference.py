@@ -2758,21 +2758,23 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         
             sc = clf.score(features_projected_train, actual_vals_train.ravel())
             print sc
+            est = clf.estimators_
+            est_w = clf.estimator_weights_
+            
+            ww = np.zeros([n,1])
+            for ili in range(0,len(est)):
+                aa = est[ili];bb = aa.coef_;ww = ww + est_w[ili] * bb.T
+            
+            W = np.zeros([n+1,1])
+            W[0:ijk,0] = ww[0:ijk,0]
+            W[ijk+1:,0] = ww[ijk:,0]
+            
         else:
             print "Oneof the classes is empty. moving on!"
         #----------------------------------------------------------
         
         
-        est = clf.estimators_
-        est_w = clf.estimator_weights_
         
-        ww = np.zeros([n,1])
-        for ili in range(0,len(est)):
-            aa = est[ili];bb = aa.coef_;ww = ww + est_w[ili] * bb.T
-        
-        W = np.zeros([n+1,1])
-        W[0:ijk,0] = ww[0:ijk,0]
-        W[ijk+1:,0] = ww[ijk:,0]
         
         t_last = T0 + T_temp
         
