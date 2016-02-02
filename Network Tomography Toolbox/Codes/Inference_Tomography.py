@@ -58,7 +58,7 @@ elif (inference_method == 4):
 #..............................................................................
 
 #.................................MSE-based Approach...........................
-if (inference_method == 7):
+if (inference_method == 7) or (inference_method == 5):
     alpha0 = 0.05
     inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size]
 #..............................................................................
@@ -78,11 +78,15 @@ if (inference_method == 7):
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_Reduced_More.txt'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_Reduced.txt'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_750.txt'
-file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
-file_name_prefix = 'Moritz'
 
-#file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
-#file_name_prefix = 'HC3'
+if (inference_method == 7):
+    file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
+    file_name_prefix = 'Moritz'
+elif (inference_method == 5):
+    inference_method = 7
+    file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
+    file_name_prefix = 'HC3'
+    
 #file_name_spikes = '../Data/Spikes/S_times_n_80_20.txt'
 #file_name_spikes = '../Data/Spikes/Spike_Times2.txt'
 #Neural_Spikes,T_max = read_spikes(file_name_spikes)
@@ -91,7 +95,7 @@ file_name_prefix = 'Moritz'
 #--------Calculate the Range to Assess the Effect of Recording Duration--------
 T_max = 7199000
 T_max = 500000
-no_stimul_rounds = 500000
+#no_stimul_rounds = 100000
 #T_max = 5000
 #T_max = 100000
 #T_max = int(1000*T_max)
@@ -195,6 +199,7 @@ for T in T_range:
             spike_file.close()
         
         #n = 93
+        n = 999
         #W_inferred,Inf_Delays = delayed_inference_constraints_memory(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,W_act,DD_act)
         #W_inferred, = delayed_inference_constraints_cvxopt(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
         W_inferred = delayed_inference_constraints_numpy(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
@@ -257,6 +262,7 @@ for T in T_range:
 
     #..........................................................................
     
+    pdb.set_trace()
     print 'Inference successfully completed for T = %s ms' %str(T/1000.0)    
     #----------------------------------------------------------------------
 

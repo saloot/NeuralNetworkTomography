@@ -2282,11 +2282,14 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         neuron_range = np.array(range(0,m))
     
     if TT > 40000:
-        T0 = 20000                                  # It is the offset, i.e. the time from which on we will consider the firing activity
-        T_temp = 20000                              # The size of the initial batch to calculate the initial inverse matrix
+        T0 = 10000                                  # It is the offset, i.e. the time from which on we will consider the firing activity
+        T_temp = 5000                              # The size of the initial batch to calculate the initial inverse matrix
+        block_size = 5000
     else:
         T0 = 0
         T_temp = 1000
+        block_size = 500
+        
     range_T = range(T_temp+T0,TT)
     #--------------------------------------------------------------------------
     
@@ -2304,7 +2307,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     d_max = 10
     t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
-    block_size = 10
+    
     
     W_infer = np.zeros([int(len(range_T)/float(block_size))+1,n+1])
     
@@ -2464,7 +2467,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             print 'Good! first time lucky!'
         else:
             print 'Oops! Optimization not successful!'
-            pdb.set_trace()
+            #pdb.set_trace()
         #----------------------------------------------------------
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2478,7 +2481,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         W2 = np.zeros([n+1,1])
         #----------------------------------------------------------------------
         
-        for ttau in range(0,500):
+        for ttau in range(0,50):
             
             #----------------------In-Loop Initializations---------------------
             xx = np.zeros([n+1,1])
@@ -2620,9 +2623,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #----------------------------------------------------------
                 
                     #--------------------Store the Solution--------------------
-                    WW = np.zeros([n+1,1])
-                    WW[0:ijk,0] = Z[0:ijk,0]
-                    WW[ijk+1:,0] = Z[ijk:,0]
+                    
                     #----------------------------------------------------------
                     
                     #---------------Update the Current Estimate----------------
@@ -2632,6 +2633,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     if sum(sum(cc<0))>0:
                         print sum(sum(cc<0))
                     else:
+                        WW = np.zeros([n+1,1])
+                        WW[0:ijk,0] = Z[0:ijk,0]
+                        WW[ijk+1:,0] = Z[ijk:,0]
                         
                         W = W + (cc.mean()) * WW
                         #W = W/np.linalg.norm(W)
@@ -2750,7 +2754,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         #pdb.set_trace()
-        W_inferred[:,ijk] = W2[0:n].ravel()
+        W_inferred[0:n,ijk] = W2[0:n].ravel()
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
             
     return W_inferred
