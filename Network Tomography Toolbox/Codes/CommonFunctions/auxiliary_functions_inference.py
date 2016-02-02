@@ -2748,7 +2748,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         features_projected_train = A
         actual_vals_train = g
         
-        
+        W = np.zeros([n+1,1])
         clf.sample_weight = {1:50,-1:1}
         if (1 in actual_vals_train) and (-1 in actual_vals_train):
             clf.fit(features_projected_train, actual_vals_train.ravel())
@@ -2765,7 +2765,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
             for ili in range(0,len(est)):
                 aa = est[ili];bb = aa.coef_;ww = ww + est_w[ili] * bb.T
             
-            W = np.zeros([n+1,1])
+            
             W[0:ijk,0] = ww[0:ijk,0]
             W[ijk+1:,0] = ww[ijk:,0]
             
