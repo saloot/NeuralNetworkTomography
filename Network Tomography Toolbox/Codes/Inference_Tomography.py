@@ -80,19 +80,25 @@ file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_Reduced.txt'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_750.txt'
 file_name_integrated_spikes_base = '../Data/Spikes/Moritz_Integrated_750'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
+file_name_prefix = 'Moritz'
+
+file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
+file_name_prefix = 'HC3'
 #file_name_spikes = '../Data/Spikes/Spike_Times2.txt'
 #Neural_Spikes,T_max = read_spikes(file_name_spikes)
 #------------------------------------------------------------------------------
     
 #--------Calculate the Range to Assess the Effect of Recording Duration--------
 T_max = 7199000
+no_stimul_rounds = 5000
 #T_max = 100000
 #T_max = int(1000*T_max)
 #T_step = int(T_max/6.0)
 #T_range = range(T_step, T_max+1, T_step)
 #print T_range
 
-T_range = [T_max]
+
+T_range = [no_stimul_rounds]
 #------------------------------------------------------------------------------
     
 #==============================================================================
@@ -186,12 +192,13 @@ for T in T_range:
             spike_file.close()
         
         n = 999
+        n = 93
         #W_inferred,Inf_Delays = delayed_inference_constraints_memory(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,W_act,DD_act)
         #W_inferred, = delayed_inference_constraints_cvxopt(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
         #W_inferred = delayed_inference_constraints_numpy(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
         W_inferred = delayed_inference_constraints_svm(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
     #--------------Post-Process the Inferred Matrix---------------
-    if len(non_zero_neurons) != n:
+    if 0:#len(non_zero_neurons) != n:
         m,c = W_inferred.shape
         W = np.zeros([n,m])
         itr = 0
@@ -244,7 +251,7 @@ for T in T_range:
         np.savetxt(file_name,WW,'%2.5f',delimiter='\t')
     else:        
         for ik in neuron_range:
-            file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_ending,str(ik))
+            file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(ik))
             np.savetxt(file_name,WW[:,ik].T,'%2.5f',delimiter='\t')
 
     #..........................................................................
@@ -259,29 +266,3 @@ for T in T_range:
     #print('\n==> AUC = '+ str(metrics.auc(fpr,tpr))+'\n');
     #----------------------------------------------------------------------
     
-    
-#for i in range(0,n):
-#    W_inferred[i,i] = 0
-#plt.subplot(1,2,1);plt.imshow(whiten(W_inferred));plt.subplot(1,2,2);plt.imshow(np.sign(W));plt.show()
-#pdb.set_trace()
-#plt.plot(fpr,tpr)
-
-
-
-#--------------Evaluate Quality of Delay Estimation----------------
-if 0 :
-    tau_m = 10.0
-    DD = np.log(1e-10 + abs(Inf_Delays))
-    #DD = abs(Inf_Delays)/(.6)
-    DD = np.multiply(DD,(DD>0).astype(int))
-    #DD = DD*tau_m
-    #plt.plot(DD[1,:]);plt.plot(1000*DD_act[1,:],'r');plt.show()
-    AA = np.sum(np.multiply((DD>0),(DD_act)>0))
-    rec = AA/float(sum(DD_act>0))
-    prec = AA/float(sum(DD>0))
-    dist = np.linalg.norm(DD-DD_act)
-
-
-    W_act2 = W_act
-    for i in range(0,n):
-        W_act2[i,i] = -0.002
