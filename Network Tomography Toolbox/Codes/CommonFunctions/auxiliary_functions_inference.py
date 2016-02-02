@@ -2873,6 +2873,8 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                             #W = W + alpha * soft_threshold(WW,sparse_thr)
                             #W = W - alpha * soft_threshold(WW,sparse_thr)
                             #W = W/np.linalg.norm(W)
+                        else:
+                            print 'Score was unsuccesfull: %f ' %sc
                     else:
                         print 'Something is fishy!'
                     
@@ -2925,7 +2927,10 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                 u = v-x
                 #..................................................................
             
-            W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[n+1,1])
+            if itr_W:
+                W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[n+1,1])
+            else:
+                W2 = W2 + np.reshape(W_infer[0:itr_W,:],[n+1,1])
             pdb.set_trace()
             #Z = (Z>4*sparse_thr).astype(int) - (Z<-4*sparse_thr).astype(int)   
             
