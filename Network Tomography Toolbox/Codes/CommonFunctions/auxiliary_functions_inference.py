@@ -2938,7 +2938,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
             #pdb.set_trace()
             #Z = (Z>4*sparse_thr).astype(int) - (Z<-4*sparse_thr).astype(int)   
             
-        pdb.set_trace()    
+        #pdb.set_trace()    
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Predict Spikes~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if 0:
             X = np.zeros([n+1,1+int(T_temp/float(t_avg))])
