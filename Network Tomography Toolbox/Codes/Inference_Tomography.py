@@ -9,7 +9,7 @@ except:
 import pdb
 from copy import deepcopy
 from scipy.cluster.vq import whiten
-from scipy.signal import find_peaks_cwt
+#from scipy.signal import find_peaks_cwt
 import os.path
 
 from CommonFunctions.auxiliary_functions import read_spikes,combine_weight_matrix,combine_spikes_matrix,generate_file_name,spike_binning
