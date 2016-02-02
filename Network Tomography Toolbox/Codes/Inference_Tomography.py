@@ -198,8 +198,10 @@ for T in T_range:
             
             spike_file.close()
         
-        #n = 94
-        #n = 999
+        if file_name_prefix == 'Moritz':
+            n = 999
+        elif file_name_prefix == 'HC3':
+            n = 94
         #W_inferred,Inf_Delays = delayed_inference_constraints_memory(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,W_act,DD_act)
         #W_inferred, = delayed_inference_constraints_cvxopt(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
         W_inferred = delayed_inference_constraints_numpy(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
