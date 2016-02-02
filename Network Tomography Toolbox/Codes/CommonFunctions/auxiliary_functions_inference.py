@@ -2750,13 +2750,16 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
         
         
         clf.sample_weight = {1:50,-1:1}
-        clf.fit(features_projected_train, actual_vals_train.ravel())
+        if (1 in actual_vals_train) and (-1 in actual_vals_train):
+            clf.fit(features_projected_train, actual_vals_train.ravel())
         
         
         #sc = clf.score(features_projected_train, actual_vals_train.ravel(), sample_weight=None)
         
-        sc = clf.score(features_projected_train, actual_vals_train.ravel())
-        print sc
+            sc = clf.score(features_projected_train, actual_vals_train.ravel())
+            print sc
+        else:
+            print "Oneof the classes is empty. moving on!"
         #----------------------------------------------------------
         
         
