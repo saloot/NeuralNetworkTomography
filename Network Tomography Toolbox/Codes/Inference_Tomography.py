@@ -40,7 +40,7 @@ tau_s = 2.0                                     # The rise time coefficient of t
 #------------------------------------------------------------------------------
 
 #-------------------------Initialize Inference Parameters----------------------
-inference_method = 7
+#inference_method = 7
 sparsity_flag = 5
 if len(neuron_range)>1:
     neuron_range = range(neuron_range[0],neuron_range[1])
@@ -171,7 +171,7 @@ for T in T_range:
         #DD_act = DD_act.T                   # This lineshould be chaged later
         
         file_name_spikes2 = file_name_spikes[:-4] + '_file.txt'
-        #pdb.set_trace()
+        
         if not os.path.isfile(file_name_spikes2):
             
             out_spikes = np.genfromtxt(file_name_spikes, dtype=float, delimiter='\t')
