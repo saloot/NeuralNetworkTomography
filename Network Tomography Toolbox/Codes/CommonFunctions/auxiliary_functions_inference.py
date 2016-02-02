@@ -2304,7 +2304,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     d_max = 10
     t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
-    block_size = 200
+    block_size = 10
     
     W_infer = np.zeros([int(len(range_T)/float(block_size))+1,n+1])
     

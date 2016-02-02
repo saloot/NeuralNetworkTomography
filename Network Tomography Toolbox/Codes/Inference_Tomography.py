@@ -91,7 +91,7 @@ file_name_prefix = 'Moritz'
 #--------Calculate the Range to Assess the Effect of Recording Duration--------
 T_max = 7199000
 T_max = 500000
-#no_stimul_rounds = 50000
+no_stimul_rounds = 500000
 #T_max = 5000
 #T_max = 100000
 #T_max = int(1000*T_max)
@@ -194,8 +194,7 @@ for T in T_range:
             
             spike_file.close()
         
-        n = 93
-        n = 999
+        #n = 93
         #W_inferred,Inf_Delays = delayed_inference_constraints_memory(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,W_act,DD_act)
         #W_inferred, = delayed_inference_constraints_cvxopt(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
         W_inferred = delayed_inference_constraints_numpy(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
