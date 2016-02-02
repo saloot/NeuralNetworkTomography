@@ -2873,7 +2873,8 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
                             #W = W + alpha * soft_threshold(WW,sparse_thr)
                             #W = W - alpha * soft_threshold(WW,sparse_thr)
                             #W = W/np.linalg.norm(W)
-                    
+                    else:
+                        print 'Something is fishy!'
                     
                     YY = np.zeros([ell,1]) 
                     AA = np.zeros([ell,n+1])
