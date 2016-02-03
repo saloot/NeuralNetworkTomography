@@ -2283,8 +2283,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     
     if TT > 40000:
         T0 = 10000                                  # It is the offset, i.e. the time from which on we will consider the firing activity
-        T_temp = 5000                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 5000
+        T_temp = 25000                              # The size of the initial batch to calculate the initial inverse matrix
+        block_size = 25000
     else:
         T0 = 0
         T_temp = 1000
@@ -2479,6 +2479,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         u = v-x
         prng = RandomState(int(time()))
         W2 = np.zeros([n+1,1])
+        W3 = W2
         #----------------------------------------------------------------------
         
         for ttau in range(0,50):
@@ -2681,7 +2682,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
                 #pdb.set_trace()
             W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[n+1,1])
-            if 0:#not ((ttau+1) % 10):
+            W3 = W3 + np.reshape(np.sign(W_infer[0:itr_W,:]).mean(axis = 0),[n+1,1])
+            if not ((ttau+1) % 10):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 pdb.set_trace()
             #Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
@@ -2787,7 +2789,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
     t_gap = 3                                    # The gap between samples to consider
     t_avg = 1
     block_size = 20000
-    bin_size = 10
+    bin_size = 1
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
@@ -2856,7 +2858,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
         #A = (V-X).T
         A = (V).T
         A = (V-X).T
-        A = (A>0.85).astype(int)
+        #A = (A>0.85).astype(int)
         
         A_orig = copy.deepcopy(A)
         Y_orig = copy.deepcopy(Y)
@@ -2878,20 +2880,31 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
         
         #--------------Calculate Prediction Accuracy----------------
         Y_predict = np.dot(A_orig,W)
-        
+        # aa = -np.ones(W.shape)
+        # aa = aa/np.linalg.norm(aa)
+        #Y_predict2 = np.dot(A_orig,aa)
+        #plt.plot(Y_orig[1000:2000]);plt.plot(Y_predict[1000:2000],'r');plt.show()
+        #plt.plot(Y_orig[1000:2000]);plt.plot(Y_predict2[1000:2000],'r');plt.show()
+        #plt.plot(Y_orig[1000:2000]);plt.plot(Y_predict[1000:2000],'r');plt.plot(Y_predict2[1000:2000],'g');plt.show()
+        #pdb.set_trace()
+        Y_predict = (Y_predict>=theta).astype(int)
         Y_orig = np.reshape(Y_orig,[len(Y_orig),1])
+        Y_predict = np.reshape(Y_predict,[len(Y_predict),1])
         
         if bin_size > 1:
             ll = int(len(Y_predict)/float(bin_size))
-            Y_predict_binned = np.reshape(Y_predict,[ll,bin_size])
-            
-            Y_predict_binned = Y_predict_binned.mean(axis = 1)
-            
-            Y_predict_binned = (Y_predict_binned>theta).astype(int)
             
             Y_orig_binned = np.reshape(Y_orig,[ll,bin_size])
             Y_orig_binned = Y_orig_binned.mean(axis = 1)
             Y_orig_binned = (Y_orig_binned>0).astype(int)
+            
+            Y_predict_binned = np.reshape(Y_predict,[ll,bin_size])
+            
+            Y_predict_binned = Y_predict_binned.mean(axis = 1)
+            
+            Y_predict_binned = (Y_predict_binned>0).astype(int)
+            
+            
         
             temp = np.multiply((Y_predict_binned==1).astype(int),(Y_orig_binned==1).astype(int))
             opt_score_true_pos = opt_score_true_pos + sum(temp)/(sum(Y_orig_binned==1)+0.0001)
@@ -2900,8 +2913,10 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             opt_score_true_neg = opt_score_true_neg + sum(temp)/(sum(Y_orig_binned==0)+0.0001)
             
             #plt.plot(Y_orig_binned);plt.plot(Y_predict_binned,'r');plt.show()
+            
         else:
-            Y_predict = (Y_predict>=theta).astype(int)
+            
+            #Y_predict = (Y_predict>=theta).astype(int)
             temp = np.multiply((Y_predict==1).astype(int),(Y_orig==1).astype(int))
             opt_score_true_pos = opt_score_true_pos + sum(temp)/(sum(Y_orig==1)+0.0001)
             
