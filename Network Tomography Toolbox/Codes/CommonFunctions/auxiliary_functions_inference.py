@@ -2765,7 +2765,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
 
 
 #------------------------------------------------------------------------------
-def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind):
+def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
     
     #----------------------------Initilizations--------------------------------    
     n = max(np.shape(W)) -1 
@@ -2783,7 +2783,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind):
     h0 = 0.0                                        # The reset membrane voltage (in mV)
     delta = 0.25                                       # The tanh coefficient to approximate the sign function
     d_max = 10
-    t_gap = 5                                     # The gap between samples to consider
+    t_gap = 3                                    # The gap between samples to consider
     t_avg = 1
     block_size = 20000
     bin_size = 10
@@ -2793,6 +2793,8 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind):
     #--------------------------------------------------------------------------
     
     #---------Identify Incoming Connections to Each Neuron in the List---------
+    opt_score_true_pos = 0
+    opt_score_true_neg = 0
     for T_pair in T_array:
         
         range_T = range(T_pair[0],T_pair[1])
@@ -2852,6 +2854,9 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind):
         
         #A = (V-X).T
         A = (V).T
+        A = (V-X).T
+        A = (A>0.85).astype(int)
+        
         A_orig = copy.deepcopy(A)
         Y_orig = copy.deepcopy(Y)
         
@@ -2872,34 +2877,42 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind):
         
         #--------------Calculate Prediction Accuracy----------------
         Y_predict = np.dot(A_orig,W)
-        Y_predict = (Y_predict>=0).astype(int)
+        
+        Y_orig = np.reshape(Y_orig,[len(Y_orig),1])
+        
         if bin_size > 1:
             ll = int(len(Y_predict)/float(bin_size))
             Y_predict_binned = np.reshape(Y_predict,[ll,bin_size])
+            
             Y_predict_binned = Y_predict_binned.mean(axis = 1)
-            Y_predict_binned = (Y_predict_binned>0).astype(int)
+            
+            Y_predict_binned = (Y_predict_binned>theta).astype(int)
             
             Y_orig_binned = np.reshape(Y_orig,[ll,bin_size])
             Y_orig_binned = Y_orig_binned.mean(axis = 1)
             Y_orig_binned = (Y_orig_binned>0).astype(int)
         
             temp = np.multiply((Y_predict_binned==1).astype(int),(Y_orig_binned==1).astype(int))
-            opt_score_true_pos = sum(temp)/(sum(Y_orig_binned==1)+0.0001)
+            opt_score_true_pos = opt_score_true_pos + sum(temp)/(sum(Y_orig_binned==1)+0.0001)
             
             temp = np.multiply((Y_predict_binned==0).astype(int),(Y_orig_binned==0).astype(int))
-            opt_score_true_neg = sum(temp)/(sum(Y_orig_binned==0)+0.0001)
+            opt_score_true_neg = opt_score_true_neg + sum(temp)/(sum(Y_orig_binned==0)+0.0001)
             
-        else:    
+            #plt.plot(Y_orig_binned);plt.plot(Y_predict_binned,'r');plt.show()
+        else:
+            Y_predict = (Y_predict>=theta).astype(int)
             temp = np.multiply((Y_predict==1).astype(int),(Y_orig==1).astype(int))
-            opt_score_true_pos = sum(temp)/(sum(Y_orig==1)+0.0001)
+            opt_score_true_pos = opt_score_true_pos + sum(temp)/(sum(Y_orig==1)+0.0001)
             
             temp = np.multiply((Y_predict==0).astype(int),(Y_orig==0).astype(int))
-            opt_score_true_neg = sum(temp)/(sum(Y_orig==0)+0.0001)
+            opt_score_true_neg = opt_score_true_neg + sum(temp)/(sum(Y_orig==0)+0.0001)
             #opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
         #----------------------------------------------------------
-        
-        #pdb.set_trace()
-                    
+    
+    opt_score_true_pos = opt_score_true_pos/float(len(T_array))
+    opt_score_true_neg = opt_score_true_neg/float(len(T_array))
+    
+    
     return opt_score_true_pos,opt_score_true_neg
 
 

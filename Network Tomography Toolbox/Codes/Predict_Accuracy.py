@@ -31,7 +31,7 @@ frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensem
 #================================INITIALIZATIONS===============================
 
 #---------------------Initialize Simulation Variables--------------------------
-theta = .005                                               # The update threshold of the neurons in the network
+theta = 20#.005                                               # The update threshold of the neurons in the network
 d_window = 2                                          # The time window the algorithm considers to account for pre-synaptic spikes
 sparse_thr0 = 0.005                                    # The initial sparsity soft-threshold (not relevant in this version)
 max_itr_optimization = 250                              # This is the maximum number of iterations performed by internal optimization algorithm for inference
@@ -42,7 +42,7 @@ tau_s = 2.0                                     # The rise time coefficient of t
 #-------------------------Initialize Inference Parameters----------------------
 inference_method = 7
 sparsity_flag = 5
-n_ind = 0                       # Index of the neuron which we want to infer
+n_ind = 1                       # Index of the neuron which we want to infer
 #------------------------------------------------------------------------------
 
 #--------Calculate the Range to Assess the Effect of Recording Duration--------
@@ -51,7 +51,8 @@ T_max = 500000
 #T_step = int(T_max/6.0)
 #T_range = range(T_step, T_max+1, T_step)
 
-T_range = [10000,20000,30000,40000,50000,80000]
+T_range = [5000]
+
 #------------------------------------------------------------------------------
 
 #----------------------Initialize the Results Matrices-------------------------
@@ -62,6 +63,9 @@ Prediction_true_neg = np.zeros([len(T_range),1])
 #-------------Specify the Name of the Files Containg the Spikes----------------
 file_name_integrated_spikes_base = '../Data/Spikes/Moritz_Integrated_750'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
+file_name_prefix = 'Moritz'
+file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
+file_name_prefix = 'HC3'
 file_name_spikes2 = file_name_spikes[:-4] + '_file.txt'
 #------------------------------------------------------------------------------
 
@@ -105,18 +109,25 @@ for T in T_range:
     if bin_size:
         file_name_ending = file_name_ending + '_bS_' + str(bin_size)
    
-    file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_ending,str(n_ind))
-    #W = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-    W = W_act[:,n_ind]
+    file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
+    W = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+    #W = W_act[:,n_ind]
     
     T_test = int(0.2*T)
-    T_array = [[T+100,T+100+T_test]]
-        
-    Accur_ture_pos,Accur_true_neg = spike_pred_accuracy(file_name_spikes2,T_array,W,n_ind)
-    Prediction_true_pos[itr_T,0] = Accur_ture_pos
+    T0 = T
+    T0 = 2000
+    T_array = [[T0+100,T0+100+T_test],[2*T0+100,2*T0+100+T_test],[10*T0+100,10*T0+100+T_test]]
+    
+    W2 = np.zeros([94,1])
+    W2[0:93,0] = W[0:93]
+    W = np.array(W2)
+    W = W - W.mean()    
+    Accur_true_pos,Accur_true_neg = spike_pred_accuracy(file_name_spikes2,T_array,W,n_ind,theta)
+    Prediction_true_pos[itr_T,0] = Accur_true_pos
     Prediction_true_neg[itr_T,0] = Accur_true_neg
     itr_T = itr_T + 1    
     
+    pdb.set_trace()
     print 'Evaluation is successfully completed for T = %s ms' %str(T/1000.0)
 #------------------------------------------------------------------------------
 
