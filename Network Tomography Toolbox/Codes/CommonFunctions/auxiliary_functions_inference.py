@@ -2281,8 +2281,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if len(neuron_range) == 0:
         neuron_range = np.array(range(0,m))
     
-    if TT > 40000:
-        T0 = 10000                                  # It is the offset, i.e. the time from which on we will consider the firing activity
+    if TT > 20000:
+        T0 = 5000                                  # It is the offset, i.e. the time from which on we will consider the firing activity
         T_temp = 5000                              # The size of the initial batch to calculate the initial inverse matrix
         block_size = 5000
     else:
