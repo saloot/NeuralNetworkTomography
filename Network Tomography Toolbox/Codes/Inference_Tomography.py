@@ -90,7 +90,7 @@ file_name_prefix = 'HC3'
     
 #--------Calculate the Range to Assess the Effect of Recording Duration--------
 T_max = 7199000
-no_stimul_rounds = 5000
+#no_stimul_rounds = 5000
 #T_max = 100000
 #T_max = int(1000*T_max)
 #T_step = int(T_max/6.0)
