@@ -2650,8 +2650,8 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
     
     if TT > 40000:
         T0 = 0                                  # It is the offset, i.e. the time from which on we will consider the firing activity
-        T_temp = 4000                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 10000
+        T_temp = 10000                              # The size of the initial batch to calculate the initial inverse matrix
+        block_size = 20000
     else:
         T0 = 0                                  # It is the offset, i.e. the time from which on we will consider the firing activity
         T_temp = 500                              # The size of the initial batch to calculate the initial inverse matrix
@@ -2665,7 +2665,7 @@ def delayed_inference_constraints_svm(out_spikes_tot_mat_file,TT,n,max_itr_opt,s
     h0 = 0.0                                        # The reset membrane voltage (in mV)
     delta = 0.25                                       # The tanh coefficient to approximate the sign function
     d_max = 10
-    t_gap = 3                                     # The gap between samples to consider
+    t_gap = 2                                     # The gap between samples to consider
     t_avg = 1
     
     
