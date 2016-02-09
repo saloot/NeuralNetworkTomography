@@ -2634,7 +2634,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     WW = np.zeros([n+1,1])
                     if sum(sum(cc<0))>0:
                         print sum(sum(cc<0))
-                    else:
+                    elif 1:
                         
                         WW[0:ijk,0] = Z[0:ijk,0]
                         WW[ijk+1:,0] = Z[ijk:,0]
