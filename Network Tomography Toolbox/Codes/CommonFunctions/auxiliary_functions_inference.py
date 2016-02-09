@@ -2284,7 +2284,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         T0 = 5000                                  # It is the offset, i.e. the time from which on we will consider the firing activity
         T_temp = 5000                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 25000
+        block_size = 15000
     else:
         T0 = 0
         T_temp = 1000
