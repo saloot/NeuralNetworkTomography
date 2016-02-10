@@ -2357,7 +2357,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             v = math.exp(-1/tau_d) * v
             v[fire_t] = v[fire_t] + 1
             
-            #v[-1,0] = 1
+            v[-1,0] = .1
                 
             V[:,t_tot] = v.ravel()
             X[:,t_tot] = x.ravel()
@@ -2532,7 +2532,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 x = math.exp(-1/tau_s) * x
                 x[fire_t] = x[fire_t] + 1
-                #v[-1,0] = 1
+                v[-1,0] = .11
                 
                 u = v#-x
                 
