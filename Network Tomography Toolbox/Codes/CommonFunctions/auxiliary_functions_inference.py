@@ -2481,6 +2481,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         W2 = np.zeros([n+1,1])
         W3 = np.zeros([n+1,1])
         #Z_tot = np.zeros([n+1,1])
+        lambda_tot = np.zeros([len(range_T),1])
         #----------------------------------------------------------------------
         
         for ttau in range(0,50):
@@ -2605,20 +2606,21 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
                     C_i = (np.eye(n) + eta*Cc/float(gamm))/float(gamm)
                     FF = np.dot(np.dot(AA,C_i),AA.T)
-                
+                    lambda_0 = lambda_tot[t_inds]
                     #----------------------------------------------------------
         
                     #---------Find the Solution with Sparsity in Mind----------
                     Z = Z_tot
-                    for i in range(0,5):
+                    for i in range(0,1):
                         BB = np.dot(AA,np.dot(C_i,Z))
                         res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
                         lam = np.reshape(res_cons['x'],[TcT,1])
+                        lambda_tot[t_inds] = lambda_tot[t_inds] + lam
                         ww = np.dot(AA.T,lam)
                         ww2 = np.dot(C_i,Z + 0.5*ww[0:n])
                         #pdb.set_trace()
                         ww2 = ww2/(0.0001+np.linalg.norm(ww2))
-                        Z = soft_threshold(ww2,sparse_thr)
+                        Z = ww2#soft_threshold(ww2,sparse_thr)
                         #if sum(Z) == 0:
                         #    pdb.set_trace()
                         #else:
