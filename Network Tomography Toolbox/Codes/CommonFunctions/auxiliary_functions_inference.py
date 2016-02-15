@@ -2479,7 +2479,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         u = v-x
         prng = RandomState(int(time()))
         W2 = np.zeros([n+1,1])
-        W3 = W2
+        W3 = np.zeros([n+1,1])
+        #Z_tot = np.zeros([n+1,1])
         #----------------------------------------------------------------------
         
         for ttau in range(0,50):
@@ -2497,6 +2498,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             alpha = alpha0/float(1+math.log(ttau+1))
             sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
             itr_W = 0
+            Z_tot = np.zeros([n,1])
             #------------------------------------------------------------------
             
             for t in range_T:
@@ -2607,6 +2609,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #----------------------------------------------------------
         
                     #---------Find the Solution with Sparsity in Mind----------
+                    Z = Z_tot
                     for i in range(0,5):
                         BB = np.dot(AA,np.dot(C_i,Z))
                         res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
@@ -2632,12 +2635,14 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #W = W - alpha * WW
                     cc = np.dot(AA,ww2)
                     WW = np.zeros([n+1,1])
+                    
                     if sum(sum(cc<0))>0:
                         print sum(sum(cc<0))
                     
                     if 1:
                         WW[0:ijk,0] = Z[0:ijk,0]
                         WW[ijk+1:,0] = Z[ijk:,0]
+                        Z_tot =  Z_tot + Z
                         
                         cc = np.multiply(cc,(cc>0).astype(int))
                         W = W + (cc.mean()) * WW
@@ -2682,6 +2687,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #..................................................................
             
                 #pdb.set_trace()
+            Z_tot = np.divide(Z_tot,itr_W)
+            WW[0:ijk,0] = Z_tot[0:ijk,0]
+            WW[ijk+1:,0] = Z_tot[ijk:,0]
             W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[n+1,1])
             W3 = W3 + np.reshape(np.sign(W_infer[0:itr_W,:]).mean(axis = 0),[n+1,1])
             if not ((ttau+1) % 2):
