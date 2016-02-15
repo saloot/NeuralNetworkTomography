@@ -2618,7 +2618,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         BB = np.dot(AA,np.dot(C_i,Z))
                         res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
                         lam = np.reshape(res_cons['x'],[TcT,1])
-                        lambda_temp = np.zeros([TcT,1])
+                        lambda_temp = np.zeros([ell,1])
                         lambda_temp[t_inds] = lam
                         lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_temp
                         ww = np.dot(AA.T,lam)
