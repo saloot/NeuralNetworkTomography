@@ -2609,7 +2609,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     FF = np.dot(np.dot(AA,C_i),AA.T)
                     lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
                     lambda_0 = lambda_temp[t_inds]
-                    block_count = block_count + 1
+                    
                     #----------------------------------------------------------
         
                     #---------Find the Solution with Sparsity in Mind----------
@@ -2630,7 +2630,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         #    pdb.set_trace()
                         #else:
                         #    Z = Z/np.linalg.norm(Z)
-                            
+                     
+                    block_count = block_count + 1       
                     #----------------------------------------------------------
                 
                     #--------------------Store the Solution--------------------
