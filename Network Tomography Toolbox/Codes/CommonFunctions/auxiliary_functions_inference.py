@@ -2493,6 +2493,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             t_counter = 0
             ell =  block_size
             r_count = 0
+            block_count = 0 
             YY = np.zeros([ell,1]) 
             AA = np.zeros([ell,n+1])
         
@@ -2606,7 +2607,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
                     C_i = (np.eye(n) + eta*Cc/float(gamm))/float(gamm)
                     FF = np.dot(np.dot(AA,C_i),AA.T)
-                    lambda_0 = lambda_tot[t_inds]
+                    lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
+                    lambda_0 = lambda_temp[t_inds]
+                    block_count = block_count + 1
                     #----------------------------------------------------------
         
                     #---------Find the Solution with Sparsity in Mind----------
@@ -2615,7 +2618,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         BB = np.dot(AA,np.dot(C_i,Z))
                         res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
                         lam = np.reshape(res_cons['x'],[TcT,1])
-                        lambda_tot[t_inds] = lambda_tot[t_inds] + lam
+                        lambda_temp = np.zeros([TcT,1])
+                        lambda_temp[t_inds] = lam
+                        lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_temp
                         ww = np.dot(AA.T,lam)
                         ww2 = np.dot(C_i,Z + 0.5*ww[0:n])
                         #pdb.set_trace()
