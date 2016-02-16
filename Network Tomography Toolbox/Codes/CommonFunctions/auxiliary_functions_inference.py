@@ -2689,9 +2689,13 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         itr_W = itr_W + 1
                     
                     Y_predict2 = np.dot(AA_orig,WW)
-                    Y_predict2 = np.dot(AA_orig,Delta_W_loc)
+                    WW[0:ijk,0] = Delta_W_loc[0:ijk,0]
+                    WW[ijk+1:,0] = Delta_W_loc[ijk:,0]
+                    Y_predict2 = np.dot(AA_orig,WW)
                     Y_predict3 = np.dot(AA_orig,W2)
-                    Y_predict3 = np.dot(AA_orig,W_tot)
+                    WW[0:ijk,0] = W_tot[0:ijk,0]
+                    WW[ijk+1:,0] = W_tot[ijk:,0]
+                    Y_predict3 = np.dot(AA_orig,WW)
                     Y_predict = np.dot(AA_orig,W)
                     Y_predict = (Y_predict>0).astype(int)
                     Y_predict2 = (Y_predict2>0).astype(int)
