@@ -2483,7 +2483,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         #Z_tot = np.zeros([n+1,1])
         lambda_tot = np.zeros([len(range_T),1])
         no_blocks = len(range_T)/block_size
-        W_tot = np.zeros([n+1,1])
+        W_tot = np.zeros([n,1])
         #----------------------------------------------------------------------
         
         for ttau in range(0,50):
@@ -2725,9 +2725,10 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #pdb.set_trace()
             Z_tot = np.divide(Z_tot,itr_W)
             WW = np.zeros([n+1,1])
-            WW[0:ijk,0] = Delta_W[0:ijk,0]
-            WW[ijk+1:,0] = Delta_W[ijk:,0]
-            W_tot = W_tot + WW
+            
+            W_tot = W_tot + Delta_W
+            WW[0:ijk,0] = W_tot[0:ijk,0]
+            WW[ijk+1:,0] = W_tot[ijk:,0]
             W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[n+1,1])
             W3 = W3 + np.reshape(np.sign(W_infer[0:itr_W,:]).mean(axis = 0),[n+1,1])
             if not ((ttau+1) % 2):
