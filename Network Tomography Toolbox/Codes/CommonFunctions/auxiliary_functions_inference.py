@@ -2501,7 +2501,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
             itr_W = 0
             Z_tot = np.zeros([n,1])
-            W_tot = np.zeros([n+1,1])
+            W_tot = np.zeros([n,1])
             #------------------------------------------------------------------
             
             for t in range_T:
@@ -2564,6 +2564,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         YY = Y_orig[t_inds]
                     #----------------------------------------------------------
 
+                    AAY_orig = np.dot(np.diag(Y_orig.ravel()),AA_orig)
                     AA = np.dot(np.diag(YY.ravel()),AA)
                     
                     #--------------Go For Derviative Maximization--------------
@@ -2576,6 +2577,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     #--------------Create the Constraints Vector---------------
                     AA = np.delete(AA.T,ijk,0).T
+                    AAY_orig = np.delete(AAY_orig.T,ijk,0).T
                     TcT = AA.shape[0]
                     bc = delta*np.ones([TcT])
                     #----------------------------------------------------------
@@ -2610,19 +2612,29 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     FF = np.dot(np.dot(AA,C_i),AA.T)
                     lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
                     lambda_0 = lambda_temp[t_inds]
-                    pdb.set_trace()
-                    aa = np.multiply(AA,AA.T)
+                    d_alp_vec = np.zeros([ell,1])
+                    
+                    aa = np.sum(np.multiply(AA,AA),axis = 1)
+                    aa = np.reshape(aa,[len(aa),1])
+                    aa = pow(aa,0.5)
+                    aa = np.dot(aa,np.ones([1,n]))
+                    AA = np.divide(AA,aa)
                     #----------------------------------------------------------
         
                     #---------Find the Solution with Sparsity in Mind----------
                     Z = Z_tot
                     W_temp = W_tot
                     for ss in range(0,TcT):
-                        ii = np.random.randint(0,TCT)
-                        ii = t_inds[ii]
-                        d_alp = 1  
+                        ii = np.random.randint(0,TCT)                        
+                        d_alp = 1 - np.dot(W_temp.T,AA[ii,:])
+                        d_alp = max(0,d_alp)
+                        jj = t_inds[ii]
+                        lambda_temp[jj] = lambda_temp[jj] + d_alp
+                        d_alp_vec[jj] = d_alp_vec[jj] + d_alp
+                        W_temp = W_temp + d_alp * np.reshape(AA[ii,:],[n,1])
                     
-                    
+                    Delta_W = np.dot(AAY_orig.T,d_alp_vec)
+                    pdb.set_trace()
                     for i in range(0,0):
                         BB = np.dot(AA,np.dot(C_i,Z))
                         res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
