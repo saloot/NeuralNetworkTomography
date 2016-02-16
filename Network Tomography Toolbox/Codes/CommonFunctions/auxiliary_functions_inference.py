@@ -2482,6 +2482,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         W3 = np.zeros([n+1,1])
         #Z_tot = np.zeros([n+1,1])
         lambda_tot = np.zeros([len(range_T),1])
+        no_blocks = len(range_T)/block_size
+        W_tot = np.zeros([n+1,1])
         #----------------------------------------------------------------------
         
         for ttau in range(0,50):
@@ -2501,7 +2503,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
             itr_W = 0
             Z_tot = np.zeros([n,1])
-            W_tot = np.zeros([n,1])
+            
+            Delta_W = np.zeros([n,1])
+            beta_K = 1
             #------------------------------------------------------------------
             
             for t in range_T:
@@ -2632,9 +2636,12 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         lambda_temp[jj] = lambda_temp[jj] + d_alp
                         d_alp_vec[jj] = d_alp_vec[jj] + d_alp
                         W_temp = W_temp + d_alp * np.reshape(AA[ii,:],[n,1])
+                        W_temp = W_temp/np.linalg.norm(W_temp)
                     
-                    Delta_W = np.dot(AAY_orig.T,d_alp_vec)
-                    pdb.set_trace()
+                    Delta_W = Delta_W + np.dot(AAY_orig.T,d_alp_vec)
+                    
+                    lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
+                    
                     for i in range(0,0):
                         BB = np.dot(AA,np.dot(C_i,Z))
                         res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
@@ -2717,11 +2724,13 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
                 #pdb.set_trace()
             Z_tot = np.divide(Z_tot,itr_W)
-            WW[0:ijk,0] = Z_tot[0:ijk,0]
-            WW[ijk+1:,0] = Z_tot[ijk:,0]
+            WW = np.zeros([n+1,1])
+            WW[0:ijk,0] = Delta_W[0:ijk,0]
+            WW[ijk+1:,0] = Delta_W[ijk:,0]
+            W_tot = W_tot + WW
             W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[n+1,1])
             W3 = W3 + np.reshape(np.sign(W_infer[0:itr_W,:]).mean(axis = 0),[n+1,1])
-            if not ((ttau+1) % 21):
+            if not ((ttau+1) % 2):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 pdb.set_trace()
             #Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
