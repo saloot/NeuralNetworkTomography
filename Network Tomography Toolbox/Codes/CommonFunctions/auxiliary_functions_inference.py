@@ -2631,7 +2631,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     for ss in range(0,TcT):
                         ii = np.random.randint(0,TcT)                        
                         d_alp = 1 - np.dot(W_temp.T,AA[ii,:])
-                        d_alp = max(0,d_alp)
+                        #d_alp = max(0,d_alp)
                         jj = t_inds[ii]
                         lambda_temp[jj] = lambda_temp[jj] + d_alp
                         d_alp_vec[jj] = d_alp_vec[jj] + d_alp
@@ -2738,11 +2738,11 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             WW[ijk+1:,0] = W_tot[ijk:,0]
             W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[n+1,1])
             W3 = W3 + np.reshape(np.sign(W_infer[0:itr_W,:]).mean(axis = 0),[n+1,1])
-            if not ((ttau+1) % 2):
+            if not ((ttau+1) % 5):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 pdb.set_trace()
             #Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
-            
+                
             
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Predict Spikes~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         if 0:
