@@ -2628,7 +2628,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #---------Find the Solution with Sparsity in Mind----------
                     Z = Z_tot
                     W_temp = W_tot
-                    for ss in range(0,TcT):
+                    for ss in range(0,8*TcT):
                         ii = np.random.randint(0,TcT)                        
                         d_alp = 1 - np.dot(W_temp.T,AA[ii,:])
                         #d_alp = max(0,d_alp)
