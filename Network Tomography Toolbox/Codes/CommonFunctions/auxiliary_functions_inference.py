@@ -2641,6 +2641,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     Delta_W = Delta_W + np.dot(AAY_orig.T,d_alp_vec)
                     
                     lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
+                    Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
                     
                     for i in range(0,0):
                         BB = np.dot(AA,np.dot(C_i,Z))
@@ -2669,7 +2670,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #---------------Update the Current Estimate----------------
                     #W = W + alpha * soft_threshold(WW,sparse_thr)
                     #W = W - alpha * WW
-                    cc = np.dot(AA,ww2)
+                    cc = np.dot(AA,W_tot)
                     WW = np.zeros([n+1,1])
                     
                     if sum(sum(cc<0))>0:
@@ -2688,7 +2689,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         itr_W = itr_W + 1
                     
                     Y_predict2 = np.dot(AA_orig,WW)
+                    Y_predict2 = np.dot(AA_orig,Delta_W_loc)
                     Y_predict3 = np.dot(AA_orig,W2)
+                    Y_predict3 = np.dot(AA_orig,W_tot)
                     Y_predict = np.dot(AA_orig,W)
                     Y_predict = (Y_predict>0).astype(int)
                     Y_predict2 = (Y_predict2>0).astype(int)
