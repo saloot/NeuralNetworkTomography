@@ -2500,6 +2500,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
         Z_tot = np.zeros([len_v-1,1])
         dual_gap = np.zeros([50,no_blocks])
+        total_cost = np.zeros([50,1])
         #----------------------------------------------------------------------
         
         for ttau in range(0,50):
@@ -2714,19 +2715,33 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     cc = np.dot(aa,ww2)
                     f_d = -loss_func_lambda(lam,FF,BB)
                     f_p = pow(np.linalg.norm(ww2),2) - gamm * pow(np.linalg.norm(cc),2) - np.dot(lam.T,cc-BB)
+                    if (abs(f_p - f_d)>0.001):
+                        print 'Dual gap not satisfied!'
+                        pdb.set_trace()
                     dual_gap[ttau,block_count] = f_p - f_d
                      
-                    #pdb.set_trace()
+                    
                     #----------------------------------------------------------
                     
                     Delta_Z = Delta_Z + Z
                     Delta_W = Delta_W + ww2 
                     block_count = block_count + 1
                     
+                    
+                    
+                    
+                    
                     #----------------------------------------------------------
                 
-                    #--------------------Store the Solution--------------------
+                    #----------------------Calculate Cost----------------------
+                    WW = np.zeros([len_v,1])
+                    WW[0:ijk,0] = W_tot[0:ijk,0]
+                    WW[ijk+1:,0] = W_tot[ijk:,0]
                     
+                    TcT = len(Y_orig)
+                    BB = np.dot(delta*np.eye(TcT) + theta * np.diag(Y_orig.ravel()),np.ones([TcT,1]))
+                    pdb.set_trace()
+                    cst = np.dot(AA_orig,W_tot) - BB
                     #----------------------------------------------------------
                     
                     #---------------Update the Current Estimate----------------
