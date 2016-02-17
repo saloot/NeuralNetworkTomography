@@ -2310,7 +2310,12 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     t_avg = 1
     theta = 20 
     
-    W_infer = np.zeros([int(len(range_T)/float(block_size))+1,n+1])
+    if theta:
+        len_v = n        
+    else:
+        len_v = n+1
+    
+    W_infer = np.zeros([int(len(range_T)/float(block_size))+1,len_v])
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
@@ -2327,10 +2332,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     
         
         #~~~~~~~~~~~~~~~~~Calculate The Initial Inverse Matrix~~~~~~~~~~~~~~~~~
-        if theta:
-            len_v = n
-        else:
-            len_v = n+1
+        
             
         X = np.zeros([len_v,int(T_temp/float(t_avg))])
         V = np.zeros([len_v,int(T_temp/float(t_avg))])
@@ -2876,7 +2878,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         #pdb.set_trace()
-        W_inferred[0:n,ijk] = W2[0:n].ravel()
+        W_inferred[0:len_v,ijk] = W2[0:len_v].ravel()
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
             
     return W_inferred
