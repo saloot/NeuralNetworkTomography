@@ -2457,7 +2457,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             print res_cons['message']
             lam = np.reshape(res_cons['x'],[TcT,1])
             ww = np.dot(AA.T,lam)
-            ww2 = np.dot(C_i,Z + 0.5*ww[0:n])
+            #ww2 = np.dot(C_i,Z + 0.5*ww[0:n])
+            ww2 = 0.5*np.dot(C_i,ww[0:n])
             ww2 = ww2/(0.001+np.linalg.norm(ww2))
             Z = soft_threshold(ww2,sparse_thr_0)
         #----------------------------------------------------------
@@ -2639,10 +2640,11 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #AA = np.divide(AA,aa)
                     gamm = .9
                     Cc = np.dot(AA.T,AA)
-                    Cc_nor = np.linalg.norm(Cc)
+                    aa = AA/np.linalg.norm(AA)
+                    Cc_nor = np.dot(aa.T,aa)
                     #C_i = (np.eye(n) + gamm*Cc_nor)
                     C_i = np.linalg.inv(np.eye(len_v-1) - gamm * Cc_nor)
-                    FF = np.dot(np.dot(AA,C_i),AA.T)
+                    FF = np.dot(np.dot(aa,C_i),aa.T)
                     BB = np.zeros([TcT,1])
                     #----------------------------------------------------------
         
@@ -2694,7 +2696,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         lambda_temp = np.zeros([ell,1])
                         lambda_temp[t_inds] = lam
                         lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + 0.1 * lambda_temp
-                        ww = np.dot(AA.T,lam)
+                        ww = np.dot(aa.T,lam)
                         ww2 = 0.5*np.dot(C_i,ww[0:n])
                         #pdb.set_trace()
                         #ww2 = ww2/(0.0001+np.linalg.norm(ww2))
@@ -2702,7 +2704,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     
                     #------------------Calculate Duality Gap-------------------
-                    cc = np.dot(AA,ww2)
+                    cc = np.dot(aa,ww2)
                     f_d = loss_func_lambda(lam,FF,BB)
                     f_p = np.linalg.norm(ww2) - gamm * np.linalg.norm(cc)
                     
@@ -2726,8 +2728,14 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     WW = np.zeros([n+1,1])
                     
-                    if sum(sum(cc<0))>0:
-                        print sum(sum(cc<0))
+                    if theta:
+                        
+                        if sum(sum(cc<BB))>0:
+                            print sum(sum(cc<BB))
+                    else:
+                        
+                        if sum(sum(cc<0))>0:
+                            print sum(sum(cc<0))
                     
                     if 1:
                         WW[0:ijk,0] = Z[0:ijk,0]
@@ -2762,7 +2770,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     opt_score2 = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
                     opt_score3 = np.linalg.norm(Y_predict[t_inds].ravel()-Y_orig[t_inds].ravel())
                     opt_score4 = np.linalg.norm(Y_predict3.ravel()-Y_orig.ravel())
-                    print opt_score,opt_score2,opt_score3,opt_score4
+                    #print opt_score,opt_score2,opt_score3,opt_score4
+                    
                     #plt.plot(Y_orig);plt.plot(Y_predict3,'r');plt.show()
                     #pdb.set_trace()
                     #----------------------------------------------------------
