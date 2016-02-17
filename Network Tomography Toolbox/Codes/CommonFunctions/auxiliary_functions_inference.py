@@ -2709,7 +2709,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     f_p = np.linalg.norm(ww2) - gamm * np.linalg.norm(cc)
                     
                     print f_p - f_d
-                    pdb.set_trace()
+                    #pdb.set_trace()
                     #----------------------------------------------------------
                     
                     Delta_Z = Delta_Z + Z
