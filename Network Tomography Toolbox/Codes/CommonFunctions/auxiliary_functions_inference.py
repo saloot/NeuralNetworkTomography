@@ -2495,10 +2495,11 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         W3 = np.zeros([len_v,1])
         #Z_tot = np.zeros([n+1,1])
         lambda_tot = np.zeros([len(range_T),1])
-        no_blocks = len(range_T)/block_size
+        no_blocks = 1+len(range_T)/block_size
         W_tot = np.zeros([len_v-1,1])
         
         Z_tot = np.zeros([len_v-1,1])
+        dual_gap = np.zeros([50,no_blocks])
         #----------------------------------------------------------------------
         
         for ttau in range(0,50):
@@ -2709,8 +2710,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     cc = np.dot(aa,ww2)
                     f_d = loss_func_lambda(lam,FF,BB)
                     f_p = np.linalg.norm(ww2) - gamm * np.linalg.norm(cc)
-                    
-                    print f_p - f_d
+                    dual_gap[ttau,block_count] = f_p - f_d
+                     
                     #pdb.set_trace()
                     #----------------------------------------------------------
                     
@@ -2802,8 +2803,10 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             #W_tot = W_tot/np.linalg.norm(W_tot)
             WW[0:ijk,0] = W_tot[0:ijk,0]
             WW[ijk+1:,0] = W_tot[ijk:,0]
-            W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[n+1,1])
-            W3 = W3 + np.reshape(np.sign(W_infer[0:itr_W,:]).mean(axis = 0),[n+1,1])
+            W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[len_v,1])
+            W3 = W3 + np.reshape(np.sign(W_infer[0:itr_W,:]).mean(axis = 0),[len_v,1])
+            
+            print dual_gap[ttau,:]
             if not ((ttau+1) % 20):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 pdb.set_trace()
