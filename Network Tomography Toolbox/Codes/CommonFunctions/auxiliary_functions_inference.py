@@ -2408,6 +2408,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
 
             AA = AA[t_inds,:]
             YY = Y_orig[t_inds]
+            gg = g[t_inds]
             
         #---Ignore the Spikes Corresponding to the Current Neuron--
         AA = np.delete(AA.T,ijk,0).T
@@ -2449,12 +2450,11 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         for i in range(0,2):
             #BB = eta * (np.dot(AA,Z) + eta * np.dot(np.dot(AA,Cc),Z))
             #BB = np.dot(AA,np.dot(C_i,Z))
-            pdb.set_trace()
-            BB = delta * np.dot(np.eye(TcT) + theta * np.dot(np.diag(g.ravel())),np.ones([TcT,1]))
+            BB = delta * np.dot(np.eye(TcT) + theta * np.diag(gg.ravel()),np.ones([TcT,1]))
             
             res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,BB),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
-            # res_cons['status']
-            # res_cons['message']
+            print res_cons['status']
+            print res_cons['message']
             lam = np.reshape(res_cons['x'],[TcT,1])
             ww = np.dot(AA.T,lam)
             ww2 = np.dot(C_i,Z + 0.5*ww[0:n])
@@ -2686,8 +2686,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             #    Z = Z/np.linalg.norm(Z)
                     
                     else:
-                        #res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
-                        BB = delta * np.dot(np.eye(TcT) + theta * np.dot(np.diag(YY.ravel())),np.ones([TcT,1]))
+                        #res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)                        
+                        BB = delta * np.dot(np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                         res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,BB),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                         #print res_cons['message']
                         lam = np.reshape(res_cons['x'],[TcT,1])
