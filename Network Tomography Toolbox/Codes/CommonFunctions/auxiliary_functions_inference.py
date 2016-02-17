@@ -2484,7 +2484,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         lambda_tot = np.zeros([len(range_T),1])
         no_blocks = len(range_T)/block_size
         W_tot = np.zeros([n,1])
-        Delta_Z = np.zeros([n,1])
+        
         Z_tot = np.zeros([n,1])
         #----------------------------------------------------------------------
         
@@ -2505,7 +2505,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
             itr_W = 0
             
-            
+            Delta_Z = np.zeros([n,1])
             Delta_W = np.zeros([n,1])
             
             beta_K = 1
@@ -2615,8 +2615,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     gamm = 1+gamm
                     #la = np.linalg.eig((gamm * np.eye(n) - Cc))
                     #C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
-                    C_i = (np.eye(n) + eta*Cc/float(gamm))/float(gamm)
-                    FF = np.dot(np.dot(AA,C_i),AA.T)
+                    
+                    
                     lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
                     lambda_0 = lambda_temp[t_inds]
                     d_alp_vec = np.zeros([ell,1])
@@ -2626,6 +2626,10 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     aa = pow(aa,0.5)
                     aa = np.dot(aa,np.ones([1,n]))
                     AA = np.divide(AA,aa)
+                    gamm = .1
+                    C_i = (np.eye(n) + gamm*Cc)
+                    FF = np.dot(np.dot(AA,C_i),AA.T)
+                    BB = np.zeros([TcT,1])
                     #----------------------------------------------------------
         
                     #---------Find the Solution with Sparsity in Mind----------
@@ -2649,24 +2653,38 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
                     
                     
-                    for i in range(0,1):
-                        BB = np.dot(AA,np.dot(C_i,Z_tot))
+                    if 0:
+                        for i in range(0,1):
+                            BB = np.dot(AA,np.dot(C_i,Z_tot))
+                            res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
+                            lam = np.reshape(res_cons['x'],[TcT,1])
+                            lambda_temp = np.zeros([ell,1])
+                            lambda_temp[t_inds] = lam
+                            lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + 0.1 * lambda_temp
+                            ww = np.dot(AA.T,lam)
+                            ww2 = np.dot(C_i,Z_tot + 0.5*ww[0:n])
+                            #pdb.set_trace()
+                            ww2 = ww2/(0.0001+np.linalg.norm(ww2))
+                            Z = ww2#soft_threshold(ww2,sparse_thr)
+                            #if sum(Z) == 0:
+                            #    pdb.set_trace()
+                            #else:
+                            #    Z = Z/np.linalg.norm(Z)
+                    
+                    else:
                         res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
                         lam = np.reshape(res_cons['x'],[TcT,1])
                         lambda_temp = np.zeros([ell,1])
                         lambda_temp[t_inds] = lam
                         lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + 0.1 * lambda_temp
                         ww = np.dot(AA.T,lam)
-                        ww2 = np.dot(C_i,Z_tot + 0.5*ww[0:n])
+                        ww2 = 0.5*np.dot(C_i,ww[0:n])
                         #pdb.set_trace()
-                        ww2 = ww2/(0.0001+np.linalg.norm(ww2))
+                        #ww2 = ww2/(0.0001+np.linalg.norm(ww2))
                         Z = ww2#soft_threshold(ww2,sparse_thr)
-                        #if sum(Z) == 0:
-                        #    pdb.set_trace()
-                        #else:
-                        #    Z = Z/np.linalg.norm(Z)
                     
-                    Delta_Z = Delta_Z + Z 
+                    Delta_Z = Delta_Z + Z
+                    Delta_W = Delta_W + ww2 
                     block_count = block_count + 1       
                     #----------------------------------------------------------
                 
@@ -2686,7 +2704,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     if 1:
                         WW[0:ijk,0] = Z[0:ijk,0]
                         WW[ijk+1:,0] = Z[ijk:,0]
-                        Z_tot =  Z_tot + ww2
+                        #Z_tot =  Z_tot + ww2
                         
                         cc = np.multiply(cc,(cc>0).astype(int))
                         W = W + (cc.mean()) * WW
@@ -2698,8 +2716,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     Y_predict2 = np.dot(AA_orig,WW)
                     #WW[0:ijk,0] = Delta_W_loc[0:ijk,0]
                     #WW[ijk+1:,0] = Delta_W_loc[ijk:,0]
-                    Y_predict2 = np.dot(AA_orig,WW)
-                    Y_predict3 = np.dot(AA_orig,W2)
+                    #Y_predict2 = np.dot(AA_orig,WW)
+                    #Y_predict3 = np.dot(AA_orig,W2)
                     WW[0:ijk,0] = W_tot[0:ijk,0]
                     WW[ijk+1:,0] = W_tot[ijk:,0]
                     Y_predict3 = np.dot(AA_orig,WW)
@@ -2741,7 +2759,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
             WW = np.zeros([n+1,1])
             
-            W_tot = W_tot + Delta_W/no_blocks
+            W_tot = W_tot + 0.1 * Delta_W/no_blocks
             #W_tot = W_tot/np.linalg.norm(W_tot)
             WW[0:ijk,0] = W_tot[0:ijk,0]
             WW[ijk+1:,0] = W_tot[ijk:,0]
