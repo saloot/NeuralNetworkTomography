@@ -2629,7 +2629,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     gamm = .9
                     Cc = np.dot(AA.T,AA)
                     Cc_nor = np.linalg.norm(Cc)
-                    #C_i = (np.eye(n) + gamm*Cc)
+                    #C_i = (np.eye(n) + gamm*Cc_nor)
                     C_i = np.linalg.inv(np.eye(n) - gamm * Cc_nor)
                     FF = np.dot(np.dot(AA,C_i),AA.T)
                     BB = np.zeros([TcT,1])
@@ -2691,7 +2691,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     Delta_Z = Delta_Z + Z
                     Delta_W = Delta_W + ww2 
                     block_count = block_count + 1
-                    pdb.set_trace()
+                    
                     #----------------------------------------------------------
                 
                     #--------------------Store the Solution--------------------
@@ -2771,7 +2771,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             WW[ijk+1:,0] = W_tot[ijk:,0]
             W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[n+1,1])
             W3 = W3 + np.reshape(np.sign(W_infer[0:itr_W,:]).mean(axis = 0),[n+1,1])
-            if not ((ttau+1) % 3):
+            if not ((ttau+1) % 20):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 pdb.set_trace()
             #Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
