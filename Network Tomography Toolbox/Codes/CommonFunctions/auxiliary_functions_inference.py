@@ -2722,7 +2722,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     f_p = pow(np.linalg.norm(ww2),2) - gamm * pow(np.linalg.norm(cc),2) - np.dot(lam.T,cc-BB)
                     if (abs(f_p - f_d)>0.001):
                         print 'Dual gap not satisfied!'
-                        pdb.set_trace()
+                        #pdb.set_trace()
                     dual_gap[ttau,block_count] = f_p - f_d
                      
                     
@@ -2731,11 +2731,6 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     Delta_Z = Delta_Z + Z
                     Delta_W = Delta_W + ww2 
                     block_count = block_count + 1
-                    
-                    
-                    
-                    
-                    
                     #----------------------------------------------------------
                 
                     #----------------------Calculate Cost----------------------
@@ -2746,11 +2741,11 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     TcT = len(Y_orig)
                     #BB = np.dot(theta * np.diag(Y_orig.ravel()),np.ones([TcT,1]))
                     BB = theta*np.ones([TcT,1])
-                    pdb.set_trace()
-                    #aa_orig = AA_orig/aa_norm
+                    
+                    aa_orig = AA_orig/aa_norm
                     #cst = np.dot(np.dot(np.diag(Y_orig.ravel()),AA_orig),WW) - BB*pow(aa_norm,1)
-                    cst = np.dot(AA_orig,WW) - BB
-                    cst = sum(np.sign(cst) != Y_orig)
+                    cst = np.dot(aa_orig,WW) - BB
+                    total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst) != Y_orig)
                     #----------------------------------------------------------
                     
                     #---------------Update the Current Estimate----------------
@@ -2834,9 +2829,12 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             W2 = W2 + np.reshape(W_infer[0:itr_W,:].mean(axis = 0),[len_v,1])
             W3 = W3 + np.reshape(np.sign(W_infer[0:itr_W,:]).mean(axis = 0),[len_v,1])
             
-            print dual_gap[ttau,:]
+            #print dual_gap[ttau,:]
+            print total_cost[ttau]
+            
             if not ((ttau+1) % 20):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
+                print total_cost[0:ttau]
                 pdb.set_trace()
             #Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
                 
