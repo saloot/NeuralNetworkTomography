@@ -2610,8 +2610,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #AB = np.dot(AA,np.eye(n)+C_i)
                     #AB = AA
                     #FF = np.dot(AA,AA.T)
-                    Cc = np.dot(AA.T,AA)
-                    Cc_nor = np.linalg.norm(Cc)
+                    #Cc = np.dot(AA.T,AA)
+                    
                     gamm = 1+gamm
                     #la = np.linalg.eig((gamm * np.eye(n) - Cc))
                     #C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
@@ -2625,9 +2625,12 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     aa = np.reshape(aa,[len(aa),1])
                     aa = pow(aa,0.5)
                     aa = np.dot(aa,np.ones([1,n]))
-                    AA = np.divide(AA,aa)
-                    gamm = .1
-                    C_i = (np.eye(n) + gamm*Cc)
+                    #AA = np.divide(AA,aa)
+                    gamm = .9
+                    Cc = np.dot(AA.T,AA)
+                    Cc_nor = np.linalg.norm(Cc)
+                    #C_i = (np.eye(n) + gamm*Cc)
+                    C_i = np.linalg.inv(np.eye(n) - gamm * Cc_nor)
                     FF = np.dot(np.dot(AA,C_i),AA.T)
                     BB = np.zeros([TcT,1])
                     #----------------------------------------------------------
@@ -2672,7 +2675,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             #    Z = Z/np.linalg.norm(Z)
                     
                     else:
-                        res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
+                        #res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
+                        res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+                        #print res_cons['message']
                         lam = np.reshape(res_cons['x'],[TcT,1])
                         lambda_temp = np.zeros([ell,1])
                         lambda_temp[t_inds] = lam
