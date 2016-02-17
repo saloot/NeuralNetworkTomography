@@ -2441,7 +2441,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         Cc = np.dot(AA.T,AA)
         gamm = 1+gamm
         #C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
-        C_i = (np.eye(n) + eta*Cc/float(gamm))/float(gamm)
+        C_i = (np.eye(len_v-1) + eta*Cc/float(gamm))/float(gamm)
         FF = np.dot(np.dot(AA,C_i),AA.T)
         #----------------------------------------------------------
         
