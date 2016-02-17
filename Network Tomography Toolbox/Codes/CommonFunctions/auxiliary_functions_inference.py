@@ -2635,13 +2635,13 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     aa = np.sum(np.multiply(AA,AA),axis = 1)
                     aa = np.reshape(aa,[len(aa),1])
                     aa = pow(aa,0.5)
-                    aa = np.dot(aa,np.ones([1,n]))
+                    aa = np.dot(aa,np.ones([1,len_v-1]))
                     #AA = np.divide(AA,aa)
                     gamm = .9
                     Cc = np.dot(AA.T,AA)
                     Cc_nor = np.linalg.norm(Cc)
                     #C_i = (np.eye(n) + gamm*Cc_nor)
-                    C_i = np.linalg.inv(np.eye(n) - gamm * Cc_nor)
+                    C_i = np.linalg.inv(np.eye(len_v-1) - gamm * Cc_nor)
                     FF = np.dot(np.dot(AA,C_i),AA.T)
                     BB = np.zeros([TcT,1])
                     #----------------------------------------------------------
