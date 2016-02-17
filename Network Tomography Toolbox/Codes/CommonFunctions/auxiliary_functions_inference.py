@@ -2649,8 +2649,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #C_i = (np.eye(n) + gamm*Cc_nor)
                     C_i = np.linalg.inv(np.eye(len_v-1) - gamm * Cc_nor)
                     la = np.linalg.eig(np.eye(len_v-1) - gamm * Cc_nor)
-                    sum(la[0]>0)
-                    pdb.set_trace()
+                    if sum(la[0]<0)>0:
+                        pdb.set_trace()
                     FF = np.dot(np.dot(aa,C_i),aa.T)
                     BB = np.zeros([TcT,1])
                     #----------------------------------------------------------
@@ -2713,7 +2713,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #------------------Calculate Duality Gap-------------------
                     cc = np.dot(aa,ww2)
                     f_d = -loss_func_lambda(lam,FF,BB)
-                    f_p = np.linalg.norm(ww2) - gamm * np.linalg.norm(cc) - np.dot(lam.T,cc-BB)
+                    f_p = pow(np.linalg.norm(ww2),2) - gamm * pow(np.linalg.norm(cc),2) - np.dot(lam.T,cc-BB)
                     dual_gap[ttau,block_count] = f_p - f_d
                      
                     #pdb.set_trace()
