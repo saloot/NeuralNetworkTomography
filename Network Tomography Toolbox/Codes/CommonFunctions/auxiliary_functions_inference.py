@@ -2509,7 +2509,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             r_count = 0
             block_count = 0 
             YY = np.zeros([ell,1]) 
-            AA = np.zeros([ell,n+1])
+            AA = np.zeros([ell,len_v])
         
             alpha = alpha0/float(1+math.log(ttau+1))
             sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
@@ -2532,7 +2532,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 u = v#-x
                     
                 if sketch_flag:
-                    s = prng.randint(0,4,[n+1,1])
+                    s = prng.randint(0,4,[len_v,1])
                     s = (s>=3).astype(int)
                     uu = np.multiply(u,s)
                 uu = u
