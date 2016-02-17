@@ -2726,7 +2726,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #W = W + alpha * soft_threshold(WW,sparse_thr)
                     #W = W - alpha * WW
                     
-                    WW = np.zeros([n+1,1])
+                    WW = np.zeros([len_v,1])
                     
                     if theta:
                         
