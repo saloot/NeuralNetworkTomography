@@ -2607,7 +2607,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #-----------Create the Bounds on Dual Variables------------
                     aa = np.ones([TcT,2])
                     aa[:,0] = 0
-                    aa[:,1] = 100000
+                    aa[:,1] = 100000000
                     bns = list(aa)
                     #----------------------------------------------------------
         
@@ -2644,9 +2644,12 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     gamm = .9
                     Cc = np.dot(AA.T,AA)
                     aa = AA/np.linalg.norm(AA)
+                    #aa = AA
                     Cc_nor = np.dot(aa.T,aa)
                     #C_i = (np.eye(n) + gamm*Cc_nor)
                     C_i = np.linalg.inv(np.eye(len_v-1) - gamm * Cc_nor)
+                    #la = np.linalg.eig(np.eye(len_v-1) - gamm * Cc_nor)
+                    #sum(la[0]>0)
                     FF = np.dot(np.dot(aa,C_i),aa.T)
                     BB = np.zeros([TcT,1])
                     #----------------------------------------------------------
@@ -2708,8 +2711,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     #------------------Calculate Duality Gap-------------------
                     cc = np.dot(aa,ww2)
-                    f_d = loss_func_lambda(lam,FF,BB)
-                    f_p = np.linalg.norm(ww2) - gamm * np.linalg.norm(cc)
+                    f_d = -loss_func_lambda(lam,FF,BB)
+                    f_p = np.linalg.norm(ww2) - gamm * np.linalg.norm(cc) - np.dot(lam.T,cc-BB)
                     dual_gap[ttau,block_count] = f_p - f_d
                      
                     #pdb.set_trace()
