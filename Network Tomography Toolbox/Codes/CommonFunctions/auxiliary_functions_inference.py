@@ -2692,7 +2692,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     else:
                         #res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)                        
-                        BB = delta * np.dot(np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
+                        BB = np.dot(delta*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                         res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,BB),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                         #print res_cons['message']
                         lam = np.reshape(res_cons['x'],[TcT,1])
@@ -2701,7 +2701,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + 0.1 * lambda_temp
                         ww = np.dot(aa.T,lam)
                         ww2 = 0.5*np.dot(C_i,ww[0:len_v-1])
-                        #pdb.set_trace()
+                        pdb.set_trace()
                         #ww2 = ww2/(0.0001+np.linalg.norm(ww2))
                         Z = ww2#soft_threshold(ww2,sparse_thr)
                     
