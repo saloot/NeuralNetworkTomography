@@ -2734,14 +2734,14 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     WW = np.zeros([len_v,1])
                     
-                    if theta:
+                    #if theta:
                         
-                        if sum(sum(cc<BB))>0:
-                            print sum(sum(cc<BB))
-                    else:
+                    #    if sum(sum(cc<BB))>0:
+                    #       print sum(sum(cc<BB))
+                    #else:
                         
-                        if sum(sum(cc<0))>0:
-                            print sum(sum(cc<0))
+                    #    if sum(sum(cc<0))>0:
+                    #        print sum(sum(cc<0))
                     
                     if 1:
                         WW[0:ijk,0] = Z[0:ijk,0]
