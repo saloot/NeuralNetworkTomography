@@ -2685,7 +2685,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     Delta_Z = Delta_Z + Z
                     Delta_W = Delta_W + ww2 
-                    block_count = block_count + 1       
+                    block_count = block_count + 1
+                    pdb.set_trace()
                     #----------------------------------------------------------
                 
                     #--------------------Store the Solution--------------------
