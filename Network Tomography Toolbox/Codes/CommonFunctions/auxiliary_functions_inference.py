@@ -2743,9 +2743,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         #Z_tot =  Z_tot + ww2
                         
                         cc = np.multiply(cc,(cc>0).astype(int))
-                        W = W + (cc.mean()) * WW
+                        #W = W + (cc.mean()) * WW
                         #W = W/np.linalg.norm(W)
-                        W = W/(np.abs(W)).max()
+                        #W = W/(np.abs(W)).max()
                         W_infer[itr_W,:] = (cc.mean()) * WW.ravel()
                         itr_W = itr_W + 1
                     
@@ -2757,8 +2757,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     WW[0:ijk,0] = W_tot[0:ijk,0]
                     WW[ijk+1:,0] = W_tot[ijk:,0]
                     Y_predict3 = np.dot(AA_orig,WW)
-                    Y_predict = np.dot(AA_orig,W)
-                    Y_predict = (Y_predict>0).astype(int)
+                    #Y_predict = np.dot(AA_orig,W)
+                    #Y_predict = (Y_predict>0).astype(int)
                     Y_predict2 = (Y_predict2>0).astype(int)
                     Y_predict3 = (Y_predict3>0).astype(int)
                     Y_orig = (Y_orig>-1).astype(int)
@@ -2767,8 +2767,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     # Y_predict[].T
                     
                     opt_score = np.linalg.norm(Y_predict2[t_inds].ravel()-Y_orig[t_inds].ravel())                    
-                    opt_score2 = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
-                    opt_score3 = np.linalg.norm(Y_predict[t_inds].ravel()-Y_orig[t_inds].ravel())
+                    #opt_score2 = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
+                    #opt_score3 = np.linalg.norm(Y_predict[t_inds].ravel()-Y_orig[t_inds].ravel())
                     opt_score4 = np.linalg.norm(Y_predict3.ravel()-Y_orig.ravel())
                     #print opt_score,opt_score2,opt_score3,opt_score4
                     
