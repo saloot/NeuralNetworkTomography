@@ -2783,7 +2783,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     #--------------------Reset the Counters--------------------
                     YY = np.zeros([ell,1]) 
-                    AA = np.zeros([ell,n+1])
+                    AA = np.zeros([ell,len_v])
                     
                     r_count = 0
                     #----------------------------------------------------------
@@ -2794,7 +2794,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #pdb.set_trace()
             Z_tot = Z_tot + 0.1 * np.divide(Delta_Z,itr_W)
             
-            WW = np.zeros([n+1,1])
+            WW = np.zeros([len_v,1])
             
             W_tot = W_tot + 0.1 * Delta_W/no_blocks
             #W_tot = W_tot/np.linalg.norm(W_tot)
