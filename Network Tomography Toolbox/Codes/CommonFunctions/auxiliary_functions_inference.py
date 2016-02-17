@@ -2698,6 +2698,16 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         #ww2 = ww2/(0.0001+np.linalg.norm(ww2))
                         Z = ww2#soft_threshold(ww2,sparse_thr)
                     
+                    
+                    #------------------Calculate Duality Gap-------------------
+                    cc = np.dot(AA,ww2)
+                    f_d = loss_func_lambda(lam,FF,BB)
+                    f_p = np.linalg.norm(ww2) - gamm * np.linalg.norm(cc)
+                    
+                    print f_p - f_d
+                    pdb.set_trace()
+                    #----------------------------------------------------------
+                    
                     Delta_Z = Delta_Z + Z
                     Delta_W = Delta_W + ww2 
                     block_count = block_count + 1
@@ -2711,7 +2721,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #---------------Update the Current Estimate----------------
                     #W = W + alpha * soft_threshold(WW,sparse_thr)
                     #W = W - alpha * WW
-                    cc = np.dot(AA,ww2)
+                    
                     WW = np.zeros([n+1,1])
                     
                     if sum(sum(cc<0))>0:
