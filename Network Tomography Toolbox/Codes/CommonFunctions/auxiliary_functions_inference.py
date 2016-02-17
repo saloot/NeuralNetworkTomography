@@ -2450,7 +2450,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             #BB = eta * (np.dot(AA,Z) + eta * np.dot(np.dot(AA,Cc),Z))
             #BB = np.dot(AA,np.dot(C_i,Z))
             BB = delta * np.dot(np.eye(TcT) + theta * np.dot(np.diag(g.ravel())),np.ones([TcT,1]))
-            res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
+            pdb.set_trace()
+            res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,BB),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
             # res_cons['status']
             # res_cons['message']
             lam = np.reshape(res_cons['x'],[TcT,1])
