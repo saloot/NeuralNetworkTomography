@@ -1477,17 +1477,18 @@ def jac(x):
     return 2 * np.sign(x)
 
 
-def loss_func_lambda(x,FF,delta,b):
+def loss_func_lambda(x,FF,b):
     
     #E = 0.25 * np.dot(np.dot(x.T,FF),x) - delta *sum(x)
-    E = 0.25 * np.dot(np.dot(x.T,FF),x) - delta *sum(x) + np.dot(x.T,b)
+    #E = 0.25 * np.dot(np.dot(x.T,FF),x) - delta *sum(x) + np.dot(x.T,b)
+    E = 0.25 * np.dot(np.dot(x.T,FF),x) - np.dot(x.T,b)
     return E
     
     
-def jac_lambda(x,FF,delta,b):
+def jac_lambda(x,FF,b):
     #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)])
-    return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)]) + b.ravel()
-
+    #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)]) + b.ravel()
+    return 0.5 * np.dot(FF,x) - b.ravel()
 #==============================================================================
 #=======================delayed_inference_constraints==========================
 #==============================================================================
@@ -2307,7 +2308,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     d_max = 10
     t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
-    
+    theta = 20 
     
     W_infer = np.zeros([int(len(range_T)/float(block_size))+1,n+1])
     
@@ -2326,12 +2327,17 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     
         
         #~~~~~~~~~~~~~~~~~Calculate The Initial Inverse Matrix~~~~~~~~~~~~~~~~~
-        X = np.zeros([n+1,int(T_temp/float(t_avg))])
-        V = np.zeros([n+1,int(T_temp/float(t_avg))])
-        x = np.zeros([n+1,1])
-        v = np.zeros([n+1,1])
-        xx = np.zeros([n+1,1])
-        vv = np.zeros([n+1,1])
+        if theta:
+            len_v = n
+        else:
+            len_v = n+1
+            
+        X = np.zeros([len_v,int(T_temp/float(t_avg))])
+        V = np.zeros([len_v,int(T_temp/float(t_avg))])
+        x = np.zeros([len_v,1])
+        v = np.zeros([len_v,1])
+        xx = np.zeros([len_v,1])
+        vv = np.zeros([len_v,1])
         Y = np.zeros([int(T_temp/float(t_avg))])
         
         yy = 0
@@ -2345,8 +2351,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
             if (ijk in fire_t):                
                 yy = 1
-                x = np.zeros([n+1,1])
-                v = np.zeros([n+1,1])
+                x = np.zeros([len_v,1])
+                v = np.zeros([len_v,1])
             else:
                 yy = 0
             
@@ -2357,7 +2363,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             v = math.exp(-1/tau_d) * v
             v[fire_t] = v[fire_t] + 1
             
-            v[-1,0] = -.11
+            if not theta:
+                v[-1,0] = -1.0
                 
             V[:,t_tot] = v.ravel()
             X[:,t_tot] = x.ravel()
@@ -2423,7 +2430,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         #-------------Create Hessian and Initial Point-------------
         lambda_0 = np.zeros([TcT,1])
         #FF = np.dot(AA,AA.T)
-        Z = np.zeros([n,1])    # The "sparse" solution
+        Z = np.zeros([len_v-1,1])    # The "sparse" solution
         eta = 1             # The constraint maximizaition penalty
         gamm = 10000             # The norm-2 penalty
         #C_i = np.linalg.inv(np.eye(n)-eta*np.dot(AA.T,AA))
@@ -2441,8 +2448,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         #---------Find the Solution with Sparsity in Mind----------
         for i in range(0,2):
             #BB = eta * (np.dot(AA,Z) + eta * np.dot(np.dot(AA,Cc),Z))
-            BB = np.dot(AA,np.dot(C_i,Z))
-            res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
+            #BB = np.dot(AA,np.dot(C_i,Z))
+            BB = delta * np.dot(np.eye(TcT) + theta * np.dot(np.diag(g.ravel())),np.ones([TcT,1]))
+            res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
             # res_cons['status']
             # res_cons['message']
             lam = np.reshape(res_cons['x'],[TcT,1])
@@ -2454,7 +2462,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
         
         #-----------------Store the Solution-----------------------
-        W = np.zeros([n+1,1])
+        W = np.zeros([len_v,1])
         cc = np.dot(AA,ww2)
         if not sum(cc<0):
             W[0:ijk,0] = Z[0:ijk,0]
@@ -2478,21 +2486,21 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         t_last = T0 + T_temp
         u = v-x
         prng = RandomState(int(time()))
-        W2 = np.zeros([n+1,1])
-        W3 = np.zeros([n+1,1])
+        W2 = np.zeros([len_v,1])
+        W3 = np.zeros([len_v,1])
         #Z_tot = np.zeros([n+1,1])
         lambda_tot = np.zeros([len(range_T),1])
         no_blocks = len(range_T)/block_size
-        W_tot = np.zeros([n,1])
+        W_tot = np.zeros([len_v-1,1])
         
-        Z_tot = np.zeros([n,1])
+        Z_tot = np.zeros([len_v-1,1])
         #----------------------------------------------------------------------
         
         for ttau in range(0,50):
             
             #----------------------In-Loop Initializations---------------------
-            xx = np.zeros([n+1,1])
-            vv = np.zeros([n+1,1])
+            xx = np.zeros([len_v,1])
+            vv = np.zeros([len_v,1])
             yy = 0
             t_counter = 0
             ell =  block_size
@@ -2505,8 +2513,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
             itr_W = 0
             
-            Delta_Z = np.zeros([n,1])
-            Delta_W = np.zeros([n,1])
+            Delta_Z = np.zeros([len_v-1,1])
+            Delta_W = np.zeros([len_v-1,1])
             
             beta_K = 1
             #------------------------------------------------------------------
@@ -2533,8 +2541,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 r_count = r_count + 1
                 
                 if t_last == t:
-                    x = np.zeros([n+1,1])
-                    v = np.zeros([n+1,1])
+                    x = np.zeros([len_v,1])
+                    v = np.zeros([len_v,1])
                 
                 
                 #fire_t = read_spikes_lines_delayed(out_spikes_tot_mat_file,t,n,d_max,dd)
@@ -2544,7 +2552,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 x = math.exp(-1/tau_s) * x
                 x[fire_t] = x[fire_t] + 1
-                v[-1,0] = -.11
+                if not theta:
+                    v[-1,0] = -1.0
                 
                 u = v#-x
                 
@@ -2552,7 +2561,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     #---------------In Case of Random Sketching----------------
                     if sketch_flag:
-                        s = prng.randint(0,4,[n+1,1])
+                        s = prng.randint(0,4,[len_v,1])
                         s = (s>=3).astype(int)
                     #----------------------------------------------------------
 
@@ -2676,7 +2685,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     else:
                         #res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)
-                        res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+                        BB = delta * np.dot(np.eye(TcT) + theta * np.dot(np.diag(YY.ravel())),np.ones([TcT,1]))
+                        res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,BB),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                         #print res_cons['message']
                         lam = np.reshape(res_cons['x'],[TcT,1])
                         lambda_temp = np.zeros([ell,1])
