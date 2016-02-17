@@ -2648,8 +2648,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     Cc_nor = np.dot(aa.T,aa)
                     #C_i = (np.eye(n) + gamm*Cc_nor)
                     C_i = np.linalg.inv(np.eye(len_v-1) - gamm * Cc_nor)
-                    #la = np.linalg.eig(np.eye(len_v-1) - gamm * Cc_nor)
-                    #sum(la[0]>0)
+                    la = np.linalg.eig(np.eye(len_v-1) - gamm * Cc_nor)
+                    sum(la[0]>0)
+                    pdb.set_trace()
                     FF = np.dot(np.dot(aa,C_i),aa.T)
                     BB = np.zeros([TcT,1])
                     #----------------------------------------------------------
