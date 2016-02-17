@@ -2587,6 +2587,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         YY = Y_orig[t_inds]
                     #----------------------------------------------------------
 
+                    AA = AA/np.linalg.norm(AA)
+                    AA_orig = AA_orig/np.linalg.norm(AA_orig)
+                    
                     AAY_orig = np.dot(np.diag(Y_orig.ravel()),AA_orig)
                     AA = np.dot(np.diag(YY.ravel()),AA)
                     
@@ -2644,8 +2647,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #AA = np.divide(AA,aa)
                     gamm = .9
                     Cc = np.dot(AA.T,AA)
-                    aa = AA/np.linalg.norm(AA)
-                    #aa = AA
+                    aa_norm = np.linalg.norm(AA)
+                    #aa = AA/aa_norm
+                    aa = AA
                     Cc_nor = np.dot(aa.T,aa)
                     #C_i = (np.eye(n) + gamm*Cc_nor)
                     C_i = np.linalg.inv(np.eye(len_v-1) - gamm * Cc_nor)
@@ -2735,13 +2739,17 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                     #----------------------Calculate Cost----------------------
                     WW = np.zeros([len_v,1])
-                    WW[0:ijk,0] = W_tot[0:ijk,0]
-                    WW[ijk+1:,0] = W_tot[ijk:,0]
+                    WW[0:ijk,0] = ww2[0:ijk,0]
+                    WW[ijk+1:,0] = ww2[ijk:,0]
                     
                     TcT = len(Y_orig)
-                    BB = np.dot(delta*np.eye(TcT) + theta * np.diag(Y_orig.ravel()),np.ones([TcT,1]))
+                    #BB = np.dot(theta * np.diag(Y_orig.ravel()),np.ones([TcT,1]))
+                    BB = theta*np.ones([TcT,1])
                     pdb.set_trace()
-                    cst = np.dot(AA_orig,W_tot) - BB
+                    #aa_orig = AA_orig/aa_norm
+                    #cst = np.dot(np.dot(np.diag(Y_orig.ravel()),AA_orig),WW) - BB*pow(aa_norm,1)
+                    cst = np.dot(AA_orig,WW) - BB
+                    cst = sum(np.sign(cst) != Y_orig)
                     #----------------------------------------------------------
                     
                     #---------------Update the Current Estimate----------------
