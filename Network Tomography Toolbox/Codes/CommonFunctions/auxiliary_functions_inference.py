@@ -1492,7 +1492,7 @@ def hinge_jac(x,FF,b):
     #temp = ((np.dot(FF,x) + b)>0).astype(int)    
     tmp = np.dot(FF.T,temp).ravel()
     
-    der[0:nn] = tmp + 2*x.ravel()
+    der[0:nn] = tmp.ravel() + 2*x.ravel()
     return der
 
 def loss_func_lambda(x,FF,b):
