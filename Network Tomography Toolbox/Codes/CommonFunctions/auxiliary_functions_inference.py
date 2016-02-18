@@ -1488,6 +1488,7 @@ def hinge_jac(x,FF,b):
     n = len(x)
     temp = np.dot(FF,x) + b
     tmp = np.dot(FF.T,(temp>0).astype(int))
+    pdb.set_trace()
     der[0:n] = tmp.ravel() + 2*x
     return der
 
