@@ -2575,6 +2575,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #----------------In Case of Random Sampling----------------
                     if rand_sample_flag:
                         t_init = np.random.randint(0,t_gap)
+                        print t_init
                         t_inds = np.array(range(t_init,ell,t_gap))
                     
                         AA_orig = AA
