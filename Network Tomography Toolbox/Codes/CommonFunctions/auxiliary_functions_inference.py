@@ -2647,7 +2647,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     aa = pow(aa,0.5)
                     aa = np.dot(aa,np.ones([1,len_v-1]))
                     #AA = np.divide(AA,aa)
-                    gamm = .9
+                    gamm = .0
                     Cc = np.dot(AA.T,AA)
                     aa_norm = np.linalg.norm(AA)
                     #aa = AA/aa_norm
