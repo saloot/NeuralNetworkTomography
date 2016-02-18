@@ -1483,16 +1483,13 @@ def hinge_loss_func(x,FF,b):
     return np.sum(temp) + pow(np.linalg.norm(x),2)
 
 def hinge_jac(x,FF,b):
-    
-    nn = len(x)
     temp = np.zeros([len(b)])
     for t in range(0,len(b)):
         temp[t] = np.sign(max(0,b[t] + np.dot(FF[t,:],x)))
     
     #temp = ((np.dot(FF,x) + b)>0).astype(int)    
     tmp = np.dot(FF.T,temp).ravel()
-    print tmp.shape
-    #der[0:nn] = 
+    
     return tmp.ravel() + 2*x.ravel()
 
 def loss_func_lambda(x,FF,b):
@@ -2752,7 +2749,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         
                         
                         ww = np.reshape(res_cons['x'],[len_v-1,1])
-                        
+                        print sum(ww)
                     
                     #------------------Calculate Duality Gap-------------------
                     cc = np.dot(aa,ww2)
