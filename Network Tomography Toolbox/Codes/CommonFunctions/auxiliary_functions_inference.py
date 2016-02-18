@@ -1485,7 +1485,7 @@ def hinge_loss_func(x,FF,b):
 def hinge_jac(x,FF,b):
     der = np.zeros_like(x)
     nn = len(x)
-    temp = ((np.dot(FF,x) + 1)>0).astype(int)    
+    temp = ((np.dot(FF,x) + b)>0).astype(int)    
     tmp = np.dot(FF.T,temp).ravel()
     
     der[0:nn] = tmp + 2*x.ravel()
@@ -2743,7 +2743,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
                         opt = {'disp':True,'maxiter':2500}
                         pdb.set_trace()
-                        res_cons = optimize.minimize(hinge_loss_func, w0, args=(aa,BB),jac=hinge_jac,constraints=(),method='BFGS', options=opt)
+                        #res_cons = optimize.minimize(hinge_loss_func, w0, args=(aa,BB),jac=hinge_jac,constraints=(),method='BFGS', options=opt)
                         res_cons = optimize.minimize(hinge_loss_func, w0, args=(FF,BB),jac=hinge_jac,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                         
                         
