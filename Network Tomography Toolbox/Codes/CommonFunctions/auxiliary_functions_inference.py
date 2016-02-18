@@ -1488,6 +1488,7 @@ def hinge_jac(x,FF,b,avg,lamb):
     for t in range(0,len(b)):
         #temp[t] = np.sign(max(0,b[t] + np.dot(FF[t,:],x)))
         temp[t] = ((b[t] + np.dot(FF[t,:],x))>0).astype(int)
+        print (b[t] + np.dot(FF[t,:],x))
     
     #temp = ((np.dot(FF,x) + b)>0).astype(int)    
     tmp = avg*np.dot(FF.T,temp).ravel()
