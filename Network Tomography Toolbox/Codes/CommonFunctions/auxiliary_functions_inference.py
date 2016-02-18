@@ -2801,7 +2801,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     aa_orig = AA_orig/aa_norm
                     #cst = np.dot(np.dot(np.diag(Y_orig.ravel()),AA_orig),WW) - BB*pow(aa_norm,1)
-                    BB = np.dot(theta * np.diag(YY.ravel()),np.ones([TcT,1]))
+                    #BB = np.dot(theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                     
                     cst = np.dot(aa_orig,WW) - BB
                     pdb.set_trace()
