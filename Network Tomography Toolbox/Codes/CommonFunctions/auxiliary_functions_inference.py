@@ -1494,7 +1494,9 @@ def hinge_jac(x,FF,b,avg,lamb):
     #temp = ((np.dot(FF,x) + b)>0).astype(int)
     print temp.max(),temp.shape
     tmp = avg*np.dot(FF.T,temp).ravel()
+    print np.linalg.norm(tmp)
     tmp = tmp.ravel() + 2*lamb*x.ravel()
+    print np.linalg.norm(tmp)
     return tmp
 
 def loss_func_lambda(x,FF,b):
