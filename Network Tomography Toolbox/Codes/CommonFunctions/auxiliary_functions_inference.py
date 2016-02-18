@@ -1487,7 +1487,7 @@ def hinge_jac(x,FF,b):
     temp = np.dot(FF,x) + b
     tmp = (temp>0).astype(int)
     temp = np.dot(FF.T,tmp)
-    return np.ndarray.flatten(temp)
+    return temp.T
 
 def loss_func_lambda(x,FF,b):
     
