@@ -1477,6 +1477,18 @@ def jac(x):
     return 2 * np.sign(x)
 
 
+def hinge_loss_func(x,FF,b):
+    #return np.dot(x.T, x)
+    temp = np.dot(FF,x) + b
+    temp = np.mutiply(temp,(temp>0).astype(int))
+    return sum(temp)
+
+def hinge_jac(x,FF,b):
+    temp = np.dot(FF,x) + b
+    tmp = (temp>0).astype(int)
+    temp = np.dot(FF.T,tmp)
+    return temp
+
 def loss_func_lambda(x,FF,b):
     
     #E = 0.25 * np.dot(np.dot(x.T,FF),x) - delta *sum(x)
@@ -2701,7 +2713,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             #else:
                             #    Z = Z/np.linalg.norm(Z)
                     
-                    else:
+                    elif 0:
                         #res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)                        
                         BB = np.dot(delta*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                         BB = BB - np.dot(aa,W_tot)
@@ -2716,7 +2728,13 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         #pdb.set_trace()
                         #ww2 = ww2/(0.0001+np.linalg.norm(ww2))
                         Z = ww2#soft_threshold(ww2,sparse_thr)
-                    
+                    else:
+                        w0 = W_tot
+                        BB = np.dot(1*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
+                        res_cons = optimize.minimize(hinge_loss_func, w0, args=(FF,BB),jac=hinge_jac,constraints=(),method='L-BFGS-B', options=opt)
+                        pdb.set_trace()
+                        ww = np.reshape(res_cons['x'],[len_v-1,1])
+                        
                     
                     #------------------Calculate Duality Gap-------------------
                     cc = np.dot(aa,ww2)
