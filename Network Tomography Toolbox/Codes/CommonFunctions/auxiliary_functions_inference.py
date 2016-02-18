@@ -2334,7 +2334,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     d_max = 10
     t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
-    theta = 20 
+    theta = 0 
     
     if theta:
         len_v = n        
@@ -2746,7 +2746,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     else:
                         
                         w0 = W_tot
-                        theta = 0.5
+                        
                         delta = 1
                         BB = np.dot(delta*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                         
@@ -2762,6 +2762,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         lamb = .5#2/float(TcT)
                         avg = 1
                         res_cons = optimize.minimize(hinge_loss_func, w0, args=(FF,BB,avg,lamb),jac=hinge_jac,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+                        print res_cons['message']
                         ww2 = np.reshape(res_cons['x'],[len_v-1,1])
                         cc = np.dot(aa,ww2)
                         #print sum(sum(cc<BB))
@@ -2800,6 +2801,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     aa_orig = AA_orig/aa_norm
                     #cst = np.dot(np.dot(np.diag(Y_orig.ravel()),AA_orig),WW) - BB*pow(aa_norm,1)
+                    BB = np.dot(theta * np.diag(YY.ravel()),np.ones([TcT,1]))
+                    
                     cst = np.dot(aa_orig,WW) - BB
                     pdb.set_trace()
                     total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst) != Y_orig)
