@@ -2743,23 +2743,24 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         bns = list(dd)
             
                         opt = {'disp':True,'maxiter':2500}
-                        pdb.set_trace()
+                        
                         #res_cons = optimize.minimize(hinge_loss_func, w0, args=(aa,BB),jac=hinge_jac,constraints=(),method='BFGS', options=opt)
                         res_cons = optimize.minimize(hinge_loss_func, w0, args=(FF,BB),jac=hinge_jac,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                         
                         
-                        ww = np.reshape(res_cons['x'],[len_v-1,1])
-                        print sum(ww)
+                        ww2 = np.reshape(res_cons['x'],[len_v-1,1])
+                        print sum(ww2)
                     
                     #------------------Calculate Duality Gap-------------------
-                    cc = np.dot(aa,ww2)
-                    f_d = -loss_func_lambda(lam,FF,BB)
-                    f_p = pow(np.linalg.norm(ww2),2) - gamm * pow(np.linalg.norm(cc),2) - np.dot(lam.T,cc-BB)
-                    if (abs(f_p - f_d)>0.001):
-                        print 'Dual gap not satisfied!'
-                        #pdb.set_trace()
-                    dual_gap[ttau,block_count] = f_p - f_d
-                     
+                    if 0:
+                        cc = np.dot(aa,ww2)
+                        f_d = -loss_func_lambda(lam,FF,BB)
+                        f_p = pow(np.linalg.norm(ww2),2) - gamm * pow(np.linalg.norm(cc),2) - np.dot(lam.T,cc-BB)
+                        if (abs(f_p - f_d)>0.001):
+                            print 'Dual gap not satisfied!'
+                            #pdb.set_trace()
+                        dual_gap[ttau,block_count] = f_p - f_d
+                         
                     
                     #----------------------------------------------------------
                     
