@@ -2826,7 +2826,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
             st_cof = 0.1/float(1+ttau)
             W_tot = W_tot + 0.1 * Delta_W/no_blocks
-            W_tot = W_tot - W_tot.mean()
+            #W_tot = W_tot - W_tot.mean()
             W_tot = W_tot/np.linalg.norm(W_tot)
             #W_tot = W_tot/np.linalg.norm(W_tot)
             WW[0:ijk,0] = W_tot[0:ijk,0]
