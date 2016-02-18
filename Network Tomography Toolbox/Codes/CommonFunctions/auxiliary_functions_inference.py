@@ -2735,11 +2735,17 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         FF = aa
                         w0 = W_tot
                         BB = np.dot(1*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
+                        
+                        dd = np.ones([len(w0),2])
+                        dd[:,0] = -100000
+                        dd[:,1] = 100000
+                        bns = list(dd)
+            
+                        opt = {'disp':True,'maxiter':2500}
                         pdb.set_trace()
-                        opt = {'disp':True,'maxiter':2500} 
                         res_cons = optimize.minimize(hinge_loss_func, w0, args=(aa,BB),jac=hinge_jac,constraints=(),method='BFGS', options=opt)
-                        res_cons = fmin_bfgs(hinge_loss_func, w0, fprime=hinge_jac,args=(aa,BB))
-                        from scipy.optimize import fmin_bfgs
+                        res_cons = optimize.minimize(hinge_loss_func, w0, args=(FF,BB),jac=hinge_jac,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+                        
                         
                         ww = np.reshape(res_cons['x'],[len_v-1,1])
                         
