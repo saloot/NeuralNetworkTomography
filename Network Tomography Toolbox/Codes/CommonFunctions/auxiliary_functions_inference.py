@@ -2575,7 +2575,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #----------------In Case of Random Sampling----------------
                     if rand_sample_flag:
                         t_init = np.random.randint(0,t_gap)
-                        print t_init
+
                         t_inds = np.array(range(t_init,ell,t_gap))
                     
                         AA_orig = AA
@@ -2824,7 +2824,10 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
             WW = np.zeros([len_v,1])
             
+            st_cof = 0.1/float(1+ttau)
             W_tot = W_tot + 0.1 * Delta_W/no_blocks
+            W_tot = W_tot - W_tot.mean()
+            W_tot = W_tot/np.linalg.norm(W_tot)
             #W_tot = W_tot/np.linalg.norm(W_tot)
             WW[0:ijk,0] = W_tot[0:ijk,0]
             WW[ijk+1:,0] = W_tot[ijk:,0]
