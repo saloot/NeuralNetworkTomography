@@ -2461,7 +2461,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         #----------------------------------------------------------
         
         #---------Find the Solution with Sparsity in Mind----------
-        for i in range(0,2):
+        for i in range(0,0):
             #BB = eta * (np.dot(AA,Z) + eta * np.dot(np.dot(AA,Cc),Z))
             #BB = np.dot(AA,np.dot(C_i,Z))
             BB = delta * np.dot(np.eye(TcT) + theta * np.diag(gg.ravel()),np.ones([TcT,1]))
@@ -2729,6 +2729,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         #ww2 = ww2/(0.0001+np.linalg.norm(ww2))
                         Z = ww2#soft_threshold(ww2,sparse_thr)
                     else:
+                        FF = aa
                         w0 = W_tot
                         BB = np.dot(1*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                         res_cons = optimize.minimize(hinge_loss_func, w0, args=(FF,BB),jac=hinge_jac,constraints=(),method='L-BFGS-B', options=opt)
