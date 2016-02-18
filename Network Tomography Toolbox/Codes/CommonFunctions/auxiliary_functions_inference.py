@@ -2704,7 +2704,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     else:
                         #res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,delta,BB),jac=jac_lambda,bounds=bns,constraints=(),method='TNC', options=opt)                        
                         BB = np.dot(delta*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
-                        BB = BB - np.dot(aa,W_tot)
+                        BB = BB + np.dot(aa,W_tot)
                         res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,BB),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                         #print res_cons['message']
                         lam = np.reshape(res_cons['x'],[TcT,1])
@@ -2825,7 +2825,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             WW = np.zeros([len_v,1])
             
             st_cof = 0.1/float(1+ttau)
-            W_tot = W_tot + 0.1 * Delta_W/no_blocks
+            W_tot = W_tot + st_cof * Delta_W/no_blocks
             #W_tot = W_tot - W_tot.mean()
             W_tot = W_tot/np.linalg.norm(W_tot)
             #W_tot = W_tot/np.linalg.norm(W_tot)
