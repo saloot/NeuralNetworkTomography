@@ -2458,6 +2458,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         #C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
         C_i = (np.eye(len_v-1) + eta*Cc/float(gamm))/float(gamm)
         FF = np.dot(np.dot(AA,C_i),AA.T)
+        ww2 = np.zeros([len_v-1,1])    # The "sparse" solution
         #----------------------------------------------------------
         
         #---------Find the Solution with Sparsity in Mind----------
@@ -2472,7 +2473,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             lam = np.reshape(res_cons['x'],[TcT,1])
             ww = np.dot(AA.T,lam)
             #ww2 = np.dot(C_i,Z + 0.5*ww[0:n])
-            ww2 = 0.5*np.dot(C_i,ww[0:n])
+            ww2 = 0.5*np.dot(C_i,ww[0:len_v-1])
             ww2 = ww2/(0.001+np.linalg.norm(ww2))
             Z = soft_threshold(ww2,sparse_thr_0)
         #----------------------------------------------------------
