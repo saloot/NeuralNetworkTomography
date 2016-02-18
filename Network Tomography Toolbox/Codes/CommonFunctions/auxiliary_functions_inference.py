@@ -2744,7 +2744,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     else:
                         
                         w0 = W_tot
-                        theta = 0.0001
+                        theta = 20
                         delta = 1
                         BB = np.dot(delta*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                         
