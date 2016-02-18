@@ -1481,7 +1481,7 @@ def hinge_loss_func(x,FF,b,avg,lamb):
     temp = np.dot(FF,x) + b
     temp = np.multiply(temp,(temp>0).astype(int))
     #temp = avg*np.sum(temp) + lamb * pow(np.linalg.norm(x),2)
-    temp = avg*np.sum(temp) + lamb * np.sum(np.abs(x))
+    temp = avg*np.sum(temp) #+ lamb * np.sum(np.abs(x))
     return temp
 
 def hinge_jac(x,FF,b,avg,lamb):
@@ -1499,7 +1499,7 @@ def hinge_jac(x,FF,b,avg,lamb):
     #print tmp.shape,x.shape
     
     #tmp = tmp.ravel() + 2*lamb*x.ravel()
-    tmp = tmp.ravel() + lamb*np.sign(x).ravel()
+    tmp = tmp.ravel() #+ lamb*np.sign(x).ravel()
     #print np.linalg.norm(tmp)
     return tmp.ravel()
 
@@ -2747,7 +2747,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         
                         w0 = W_tot
                         
-                        delta = 1
+                        delta = .25
                         BB = np.dot(delta*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                         
                         dd = np.ones([len(w0),2])
