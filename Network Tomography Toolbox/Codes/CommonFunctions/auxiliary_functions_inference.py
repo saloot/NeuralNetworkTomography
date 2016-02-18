@@ -1478,17 +1478,17 @@ def jac(x):
 
 
 def hinge_loss_func(x,FF,b):
-    temp = np.dot(FF,x) + b
+    temp = -np.dot(FF,x) + b
     temp = np.multiply(temp,(temp>0).astype(int))
     return np.sum(temp) + pow(np.linalg.norm(x),2)
 
 def hinge_jac(x,FF,b):
     temp = np.zeros([len(b)])
     for t in range(0,len(b)):
-        temp[t] = np.sign(max(0,b[t] + np.dot(FF[t,:],x)))
+        temp[t] = np.sign(max(0,b[t] - np.dot(FF[t,:],x)))
     
     #temp = ((np.dot(FF,x) + b)>0).astype(int)    
-    tmp = np.dot(FF.T,temp).ravel()
+    tmp = np.dot(-FF.T,temp).ravel()
     
     return tmp.ravel() + 2*x.ravel()
 
@@ -2743,15 +2743,16 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         dd[:,1] = 1
                         bns = list(dd)
             
-                        opt = {'disp':True,'maxiter':2500}
+                        #opt = {'disp':True,'maxiter':2500}
                         
                         #res_cons = optimize.minimize(hinge_loss_func, w0, args=(aa,BB),jac=hinge_jac,constraints=(),method='BFGS', options=opt)
                         res_cons = optimize.minimize(hinge_loss_func, w0, args=(FF,BB),jac=hinge_jac,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+                        ww2 = np.reshape(res_cons['x'],[len_v-1,1])
                         pdb.set_trace()
                         
-                        ww2 = np.reshape(res_cons['x'],[len_v-1,1])
+                        
                         Z = ww2
-                        print sum(ww2)
+                        #print sum(ww2)
                     
                     #------------------Calculate Duality Gap-------------------
                     if 0:
