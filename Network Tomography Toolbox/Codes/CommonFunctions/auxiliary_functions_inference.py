@@ -1485,11 +1485,11 @@ def hinge_loss_func(x,FF,b):
 
 def hinge_jac(x,FF,b):
     der = np.zeros_like(x)
-    n = len(x)
+    nn = len(x)
     temp = np.dot(FF,x) + b
     tmp = np.dot(FF.T,(temp>0).astype(int))
-    pdb.set_trace()
-    der[0:n] = tmp.ravel() + 2*x
+    
+    der[0:nn] = tmp.ravel() + 2*x.ravel()
     return der
 
 def loss_func_lambda(x,FF,b):
@@ -2734,7 +2734,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         Z = ww2#soft_threshold(ww2,sparse_thr)
                     else:
                         FF = aa
-                        w0 = np.zeros(len(W_tot))
+                        w0 = W_tot
                         BB = np.dot(1*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                         pdb.set_trace()
                         res_cons = optimize.minimize(hinge_loss_func, w0, args=(aa,BB),jac=hinge_jac,constraints=(),method='BFGS', options=opt)
