@@ -2749,6 +2749,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         
                         
                         ww2 = np.reshape(res_cons['x'],[len_v-1,1])
+                        Z = ww2
                         print sum(ww2)
                     
                     #------------------Calculate Duality Gap-------------------
