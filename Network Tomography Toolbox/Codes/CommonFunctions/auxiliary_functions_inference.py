@@ -2616,7 +2616,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #----------------------------------------------------------
 
                     
-                    AA_orig = AA_orig/np.linalg.norm(AA)
+                    #AA_orig = AA_orig/np.linalg.norm(AA)
                     AA = AA/np.linalg.norm(AA)
                     DDF = AA_orig
                     
@@ -2743,7 +2743,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         
                         #Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
                         # goal: 
-                        Delta_W_loc = np.dot(DD.T,d_alp_vec[t_inds])
+                        Delta_W_loc = np.dot(FF.T,d_alp_vec[t_inds])
                         Delta_W = Delta_W + Delta_W_loc
                         
                         #BB = np.dot(0*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
