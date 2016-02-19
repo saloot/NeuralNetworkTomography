@@ -2703,13 +2703,13 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             b = cf * (np.dot(W_temp.T,aa[ii,:]) - 1)
                             if (b>=-lambda_temp[jj]) and (b <= 1-lambda_temp[jj]):
                                 d_alp = -b
-                                print 1
+                                #print 1
                             elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
                                 d_alp = -lambda_temp[jj]
-                                print 2
+                                #print 2
                             else:
                                 d_alp = 1-lambda_temp[jj]
-                                print 3
+                                #print 3
                             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                             
                             lambda_temp[jj] = lambda_temp[jj] + d_alp
@@ -2723,6 +2723,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         
                         lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
                     
+                        WW = np.zeros([len_v,1])
+                        WW[0:ijk,0] = Delta_W_loc[0:ijk,0]
+                        WW[ijk+1:,0] = Delta_W_loc[ijk:,0]
                     
                     if 0:
                         for i in range(0,1):
@@ -2757,7 +2760,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         #pdb.set_trace()
                         #ww2 = ww2/(0.0001+np.linalg.norm(ww2))
                         Z = ww2#soft_threshold(ww2,sparse_thr)
-                    else:
+                    elif 0:
                         
                         w0 = W_tot
                         
@@ -2798,19 +2801,21 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             print 'Dual gap not satisfied!'
                             #pdb.set_trace()
                         dual_gap[ttau,block_count] = f_p - f_d
-                         
+                        
+                        Delta_Z = Delta_Z + Z
+                        Delta_W = Delta_W + ww2  
                     
+                        WW = np.zeros([len_v,1])
+                        WW[0:ijk,0] = ww2[0:ijk,0]
+                        WW[ijk+1:,0] = ww2[ijk:,0]
                     #----------------------------------------------------------
                     
-                    Delta_Z = Delta_Z + Z
-                    Delta_W = Delta_W + ww2 
+                    
                     block_count = block_count + 1
                     #----------------------------------------------------------
                 
                     #----------------------Calculate Cost----------------------
-                    WW = np.zeros([len_v,1])
-                    WW[0:ijk,0] = ww2[0:ijk,0]
-                    WW[ijk+1:,0] = ww2[ijk:,0]
+                    
                     
                     TcT = len(Y_orig)
                     #BB = np.dot(theta * np.diag(Y_orig.ravel()),np.ones([TcT,1]))
