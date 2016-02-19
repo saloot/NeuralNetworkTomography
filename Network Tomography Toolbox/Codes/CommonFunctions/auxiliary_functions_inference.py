@@ -2690,18 +2690,17 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #----------------------------------------------------------
                     
                     #----------------Create a Balanced Dataset-----------------
-                    inds_f = np.nonzero(Y_orig>0)[0]
-                    ll = len(inds_f)
+                    #inds_f = np.nonzero(Y_orig>0)[0]
+                    #ll = len(inds_f)
+
+                    #t_inds = np.reshape(inds_f,[1,len(inds_f)])
                     
-                    
-                    t_inds = np.reshape(inds_f,[1,len(inds_f)])
-                    
-                    inds_f = np.nonzero(Y_orig<=0)[0]
-                    rand_ind = np.random.randint(0,len(inds_f),[10*ll])
-                    inds_f = inds_f[rand_ind]
-                    inds_f = np.reshape(inds_f,[1,len(inds_f)])
-                    t_inds = np.hstack([t_inds,inds_f])
-                    t_inds = t_inds.ravel()
+                    #inds_f = np.nonzero(Y_orig<=0)[0]
+                    #rand_ind = np.random.randint(0,len(inds_f),[10*ll])
+                    #inds_f = inds_f[rand_ind]
+                    #inds_f = np.reshape(inds_f,[1,len(inds_f)])
+                    #t_inds = np.hstack([t_inds,inds_f])
+                    #t_inds = t_inds.ravel()
                     
                     FF = AAY_orig[t_inds,:]
                     DD = DDF[t_inds,:]
@@ -2710,7 +2709,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
                     #---------Find the Solution with Sparsity in Mind----------
                     if 1:
-                        lamb = .1/float(TcT)
+                        lamb = .001/float(TcT)
                         cf = lamb*TcT
                         
                         lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
@@ -2718,7 +2717,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         d_alp_vec = np.zeros([ell,1])
                         W_temp = W_tot
                         
-                        for ss in range(0,250*TcT):
+                        for ss in range(0,1000*TcT):
                             
                             ii = np.random.randint(0,TcT)
                             jj = t_inds[ii]
