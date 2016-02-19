@@ -2693,7 +2693,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     inds_f = np.nonzero(YY>0)[0]
                     inds_f = np.reshape(inds_f,[1,len(inds_f)])
                     
-                    ll =len(inds_f)
+                    
                     
                     t_inds = inds_f
                     
@@ -2705,7 +2705,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     t_inds = t_inds.ravel()
                     
                     FF = aa[t_inds,:]
-                    TcT = 3*ll
+                    TcT = len(t_inds)
                     #----------------------------------------------------------
         
                     #---------Find the Solution with Sparsity in Mind----------
@@ -2746,7 +2746,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         Delta_W_loc = np.dot(FF.T,d_alp_vec[t_inds])
                         Delta_W = Delta_W + Delta_W_loc
                         
-                        BB = np.dot(0*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
+                        #BB = np.dot(0*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                         BB = np.zeros([TcT,1])
                         print hinge_loss_func(Delta_W_loc,-FF,BB,1,0)
                         #cc = np.dot(aa,Delta_W_loc)
