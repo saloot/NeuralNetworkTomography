@@ -2665,9 +2665,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #C_i = np.linalg.inv(gamm * np.eye(n) - Cc)
                     
                     
-                    lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
-                    lambda_0 = lambda_temp[t_inds]
-                    d_alp_vec = np.zeros([ell,1])
+                    
                     
                     aa = np.sum(np.multiply(AA,AA),axis = 1)
                     aa = np.reshape(aa,[len(aa),1])
@@ -2690,19 +2688,31 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #----------------------------------------------------------
         
                     #---------Find the Solution with Sparsity in Mind----------
-                    if 0:
-                        Z = Z_tot
+                    if 1:
+                        lamb = 1
+                        cf = lamb*TcT
+                        lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
+                        lambda_0 = lambda_temp[t_inds]
+                        d_alp_vec = np.zeros([ell,1])
                         W_temp = W_tot
                         for ss in range(0,8*TcT):
-                            ii = np.random.randint(0,TcT)                        
-                            d_alp = 1 - np.dot(W_temp.T,AA[ii,:])
-                            d_alp =  - np.dot(W_temp.T,AA[ii,:])
-                            #d_alp = max(0,d_alp)
+                            ii = np.random.randint(0,TcT)
                             jj = t_inds[ii]
+                            
+                            #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
+                            b = cf * (np.dot(W_temp.T,aa[ii,:]) - 1)
+                            if (b>=-lambda_temp[jj]) and (b <= 1-lambda_temp[jj]):
+                                d_alp = -b
+                            elif pow(b-lambda_temp[jj],2) < (b+1-lambda_temp[jj],2):
+                                d_alp = -lambda_temp[jj]
+                            else:
+                                d_alp = 1-lambda_temp[jj]
+                            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            
                             lambda_temp[jj] = lambda_temp[jj] + d_alp
                             d_alp_vec[jj] = d_alp_vec[jj] + d_alp
-                            W_temp = W_temp + d_alp * np.reshape(AA[ii,:],[n,1])
-                            W_temp = W_temp/np.linalg.norm(W_temp)
+                            W_temp = W_temp + d_alp * np.reshape(AA[ii,:],[n,1])/float(cf)
+                            
                         
                         Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
                         Delta_W = Delta_W + Delta_W_loc
@@ -2761,9 +2771,12 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         FF = -aa
                         lamb = .5#2/float(TcT)
                         avg = 1
+                        opt = {'disp':True,'maxiter':5000,'ftol':1e-7,'gtol':1e-5}
                         res_cons = optimize.minimize(hinge_loss_func, w0, args=(FF,BB,avg,lamb),jac=hinge_jac,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                         print res_cons['message']
                         ww2 = np.reshape(res_cons['x'],[len_v-1,1])
+                        
+                        #hinge_loss_func(ww2,FF,BB,avg,lamb)
                         cc = np.dot(aa,ww2)
                         #print sum(sum(cc<BB))
                         #pdb.set_trace()
@@ -2799,7 +2812,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #BB = np.dot(theta * np.diag(Y_orig.ravel()),np.ones([TcT,1]))
                     BB = theta*np.ones([TcT,1])
                     
-                    aa_orig = AA_orig/aa_norm
+                    aa_orig = AA_orig/np.linalg.norm(AA_orig)
                     #cst = np.dot(np.dot(np.diag(Y_orig.ravel()),AA_orig),WW) - BB*pow(aa_norm,1)
                     #BB = np.dot(theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                     
