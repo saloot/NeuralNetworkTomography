@@ -2723,9 +2723,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         
                         #Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
                         # goal: 
-                        Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
+                        Delta_W_loc = np.dot(DD.T,d_alp_vec[t_inds])
                         Delta_W = Delta_W + Delta_W_loc
-                        cc = np.dot(DD,Delta_W_loc)
+                        cc = np.dot(aa,Delta_W_loc)
                         
                         lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
                     
