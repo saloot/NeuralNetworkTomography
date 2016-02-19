@@ -2718,7 +2718,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         d_alp_vec = np.zeros([ell,1])
                         W_temp = W_tot
                         
-                        for ss in range(0,1000*TcT):
+                        for ss in range(0,50*TcT):
                             
                             ii = np.random.randint(0,TcT)
                             jj = t_inds[ii]
@@ -2864,7 +2864,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #cst = np.dot(aa_orig,WW) - BB
                     cst = np.dot(AAY_orig,Delta_W_loc)
                     
-                    #pdb.set_trace()
+                    pdb.set_trace()
                     total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst) != Y_orig)
                     #----------------------------------------------------------
                     
