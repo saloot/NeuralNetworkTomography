@@ -2334,7 +2334,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     d_max = 10
     t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
-    theta = 20 
+    theta = 0 
     
     if theta:
         len_v = n        
@@ -2710,7 +2710,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
                     #---------Find the Solution with Sparsity in Mind----------
                     if 1:
-                        lamb = .5/float(TcT)
+                        lamb = .1/float(TcT)
                         cf = lamb*TcT
                         
                         lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
@@ -2718,7 +2718,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         d_alp_vec = np.zeros([ell,1])
                         W_temp = W_tot
                         
-                        for ss in range(0,50*TcT):
+                        for ss in range(0,250*TcT):
                             
                             ii = np.random.randint(0,TcT)
                             jj = t_inds[ii]
