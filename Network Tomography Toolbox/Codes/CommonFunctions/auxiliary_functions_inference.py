@@ -2688,17 +2688,36 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     FF = np.dot(np.dot(aa,C_i),aa.T)
                     BB = np.zeros([TcT,1])
                     #----------------------------------------------------------
+                    
+                    #----------------Create a Balanced Dataset-----------------
+                    inds_f = np.nonzero(YY>0)[0]
+                    inds_f = np.reshape(inds_f,[1,len(inds_f)])
+                    
+                    ll =len(inds_f)
+                    
+                    t_inds = inds_f
+                    
+                    rand_ind = np.random.randint(0,TcT,[2*ll])
+                    inds_f = np.nonzero(YY<=0)[0]
+                    inds_f = inds_f[rand_ind]
+                    inds_f = np.reshape(inds_f,[1,len(inds_f)])
+                    t_inds = np.hstack([t_inds,inds_f])
+                    t_inds = t_inds.ravel()
+                    
+                    FF = aa[t_inds,:]
+                    TcT = 3*ll
+                    #----------------------------------------------------------
         
                     #---------Find the Solution with Sparsity in Mind----------
                     if 1:
                         lamb = 1/float(TcT)
                         cf = lamb*TcT
-                        FF = aa
+                        
                         lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
                         lambda_0 = lambda_temp[t_inds]
                         d_alp_vec = np.zeros([ell,1])
                         W_temp = W_tot
-                        BB = np.dot(delta*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
+                        
                         for ss in range(0,8*TcT):
                             
                             ii = np.random.randint(0,TcT)
@@ -2719,7 +2738,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             
                             lambda_temp[jj] = lambda_temp[jj] + d_alp
                             d_alp_vec[jj] = d_alp_vec[jj] + d_alp
-                            W_temp = W_temp + d_alp * np.reshape(DD[ii,:],[len_v-1,1])/float(cf)
+                            W_temp = W_temp + d_alp * np.reshape(FF[ii,:],[len_v-1,1])/float(cf)
                             
                         
                         #Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
@@ -2727,7 +2746,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         Delta_W_loc = np.dot(FF.T,d_alp_vec[t_inds])
                         Delta_W = Delta_W + Delta_W_loc
                         
-                        print hinge_loss_func(Delta_W_loc,-FF,np.zeros([TcT,1]),1,0)
+                        BB = np.dot(0*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
+                        BB = np.zeros([TcT,1])
+                        print hinge_loss_func(Delta_W_loc,-FF,BB,1,0)
                         #cc = np.dot(aa,Delta_W_loc)
                         #cc = np.dot(AAY_orig,Delta_W_loc)
                         pdb.set_trace()
