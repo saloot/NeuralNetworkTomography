@@ -2693,6 +2693,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     if 1:
                         lamb = 1/float(TcT)
                         cf = lamb*TcT
+                        FF = -aa
                         lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
                         lambda_0 = lambda_temp[t_inds]
                         d_alp_vec = np.zeros([ell,1])
@@ -2704,7 +2705,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             jj = t_inds[ii]
                             
                             #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
-                            b = cf * (np.dot(W_temp.T,aa[ii,:]) - 1)
+                            b = cf * (np.dot(W_temp.T,FF[ii,:]) - 1)
                             if (b>=-lambda_temp[jj]) and (b <= 1-lambda_temp[jj]):
                                 d_alp = -b
                                 #print 1
@@ -2718,12 +2719,12 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             
                             lambda_temp[jj] = lambda_temp[jj] + d_alp
                             d_alp_vec[jj] = d_alp_vec[jj] + d_alp
-                            W_temp = W_temp + d_alp * np.reshape(DD[ii,:],[n,1])/float(cf)
+                            W_temp = W_temp + d_alp * np.reshape(FF[ii,:],[n,1])/float(cf)
                             
                         
                         #Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
                         # goal: 
-                        Delta_W_loc = np.dot(DD.T,d_alp_vec[t_inds])
+                        Delta_W_loc = np.dot(FF.T,d_alp_vec[t_inds])
                         Delta_W = Delta_W + Delta_W_loc
                         #cc = np.dot(aa,Delta_W_loc)
                         #cc = np.dot(AAY_orig,Delta_W_loc)
@@ -2835,6 +2836,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #cst = np.dot(aa_orig,WW) - BB
                     cst = np.dot(AAY_orig,Delta_W_loc)
                     
+                    pdb.set_trace()
                     total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst) != Y_orig)
                     #----------------------------------------------------------
                     
