@@ -2717,7 +2717,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         d_alp_vec = np.zeros([ell,1])
                         W_temp = W_tot
                         
-                        for ss in range(0,8*TcT):
+                        for ss in range(0,50*TcT):
                             
                             ii = np.random.randint(0,TcT)
                             jj = t_inds[ii]
@@ -2748,7 +2748,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         #BB = np.dot(0*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                         BB = np.zeros([TcT,1])
                         print hinge_loss_func(Delta_W_loc,-FF,BB,1,0)
-                        #cc = np.dot(aa,Delta_W_loc)
+                        #cc = np.dot(FF,Delta_W_loc)
                         #cc = np.dot(AAY_orig,Delta_W_loc)
                         pdb.set_trace()
                         lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
