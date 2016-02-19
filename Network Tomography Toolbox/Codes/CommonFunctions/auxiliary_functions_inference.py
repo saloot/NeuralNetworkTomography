@@ -2718,7 +2718,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         d_alp_vec = np.zeros([ell,1])
                         W_temp = W_tot
                         
-                        for ss in range(0,50*TcT):
+                        for ss in range(0,1*TcT):
                             
                             ii = np.random.randint(0,TcT)
                             jj = t_inds[ii]
@@ -2738,7 +2738,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             
                             lambda_temp[jj] = lambda_temp[jj] + d_alp
                             d_alp_vec[jj] = d_alp_vec[jj] + d_alp
-                            W_temp = W_temp + d_alp * np.reshape(DD[ii,:],[len_v-1,1])/float(cf)
+                            W_temp = W_temp + d_alp * np.reshape(FF[ii,:],[len_v-1,1])/float(cf)
                             
                         
                         #Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
