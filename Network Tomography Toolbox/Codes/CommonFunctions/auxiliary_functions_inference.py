@@ -1481,7 +1481,7 @@ def hinge_loss_func(x,FF,b,avg,lamb):
     temp = np.dot(FF,x) + b
     temp = np.multiply(temp,(temp>0).astype(int))
     #temp = avg*np.sum(temp) + lamb * pow(np.linalg.norm(x),2)
-    temp = avg*np.sum(temp) #+ lamb * np.sum(np.abs(x))
+    temp = avg*np.sum(temp) + lamb * np.sum(np.abs(x))
     return temp
 
 def hinge_jac(x,FF,b,avg,lamb):
@@ -1499,7 +1499,7 @@ def hinge_jac(x,FF,b,avg,lamb):
     #print tmp.shape,x.shape
     
     #tmp = tmp.ravel() + 2*lamb*x.ravel()
-    tmp = tmp.ravel() #+ lamb*np.sign(x).ravel()
+    tmp = tmp.ravel() + lamb*np.sign(x).ravel()
     #print np.linalg.norm(tmp)
     return tmp.ravel()
 
@@ -2334,7 +2334,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     d_max = 10
     t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
-    theta = 0 
+    theta = 20 
     
     if theta:
         len_v = n        
@@ -2727,7 +2727,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         Delta_W_loc = np.dot(FF.T,d_alp_vec[t_inds])
                         Delta_W = Delta_W + Delta_W_loc
                         
-                        print hinge_loss_func(Delta_W_loc,FF,np.zeros([TcT,1]),1,0)
+                        print hinge_loss_func(Delta_W_loc,-FF,np.zeros([TcT,1]),1,0)
                         #cc = np.dot(aa,Delta_W_loc)
                         #cc = np.dot(AAY_orig,Delta_W_loc)
                         pdb.set_trace()
