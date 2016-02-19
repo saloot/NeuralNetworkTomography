@@ -2726,8 +2726,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
                             ff = FF[ii,:]
                             b = cf * (np.dot(W_temp.T,ff) - 1)/pow(np.linalg.norm(FF[ii,:]),2)
-                            pdb.set_trace()
-                            if (b<=lambda_temp[jj]) and (b >= 1-lambda_temp[jj]):
+                            #pdb.set_trace()
+                            if (b<=lambda_temp[jj]) and (b >= lambda_temp[jj]-1):
                                 d_alp = -b
                                 #print 1
                             elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
