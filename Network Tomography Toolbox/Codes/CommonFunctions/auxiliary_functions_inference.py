@@ -2633,7 +2633,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     #--------------Create the Constraints Vector---------------
                     AA = np.delete(AA.T,ijk,0).T
-                    DD = np.delete(DD.T,ijk,0).T
+                    DDF = np.delete(DDF.T,ijk,0).T
                     AAY_orig = np.delete(AAY_orig.T,ijk,0).T
                     TcT = AA.shape[0]
                     bc = delta*np.ones([TcT])
