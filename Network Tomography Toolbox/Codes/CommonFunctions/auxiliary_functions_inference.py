@@ -2618,7 +2618,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     AA_orig = AA_orig/np.linalg.norm(AA)
                     AA = AA/np.linalg.norm(AA)
-                    DD = AA
+                    DDF = AA_orig
                     
                     AAY_orig = np.dot(np.diag(Y_orig.ravel()),AA_orig)
                     AA = np.dot(np.diag(YY.ravel()),AA)
@@ -2704,7 +2704,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     t_inds = t_inds.ravel()
                     
                     FF = AA_orig[t_inds,:]
-                    DD = DD[t_inds,:]
+                    DD = DDF[t_inds,:]
                     TcT = len(t_inds)
                     #----------------------------------------------------------
         
