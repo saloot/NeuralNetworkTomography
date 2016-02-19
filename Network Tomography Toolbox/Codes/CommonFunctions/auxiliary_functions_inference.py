@@ -2703,7 +2703,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     t_inds = np.hstack([t_inds,inds_f])
                     t_inds = t_inds.ravel()
                     
-                    FF = AA_orig[t_inds,:]
+                    FF = AAY_orig[t_inds,:]
                     DD = DDF[t_inds,:]
                     TcT = len(t_inds)
                     #----------------------------------------------------------
