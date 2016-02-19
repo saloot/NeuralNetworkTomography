@@ -2690,20 +2690,21 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #----------------------------------------------------------
                     
                     #----------------Create a Balanced Dataset-----------------
-                    inds_f = np.nonzero(YY>0)[0]
+                    inds_f = np.nonzero(Y_orig>0)[0]
                     ll = len(inds_f)
                     
                     
                     t_inds = np.reshape(inds_f,[1,len(inds_f)])
                     
-                    inds_f = np.nonzero(YY<=0)[0]
+                    inds_f = np.nonzero(Y_orig<=0)[0]
                     rand_ind = np.random.randint(0,len(inds_f),[2*ll])
                     inds_f = inds_f[rand_ind]
                     inds_f = np.reshape(inds_f,[1,len(inds_f)])
                     t_inds = np.hstack([t_inds,inds_f])
                     t_inds = t_inds.ravel()
                     
-                    FF = aa[t_inds,:]
+                    FF = AA_orig[t_inds,:]
+                    DD = DD[t_inds,:]
                     TcT = len(t_inds)
                     #----------------------------------------------------------
         
@@ -2737,7 +2738,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             
                             lambda_temp[jj] = lambda_temp[jj] + d_alp
                             d_alp_vec[jj] = d_alp_vec[jj] + d_alp
-                            W_temp = W_temp + d_alp * np.reshape(FF[ii,:],[len_v-1,1])/float(cf)
+                            W_temp = W_temp + d_alp * np.reshape(DD[ii,:],[len_v-1,1])/float(cf)
                             
                         
                         #Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
