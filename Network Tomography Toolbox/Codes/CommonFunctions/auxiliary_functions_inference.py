@@ -2689,7 +2689,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
                     #---------Find the Solution with Sparsity in Mind----------
                     if 1:
-                        lamb = 1
+                        lamb = 1/float(TcT)
                         cf = lamb*TcT
                         lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
                         lambda_0 = lambda_temp[t_inds]
@@ -2703,7 +2703,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             b = cf * (np.dot(W_temp.T,aa[ii,:]) - 1)
                             if (b>=-lambda_temp[jj]) and (b <= 1-lambda_temp[jj]):
                                 d_alp = -b
-                            elif pow(b-lambda_temp[jj],2) < (b+1-lambda_temp[jj],2):
+                            elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
                                 d_alp = -lambda_temp[jj]
                             else:
                                 d_alp = 1-lambda_temp[jj]
@@ -2711,10 +2711,11 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             
                             lambda_temp[jj] = lambda_temp[jj] + d_alp
                             d_alp_vec[jj] = d_alp_vec[jj] + d_alp
-                            W_temp = W_temp + d_alp * np.reshape(AA[ii,:],[n,1])/float(cf)
+                            W_temp = W_temp + d_alp * np.reshape(aa[ii,:],[n,1])/float(cf)
                             
                         
-                        Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
+                        #Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
+                        Delta_W_loc = np.dot(aa.T,d_alp_vec)
                         Delta_W = Delta_W + Delta_W_loc
                         
                         lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
