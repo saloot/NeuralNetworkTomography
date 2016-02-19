@@ -2872,7 +2872,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #W = W + alpha * soft_threshold(WW,sparse_thr)
                     #W = W - alpha * WW
                     
-                    WW = np.zeros([len_v,1])
+                    #WW = np.zeros([len_v,1])
                     
                     #if theta:
                         
@@ -2883,7 +2883,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #    if sum(sum(cc<0))>0:
                     #        print sum(sum(cc<0))
                     
-                    if 1:
+                    if 0:
                         WW[0:ijk,0] = Z[0:ijk,0]
                         WW[ijk+1:,0] = Z[ijk:,0]
                         #Z_tot =  Z_tot + ww2
