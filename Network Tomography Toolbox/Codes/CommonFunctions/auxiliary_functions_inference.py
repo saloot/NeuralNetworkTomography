@@ -2691,13 +2691,12 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     #----------------Create a Balanced Dataset-----------------
                     inds_f = np.nonzero(YY>0)[0]
-                    inds_f = np.reshape(inds_f,[1,len(inds_f)])
                     
-                    
-                    
-                    t_inds = inds_f
                     
                     rand_ind = np.random.randint(0,TcT,[2*len(inds_f)])
+                    inds_f = np.reshape(inds_f,[1,len(inds_f)])
+                    t_inds = inds_f
+                    
                     inds_f = np.nonzero(YY<=0)[0]
                     inds_f = inds_f[rand_ind]
                     inds_f = np.reshape(inds_f,[1,len(inds_f)])
