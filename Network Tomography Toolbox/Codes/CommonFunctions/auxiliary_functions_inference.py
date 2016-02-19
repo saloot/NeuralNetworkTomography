@@ -2710,7 +2710,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
                     #---------Find the Solution with Sparsity in Mind----------
                     if 1:
-                        lamb = 1/float(TcT)
+                        lamb = .01/float(TcT)
                         cf = lamb*TcT
                         
                         lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
@@ -2724,7 +2724,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             jj = t_inds[ii]
                             
                             #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
-                            b = cf * (np.dot(W_temp.T,FF[ii,:]) - 1)/pow(np.linalg.norm(FF[ii,:]),2)
+                            ff = FF[ii,:]
+                            b = cf * (np.dot(W_temp.T,ff) - 1)/pow(np.linalg.norm(FF[ii,:]),2)
                             if (b>=-lambda_temp[jj]) and (b <= 1-lambda_temp[jj]):
                                 d_alp = -b
                                 #print 1
@@ -2739,6 +2740,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             lambda_temp[jj] = lambda_temp[jj] + d_alp
                             d_alp_vec[jj] = d_alp_vec[jj] + d_alp
                             W_temp = W_temp + d_alp * np.reshape(FF[ii,:],[len_v-1,1])/float(cf)
+                            
+                            if not (ss%20):
+                                print hinge_loss_func(W_temp,-FF,np.zeros([TcT,1]),1,0)
                             
                         
                         #Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
