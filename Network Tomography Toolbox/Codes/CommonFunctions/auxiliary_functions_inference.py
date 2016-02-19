@@ -2703,10 +2703,13 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             b = cf * (np.dot(W_temp.T,aa[ii,:]) - 1)
                             if (b>=-lambda_temp[jj]) and (b <= 1-lambda_temp[jj]):
                                 d_alp = -b
+                                print 1
                             elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
                                 d_alp = -lambda_temp[jj]
+                                print 2
                             else:
                                 d_alp = 1-lambda_temp[jj]
+                                print 3
                             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                             
                             lambda_temp[jj] = lambda_temp[jj] + d_alp
@@ -2715,6 +2718,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             
                         
                         #Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
+                        pdb.set_trace()
                         Delta_W_loc = np.dot(aa.T,d_alp_vec)
                         Delta_W = Delta_W + Delta_W_loc
                         
