@@ -2725,13 +2725,14 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         # goal: 
                         Delta_W_loc = np.dot(DD.T,d_alp_vec[t_inds])
                         Delta_W = Delta_W + Delta_W_loc
-                        cc = np.dot(aa,Delta_W_loc)
+                        #cc = np.dot(aa,Delta_W_loc)
+                        #cc = np.dot(AAY_orig,Delta_W_loc)
                         
                         lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
                     
                         WW = np.zeros([len_v,1])
-                        WW[0:ijk,0] = Delta_W_loc[0:ijk,0]
-                        WW[ijk+1:,0] = Delta_W_loc[ijk:,0]
+                        WW[0:ijk,0] = Delta_W[0:ijk,0]
+                        WW[ijk+1:,0] = Delta_W[ijk:,0]
                     
                     if 0:
                         for i in range(0,1):
@@ -2831,8 +2832,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #cst = np.dot(np.dot(np.diag(Y_orig.ravel()),AA_orig),WW) - BB*pow(aa_norm,1)
                     #BB = np.dot(theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                     
-                    cst = np.dot(aa_orig,WW) - BB
-                    pdb.set_trace()
+                    #cst = np.dot(aa_orig,WW) - BB
+                    cst = np.dot(AAY_orig,Delta_W_loc)
+                    
                     total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst) != Y_orig)
                     #----------------------------------------------------------
                     
