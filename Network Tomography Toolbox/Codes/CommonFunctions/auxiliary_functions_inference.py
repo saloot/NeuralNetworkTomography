@@ -2697,7 +2697,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     t_inds = np.reshape(inds_f,[1,len(inds_f)])
                     
                     inds_f = np.nonzero(Y_orig<=0)[0]
-                    rand_ind = np.random.randint(0,len(inds_f),[2*ll])
+                    rand_ind = np.random.randint(0,len(inds_f),[10*ll])
                     inds_f = inds_f[rand_ind]
                     inds_f = np.reshape(inds_f,[1,len(inds_f)])
                     t_inds = np.hstack([t_inds,inds_f])
@@ -2863,9 +2863,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     #cst = np.dot(aa_orig,WW) - BB
                     cst = np.dot(AAY_orig,Delta_W_loc)
-                    
-                    pdb.set_trace()
-                    total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst) != Y_orig)
+                    total_cost[ttau] = total_cost[ttau] + sum(cst<0)
+                    #pdb.set_trace()
+                    #total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst) != Y_orig)
                     #----------------------------------------------------------
                     
                     #---------------Update the Current Estimate----------------
