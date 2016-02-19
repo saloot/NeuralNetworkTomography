@@ -2717,9 +2717,8 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             W_temp = W_temp + d_alp * np.reshape(aa[ii,:],[n,1])/float(cf)
                             
                         
-                        #Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
-                        pdb.set_trace()
-                        Delta_W_loc = np.dot(aa.T,d_alp_vec)
+                        Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
+                        #Delta_W_loc = np.dot(aa.T,d_alp_vec)
                         Delta_W = Delta_W + Delta_W_loc
                         
                         lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
