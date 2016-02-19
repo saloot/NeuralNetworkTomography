@@ -2724,7 +2724,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             jj = t_inds[ii]
                             
                             #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
-                            b = cf * (np.dot(W_temp.T,FF[ii,:]) - 1)
+                            b = cf * (np.dot(W_temp.T,FF[ii,:]) - 1)/np.linalg.norm(FF[ii,:])
                             if (b>=-lambda_temp[jj]) and (b <= 1-lambda_temp[jj]):
                                 d_alp = -b
                                 #print 1
@@ -2743,7 +2743,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         
                         #Delta_W_loc = np.dot(AAY_orig.T,d_alp_vec)
                         # goal: 
-                        Delta_W_loc = np.dot(FF.T,d_alp_vec[t_inds])
+                        Delta_W_loc = np.dot(DD.T,d_alp_vec[t_inds])
                         Delta_W = Delta_W + Delta_W_loc
                         
                         #BB = np.dot(0*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
