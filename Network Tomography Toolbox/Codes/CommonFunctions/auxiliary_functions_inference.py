@@ -2710,7 +2710,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
                     #---------Find the Solution with Sparsity in Mind----------
                     if 1:
-                        lamb = .01/float(TcT)
+                        lamb = .5/float(TcT)
                         cf = lamb*TcT
                         
                         lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
