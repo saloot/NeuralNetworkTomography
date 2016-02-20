@@ -2334,7 +2334,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     d_max = 10
     t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
-    theta = 0 
+    theta = 2 
     
     if theta:
         len_v = n        
@@ -2690,17 +2690,18 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #----------------------------------------------------------
                     
                     #----------------Create a Balanced Dataset-----------------
-                    #inds_f = np.nonzero(Y_orig>0)[0]
-                    #ll = len(inds_f)
-
-                    #t_inds = np.reshape(inds_f,[1,len(inds_f)])
-                    
-                    #inds_f = np.nonzero(Y_orig<=0)[0]
-                    #rand_ind = np.random.randint(0,len(inds_f),[10*ll])
-                    #inds_f = inds_f[rand_ind]
-                    #inds_f = np.reshape(inds_f,[1,len(inds_f)])
-                    #t_inds = np.hstack([t_inds,inds_f])
-                    #t_inds = t_inds.ravel()
+                    if 0:
+                        inds_f = np.nonzero(Y_orig>0)[0]
+                        ll = len(inds_f)
+    
+                        t_inds = np.reshape(inds_f,[1,len(inds_f)])
+                        
+                        inds_f = np.nonzero(Y_orig<=0)[0]
+                        rand_ind = np.random.randint(0,len(inds_f),[10*ll])
+                        inds_f = inds_f[rand_ind]
+                        inds_f = np.reshape(inds_f,[1,len(inds_f)])
+                        t_inds = np.hstack([t_inds,inds_f])
+                        t_inds = t_inds.ravel()
                     
                     FF = AAY_orig[t_inds,:]
                     DD = DDF[t_inds,:]
@@ -2709,7 +2710,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
                     #---------Find the Solution with Sparsity in Mind----------
                     if 1:
-                        lamb = .001/float(TcT)
+                        lamb = .01/float(TcT)
                         cf = lamb*TcT
                         
                         lambda_temp = lambda_tot[block_count*ell:(block_count+1)*ell]
@@ -2861,7 +2862,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #BB = np.dot(theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                     
                     #cst = np.dot(aa_orig,WW) - BB
-                    cst = np.dot(AAY_orig,Delta_W_loc)
+                    cst = np.dot(AAY_orig,W_tot)
                     total_cost[ttau] = total_cost[ttau] + sum(cst<0)
                     #pdb.set_trace()
                     #total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst) != Y_orig)
