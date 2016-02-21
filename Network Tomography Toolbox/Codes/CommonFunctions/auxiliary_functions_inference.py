@@ -2334,7 +2334,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     d_max = 10
     t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
-    theta = 2 
+    theta = 10
     
     if theta:
         len_v = n        
