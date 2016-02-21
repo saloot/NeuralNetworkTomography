@@ -2311,7 +2311,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         T0 = 5000                                  # It is the offset, i.e. the time from which on we will consider the firing activity
         T_temp = 5000                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 7500
+        block_size = 27500
     else:
         T0 = 0
         T_temp = 1000
@@ -2528,6 +2528,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
         Z_tot = np.zeros([len_v-1,1])
         dual_gap = np.zeros([50,no_blocks])
         total_cost = np.zeros([50,1])
+        total_Y = np.zeros([50,1])
         #----------------------------------------------------------------------
         
         for ttau in range(0,50):
@@ -2752,7 +2753,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         Delta_W = Delta_W + Delta_W_loc
                         
                         #BB = np.dot(0*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
-                        BB = np.zeros([TcT,1])
+                        BB = 0*np.ones([TcT,1])
                         print hinge_loss_func(Delta_W_loc,-FF,BB,1,0)
                         #cc = np.dot(FF,Delta_W_loc)
                         #cc = np.dot(AAY_orig,Delta_W_loc)
@@ -2864,6 +2865,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #cst = np.dot(aa_orig,WW) - BB
                     cst = np.dot(AAY_orig,W_tot)
                     total_cost[ttau] = total_cost[ttau] + sum(cst<0)
+                    total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
                     #pdb.set_trace()
                     #total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst) != Y_orig)
                     #----------------------------------------------------------
@@ -2953,7 +2955,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             W3 = W3 + np.reshape(np.sign(W_infer[0:itr_W,:]).mean(axis = 0),[len_v,1])
             
             #print dual_gap[ttau,:]
-            print total_cost[ttau]
+            print total_cost[ttau],total_Y[ttau]
             
             if not ((ttau+1) % 20):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
