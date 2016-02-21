@@ -2864,7 +2864,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     #cst = np.dot(aa_orig,WW) - BB
                     cst = np.dot(AAY_orig,W_tot)
-                    total_cost[ttau] = total_cost[ttau] + sum(cst<0)
+                    total_cost[ttau] = total_cost[ttau] + sum(cst<=0)
                     pdb.set_trace()
                     total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
                     #pdb.set_trace()
