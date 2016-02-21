@@ -2311,7 +2311,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         T0 = 50                                  # It is the offset, i.e. the time from which on we will consider the firing activity
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 70000
+        block_size = 10000
     else:
         T0 = 0
         T_temp = 1000
@@ -2754,7 +2754,9 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         
                         #BB = np.dot(0*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                         BB = 0*np.ones([TcT,1])
+                        
                         print hinge_loss_func(Delta_W_loc,-FF,BB,1,0)
+                        pdb.set_trace()
                         #cc = np.dot(FF,Delta_W_loc)
                         #cc = np.dot(AAY_orig,Delta_W_loc)
                         
