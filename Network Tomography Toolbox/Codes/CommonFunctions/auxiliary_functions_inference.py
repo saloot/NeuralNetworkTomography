@@ -3316,7 +3316,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 
                 #--------------Check If the Block Is Processed Before-----------
-                spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_A.txt'
+                spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_i_' + str(ijk) + '_A.txt'
                 if not os.path.isfile(spikes_file):
                     X = np.zeros([len_v,block_size])
                     V = np.zeros([len_v,block_size])
@@ -3386,17 +3386,17 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         print 'Integrate file could not be saved'
                         
                     try:
-                        spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_Y.txt'
+                        spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_i_' + str(ijk) + '_Y.txt'
                         np.savetxt(spikes_file,YY,'%2.1f',delimiter='\t')
                     except:
                         print 'Spikes file could not be saved'
                     #----------------------------------------------------------
                 else:
                     print 'yoohoo!'
-                    spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_A.txt'
+                    spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_i_' + str(ijk) + '_A.txt'
                     AA = np.genfromtxt(spikes_file, dtype=float, delimiter='\t')
                     
-                    spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_Y.txt'
+                    spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_i_' + str(ijk) + '_Y.txt'
                     YY = np.genfromtxt(spikes_file, dtype=float, delimiter='\t')
                 #---------------------------------------------------------------
                 
@@ -3414,7 +3414,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
-                lamb = .01/float(TcT)
+                lamb = .1/float(TcT)
                 cf = lamb*TcT
                         
                 lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
