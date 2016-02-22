@@ -3420,7 +3420,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
-                lamb = .01/float(TcT)
+                lamb = .001/float(TcT)
                 cf = lamb*TcT
                         
                 lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
@@ -3432,7 +3432,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 d_alp_vec = np.zeros([block_size,1])
                 
                         
-                for ss in range(0,100*TcT):
+                for ss in range(0,200*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     jj = t_inds[ii]
@@ -3492,9 +3492,9 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             WW[ijk+1:,0] = W_tot[ijk:,0]
             
             
-            print total_cost[ttau],total_Y[ttau]
+            #print total_cost[ttau],total_Y[ttau]
             pdb.set_trace()
-            if not ((ttau+1) % 20):
+            if not ((ttau+1) % 50):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 print total_cost[0:ttau]
                 pdb.set_trace()
