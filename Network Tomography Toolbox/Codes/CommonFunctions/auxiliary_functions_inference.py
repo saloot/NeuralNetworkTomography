@@ -3271,88 +3271,6 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
         
         print '-------------Neuron %s----------' %str(ijk)
     
-    
-        Z = np.reshape(W_inferred[:,ijk],[n,1])                                # The auxiliary optimization variable
-        Z = Z[1:,0]
-    
-        
-        #~~~~~~~~~~~~~~~~~Calculate The Initial Inverse Matrix~~~~~~~~~~~~~~~~~
-        
-            
-        X = np.zeros([len_v,len(range_T)])
-        V = np.zeros([len_v,len(range_T)])
-        x = np.zeros([len_v,1])
-        v = np.zeros([len_v,1])
-        xx = np.zeros([len_v,1])
-        vv = np.zeros([len_v,1])
-        Y = np.zeros([len(range_T)])
-        
-        yy = 0
-        
-        t_counter = 0
-        t_tot = 0
-        for t in range_T:
-            
-            #........Pre-compute Some of Matrices to Speed Up the Process......
-            #fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
-            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
-            if (ijk in fire_t):                
-                yy = 1
-                x = np.zeros([len_v,1])
-                v = np.zeros([len_v,1])
-            else:
-                yy = 0
-            
-            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
-            x = math.exp(-1/tau_s) * x
-            x[fire_t] = x[fire_t] + 1
-            
-            v = math.exp(-1/tau_d) * v
-            v[fire_t] = v[fire_t] + 1
-            
-            if not theta:
-                v[-1,0] = -1.0
-                
-            V[:,t_tot] = v.ravel()
-            X[:,t_tot] = x.ravel()
-            Y[t_tot] = yy
-                
-            t_tot = t_tot + 1
-            
-        Y = np.array(Y)
-        
-        V = V[:,0:t_tot]
-        X = X[:,0:t_tot]
-        Y = Y[0:t_tot]
-        
-        g = (Y>0).astype(int) - (Y<=0).astype(int)
-        #A = (V-X).T
-        A = (V).T
-        A_orig = copy.deepcopy(A)
-        Y_orig = copy.deepcopy(g)
-        
-        #--------Shift Post-Synaptic Spike One to the Left---------        
-        Y_orig = np.roll(Y_orig,-1)
-        Y_orig[-1] = -1
-        #----------------------------------------------------------
-        
-        pdb.set_trace()
-        AA = np.dot(np.diag(Y_orig.ravel()),A)
-        AA_orig = AA
-        
-        #--------------Go For Derviative Maximization--------------
-        if der_flag:
-            B = A[g_der,:]-A[g_der-1,:]
-            g_der = np.nonzero(Y)[0]
-            AA = np.vstack([AA,B])
-        #----------------------------------------------------------
-        
-        #---Ignore the Spikes Corresponding to the Current Neuron--
-        AA = np.delete(AA.T,ijk,0).T
-        #----------------------------------------------------------
-        
-        #~~~~~~~~~~~~~~~~~Infer the Connections for Each Block~~~~~~~~~~~~~~~~~
-        
         #---------------------Necessary Initializations------------------------
         t_last = T0 + T_temp        
         prng = RandomState(int(time()))
@@ -3384,21 +3302,113 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             Delta_Z = np.zeros([len_v-1,1])
             Delta_W = np.zeros([len_v-1,1])
             range_T = range(T0,block_size,TT)
+            
+            X = np.zeros([len_v,block_size])
+            V = np.zeros([len_v,block_size])
+            x = np.zeros([len_v,1])
+            v = np.zeros([len_v,1])
+            xx = np.zeros([len_v,1])
+            vv = np.zeros([len_v,1])
+            Y = np.zeros([block_size])
             #------------------------------------------------------------------
             
             for t_0 in range_T:
                 
-                #------------------Prepare the Submatrix-----------------------
-                aa = AA[t_0:t_0+block_size,:]
-                yy = Y_orig[t_0:t_0+block_size]
                 
+                #--------------Check If the Block Is Processed Before-----------
+                spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_A.txt'
+                if not os.path.isfile(spikes_file):
+                    X = np.zeros([len_v,block_size])
+                    V = np.zeros([len_v,block_size])
+                    x = np.zeros([len_v,1])
+                    v = np.zeros([len_v,1])
+                    xx = np.zeros([len_v,1])
+                    vv = np.zeros([len_v,1])
+                    Y = np.zeros([block_size])
+                    
+        
+                    yy = 0
+                    
+                    t_counter = 0
+                    t_tot = 0
+                    
+                    range_temp = range(t_0,t_0+block_size)
+                    for t in range_temp:
+                        
+                        #........Pre-compute Some of Matrices to Speed Up the Process......
+                        #fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+                        fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+                        if (ijk in fire_t):                
+                            yy = 1
+                            x = np.zeros([len_v,1])
+                            v = np.zeros([len_v,1])
+                        else:
+                            yy = 0
+                        
+                        fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
+                        x = math.exp(-1/tau_s) * x
+                        x[fire_t] = x[fire_t] + 1
+                        
+                        v = math.exp(-1/tau_d) * v
+                        v[fire_t] = v[fire_t] + 1
+                        
+                        if not theta:
+                            v[-1,0] = -1.0
+                            
+                        V[:,t_tot] = v.ravel()
+                        X[:,t_tot] = x.ravel()
+                        Y[t_tot] = yy
+                            
+                        t_tot = t_tot + 1
+                        
+                    Y = np.array(Y)
+                    
+                    V = V[:,0:t_tot]
+                    X = X[:,0:t_tot]
+                    Y = Y[0:t_tot]
+                    
+                    Y_orig = (Y>0).astype(int) - (Y<=0).astype(int)
+                    #A = (V-X).T
+                    A = (V).T
+                    
+                    #--------Shift Post-Synaptic Spike One to the Left---------        
+                    Y_orig = np.roll(Y_orig,-1)
+                    Y_orig[-1] = -1
+                    #----------------------------------------------------------
+        
+                    AA = np.dot(np.diag(Y_orig.ravel()),A)
+                    AA = np.delete(AA.T,ijk,0).T
+        
+                    #------------------Try to Store the Matrix-----------------
+                    try:
+                        np.savetxt(spikes_file,AA,'%2.5f',delimiter='\t')
+                    except:
+                        print 'Integrate file could not be saved'
+                        
+                    try:
+                        spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_Y.txt'
+                        np.savetxt(spikes_file,Y_orig,'%2.1f',delimiter='\t')
+                    except:
+                        print 'Spikes file could not be saved'
+                    #----------------------------------------------------------
+                else:
+                    spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_A.txt'
+                    AA = np.genfromtxt(spikes_file, dtype=float, delimiter='\t')
+                    
+                    spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_Y.txt'
+                    YY = np.genfromtxt(spikes_file, dtype=float, delimiter='\t')
+                #---------------------------------------------------------------
+                
+                #------------------Prepare the Submatrix-----------------------
                 if rand_sample_flag:
                     t_init = np.random.randint(0,t_gap)
                     t_inds = np.array(range(t_init,block_size,t_gap))
                     
-
-                    aa = aa[t_inds,:]
-                    yy = yy[t_inds]
+                    aa = AA[t_inds,:]
+                    yy = YY[t_inds]
+                else:
+                    aa = AA
+                    yy = YY
                 #---------------------------------------------------------------
                 
                 #-----------------------Do the Optimization---------------------
@@ -3437,8 +3447,10 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
                 Delta_W = Delta_W + Delta_W_loc
                 lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
+                
+                W_tot = W_tot + Delta_W/no_blocks
                 #---------------------------------------------------------------
-                        
+
                 #------------------Evaluate the Performance---------------------
                 #BB = np.dot(0*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
                 BB = 0*np.ones([TcT,1])
@@ -3462,7 +3474,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
                 
             WW = np.zeros([len_v,1])
-            W_tot = W_tot + Delta_W/no_blocks
+            #W_tot = W_tot + Delta_W/no_blocks
             st_cof = 0.1/float(1+ttau)
             
             WW[0:ijk,0] = W_tot[0:ijk,0]
