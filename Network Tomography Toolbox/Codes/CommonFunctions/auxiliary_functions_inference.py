@@ -3301,7 +3301,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
             Delta_Z = np.zeros([len_v-1,1])
             Delta_W = np.zeros([len_v-1,1])
-            range_T = range(T0,block_size,TT)
+            range_T = range(T0,TT,block_size)
             
             X = np.zeros([len_v,block_size])
             V = np.zeros([len_v,block_size])
@@ -3422,7 +3422,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 d_alp_vec = np.zeros([block_size,1])
                 W_temp = W_tot
                         
-                for ss in range(0,1000*TcT):
+                for ss in range(0,10*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     jj = t_inds[ii]
@@ -3466,10 +3466,13 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #----------------------Calculate Cost----------------------
                 cst = np.dot(AA,W_tot)
-                total_cost[ttau] = total_cost[ttau] + sum(cst<=0)                
+                total_cost[ttau] = total_cost[ttau] + sum(cst<=0)
+                #DD = np.dot(np.diag(YY),AA)
+                #cc = np.dot(DD,W_tot)
                 #total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
                 pdb.set_trace()
                 total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,(cst<=0).ravel()))
+                #total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY<=0,(cst<=0).ravel()))
                 #----------------------------------------------------------
                     
                 #..................................................................
