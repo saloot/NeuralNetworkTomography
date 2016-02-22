@@ -3336,6 +3336,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
         Y_orig[-1] = -1
         #----------------------------------------------------------
         
+        pdb.set_trace()
         AA = np.dot(np.diag(Y_orig.ravel()),A)
         AA_orig = AA
         
