@@ -3470,7 +3470,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #DD = np.dot(np.diag(YY),AA)
                 #cc = np.dot(DD,W_tot)
                 #total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
-                pdb.set_trace()
+                
                 total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,(cst<=0).ravel()))
                 #total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY<=0,(cst<=0).ravel()))
                 #----------------------------------------------------------
