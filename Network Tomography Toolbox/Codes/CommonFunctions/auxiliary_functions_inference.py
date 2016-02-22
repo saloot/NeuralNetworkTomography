@@ -3288,7 +3288,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
         ell =  block_size
         #----------------------------------------------------------------------
         
-        for ttau in range(0,50):
+        for ttau in range(0,250):
             
             #----------------------In-Loop Initializations---------------------
             t_counter = 0
@@ -3310,6 +3310,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             xx = np.zeros([len_v,1])
             vv = np.zeros([len_v,1])
             Y = np.zeros([block_size])
+            
+            W_temp = W_tot
             #------------------------------------------------------------------
             
             for t_0 in range_T:
@@ -3428,7 +3430,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     lambda_0 = lambda_temp
                     
                 d_alp_vec = np.zeros([block_size,1])
-                W_temp = W_tot
+                
                         
                 for ss in range(0,10*TcT):
                             
@@ -3456,8 +3458,6 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
                 Delta_W = Delta_W + Delta_W_loc
                 lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
-                
-                W_tot = W_tot + Delta_W/no_blocks
                 #---------------------------------------------------------------
 
                 #------------------Evaluate the Performance---------------------
@@ -3465,15 +3465,11 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 BB = 0*np.ones([TcT,1])
                 print hinge_loss_func(Delta_W_loc,-aa,BB,1,0)
                         
-                WW = np.zeros([len_v,1])
-                WW[0:ijk,0] = Delta_W[0:ijk,0]
-                WW[ijk+1:,0] = Delta_W[ijk:,0]
-                
                 block_count = block_count + 1
                 #----------------------------------------------------------
                 
                 #----------------------Calculate Cost----------------------
-                cst = np.dot(AA,W_tot)
+                cst = np.dot(AA,Delta_W)
                 total_cost[ttau] = total_cost[ttau] + sum(cst<=0)
                 #DD = np.dot(np.diag(YY),AA)
                 #cc = np.dot(DD,W_tot)
@@ -3486,16 +3482,18 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #..................................................................
             
                 
-            WW = np.zeros([len_v,1])
+            
             #W_tot = W_tot + Delta_W/no_blocks
             st_cof = 0.1/float(1+ttau)
+            W_tot = W_tot + Delta_W#/no_blocks
             
+            WW = np.zeros([len_v,1])
             WW[0:ijk,0] = W_tot[0:ijk,0]
             WW[ijk+1:,0] = W_tot[ijk:,0]
             
             
             print total_cost[ttau],total_Y[ttau]
-            
+            pdb.set_trace()
             if not ((ttau+1) % 20):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 print total_cost[0:ttau]
