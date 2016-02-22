@@ -204,7 +204,8 @@ for T in T_range:
             n = 94
         #W_inferred,Inf_Delays = delayed_inference_constraints_memory(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,W_act,DD_act)
         #W_inferred, = delayed_inference_constraints_cvxopt(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
-        W_inferred = delayed_inference_constraints_numpy(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
+        #W_inferred = delayed_inference_constraints_numpy(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
+        W_inferred = delayed_inference_constraints_hinge(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
     #--------------Post-Process the Inferred Matrix---------------
     if 0:#len(non_zero_neurons) != n:
         m,c = W_inferred.shape

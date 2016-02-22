@@ -3452,8 +3452,9 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #----------------------Calculate Cost----------------------
                 cst = np.dot(AA,W_tot)
-                total_cost[ttau] = total_cost[ttau] + sum(cst<=0)
-                total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
+                total_cost[ttau] = total_cost[ttau] + sum(cst<=0)                
+                #total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
+                total_Y[ttau] = total_Y[ttau] + sum(np.multiply(Y_orig>0,cst<=0))
                 #----------------------------------------------------------
                     
                 #..................................................................
