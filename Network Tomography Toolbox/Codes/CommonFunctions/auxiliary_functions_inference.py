@@ -3212,3 +3212,344 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
 
 
 #------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
+    
+    #----------------------------Initilizations--------------------------------    
+    from auxiliary_functions import soft_threshold
+    import os.path
+    m = n
+    W_inferred = np.zeros([n,m])
+    
+    range_tau = range(0,max_itr_opt)
+    
+    if len(neuron_range) == 0:
+        neuron_range = np.array(range(0,m))
+    
+    if TT > 20000:
+        T0 = 50                                  # It is the offset, i.e. the time from which on we will consider the firing activity
+        T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
+        block_size = 70000
+    else:
+        T0 = 0
+        T_temp = 1000
+        block_size = 500
+        
+    range_T = range(T0,TT)
+    #--------------------------------------------------------------------------
+    
+    #-----------------------------Behavior Flags-------------------------------
+    der_flag = 0                                # If 1, the derivative criteria will also be taken into account
+    rand_sample_flag = 1                        # If 1, the samples will be wide apart to reduce correlation
+    sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
+    #--------------------------------------------------------------------------
+    
+    #---------------------------Neural Parameters------------------------------
+    tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
+    tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
+    h0 = 0.0                                        # The reset membrane voltage (in mV)
+    delta = 0.25                                       # The tanh coefficient to approximate the sign function
+    d_max = 10
+    t_gap = 2                                    # The gap between samples to consider
+    t_avg = 1
+    theta = 10
+    
+    if theta:
+        len_v = n        
+    else:
+        len_v = n+1
+    
+    W_infer = np.zeros([int(len(range_T)/float(block_size))+1,len_v])
+    
+    t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
+    U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
+    #--------------------------------------------------------------------------
+    
+    #---------Identify Incoming Connections to Each Neuron in the List---------
+    for ijk in neuron_range:
+        
+        print '-------------Neuron %s----------' %str(ijk)
+    
+    
+        Z = np.reshape(W_inferred[:,ijk],[n,1])                                # The auxiliary optimization variable
+        Z = Z[1:,0]
+    
+        
+        #~~~~~~~~~~~~~~~~~Calculate The Initial Inverse Matrix~~~~~~~~~~~~~~~~~
+        
+            
+        X = np.zeros([len_v,len(range_T)])
+        V = np.zeros([len_v,len(range_T)])
+        x = np.zeros([len_v,1])
+        v = np.zeros([len_v,1])
+        xx = np.zeros([len_v,1])
+        vv = np.zeros([len_v,1])
+        Y = np.zeros([len(range_T)])
+        
+        yy = 0
+        
+        t_counter = 0
+        t_tot = 0
+        for t in range_T:
+            
+            #........Pre-compute Some of Matrices to Speed Up the Process......
+            #fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+            if (ijk in fire_t):                
+                yy = 1
+                x = np.zeros([len_v,1])
+                v = np.zeros([len_v,1])
+            else:
+                yy = 0
+            
+            fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
+            x = math.exp(-1/tau_s) * x
+            x[fire_t] = x[fire_t] + 1
+            
+            v = math.exp(-1/tau_d) * v
+            v[fire_t] = v[fire_t] + 1
+            
+            if not theta:
+                v[-1,0] = -1.0
+                
+            V[:,t_tot] = v.ravel()
+            X[:,t_tot] = x.ravel()
+            Y[t_tot] = yy
+                
+            t_tot = t_tot + 1
+            
+        Y = np.array(Y)
+        
+        V = V[:,0:t_tot]
+        X = X[:,0:t_tot]
+        Y = Y[0:t_tot]
+        
+        g = (Y>0).astype(int) - (Y<=0).astype(int)
+        #A = (V-X).T
+        A = (V).T
+        A_orig = copy.deepcopy(A)
+        Y_orig = copy.deepcopy(g)
+        
+        #--------Shift Post-Synaptic Spike One to the Left---------        
+        Y_orig = np.roll(Y_orig,-1)
+        Y_orig[-1] = -1
+        #----------------------------------------------------------
+        
+        AA = np.dot(np.diag(Y_orig.ravel()),A)
+        AA_orig = AA
+        
+        #--------------Go For Derviative Maximization--------------
+        if der_flag:
+            B = A[g_der,:]-A[g_der-1,:]
+            g_der = np.nonzero(Y)[0]
+            AA = np.vstack([AA,B])
+        #----------------------------------------------------------
+        
+        #---Ignore the Spikes Corresponding to the Current Neuron--
+        AA = np.delete(AA.T,ijk,0).T
+        #----------------------------------------------------------
+        
+        #~~~~~~~~~~~~~~~~~Infer the Connections for Each Block~~~~~~~~~~~~~~~~~
+        
+        #---------------------Necessary Initializations------------------------
+        t_last = T0 + T_temp        
+        prng = RandomState(int(time()))
+        
+        lambda_tot = np.zeros([len(range_T),1])
+        no_blocks = 1+len(range_T)/block_size
+        
+        W_tot = np.zeros([len_v-1,1])
+        Z_tot = np.zeros([len_v-1,1])
+        
+        dual_gap = np.zeros([50,no_blocks])
+        total_cost = np.zeros([50,1])
+        total_Y = np.zeros([50,1])
+        beta_K = 1
+        ell =  block_size
+        #----------------------------------------------------------------------
+        
+        for ttau in range(0,50):
+            
+            #----------------------In-Loop Initializations---------------------
+            t_counter = 0
+            r_count = 0
+            block_count = 0 
+            
+            alpha = alpha0/float(1+math.log(ttau+1))
+            sparse_thr = sparse_thr_0/float(1+math.log(ttau+1))
+            itr_W = 0
+            
+            Delta_Z = np.zeros([len_v-1,1])
+            Delta_W = np.zeros([len_v-1,1])
+            range_T = range(T0,block_size,TT)
+            #------------------------------------------------------------------
+            
+            for t_0 in range_T:
+                
+                #------------------Prepare the Submatrix-----------------------
+                aa = AA[t_0:t_0+block_size,:]
+                yy = Y_orig[t_0:t_0+block_size]
+                
+                if rand_sample_flag:
+                    t_init = np.random.randint(0,t_gap)
+                    t_inds = np.array(range(t_init,block_size,t_gap))
+                    
+
+                    aa = aa[t_inds,:]
+                    yy = yy[t_inds]
+                #---------------------------------------------------------------
+                
+                #-----------------------Do the Optimization---------------------
+                TcT = len(yy)
+                lamb = .01/float(TcT)
+                cf = lamb*TcT
+                        
+                lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
+                lambda_0 = lambda_temp[t_inds]
+                d_alp_vec = np.zeros([block_size,1])
+                W_temp = W_tot
+                        
+                for ss in range(0,1*TcT):
+                            
+                    ii = np.random.randint(0,TcT)
+                    jj = t_inds[ii]
+                            
+                    #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
+                    ff = aa[ii,:]
+                    b = cf * (np.dot(W_temp.T,ff) - 1)/pow(np.linalg.norm(aa[ii,:]),2)
+                            
+                    if (b<=lambda_temp[jj]) and (b >= lambda_temp[jj]-1):
+                        d_alp = -b
+                    elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
+                        d_alp = -lambda_temp[jj]
+                    else:
+                        d_alp = 1-lambda_temp[jj]
+                    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            
+                    lambda_temp[jj] = lambda_temp[jj] + d_alp
+                    d_alp_vec[jj] = d_alp_vec[jj] + d_alp
+                    W_temp = W_temp + d_alp * np.reshape(aa[ii,:],[len_v-1,1])/float(cf)
+                #---------------------------------------------------------------
+            
+                #----------------------Update the Weights-----------------------
+                Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
+                Delta_W = Delta_W + Delta_W_loc
+                lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
+                #---------------------------------------------------------------
+                        
+                #------------------Evaluate the Performance---------------------
+                #BB = np.dot(0*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
+                BB = 0*np.ones([TcT,1])
+                print hinge_loss_func(Delta_W_loc,-aa,BB,1,0)
+                        
+                WW = np.zeros([len_v,1])
+                WW[0:ijk,0] = Delta_W[0:ijk,0]
+                WW[ijk+1:,0] = Delta_W[ijk:,0]
+                
+                block_count = block_count + 1
+                #----------------------------------------------------------
+                
+                #----------------------Calculate Cost----------------------
+                cst = np.dot(AA,W_tot)
+                total_cost[ttau] = total_cost[ttau] + sum(cst<=0)
+                total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
+                #----------------------------------------------------------
+                    
+                #..................................................................
+            
+                
+            WW = np.zeros([len_v,1])
+            W_tot = W_tot + Delta_W/no_blocks
+            st_cof = 0.1/float(1+ttau)
+            
+            WW[0:ijk,0] = W_tot[0:ijk,0]
+            WW[ijk+1:,0] = W_tot[ijk:,0]
+            
+            
+            print total_cost[ttau],total_Y[ttau]
+            
+            if not ((ttau+1) % 20):
+                #W2 = merge_W(W_infer[0:itr_W,:],0.01)
+                print total_cost[0:ttau]
+                pdb.set_trace()
+            
+                
+            
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~Predict Spikes~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if 0:
+            X = np.zeros([n+1,1+int(T_temp/float(t_avg))])
+            V = np.zeros([n+1,1+int(T_temp/float(t_avg))])
+            x = np.zeros([n+1,1])
+            v = np.zeros([n+1,1])
+            xx = np.zeros([n+1,1])
+            vv = np.zeros([n+1,1])
+            Y = np.zeros([1+int(T_temp/float(t_avg))])
+            
+            yy = 0
+            
+            t_counter = 0
+            t_tot = 0
+            for t in range(T0,T0 + T_temp):
+                
+                #........Pre-compute Some of Matrices to Speed Up the Process......
+                #fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+                fire_t = read_spikes_lines(out_spikes_tot_mat_file,t,n)
+                if (ijk in fire_t):                
+                    yy = yy + 1
+                    x = np.zeros([n+1,1])
+                    v = np.zeros([n+1,1])
+                
+                fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
+                x = math.exp(-1/tau_s) * x
+                x[fire_t] = x[fire_t] + 1
+                
+                v = math.exp(-1/tau_d) * v
+                v[fire_t] = v[fire_t] + 1
+                
+                if ((t % t_avg) == 0) and (t_counter):
+                    vv = vv/float(t_counter)
+                    xx = xx/float(t_counter)
+                    
+                    V[:,t_tot] = vv.ravel()
+                    X[:,t_tot] = xx.ravel()
+                    Y[t_tot] = yy
+                    
+                    xx = np.zeros([n+1,1])
+                    vv = np.zeros([n+1,1])
+                    yy = 0
+                    t_counter = 0
+                    t_tot = t_tot + 1
+                else:
+                    vv = vv + v
+                    xx = xx + x
+                    vv[-1,0] = 1
+                    t_counter = t_counter + 1
+            
+            Y = np.array(Y)
+            
+            V = V[:,0:t_tot]
+            X = X[:,0:t_tot]
+            Y = Y[0:t_tot]
+            
+            g = (Y>0).astype(int) - (Y<=0).astype(int)
+            A = (V-X).T
+            
+            #Y_predict = np.dot(A,W)
+            Y_predict = np.dot(A_orig,W)
+            Y_predict = (Y_predict>0).astype(int)
+            #np.linalg.norm(Y_predict-Y_orig)
+            opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig)
+            pdb.set_trace()
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        #pdb.set_trace()
+        W_inferred[0:len_v,ijk] = WW[0:len_v].ravel()
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+            
+    return W_inferred
+
+
+
+#------------------------------------------------------------------------------
+
