@@ -3367,16 +3367,16 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     X = X[:,0:t_tot]
                     Y = Y[0:t_tot]
                     
-                    Y_orig = (Y>0).astype(int) - (Y<=0).astype(int)
+                    YY = (Y>0).astype(int) - (Y<=0).astype(int)
                     #A = (V-X).T
                     A = (V).T
                     
                     #--------Shift Post-Synaptic Spike One to the Left---------        
-                    Y_orig = np.roll(Y_orig,-1)
-                    Y_orig[-1] = -1
+                    YY = np.roll(YY,-1)
+                    YY[-1] = -1
                     #----------------------------------------------------------
         
-                    AA = np.dot(np.diag(Y_orig.ravel()),A)
+                    AA = np.dot(np.diag(YY.ravel()),A)
                     AA = np.delete(AA.T,ijk,0).T
         
                     #------------------Try to Store the Matrix-----------------
@@ -3387,7 +3387,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         
                     try:
                         spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_Y.txt'
-                        np.savetxt(spikes_file,Y_orig,'%2.1f',delimiter='\t')
+                        np.savetxt(spikes_file,YY,'%2.1f',delimiter='\t')
                     except:
                         print 'Spikes file could not be saved'
                     #----------------------------------------------------------
