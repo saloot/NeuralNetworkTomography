@@ -3392,6 +3392,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         print 'Spikes file could not be saved'
                     #----------------------------------------------------------
                 else:
+                    print 'yoohoo!'
                     spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_A.txt'
                     AA = np.genfromtxt(spikes_file, dtype=float, delimiter='\t')
                     
@@ -3421,7 +3422,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 d_alp_vec = np.zeros([block_size,1])
                 W_temp = W_tot
                         
-                for ss in range(0,1*TcT):
+                for ss in range(0,100*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     jj = t_inds[ii]
@@ -3468,7 +3469,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 total_cost[ttau] = total_cost[ttau] + sum(cst<=0)                
                 #total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
                 pdb.set_trace()
-                total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,cst<=0))
+                total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,(cst<=0).ravel()))
                 #----------------------------------------------------------
                     
                 #..................................................................
