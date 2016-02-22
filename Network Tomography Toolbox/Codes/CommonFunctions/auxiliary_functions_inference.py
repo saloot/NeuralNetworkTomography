@@ -3314,6 +3314,10 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
             for t_0 in range_T:
                 
+                #------------This is for the last block-----------
+                if (max(range_T)-t_0) < block_size:
+                    continue
+                #-------------------------------------------------
                 
                 #--------------Check If the Block Is Processed Before-----------
                 spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_i_' + str(ijk) + '_A.txt'
@@ -3418,7 +3422,11 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 cf = lamb*TcT
                         
                 lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
-                lambda_0 = lambda_temp[t_inds]
+                if rand_sample_flag:
+                    lambda_0 = lambda_temp[t_inds]
+                else:
+                    lambda_0 = lambda_temp
+                    
                 d_alp_vec = np.zeros([block_size,1])
                 W_temp = W_tot
                         
