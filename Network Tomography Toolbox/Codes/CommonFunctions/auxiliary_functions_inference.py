@@ -3253,7 +3253,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     d_max = 10
     t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
-    theta = 10
+    theta = 0
     
     if theta:
         len_v = n        
@@ -3476,13 +3476,17 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #----------------------Calculate Cost----------------------
                 cst = np.dot(AA,Delta_W)
+                if theta:
+                    bb = theta*YY
+                else:
+                    bb = 0*YY
                 #cst = np.dot(AA,W_tot)
-                total_cost[ttau] = total_cost[ttau] + sum(cst<0)
+                total_cost[ttau] = total_cost[ttau] + sum(cst.ravel()<bb)
                 #DD = np.dot(np.diag(YY),AA)
                 #cc = np.dot(DD,W_tot)
                 #total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
                 
-                total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,(cst<0).ravel()))
+                total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,(cst.ravel()<bb).ravel()))
                 #total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY<=0,(cst<0).ravel()))
                 #----------------------------------------------------------
                     
@@ -3492,7 +3496,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
             #W_tot = W_tot + Delta_W/no_blocks
             st_cof = 0.1/float(1+ttau)
-            W_tot = W_tot + Delta_W#/no_blocks
+            W_tot = W_tot + Delta_W/no_blocks
             
             WW = np.zeros([len_v,1])
             WW[0:ijk,0] = W_tot[0:ijk,0]
