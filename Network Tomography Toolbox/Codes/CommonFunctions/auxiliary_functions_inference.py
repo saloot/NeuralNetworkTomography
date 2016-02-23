@@ -3445,6 +3445,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     else:
                         c = 1
                     
+                    pdb.set_trace()
                     b = cf * (np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(aa[ii,:]),2)
                     
                     if (b<=lambda_temp[jj]) and (b >= lambda_temp[jj]-1):
