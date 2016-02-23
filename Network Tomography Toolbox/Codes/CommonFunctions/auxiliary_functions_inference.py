@@ -3406,6 +3406,12 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     YY = np.genfromtxt(spikes_file, dtype=float, delimiter='\t')
                 #---------------------------------------------------------------
                 
+                #-------------Add a Row for Theta If Missing From File----------
+                if AA.shape[1] != len(W_temp):
+                    tmp = -np.ones([AA.shape[0],1])
+                    AA = np.hstack([AA,tmp])
+                #---------------------------------------------------------------
+                
                 #------------------Prepare the Submatrix-----------------------
                 if rand_sample_flag:
                     t_init = np.random.randint(0,t_gap)
@@ -3418,11 +3424,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     yy = YY
                 #---------------------------------------------------------------
                 
-                #-------------Add a Row for Theta If Missing From File----------
-                if aa.shape[1] != len(W_temp):
-                    tmp = -np.ones([aa.shape[0],1])
-                    aa = np.hstack([aa,tmp])
-                #---------------------------------------------------------------
+                
                 
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
