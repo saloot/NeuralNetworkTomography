@@ -3220,7 +3220,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     from auxiliary_functions import soft_threshold
     import os.path
     m = n
-    W_inferred = np.zeros([n,m])
+    
     
     range_tau = range(0,max_itr_opt)
     
@@ -3261,6 +3261,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
         len_v = n+1
     
     W_infer = np.zeros([int(len(range_T)/float(block_size))+1,len_v])
+    W_inferred = np.zeros([len_v,len_v])
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
@@ -3517,7 +3518,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             if not ((ttau+1) % 5):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 print total_cost[0:ttau]
-                pdb.set_trace()
+                #pdb.set_trace()
             
                 
             
