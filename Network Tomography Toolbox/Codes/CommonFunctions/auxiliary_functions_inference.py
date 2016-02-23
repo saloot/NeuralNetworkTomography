@@ -3439,8 +3439,14 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             
                     #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
                     ff = aa[ii,:]
-                    b = cf * (np.dot(W_temp.T,ff) - 1)/pow(np.linalg.norm(aa[ii,:]),2)
-                            
+                    
+                    if theta:
+                        c = 1 + theta * yy[ii]
+                    else:
+                        c = 1
+                    
+                    b = cf * (np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(aa[ii,:]),2)
+                    
                     if (b<=lambda_temp[jj]) and (b >= lambda_temp[jj]-1):
                         d_alp = -b
                     elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
@@ -3471,13 +3477,13 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #----------------------Calculate Cost----------------------
                 cst = np.dot(AA,Delta_W)
                 #cst = np.dot(AA,W_tot)
-                total_cost[ttau] = total_cost[ttau] + sum(cst<=0)
+                total_cost[ttau] = total_cost[ttau] + sum(cst<0)
                 #DD = np.dot(np.diag(YY),AA)
                 #cc = np.dot(DD,W_tot)
                 #total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
                 
-                total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,(cst<=0).ravel()))
-                #total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY<=0,(cst<=0).ravel()))
+                total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,(cst<0).ravel()))
+                #total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY<=0,(cst<0).ravel()))
                 #----------------------------------------------------------
                     
                 #..................................................................
