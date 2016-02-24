@@ -3514,9 +3514,9 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
             
             print total_cost[ttau],total_Y[ttau]
-            #pdb.set_trace()
+            pdb.set_trace()
             if ttau > 0:
-                if (total_cost[ttau] == 0) and (total_cost[ttau-1] == 0):
+                if ((total_cost[ttau] == 0) and (total_cost[ttau-1] == 0)) or (total_cost[ttau] - total_cost[ttau-1] == 0):
                     pdb.set_trace()
                     break
             if not ((ttau+1) % 5):
