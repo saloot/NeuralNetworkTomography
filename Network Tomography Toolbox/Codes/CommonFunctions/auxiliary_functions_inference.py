@@ -3254,7 +3254,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
     theta = 0
-    
+    c_1 = 25                                        # This is the weight of class +1 (i.e. y(t) = 1)
+    c_0 = 1                                         # This is the weight of class 0 (i.e. y(t) = 0)
     if theta:
         len_v = n        
     else:
@@ -3425,7 +3426,12 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     yy = YY
                 #---------------------------------------------------------------
                 
-                
+                #--------------Assign Weights to the Classes--------------------
+                gg = {}
+                gg[-1] = c_0
+                gg[1] = c_1
+                #GG = np.diag(gg)
+                #---------------------------------------------------------------
                 
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
@@ -3447,7 +3453,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     jj = t_inds[ii]
                             
                     #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
-                    ff = aa[ii,:]
+                    ff = gg[yy[ii]]*aa[ii,:]
                     
                     if theta:
                         c = 1 + theta * yy[ii]
@@ -3493,7 +3499,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #cst = np.dot(AA,W_tot)
                 total_cost[ttau] = total_cost[ttau] + sum(cst.ravel()<bb)
                 #DD = np.dot(np.diag(YY),AA)
-                #cc = np.dot(DD,20*W_tot)
+                #cc = np.dot(DD,2*W_tot)
                 #total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
                 
                 total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,(cst.ravel()<bb).ravel()))
