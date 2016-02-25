@@ -3254,7 +3254,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
     theta = 0
-    c_1 = 25                                        # This is the weight of class +1 (i.e. y(t) = 1)
+    c_1 = 10                                        # This is the weight of class +1 (i.e. y(t) = 1)
     c_0 = 1                                         # This is the weight of class 0 (i.e. y(t) = 0)
     if theta:
         len_v = n        
@@ -3290,7 +3290,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
         ell =  block_size
         #----------------------------------------------------------------------
         
-        for ttau in range(0,250):
+        for ttau in range(0,50):
             
             #----------------------In-Loop Initializations---------------------
             t_counter = 0
