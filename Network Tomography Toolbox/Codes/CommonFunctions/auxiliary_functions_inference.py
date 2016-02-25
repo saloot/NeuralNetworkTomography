@@ -3290,7 +3290,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
         ell =  block_size
         #----------------------------------------------------------------------
         
-        for ttau in range(0,50):
+        for ttau in range(0,250):
             
             #----------------------In-Loop Initializations---------------------
             t_counter = 0
