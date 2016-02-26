@@ -3324,7 +3324,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 if (max(range_T)-t_0) < block_size:
                     continue
                 #-------------------------------------------------
-                
+                pdb.set_trace()
                 #--------------Check If the Block Is Processed Before-----------
                 spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_i_' + str(ijk) + '_A.txt'
                 if not os.path.isfile(spikes_file):
