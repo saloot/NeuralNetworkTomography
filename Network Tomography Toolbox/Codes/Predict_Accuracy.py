@@ -128,7 +128,7 @@ for T in T_range:
     
     T_test = int(0.2*T)
     T0 = T
-    T0 = 30050
+    T0 = 50
     T_test = 30000
     T_array = [[T0+100,T0+100+T_test],[2*T0+100,2*T0+100+T_test],[10*T0+100,10*T0+100+T_test]]
     T_array = [[T0,T0+T_test]]
