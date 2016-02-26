@@ -3391,7 +3391,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     AA = np.delete(AA.T,ijk,0).T
         
                     #------------------Try to Store the Matrix-----------------
-                    pdb.set_trace()
+                    #pdb.set_trace()
                     try:
                         np.savetxt(spikes_file,AA,'%2.5f',delimiter='\t')
                     except:
@@ -3532,14 +3532,14 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             #pdb.set_trace()
             if ttau > 0:
                 if ((total_cost[ttau] == 0) and (total_cost[ttau-1] == 0)) or (total_cost[ttau] - total_cost[ttau-1] == 0):
-                    pdb.set_trace()
+                    #pdb.set_trace()
                     break
             if not ((ttau+1) % 4):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 print total_cost[0:ttau]
                 DD = np.dot(np.diag(YY),AA)
                 cc = np.dot(DD,2*W_tot)
-                pdb.set_trace()
+                #pdb.set_trace()
             
                 
             
