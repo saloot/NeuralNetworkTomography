@@ -40,9 +40,7 @@ tau_s = 2.0                                     # The rise time coefficient of t
 #------------------------------------------------------------------------------
 
 #-------------------------Initialize Inference Parameters----------------------
-inference_method = 7
 sparsity_flag = 5
-n_ind = 1                       # Index of the neuron which we want to infer
 #------------------------------------------------------------------------------
 
 #--------Calculate the Range to Assess the Effect of Recording Duration--------
@@ -51,7 +49,7 @@ T_max = 500000
 #T_step = int(T_max/6.0)
 #T_range = range(T_step, T_max+1, T_step)
 
-T_range = [5000]
+T_range = [no_stimul_rounds]
 
 #------------------------------------------------------------------------------
 
@@ -64,8 +62,8 @@ Prediction_true_neg = np.zeros([len(T_range),1])
 file_name_integrated_spikes_base = '../Data/Spikes/Moritz_Integrated_750'
 file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
 file_name_prefix = 'Moritz'
-file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
-file_name_prefix = 'HC3'
+#file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
+#file_name_prefix = 'HC3'
 file_name_spikes2 = file_name_spikes[:-4] + '_file.txt'
 #------------------------------------------------------------------------------
 
@@ -81,8 +79,19 @@ if not os.path.isfile(file_name_spikes2):
 #====================READ THE GROUND TRUTH IF POSSIBLE=========================
 #file_name = '../Data/Graphs/network_mocktest_adapted.txt'
 #file_name = '../Data/Graphs/Matrix_Accurate.txt'
-file_name = '../Data/Graphs/Moritz_Actual_Connectivity.txt'
 #file_name = '../Data/Graphs/Connectivity_Matrix2.txt'
+
+if (inference_method == 7):
+    file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
+    file_name = '../Data/Graphs/Moritz_Actual_Connectivity.txt'
+    file_name_prefix = 'Moritz'
+    n_ind = 0                       # Index of the neuron which we want to infer
+elif (inference_method == 5):
+    inference_method = 7
+    file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
+    file_name_prefix = 'HC3'
+    n_ind = 1                       # Index of the neuron which we want to infer
+    
 
 W_act = np.genfromtxt(file_name, dtype=None, delimiter='\t')
 W_act = W_act.T
@@ -111,17 +120,29 @@ for T in T_range:
    
     file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     W = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+    #W = W/(0.0001+np.linalg.norm(W))
+    
+    theta = W[-1]
+    
     #W = W_act[:,n_ind]
     
     T_test = int(0.2*T)
     T0 = T
-    T0 = 2000
+    T0 = 30050
+    T_test = 30000
     T_array = [[T0+100,T0+100+T_test],[2*T0+100,2*T0+100+T_test],[10*T0+100,10*T0+100+T_test]]
+    T_array = [[T0,T0+T_test]]
     
-    W2 = np.zeros([94,1])
-    W2[0:93,0] = W[0:93]
+    if file_name_prefix == 'HC3':
+        W2 = np.zeros([94,1])
+    elif file_name_prefix == 'Moritz':
+        W2 = np.zeros([1000,1])
+        W2[0:999,0] = W[0:999]
+        
     W = np.array(W2)
-    W = W - W.mean()    
+    
+    pdb.set_trace()
+    #W = W - W.mean()    
     Accur_true_pos,Accur_true_neg = spike_pred_accuracy(file_name_spikes2,T_array,W,n_ind,theta)
     Prediction_true_pos[itr_T,0] = Accur_true_pos
     Prediction_true_neg[itr_T,0] = Accur_true_neg
