@@ -3118,7 +3118,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             v = math.exp(-1/tau_d) * v
             v[fire_t] = v[fire_t] + 1
             
-            #v[-1,0] = 1
+            v[-1,0] = -1
                 
             V[:,t_tot] = v.ravel()
             X[:,t_tot] = x.ravel()
@@ -3135,7 +3135,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
         
         #A = (V-X).T
         A = (V).T
-        A = (V-X).T
+        #A = (V-X).T
         #A = (A>0.85).astype(int)
         
         A_orig = copy.deepcopy(A)
@@ -3157,6 +3157,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             
         
         #--------------Calculate Prediction Accuracy----------------
+        W[-1] = theta
         Y_predict = np.dot(A_orig,W)
         # aa = -np.ones(W.shape)
         # aa = aa/np.linalg.norm(aa)
@@ -3201,6 +3202,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             temp = np.multiply((Y_predict==0).astype(int),(Y_orig==0).astype(int))
             opt_score_true_neg = opt_score_true_neg + sum(temp)/(sum(Y_orig==0)+0.0001)
             #opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
+            pdb.set_trace()
         #----------------------------------------------------------
     
     opt_score_true_pos = opt_score_true_pos/float(len(T_array))
@@ -3525,10 +3527,12 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 if ((total_cost[ttau] == 0) and (total_cost[ttau-1] == 0)) or (total_cost[ttau] - total_cost[ttau-1] == 0):
                     #pdb.set_trace()
                     break
-            if not ((ttau+1) % 25):
+            if not ((ttau+1) % 2):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 print total_cost[0:ttau]
-                #pdb.set_trace()
+                DD = np.dot(np.diag(YY),AA)
+                cc = np.dot(DD,2*W_tot)
+                pdb.set_trace()
             
                 
             
