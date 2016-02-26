@@ -3118,7 +3118,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             v = math.exp(-1/tau_d) * v
             v[fire_t] = v[fire_t] + 1
             
-            v[-1,0] = -1
+            v[-1,0] = 1
                 
             V[:,t_tot] = v.ravel()
             X[:,t_tot] = x.ravel()
@@ -3159,6 +3159,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
         #--------------Calculate Prediction Accuracy----------------
         W[-1] = theta
         Y_predict = np.dot(A_orig,W)
+        Y_predict = np.dot(AA,W)
         # aa = -np.ones(W.shape)
         # aa = aa/np.linalg.norm(aa)
         #Y_predict2 = np.dot(A_orig,aa)
@@ -3324,7 +3325,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 if (max(range_T)-t_0) < block_size:
                     continue
                 #-------------------------------------------------
-                pdb.set_trace()
+                
                 #--------------Check If the Block Is Processed Before-----------
                 spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(block_count) + '_i_' + str(ijk) + '_A.txt'
                 if not os.path.isfile(spikes_file):
@@ -3499,8 +3500,12 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 else:
                     bb = 0*YY
                 #cst = np.dot(AA,W_tot)
+                #total_cost[ttau] = total_cost[ttau] + sum(cst.ravel()<bb)
+                DD = np.dot(np.diag(YY),AA)
+                DD[:,-1] = np.ones([block_size])
+                W_tot[-1] = 0
+                cst = np.dot(DD,2*W_tot)
                 total_cost[ttau] = total_cost[ttau] + sum(cst.ravel()<bb)
-                #DD = np.dot(np.diag(YY),AA)
                 #cc = np.dot(DD,2*W_tot)
                 #total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
                 
@@ -3527,7 +3532,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 if ((total_cost[ttau] == 0) and (total_cost[ttau-1] == 0)) or (total_cost[ttau] - total_cost[ttau-1] == 0):
                     pdb.set_trace()
                     break
-            if not ((ttau+1) % 2):
+            if not ((ttau+1) % 4):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 print total_cost[0:ttau]
                 DD = np.dot(np.diag(YY),AA)
