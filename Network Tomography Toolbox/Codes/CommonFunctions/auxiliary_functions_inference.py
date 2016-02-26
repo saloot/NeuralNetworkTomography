@@ -3373,7 +3373,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         t_tot = t_tot + 1
                         
                     Y = np.array(Y)
-                    pdb.set_trace()
+                    
                     V = V[:,0:t_tot]
                     X = X[:,0:t_tot]
                     Y = Y[0:t_tot]
@@ -3391,6 +3391,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     AA = np.delete(AA.T,ijk,0).T
         
                     #------------------Try to Store the Matrix-----------------
+                    pdb.set_trace()
                     try:
                         np.savetxt(spikes_file,AA,'%2.5f',delimiter='\t')
                     except:
