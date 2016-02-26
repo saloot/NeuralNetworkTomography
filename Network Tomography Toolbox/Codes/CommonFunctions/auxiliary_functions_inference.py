@@ -3414,7 +3414,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #-------------Add a Row for Theta If Missing From File----------
                 if AA.shape[1] != len(W_temp):
-                    tmp = -np.ones([AA.shape[0],1])
+                    tmp = -YY
+                    tmp = np.reshape(tmp,[len(tmp),1])
                     AA = np.hstack([AA,tmp])
                 #---------------------------------------------------------------
                 
