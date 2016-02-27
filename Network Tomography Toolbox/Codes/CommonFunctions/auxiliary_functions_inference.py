@@ -3452,7 +3452,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 d_alp_vec = np.zeros([block_size,1])
                 
                         
-                for ss in range(0,50*TcT):
+                for ss in range(0,500*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     jj = t_inds[ii]
@@ -3540,9 +3540,9 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             if not ((ttau+1) % 4):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 print total_cost[0:ttau]
-                DD = np.dot(np.diag(YY),AA)
-                cc = np.dot(DD,2*W_tot)
-                #pdb.set_trace()
+                #DD = np.dot(np.diag(YY),AA)
+                #cc = np.dot(DD,2*W_tot)
+                pdb.set_trace()
             
                 
             
