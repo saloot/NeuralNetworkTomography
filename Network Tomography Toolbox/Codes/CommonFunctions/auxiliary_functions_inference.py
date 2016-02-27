@@ -3286,14 +3286,14 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
         W_tot = np.zeros([len_v-1,1])
         Z_tot = np.zeros([len_v-1,1])
         
-        dual_gap = np.zeros([50,no_blocks])
-        total_cost = np.zeros([50,1])
-        total_Y = np.zeros([50,1])
+        dual_gap = np.zeros([len(range_tau),no_blocks])
+        total_cost = np.zeros([len(range_tau),1])
+        total_Y = np.zeros([len(range_tau),1])
         beta_K = 1
         ell =  block_size
         #----------------------------------------------------------------------
         
-        for ttau in range(0,550):
+        for ttau in range_tau:
             
             #----------------------In-Loop Initializations---------------------
             t_counter = 0
@@ -3452,7 +3452,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 d_alp_vec = np.zeros([block_size,1])
                 
                         
-                for ss in range(0,100*TcT):
+                for ss in range(0,1000*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     jj = t_inds[ii]
@@ -3504,7 +3504,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #cst = np.dot(AA,W_tot)
                 #total_cost[ttau] = total_cost[ttau] + sum(cst.ravel()<bb)
                 DD = np.dot(np.diag(YY),AA)
-                DD[:,-1] = -np.ones([block_size])
+                #DD[:,-1] = -np.ones([block_size])
                 
                 cst = np.dot(DD,2*W_tot)
                 #cst = np.dot(DD,2*Delta_W)
