@@ -3158,7 +3158,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
         
         #--------------Calculate Prediction Accuracy----------------        
         Y_predict = np.dot(A_orig,W)
-        pdb.set_trace()
+        
         # aa = -np.ones(W.shape)
         # aa = aa/np.linalg.norm(aa)
         #Y_predict2 = np.dot(A_orig,aa)
@@ -3202,7 +3202,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             temp = np.multiply((Y_predict==0).astype(int),(Y_orig==0).astype(int))
             opt_score_true_neg = opt_score_true_neg + sum(temp)/(sum(Y_orig==0)+0.0001)
             #opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
-            pdb.set_trace()
+            #pdb.set_trace()
         #----------------------------------------------------------
     
     opt_score_true_pos = opt_score_true_pos/float(len(T_array))
@@ -3440,7 +3440,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
-                lamb = .01/float(TcT)
+                lamb = .0001/float(TcT)
                 cf = lamb*TcT
                         
                 lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
@@ -3507,6 +3507,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #DD[:,-1] = -np.ones([block_size])
                 
                 cst = np.dot(DD,2*W_tot)
+                pdb.set_trace()
                 #cst = np.dot(DD,2*Delta_W)
                 total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst.ravel())!=np.sign(YY))
                 
