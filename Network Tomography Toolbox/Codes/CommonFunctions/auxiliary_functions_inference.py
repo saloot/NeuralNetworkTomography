@@ -3463,12 +3463,13 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                 d_alp_vec = np.zeros([block_size,1])
                 
-                aa = np.ones([TcT,2])
-                aa[:,0] = 0
-                aa[:,1] = 1
-                bns = list(aa)
+                qq = np.ones([TcT,2])
+                qq[:,0] = 0
+                qq[:,1] = 1
+                bns = list(qq)
+                FF = np.dot(aa,aa.T)
                 
-                res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,cf),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+                res_cons = optimize.minimize(hinge_loss_func_dual, lambda_0, args=(FF,cf),jac=hinge_jac_dual,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                 print res_cons['message']
                 d_alp_vec = np.reshape(res_cons['x'],[TcT,1])
                 
