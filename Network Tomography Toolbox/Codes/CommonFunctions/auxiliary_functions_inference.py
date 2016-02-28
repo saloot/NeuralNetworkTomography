@@ -3468,11 +3468,11 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 qq[:,1] = 1
                 bns = list(qq)
                 FF = np.dot(aa,aa.T)
-                opt = {'disp':True,'maxiter':5000}
+                opt = {'disp':False,'maxiter':5000}
                 res_cons = optimize.minimize(hinge_loss_func_dual, lambda_0, args=(FF,cf),jac=hinge_jac_dual,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                 print res_cons['message']
-                d_alp_vec = np.reshape(res_cons['x'],[TcT,1])
-                
+                lam = np.reshape(res_cons['x'],[TcT,1])
+                d_alp_vec[t_inds] = lam
                 for ss in range(0,0*TcT):
                             
                     ii = np.random.randint(0,TcT)
@@ -3503,8 +3503,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #---------------------------------------------------------------
             
                 #----------------------Update the Weights-----------------------
-                #Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
-                Delta_W_loc = np.dot(aa.T,d_alp_vec)
+                Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
                 Delta_W = Delta_W + Delta_W_loc
                 lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
                 #---------------------------------------------------------------
