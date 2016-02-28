@@ -1503,6 +1503,18 @@ def hinge_jac(x,FF,b,avg,lamb):
     #print np.linalg.norm(tmp)
     return tmp.ravel()
 
+
+
+def hinge_loss_func_dual(x,FF,cf):
+    E = cf * np.dot(np.dot(x.T,FF),x) - sum(x)
+    return E
+
+def hinge_jac_dual(x,FF,cf):
+    #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)])
+    #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)]) + b.ravel()
+    return 2 * cf * np.dot(FF,x) - np.ones([len(x)])
+
+
 def loss_func_lambda(x,FF,b):
     
     #E = 0.25 * np.dot(np.dot(x.T,FF),x) - delta *sum(x)
@@ -3440,7 +3452,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
-                lamb = .1/float(TcT)
+                lamb = .001/float(TcT)
                 cf = lamb*TcT
                         
                 lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
@@ -3451,8 +3463,16 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                 d_alp_vec = np.zeros([block_size,1])
                 
-                        
-                for ss in range(0,500*TcT):
+                aa = np.ones([TcT,2])
+                aa[:,0] = 0
+                aa[:,1] = 1
+                bns = list(aa)
+                
+                res_cons = optimize.minimize(loss_func_lambda, lambda_0, args=(FF,cf),jac=jac_lambda,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+                print res_cons['message']
+                d_alp_vec = np.reshape(res_cons['x'],[TcT,1])
+                
+                for ss in range(0,0*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     jj = t_inds[ii]
@@ -3482,7 +3502,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #---------------------------------------------------------------
             
                 #----------------------Update the Weights-----------------------
-                Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
+                #Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
+                Delta_W_loc = np.dot(aa.T,d_alp_vec)
                 Delta_W = Delta_W + Delta_W_loc
                 lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
                 #---------------------------------------------------------------
