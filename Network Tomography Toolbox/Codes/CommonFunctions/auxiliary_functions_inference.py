@@ -3158,7 +3158,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
         
         #--------------Calculate Prediction Accuracy----------------        
         Y_predict = np.dot(A_orig,W)
-        #pdb.set_trace()
+        pdb.set_trace()
         # aa = -np.ones(W.shape)
         # aa = aa/np.linalg.norm(aa)
         #Y_predict2 = np.dot(A_orig,aa)
@@ -3202,7 +3202,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             temp = np.multiply((Y_predict==0).astype(int),(Y_orig==0).astype(int))
             opt_score_true_neg = opt_score_true_neg + sum(temp)/(sum(Y_orig==0)+0.0001)
             #opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
-            
+            pdb.set_trace()
         #----------------------------------------------------------
     
     opt_score_true_pos = opt_score_true_pos/float(len(T_array))
@@ -3230,9 +3230,10 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
         neuron_range = np.array(range(0,m))
     
     if TT > 20000:
-        T0 = 50                                  # It is the offset, i.e. the time from which on we will consider the firing activity
+        
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
         block_size = 30000
+        T0 = TT - 3*block_size                   # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
         T_temp = 1000
@@ -3437,8 +3438,6 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #GG = np.diag(gg)
                 #---------------------------------------------------------------
                 
-                pdb.set_trace()
-                
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
                 lamb = .001/float(TcT)
@@ -3543,7 +3542,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 print total_cost[0:ttau]
                 #DD = np.dot(np.diag(YY),AA)
                 #cc = np.dot(DD,2*W_tot)
-                pdb.set_trace()
+                #pdb.set_trace()
             
                 
             
