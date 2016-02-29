@@ -3269,7 +3269,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
     theta = 0
-    c_1 = 3                                        # This is the weight of class +1 (i.e. y(t) = 1)
+    c_1 = 1                                        # This is the weight of class +1 (i.e. y(t) = 1)
     c_0 = 1                                         # This is the weight of class 0 (i.e. y(t) = 0)
     if theta:
         len_v = n        
@@ -3467,7 +3467,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 qq[:,0] = 0
                 qq[:,1] = 1
                 bns = list(qq)
-                bb = c_1 * (yy>0) + c_0 * (yy<=0)
+                bb = c_1 * (yy>0).astype(int) + c_0 * (yy<=0).astype(int)
                 #bb = np.dot(np.reshape(bb,[len(bb),1]),np.ones([1,len_v-1]))
                 #bb = np.multiply(bb,aa)
                 bb = np.dot(np.diag(bb.ravel()),aa)
