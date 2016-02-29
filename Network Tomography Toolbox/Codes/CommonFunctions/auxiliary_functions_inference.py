@@ -3468,7 +3468,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 qq[:,1] = 1
                 bns = list(qq)
                 FF = np.dot(aa,aa.T)
-                b = 2 * cf * np.dot(aa,W_tot)
+                b = np.ones([TcT,1]) - 1 * np.dot(aa,W_tot) 
                 opt = {'disp':False,'maxiter':5000}
                 res_cons = optimize.minimize(hinge_loss_func_dual, lambda_0, args=(FF,b,0.5/cf),jac=hinge_jac_dual,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                 print res_cons['message']
