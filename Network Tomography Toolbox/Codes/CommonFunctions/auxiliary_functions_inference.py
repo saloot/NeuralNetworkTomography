@@ -3468,8 +3468,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 qq[:,1] = 1
                 bns = list(qq)
                 bb = c_1 * (YY>0) + c_0 * (YY<=0)
-                bb = np.diag(bb.ravel())
-                bb = np.dot(bb,aa)
+                bb = np.dot(np.ones[len(bb),1],np.reshape(bb,[1,len(bb)]))
+                bb = np.multiply(bb,aa)
                 FF = np.dot(bb,bb.T)
                 b = np.ones([TcT,1]) - 1 * np.dot(bb,W_tot) 
                 opt = {'disp':False,'maxiter':5000}
