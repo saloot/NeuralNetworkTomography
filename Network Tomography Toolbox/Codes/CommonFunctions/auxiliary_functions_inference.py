@@ -1505,14 +1505,14 @@ def hinge_jac(x,FF,b,avg,lamb):
 
 
 
-def hinge_loss_func_dual(x,FF,cf):
-    E = cf * np.dot(np.dot(x.T,FF),x) - sum(x)
+def hinge_loss_func_dual(x,FF,b,cf):
+    E = cf * np.dot(np.dot(x.T,FF),x) - np.dot(x.T,b)
     return E
 
-def hinge_jac_dual(x,FF,cf):
+def hinge_jac_dual(x,FF,b,cf):
     #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)])
     #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)]) + b.ravel()
-    return 2 * cf * np.dot(FF,x) - np.ones([len(x)])
+    return 2 * cf * np.dot(FF,x) - b.ravel()
 
 
 def loss_func_lambda(x,FF,b):
@@ -3468,8 +3468,9 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 qq[:,1] = 1
                 bns = list(qq)
                 FF = np.dot(aa,aa.T)
+                b = 2 * cf * np.dot(aa,W_tot)
                 opt = {'disp':False,'maxiter':5000}
-                res_cons = optimize.minimize(hinge_loss_func_dual, lambda_0, args=(FF,0.5/cf),jac=hinge_jac_dual,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+                res_cons = optimize.minimize(hinge_loss_func_dual, lambda_0, args=(FF,b,0.5/cf),jac=hinge_jac_dual,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                 print res_cons['message']
                 lam = np.reshape(res_cons['x'],[TcT,1])
                 d_alp_vec[t_inds] = lam
@@ -3526,7 +3527,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #total_cost[ttau] = total_cost[ttau] + sum(cst.ravel()<bb)
                 DD = np.dot(np.diag(YY),AA)
                 #DD[:,-1] = -np.ones([block_size])
-                
+                Yk = (YY>0).astype(int)
                 cst = np.dot(DD,2*W_tot)
                 
                 #cst = np.dot(DD,2*Delta_W)
