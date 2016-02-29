@@ -3570,7 +3570,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 print total_cost[0:ttau]
                 #DD = np.dot(np.diag(YY),AA)
                 #cc = np.dot(DD,2*W_tot)
-                pdb.set_trace()
+                #pdb.set_trace()
             
                 
             
