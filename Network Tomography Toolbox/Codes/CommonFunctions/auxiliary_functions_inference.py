@@ -3269,8 +3269,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     t_gap = 2                                    # The gap between samples to consider
     t_avg = 1
     theta = 0
-    c_1 = .3                                        # This is the weight of class +1 (i.e. y(t) = 1)
-    c_0 = .1                                         # This is the weight of class 0 (i.e. y(t) = 0)
+    c_1 = 1                                        # This is the weight of class +1 (i.e. y(t) = 1)
+    c_0 = .3                                         # This is the weight of class 0 (i.e. y(t) = 0)
     if theta:
         len_v = n        
     else:
@@ -3452,7 +3452,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
-                lamb = .01/float(TcT)
+                lamb = .001/float(TcT)
                 cf = lamb*TcT
                         
                 lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
@@ -3472,15 +3472,14 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #bb = np.multiply(bb,aa)
                 bb = np.diag(bb.ravel())
                 bb = np.dot(bb,aa)
-                pdb.set_trace()
-                bb = aa
+                #pdb.set_trace()
+                #bb = aa
                 FF = np.dot(bb,bb.T)
-                b = np.ones([TcT,1]) - 1 * np.dot(bb,W_tot) 
+                cb = np.ones([TcT,1]) - 1 * np.dot(bb,W_tot) 
                 opt = {'disp':False,'maxiter':5000}
-                res_cons = optimize.minimize(hinge_loss_func_dual, lambda_0, args=(FF,b,0.5/cf),jac=hinge_jac_dual,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
+                res_cons = optimize.minimize(hinge_loss_func_dual, lambda_0, args=(FF,cb,0.5/cf),jac=hinge_jac_dual,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                 print res_cons['message']
-                lam = np.reshape(res_cons['x'],[TcT,1])
-                d_alp_vec[t_inds] = lam
+                d_alp_vec[t_inds] = np.reshape(res_cons['x'],[TcT,1])
                 
                 for ss in range(0,0*TcT):
                             
