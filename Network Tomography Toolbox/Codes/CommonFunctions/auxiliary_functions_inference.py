@@ -3471,7 +3471,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #bb = np.dot(np.reshape(bb,[len(bb),1]),np.ones([1,len_v-1]))
                 #bb = np.multiply(bb,aa)
                 bb = np.dot(np.diag(bb.ravel()),aa)
-                
+                bb = aa
                 FF = np.dot(bb,bb.T)
                 b = np.ones([TcT,1]) - 1 * np.dot(bb,W_tot) 
                 opt = {'disp':False,'maxiter':5000}
