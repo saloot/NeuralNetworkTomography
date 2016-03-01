@@ -1504,15 +1504,24 @@ def hinge_jac(x,FF,b,avg,lamb):
     return tmp.ravel()
 
 
+def hinge_loss_func_dual_l2(x,FF,b,cf):
+    E = cf * np.dot(np.dot(x.T,FF),x) - np.dot(x.T,b)
+    return E
+
+def hinge_jac_dual_l2(x,FF,b,cf):
+    #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)])
+    #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)]) + b.ravel()
+    return 2 * cf * np.dot(FF,x) - b.ravel()
+
 
 def hinge_loss_func_dual(x,FF,b,cf):
-    E = cf * np.dot(np.dot(x.T,FF),x) - np.dot(x.T,b)
+    E = cf * sum(np.abs(np.dot(FF,x))) - np.dot(x.T,b)
     return E
 
 def hinge_jac_dual(x,FF,b,cf):
     #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)])
     #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)]) + b.ravel()
-    return 2 * cf * np.dot(FF,x) - b.ravel()
+    return cf * np.dot(FF.T,np.sign(np.dot(FF,x))) - b.ravel()
 
 
 def loss_func_lambda(x,FF,b):
@@ -3474,7 +3483,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 bb = np.dot(bb,aa)
                 #pdb.set_trace()
                 #bb = aa
-                FF = np.dot(bb,bb.T)
+                #FF = np.dot(bb,bb.T)
+                FF = bb.T
                 cb = np.ones([TcT,1]) - 1 * np.dot(bb,W_tot) 
                 opt = {'disp':False,'maxiter':5000}
                 res_cons = optimize.minimize(hinge_loss_func_dual, lambda_0, args=(FF,cb,0.5/cf),jac=hinge_jac_dual,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
