@@ -3583,12 +3583,12 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 if ((total_cost[ttau] == 0) and (total_cost[ttau-1] == 0)) or (total_cost[ttau] - total_cost[ttau-1] == 0):
                     #pdb.set_trace()
                     break
-            if not ((ttau+1) % 4):
+            if not ((ttau+1) % 8):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 print total_cost[0:ttau]
                 #DD = np.dot(np.diag(YY),AA)
                 #cc = np.dot(DD,2*W_tot)
-                #pdb.set_trace()
+                pdb.set_trace()
             
                 
             
