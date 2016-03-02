@@ -3546,21 +3546,21 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 else:
                     bb = 0*YY
                 #cst = np.dot(AA,W_tot)
-                #total_cost[ttau] = total_cost[ttau] + sum(cst.ravel()<bb)
-                DD = np.dot(np.diag(YY),AA)
+                total_cost[ttau] = total_cost[ttau] + sum(cst.ravel()<bb)
+                #DD = np.dot(np.diag(YY),AA)
                 #DD[:,-1] = -np.ones([block_size])
                 Yk = (YY>0).astype(int)
-                cst = np.dot(DD,2*W_tot)
+                #cst = np.dot(DD,2*W_tot)
                 
                 #pdb.set_trace()
                 #cst = np.dot(DD,2*Delta_W)
-                total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst.ravel())!=np.sign(YY))
+                #total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst.ravel())!=np.sign(YY))
                 
                 #cc = np.dot(DD,2*W_tot)
                 #total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
                 
-                total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,np.sign(cst.ravel())!=np.sign(YY)))
-                #total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,(cst.ravel()<bb).ravel()))
+                #total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,np.sign(cst.ravel())!=np.sign(YY)))
+                total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,(cst.ravel()<bb).ravel()))
                 #total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY<=0,(cst<0).ravel()))
                 #----------------------------------------------------------
                     
