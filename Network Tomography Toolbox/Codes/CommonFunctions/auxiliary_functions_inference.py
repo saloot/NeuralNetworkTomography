@@ -3253,7 +3253,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 25000
+        block_size = 30000
         T0 = max(TT - 3*block_size,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
@@ -3461,7 +3461,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
-                lamb = .001/float(TcT)
+                lamb = .01/float(TcT)
                 cf = lamb*TcT
                         
                 lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
@@ -3473,7 +3473,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 d_alp_vec = np.zeros([block_size,1])
                 
                 qq = np.ones([TcT,2])
-                qq[:,0] = 0.0001
+                qq[:,0] = 0
                 qq[:,1] = 1
                 bns = list(qq)
                 bb = c_1 * (yy>0).astype(int) + c_0 * (yy<=0).astype(int)
@@ -3492,8 +3492,9 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 FF = np.dot(bb,bb.T)
                 res_cons = optimize.minimize(hinge_loss_func_dual_l2, lambda_0, args=(FF,cb,0.5/cf),jac=hinge_jac_dual_l2,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                 print res_cons['message']
-                d_alp_vec[t_inds] = np.reshape(res_cons['x'],[TcT,1])
-                
+                lam = np.reshape(res_cons['x'],[TcT,1])
+                #lam = np.multiply(lam,(lam > qq.min()).astype(int))
+                d_alp_vec[t_inds] = lam
                 for ss in range(0,0*TcT):
                             
                     ii = np.random.randint(0,TcT)
@@ -3551,7 +3552,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 Yk = (YY>0).astype(int)
                 cst = np.dot(DD,2*W_tot)
                 
-                #pdb.set_trace()
+                pdb.set_trace()
                 #cst = np.dot(DD,2*Delta_W)
                 total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst.ravel())!=np.sign(YY))
                 
