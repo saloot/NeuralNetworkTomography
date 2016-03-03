@@ -3223,7 +3223,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             temp = np.multiply((Y_predict==0).astype(int),(Y_orig==0).astype(int))
             opt_score_true_neg = opt_score_true_neg + sum(temp)/(sum(Y_orig==0)+0.0001)
             #opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
-            #pdb.set_trace()
+            pdb.set_trace()
         #----------------------------------------------------------
     
     opt_score_true_pos = opt_score_true_pos/float(len(T_array))
@@ -3279,7 +3279,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     t_avg = 1
     theta = 0
     c_1 = 1                                        # This is the weight of class +1 (i.e. y(t) = 1)
-    c_0 = .3                                         # This is the weight of class 0 (i.e. y(t) = 0)
+    c_0 = .05                                         # This is the weight of class 0 (i.e. y(t) = 0)
     if theta:
         len_v = n        
     else:
