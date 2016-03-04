@@ -3354,6 +3354,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 if not os.path.isfile(spikes_file):
                     X = np.zeros([len_v,block_size])
                     V = np.zeros([len_v,block_size])
+                    AA = np.zeros([len_v,block_size])
                     x = np.zeros([len_v,1])
                     v = np.zeros([len_v,1])
                     xx = np.zeros([len_v,1])
@@ -3392,6 +3393,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         V[:,t_tot] = v.ravel()
                         X[:,t_tot] = x.ravel()
                         Y[t_tot] = yy
+                        AA[:,t_tot] = pow(-1,1-yy) * v.ravel()
                             
                         t_tot = t_tot + 1
                         
@@ -3400,6 +3402,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     V = V[:,0:t_tot]
                     X = X[:,0:t_tot]
                     Y = Y[0:t_tot]
+                    AA = AA[:,t_tot]
                     
                     YY = (Y>0).astype(int) - (Y<=0).astype(int)
                     #A = (V-X).T
@@ -3410,7 +3413,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     YY[-1] = -1
                     #----------------------------------------------------------
         
-                    AA = np.dot(np.diag(YY.ravel()),A)
+                    #AA = np.dot(np.diag(YY.ravel()),A)
                     AA = np.delete(AA.T,ijk,0).T
         
                     #------------------Try to Store the Matrix-----------------
