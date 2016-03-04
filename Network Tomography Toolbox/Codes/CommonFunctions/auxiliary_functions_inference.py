@@ -3402,7 +3402,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     V = V[:,0:t_tot]
                     X = X[:,0:t_tot]
                     Y = Y[0:t_tot]
-                    AA = AA[:,t_tot]
+                    AA = AA[:,0:t_tot]
                     
                     YY = (Y>0).astype(int) - (Y<=0).astype(int)
                     #A = (V-X).T
