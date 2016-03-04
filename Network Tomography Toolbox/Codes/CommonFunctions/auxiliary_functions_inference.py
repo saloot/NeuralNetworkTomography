@@ -3465,6 +3465,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 cf = lamb*TcT
                         
                 lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
+                
                 if rand_sample_flag:
                     lambda_0 = lambda_temp[t_inds]
                 else:
@@ -3525,10 +3526,11 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #---------------------------------------------------------------
             
                 #----------------------Update the Weights-----------------------
-                Delta_W_loc = np.dot(bb.T,d_alp_vec[t_inds])
+                #Delta_W_loc = np.dot(bb.T,d_alp_vec[t_inds])
+                Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
                 Delta_W = Delta_W + Delta_W_loc
-                #W_tot = W_tot + Delta_W_loc/no_blocks
-                lambda_tot[block_count*ell:(block_count+1)*ell] = lambda_tot[block_count*ell:(block_count+1)*ell] + d_alp_vec * (beta_K/no_blocks)
+                W_tot = W_tot + Delta_W_loc#/no_blocks
+                lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
                 #---------------------------------------------------------------
 
                 #------------------Evaluate the Performance---------------------
@@ -3552,7 +3554,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 Yk = (YY>0).astype(int)
                 #cst = np.dot(DD,2*W_tot)
                 
-                #pdb.set_trace()
+                pdb.set_trace()
                 #cst = np.dot(DD,2*Delta_W)
                 #total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst.ravel())!=np.sign(YY))
                 
@@ -3570,7 +3572,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
             #W_tot = W_tot + Delta_W/no_blocks
             st_cof = 0.1/float(1+ttau)
-            W_tot = W_tot + Delta_W/no_blocks
+            #W_tot = W_tot + Delta_W/no_blocks
             
             WW = np.zeros([len_v,1])
             WW[0:ijk,0] = W_tot[0:ijk,0]
