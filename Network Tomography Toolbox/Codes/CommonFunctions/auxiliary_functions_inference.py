@@ -1505,13 +1505,15 @@ def hinge_jac(x,FF,b,avg,lamb):
 
 
 def hinge_loss_func_dual_l2(x,FF,b,cf):
-    E = cf * np.dot(np.dot(x.T,FF),x) - np.dot(x.T,b)
+    #E = cf * np.dot(np.dot(x.T,FF),x) - np.dot(x.T,b)
+    E = cf * pow(np.linalg.norm(np.dot(FF,x)),2) - np.dot(x.T,b)
     return E
 
 def hinge_jac_dual_l2(x,FF,b,cf):
     #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)])
     #return 0.5 * np.dot(FF,x) - delta * np.ones([len(x)]) + b.ravel()
-    return 2 * cf * np.dot(FF,x) - b.ravel()
+    #return 2 * cf * np.dot(FF,x) - b.ravel()
+    return 2 * cf * np.dot(FF.T,np.dot(FF,x)) - b.ravel()
 
 
 def hinge_loss_func_dual(x,FF,b,cf):
@@ -3253,8 +3255,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 30000
-        T0 = max(TT - 3*block_size,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
+        block_size = 60000
+        T0 = max(TT - 2*block_size,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
         T_temp = 1000
@@ -3488,9 +3490,10 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 cb = np.ones([TcT,1]) - 1 * np.dot(bb,W_tot) 
                 opt = {'disp':False,'maxiter':5000}
-                #FF = bb.T
+                FF = bb.T
                 #res_cons = optimize.minimize(hinge_loss_func_dual, lambda_0, args=(FF,cb,0.5/cf),jac=hinge_jac_dual,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
-                FF = np.dot(bb,bb.T)
+                #FF = np.dot(bb,bb.T)
+                
                 res_cons = optimize.minimize(hinge_loss_func_dual_l2, lambda_0, args=(FF,cb,0.5/cf),jac=hinge_jac_dual_l2,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                 print res_cons['message']
                 lam = np.reshape(res_cons['x'],[TcT,1])
