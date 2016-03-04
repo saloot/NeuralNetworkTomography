@@ -3442,6 +3442,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 if AA.shape[1] != len(W_temp):
                     tmp = -YY
                     tmp = np.reshape(tmp,[len(tmp),1])
+                    pdb.set_trace()
                     AA = np.hstack([AA,tmp])
                 #---------------------------------------------------------------
                 
