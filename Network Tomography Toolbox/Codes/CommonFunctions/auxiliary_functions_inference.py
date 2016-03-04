@@ -3255,7 +3255,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 60000
+        block_size = 90000
         T0 = max(TT - 2*block_size,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
@@ -3407,7 +3407,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     YY = (Y>0).astype(int) - (Y<=0).astype(int)
                     #A = (V-X).T
                     A = (V).T
-                    
+                    AA = AA.T
                     #--------Shift Post-Synaptic Spike One to the Left---------        
                     YY = np.roll(YY,-1)
                     YY[-1] = -1
