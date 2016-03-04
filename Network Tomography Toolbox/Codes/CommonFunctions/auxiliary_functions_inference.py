@@ -3526,8 +3526,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #---------------------------------------------------------------
             
                 #----------------------Update the Weights-----------------------
-                #Delta_W_loc = np.dot(bb.T,d_alp_vec[t_inds])
-                Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
+                Delta_W_loc = np.dot(bb.T,d_alp_vec[t_inds])
+                #Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
                 Delta_W = Delta_W + Delta_W_loc
                 W_tot = W_tot + Delta_W_loc#/no_blocks
                 lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
@@ -3554,8 +3554,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 Yk = (YY>0).astype(int)
                 #cst = np.dot(DD,2*W_tot)
                 
-                pdb.set_trace()
-                #cst = np.dot(DD,2*Delta_W)
+                
+                #cst = np.dot(DD,2*Delta_W_loc)
                 #total_cost[ttau] = total_cost[ttau] + sum(np.sign(cst.ravel())!=np.sign(YY))
                 
                 #cc = np.dot(DD,2*W_tot)
@@ -3569,7 +3569,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #..................................................................
             
                 
-            
+            pdb.set_trace()
             #W_tot = W_tot + Delta_W/no_blocks
             st_cof = 0.1/float(1+ttau)
             #W_tot = W_tot + Delta_W/no_blocks
