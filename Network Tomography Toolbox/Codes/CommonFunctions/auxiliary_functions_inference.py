@@ -2986,7 +2986,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
             if not ((ttau+1) % 20):
                 #W2 = merge_W(W_infer[0:itr_W,:],0.01)
                 print total_cost[0:ttau]
-                pdb.set_trace()
+                #pdb.set_trace()
             #Z = (Z>2*sparse_thr).astype(int) - (Z<-2*sparse_thr).astype(int)   
                 
             
@@ -3576,7 +3576,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #..................................................................
             
                 
-            pdb.set_trace()
+            #pdb.set_trace()
             #W_tot = W_tot + Delta_W/no_blocks
             st_cof = 0.1/float(1+ttau)
             #W_tot = W_tot + Delta_W/no_blocks
