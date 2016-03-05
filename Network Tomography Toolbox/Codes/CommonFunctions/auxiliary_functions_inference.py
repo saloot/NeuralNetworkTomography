@@ -3576,7 +3576,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #..................................................................
             
                 
-            pdb.set_trace()
+            #pdb.set_trace()
             #W_tot = W_tot + Delta_W/no_blocks
             st_cof = 0.1/float(1+ttau)
             #W_tot = W_tot + Delta_W/no_blocks
