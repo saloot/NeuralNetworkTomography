@@ -3101,8 +3101,8 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
     opt_score_true_neg = 0
     for T_pair in T_array:
         
-        range_T = range(T_pair[0],T_pair[1])
-        T_temp = T_pair[1] - T_pair[0]
+        range_T = range(0,T_pair[1])
+        T_temp = len(range_T)
         T0 = T_pair[0]
         
         print '-------------T is from %s to %s----------' %(str(T_pair[0]),str(T_pair[1]))
@@ -3160,7 +3160,8 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
         A = (V).T
         #A = (V-X).T
         #A = (A>0.85).astype(int)
-        
+        A = A[T_pair[0]:T_pair[1],:]
+        Y = Y[T_pair[0]:T_pair[1]]
         A_orig = copy.deepcopy(A)
         Y_orig = copy.deepcopy(Y)
         
@@ -3173,7 +3174,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
         
         if rand_sample_flag:
             t_init = np.random.randint(0,t_gap)
-            t_inds = np.array(range(t_init,T_temp,t_gap))
+            t_inds = np.array(range(t_init,T_pair[1]-T_pair[0],t_gap))
 
             A = A[t_inds,:]
             Y = Y_orig[t_inds]
@@ -3255,7 +3256,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 200000
+        block_size = 27000
         T0 = max(TT - 1*block_size-10,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
@@ -3393,7 +3394,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         V[:,t_tot] = v.ravel()
                         X[:,t_tot] = x.ravel()
                         Y[t_tot] = yy
-                        AA[:,t_tot] = pow(-1,1-yy) * v.ravel()
+                        AA[:,t_tot] = (2*yy-1) * v.ravel()
                             
                         t_tot = t_tot + 1
                         
@@ -3412,7 +3413,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     YY = np.roll(YY,-1)
                     YY[-1] = -1
                     #----------------------------------------------------------
-        
+
                     #AA = np.dot(np.diag(YY.ravel()),A)
                     AA = np.delete(AA.T,ijk,0).T
         
@@ -3488,7 +3489,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #bb = np.multiply(bb,aa)
                 #bb = np.diag(bb.ravel())
                 #bb = np.dot(bb,aa)
-                #pdb.set_trace()
+                pdb.set_trace()
                 bb = aa
                 
                 
@@ -3587,7 +3588,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
             
             print total_cost[ttau],total_Y[ttau]
-            #pdb.set_trace()
+            pdb.set_trace()
             if ttau > 0:
                 if ((total_cost[ttau] == 0) and (total_cost[ttau-1] == 0)) or (total_cost[ttau] - total_cost[ttau-1] == 0):
                     #pdb.set_trace()
