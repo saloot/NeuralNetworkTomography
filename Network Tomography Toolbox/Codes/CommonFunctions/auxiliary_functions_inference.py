@@ -3256,7 +3256,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 27500
+        block_size = 200000
         T0 = max(TT - 1*block_size-10,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
@@ -3404,12 +3404,12 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     V = V[:,0:t_tot]
                     X = X[:,0:t_tot]
                     Y = Y[0:t_tot]
-                    AA = AA[:,0:t_tot]
+                    #AA = AA[:,0:t_tot]
                     
                     YY = (Y>0).astype(int) - (Y<=0).astype(int)
                     #A = (V-X).T
                     A = (V).T
-                    AA = AA.T
+                    #AA = AA.T
                     #--------Shift Post-Synaptic Spike One to the Left---------        
                     YY = np.roll(YY,-1)
                     YY[-1] = -1
@@ -3473,7 +3473,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
-                lamb = .01/float(TcT)
+                lamb = .001/float(TcT)
                 cf = lamb*TcT
                         
                 lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
@@ -3494,7 +3494,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #bb = np.multiply(bb,aa)
                 #bb = np.diag(bb.ravel())
                 #bb = np.dot(bb,aa)
-                pdb.set_trace()
+                #pdb.set_trace()
                 bb = aa
                 
                 
@@ -3593,7 +3593,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             
             
             print total_cost[ttau],total_Y[ttau]
-            pdb.set_trace()
+            #pdb.set_trace()
             if ttau > 0:
                 if ((total_cost[ttau] == 0) and (total_cost[ttau-1] == 0)) or (total_cost[ttau] - total_cost[ttau-1] == 0):
                     #pdb.set_trace()
