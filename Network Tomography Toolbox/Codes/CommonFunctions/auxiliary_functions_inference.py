@@ -3256,7 +3256,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 27000
+        block_size = 27500
         T0 = max(TT - 1*block_size-10,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
@@ -3394,7 +3394,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         V[:,t_tot] = v.ravel()
                         X[:,t_tot] = x.ravel()
                         Y[t_tot] = yy
-                        AA[:,t_tot] = (2*yy-1) * v.ravel()
+                        
+                        #AA[:,t_tot] = (2*yy-1) * v.ravel()
                             
                         t_tot = t_tot + 1
                         
@@ -3415,6 +3416,10 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #----------------------------------------------------------
 
                     #AA = np.dot(np.diag(YY.ravel()),A)
+                    AA = np.zeros(A.shape)
+                    for t in range(0,t_tot):
+                        AA[t,:] = YY[t]*A[t,:]
+                        
                     AA = np.delete(AA.T,ijk,0).T
         
                     #------------------Try to Store the Matrix-----------------
