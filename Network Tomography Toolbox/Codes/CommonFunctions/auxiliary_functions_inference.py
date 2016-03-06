@@ -3226,7 +3226,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             temp = np.multiply((Y_predict==0).astype(int),(Y_orig==0).astype(int))
             opt_score_true_neg = opt_score_true_neg + sum(temp)/(sum(Y_orig==0)+0.0001)
             #opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
-            pdb.set_trace()
+            #pdb.set_trace()
         #----------------------------------------------------------
     
     opt_score_true_pos = opt_score_true_pos/float(len(T_array))
@@ -3256,7 +3256,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 100000
+        block_size = 300000
         T0 = max(TT - 1*block_size-10,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
@@ -3509,7 +3509,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #lam = np.reshape(res_cons['x'],[TcT,1])
                 #lam = np.multiply(lam,(lam > qq.min()).astype(int))
                 #d_alp_vec[t_inds] = lam
-                for ss in range(0,4*TcT):
+                for ss in range(0,10*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     jj = t_inds[ii]
