@@ -3101,7 +3101,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
     opt_score_true_neg = 0
     for T_pair in T_array:
         
-        range_T = range(0,T_pair[1])
+        range_T = range(max(T_pair[0]-1000,0),T_pair[1])
         T_temp = len(range_T)
         T0 = T_pair[0]
         
@@ -3160,8 +3160,8 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
         A = (V).T
         #A = (V-X).T
         #A = (A>0.85).astype(int)
-        A = A[T_pair[0]:T_pair[1],:]
-        Y = Y[T_pair[0]:T_pair[1]]
+        A = A[T_pair[0] - range_T[0]:T_pair[1],:]
+        Y = Y[T_pair[0] - range_T[0]:T_pair[1]]
         A_orig = copy.deepcopy(A)
         Y_orig = copy.deepcopy(Y)
         
@@ -3182,7 +3182,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
         
         #--------------Calculate Prediction Accuracy----------------        
         Y_predict = np.dot(A_orig,W)
-        
+        #plt.plot(Y_predict[0:1000]);plt.plot(Y_orig[0:1000],'g');plt.show()
         # aa = -np.ones(W.shape)
         # aa = aa/np.linalg.norm(aa)
         #Y_predict2 = np.dot(A_orig,aa)
@@ -3256,7 +3256,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 200000
+        block_size = 100000
         T0 = max(TT - 1*block_size-10,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
@@ -3473,7 +3473,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
-                lamb = .001/float(TcT)
+                lamb = .0001/float(TcT)
                 cf = lamb*TcT
                         
                 lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
