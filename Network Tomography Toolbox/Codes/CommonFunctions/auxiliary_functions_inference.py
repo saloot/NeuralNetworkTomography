@@ -3473,7 +3473,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
-                lamb = .00001/float(TcT)
+                lamb = .0001/float(TcT)
                 cf = lamb*TcT
                         
                 lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
@@ -3509,7 +3509,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #lam = np.reshape(res_cons['x'],[TcT,1])
                 #lam = np.multiply(lam,(lam > qq.min()).astype(int))
                 #d_alp_vec[t_inds] = lam
-                for ss in range(0,100*TcT):
+                for ss in range(0,1000*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     jj = t_inds[ii]
