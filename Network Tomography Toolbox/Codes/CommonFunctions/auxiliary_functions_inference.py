@@ -3473,7 +3473,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
-                lamb = .00001/float(TcT)
+                lamb = .0001/float(TcT)
                 cf = lamb*TcT
                         
                 lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
