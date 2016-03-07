@@ -3256,7 +3256,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 300000
+        block_size = 1000000
         T0 = max(TT - 1*block_size-10,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
@@ -3282,7 +3282,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     t_avg = 1
     theta = 0
     c_1 = 1                                        # This is the weight of class +1 (i.e. y(t) = 1)
-    c_0 = .5                                         # This is the weight of class 0 (i.e. y(t) = 0)
+    c_0 = .05                                         # This is the weight of class 0 (i.e. y(t) = 0)
     if theta:
         len_v = n        
     else:
