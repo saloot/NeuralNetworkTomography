@@ -3383,7 +3383,10 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         
                         fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
                         x = math.exp(-1/tau_s) * x
-                        x[fire_t] = x[fire_t] + 1
+                        try:
+                            x[fire_t] = x[fire_t] + 1
+                        except:
+                            pdb.set_trace()
                         
                         v = math.exp(-1/tau_d) * v
                         v[fire_t] = v[fire_t] + 1
