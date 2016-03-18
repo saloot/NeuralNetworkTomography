@@ -3382,6 +3382,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             yy = 0
                         
                         fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
+                        fire_t = np.array(fire_t).astype(int)
+                        
                         x = math.exp(-1/tau_s) * x
                         try:
                             x[fire_t] = x[fire_t] + 1
