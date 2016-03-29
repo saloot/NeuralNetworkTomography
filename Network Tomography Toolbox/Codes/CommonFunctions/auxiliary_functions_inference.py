@@ -3256,9 +3256,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 600000
-        block_size = TT-200
-        T0 = max(TT - 1*block_size-10,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
+        block_size = 300000        
+        T0 = 50 #max(TT - 1*block_size-10,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
         T_temp = 1000
@@ -3341,10 +3340,12 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             vv = np.zeros([len_v,1])
             Y = np.zeros([block_size])
             
-            W_temp = W_tot
+            
             #------------------------------------------------------------------
             
             for t_0 in range_T:
+                
+                W_temp = W_tot
                 
                 #------------This is for the last block-----------
                 if (max(range_T)-t_0) < block_size:
@@ -3479,7 +3480,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #-----------------------Do the Optimization---------------------
                 TcT = len(yy)
-                lamb = .01/float(TcT)
+                lamb = .001/float(TcT)
                 cf = lamb*TcT
                 
                 #pdb.set_trace()        
@@ -3549,7 +3550,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 Delta_W_loc = np.dot(bb.T,d_alp_vec[t_inds])
                 #Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
                 Delta_W = Delta_W + Delta_W_loc
-                W_tot = W_tot + Delta_W_loc#/no_blocks
+                W_tot = W_tot + Delta_W_loc/no_blocks
                 lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
                 #---------------------------------------------------------------
 
