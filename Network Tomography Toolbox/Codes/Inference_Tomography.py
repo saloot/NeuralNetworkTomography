@@ -194,7 +194,8 @@ for T in T_range:
                 
                 if len(temp):
                     fire_matx.append(temp[:-1])
-                
+                else:
+                    fire_matx.append(' ')
             
             spike_file.write('\n'.join(fire_matx))
             
