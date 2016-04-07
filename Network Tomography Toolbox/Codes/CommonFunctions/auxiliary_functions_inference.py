@@ -3282,7 +3282,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     t_avg = 1
     theta = 0
     c_1 = 1                                        # This is the weight of class +1 (i.e. y(t) = 1)
-    c_0 = .05                                         # This is the weight of class 0 (i.e. y(t) = 0)
+    c_0 = .005                                         # This is the weight of class 0 (i.e. y(t) = 0)
     if theta:
         len_v = n        
     else:
@@ -3517,7 +3517,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #lam = np.reshape(res_cons['x'],[TcT,1])
                 #lam = np.multiply(lam,(lam > qq.min()).astype(int))
                 #d_alp_vec[t_inds] = lam
-                for ss in range(0,100*TcT):
+                for ss in range(0,50*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     jj = t_inds[ii]
