@@ -3282,7 +3282,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     t_avg = 1
     theta = 0
     c_1 = 1                                        # This is the weight of class +1 (i.e. y(t) = 1)
-    c_0 = .005                                         # This is the weight of class 0 (i.e. y(t) = 0)
+    c_0 = .001                                         # This is the weight of class 0 (i.e. y(t) = 0)
     if theta:
         len_v = n        
     else:

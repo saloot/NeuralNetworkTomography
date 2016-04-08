@@ -81,7 +81,7 @@ file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_750.txt'
 
 if (inference_method == 7):
     file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
-    #file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/Moritz_Spike_Times.txt'
+    file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/Moritz_Spike_Times.txt'
     file_name_prefix = 'Moritz'
 elif (inference_method == 5):
     inference_method = 7
@@ -185,17 +185,18 @@ for T in T_range:
             fire_inds = out_spikes[:,0]
             fire_inds = fire_inds[:-1]
             fire_times = fire_times[:-1]
-            fire_matx = []
+            fire_matx = [None] * T
             
             for t in range(0,T):
                 temp = ''
                 for item in np.where(fire_times==t)[0]:
                     temp = temp + str(fire_inds[item]) + ' '
                 
-                if len(temp):
-                    fire_matx.append(temp[:-1])
-                else:
-                    fire_matx.append(' ')
+                #if len(temp):
+                #    fire_matx.append(temp[:-1])
+                #else:
+                #    fire_matx.append(' ')
+                fire_matx[t] = temp
             
             spike_file.write('\n'.join(fire_matx))
             
