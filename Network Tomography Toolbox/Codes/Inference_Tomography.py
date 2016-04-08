@@ -175,8 +175,7 @@ for T in T_range:
         file_name_spikes2 = file_name_spikes[:-4] + '_file.txt'
         
         if not os.path.isfile(file_name_spikes2):            
-            out_spikes = np.genfromtxt(file_name_spikes, dtype=float, delimiter='\t')
-            pdb.set_trace()
+            out_spikes = np.genfromtxt(file_name_spikes, dtype=float, delimiter='\t')            
             spike_file = open(file_name_spikes2,'w')
             #aa = np.nonzero(out_spikes_tot_mat)
             #pdb.set_trace()
@@ -195,10 +194,12 @@ for T in T_range:
                             temp = str(nn)
                     else:
                         print 'What the ...?'
+                    
+                    fire_matx[tt] = temp
                 except:
                     pdb.set_trace()
                 
-                fire_matx[tt] = temp
+                
                 
                 if not (l % 500000):
                     print l
