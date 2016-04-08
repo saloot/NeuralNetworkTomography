@@ -184,7 +184,7 @@ for T in T_range:
             fire_matx = [None] * T
             LL = out_spikes.shape[0]
             for l in range(0,LL):
-                nn = out_spikes[l,0]
+                nn = int(out_spikes[l,0])
                 tt = int(1000*out_spikes[l,1])
                 temp = fire_matx[tt]
                 if str(nn) not in temp:
