@@ -180,7 +180,7 @@ for T in T_range:
             #aa = np.nonzero(out_spikes_tot_mat)
             #pdb.set_trace()
             
-            fire_matx = [''] * T
+            fire_matx = [''] * (T+1)
             LL = out_spikes.shape[0]
             for l in range(0,LL):
                 nn = int(out_spikes[l,0])
@@ -195,7 +195,8 @@ for T in T_range:
                     else:
                         print 'What the ...?'
                     
-                    fire_matx[tt] = temp
+                    if tt<=T:
+                        fire_matx[tt] = temp
                 except:
                     pdb.set_trace()
                 
