@@ -188,7 +188,7 @@ for T in T_range:
                 tt = int(1000*out_spikes[l,1])
                 temp = fire_matx[tt]
                 if str(nn) not in temp:
-                    if len(temp):
+                    if temp:
                         temp = temp + ' ' + str(nn)
                     else:
                         temp = str(nn)
