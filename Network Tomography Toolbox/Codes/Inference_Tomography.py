@@ -181,24 +181,43 @@ for T in T_range:
             spike_file = open(file_name_spikes2,'w')
             #aa = np.nonzero(out_spikes_tot_mat)
             #pdb.set_trace()
-            fire_times = (1000*out_spikes[:,1]).astype(int)
-            fire_inds = out_spikes[:,0]
-            fire_inds = fire_inds[:-1]
-            fire_times = fire_times[:-1]
-            fire_matx = [None] * T
             
-            for t in range(0,T):
-                temp = ''
-                for item in np.where(fire_times==t)[0]:
-                    temp = temp + str(fire_inds[item]) + ' '
+            fire_matx = [None] * T
+            LL = out_spikes.shape[0]
+            for l in range(0,LL):
+                nn = out_spikes[l,0]
+                tt = out_spikes[l,1]
+                temp = fire_matx[tt]
+                if str(nn) not in temp:
+                    if len(temp):
+                        temp = temp + ' ' + str(nn)
+                    else:
+                        temp = temp + str(nn)
+                else:
+                    print 'What the ...?'
                 
-                #if len(temp):
-                #    fire_matx.append(temp[:-1])
-                #else:
-                #    fire_matx.append(' ')
-                fire_matx[t] = temp
-                if not (t % 100000):
-                    print t
+                fire_matx[tt] = temp
+                
+                if not (l % 500000):
+                    print l
+                        
+            if 0 :
+                fire_times = (1000*out_spikes[:,1]).astype(int)
+                fire_inds = out_spikes[:,0]
+                fire_inds = fire_inds[:-1]
+                fire_times = fire_times[:-1]
+                for t in range(0,T):
+                    temp = ''
+                    for item in np.where(fire_times==t)[0]:
+                        temp = temp + str(fire_inds[item]) + ' '
+                    
+                    #if len(temp):
+                    #    fire_matx.append(temp[:-1])
+                    #else:
+                    #    fire_matx.append(' ')
+                    fire_matx[t] = temp
+                    if not (t % 100000):
+                        print t
             spike_file.write('\n'.join(fire_matx))
             
             spike_file.close()
