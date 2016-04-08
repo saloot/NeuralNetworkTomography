@@ -185,7 +185,8 @@ for T in T_range:
             for l in range(0,LL):
                 nn = int(out_spikes[l,0])
                 tt = int(1000*out_spikes[l,1])
-                temp = fire_matx[tt]
+                if tt<=T:
+                    temp = fire_matx[tt]
                 try:
                     if str(nn) not in temp:
                         if len(temp):
