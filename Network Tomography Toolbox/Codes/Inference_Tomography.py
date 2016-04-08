@@ -197,7 +197,8 @@ for T in T_range:
                 #else:
                 #    fire_matx.append(' ')
                 fire_matx[t] = temp
-            
+                if not (t % 100000):
+                    print t
             spike_file.write('\n'.join(fire_matx))
             
             spike_file.close()
