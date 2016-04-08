@@ -174,10 +174,9 @@ for T in T_range:
         
         file_name_spikes2 = file_name_spikes[:-4] + '_file.txt'
         
-        if not os.path.isfile(file_name_spikes2):
-            pdb.set_trace()
+        if not os.path.isfile(file_name_spikes2):            
             out_spikes = np.genfromtxt(file_name_spikes, dtype=float, delimiter='\t')
-            
+            pdb.set_trace()
             spike_file = open(file_name_spikes2,'w')
             #aa = np.nonzero(out_spikes_tot_mat)
             #pdb.set_trace()
