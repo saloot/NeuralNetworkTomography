@@ -191,7 +191,7 @@ for T in T_range:
                     if len(temp):
                         temp = temp + ' ' + str(nn)
                     else:
-                        temp = temp + str(nn)
+                        temp = str(nn)
                 else:
                     print 'What the ...?'
                 
