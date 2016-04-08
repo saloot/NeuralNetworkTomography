@@ -189,20 +189,20 @@ for T in T_range:
                 tt = int(1000*out_spikes[l,1])
                 if tt<=T:
                     temp = fire_matx[tt]
-                try:
-                    if str(nn) not in temp:
-                        if len(temp):
-                            temp = temp + ' ' + str(nn)
+                    try:
+                        if str(nn) not in temp:
+                            if len(temp):
+                                temp = temp + ' ' + str(nn)
+                            else:
+                                temp = str(nn)
                         else:
-                            temp = str(nn)
-                    else:
-                        print 'What the ...?'
+                            print 'What the ...?'
+                            pdb.set_trace()
+                        
+                        if tt<=T:
+                            fire_matx[tt] = temp
+                    except:
                         pdb.set_trace()
-                    
-                    if tt<=T:
-                        fire_matx[tt] = temp
-                except:
-                    pdb.set_trace()
                 
                 
                 
