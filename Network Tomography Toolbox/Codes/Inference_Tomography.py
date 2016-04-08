@@ -181,19 +181,22 @@ for T in T_range:
             #aa = np.nonzero(out_spikes_tot_mat)
             #pdb.set_trace()
             
-            fire_matx = [None] * T
+            fire_matx = [''] * T
             LL = out_spikes.shape[0]
             for l in range(0,LL):
                 nn = int(out_spikes[l,0])
                 tt = int(1000*out_spikes[l,1])
                 temp = fire_matx[tt]
-                if str(nn) not in temp:
-                    if temp:
-                        temp = temp + ' ' + str(nn)
+                try:
+                    if str(nn) not in temp:
+                        if len(temp):
+                            temp = temp + ' ' + str(nn)
+                        else:
+                            temp = str(nn)
                     else:
-                        temp = str(nn)
-                else:
-                    print 'What the ...?'
+                        print 'What the ...?'
+                except:
+                    pdb.set_trace()
                 
                 fire_matx[tt] = temp
                 
