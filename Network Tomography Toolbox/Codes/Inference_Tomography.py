@@ -197,6 +197,7 @@ for T in T_range:
                             temp = str(nn)
                     else:
                         print 'What the ...?'
+                        pdb.set_trace()
                     
                     if tt<=T:
                         fire_matx[tt] = temp
