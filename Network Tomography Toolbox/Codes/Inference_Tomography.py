@@ -182,7 +182,9 @@ for T in T_range:
             
             fire_matx = [''] * (T+1)
             LL = out_spikes.shape[0]
+            nn = -1
             for l in range(0,LL):
+                last_nn = nn
                 nn = int(out_spikes[l,0])
                 tt = int(1000*out_spikes[l,1])
                 if tt<=T:
@@ -203,8 +205,9 @@ for T in T_range:
                 
                 
                 
-                if not (l % 500000):
-                    print l
+                #if not (l % 500000):
+                if (last_nn != nn):
+                    print 'results for neuron %s is beginning' %str(nn)
                         
             if 0 :
                 fire_times = (1000*out_spikes[:,1]).astype(int)
