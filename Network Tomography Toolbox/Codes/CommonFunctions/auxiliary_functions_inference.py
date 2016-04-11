@@ -3517,7 +3517,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #lam = np.reshape(res_cons['x'],[TcT,1])
                 #lam = np.multiply(lam,(lam > qq.min()).astype(int))
                 #d_alp_vec[t_inds] = lam
-                for ss in range(0,500*TcT):
+                for ss in range(0,5*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     jj = t_inds[ii]
@@ -3543,7 +3543,9 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             
                     lambda_temp[jj] = lambda_temp[jj] + d_alp
                     d_alp_vec[jj] = d_alp_vec[jj] + d_alp
-                    W_temp = W_temp + d_alp * np.reshape(aa[ii,:],[len_v-1,1])/float(cf)
+                    #W_temp = W_temp + d_alp * np.reshape(aa[ii,:],[len_v-1,1])/float(cf)
+                    pdb.set_trace()
+                    W_temp = W_temp + 0.0001* hinge_loss_func(W_temp,-aa,BB,1,0)
                 #---------------------------------------------------------------
             
                 #----------------------Update the Weights-----------------------
