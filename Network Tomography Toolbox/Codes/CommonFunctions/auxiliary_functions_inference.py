@@ -3549,8 +3549,9 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #---------------------------------------------------------------
             
                 #----------------------Update the Weights-----------------------
-                pdb.set_trace()
-                Delta_W_loc = np.dot(bb.T,d_alp_vec[t_inds])
+                #pdb.set_trace()
+                #Delta_W_loc = np.dot(bb.T,d_alp_vec[t_inds])
+                Delta_W_loc = soft_threshold(W_temp.ravel(),sparse_thr)
                 #Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
                 Delta_W = Delta_W + Delta_W_loc
                 W_tot = W_tot + Delta_W_loc/no_blocks
