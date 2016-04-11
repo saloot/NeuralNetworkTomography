@@ -287,6 +287,9 @@ for T in T_range:
         file_name_ending = file_name_ending + '_jt_' + str(jitt)
     if bin_size:
         file_name_ending = file_name_ending + '_bS_' + str(bin_size)
+    
+    file_name_ending = file_name_ending + '_ii_' + str(max_itr_optimization)    
+    
         
     
     if len(neuron_range) == 0:
