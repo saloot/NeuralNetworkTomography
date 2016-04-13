@@ -3268,7 +3268,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     
     #-----------------------------Behavior Flags-------------------------------
     der_flag = 0                                # If 1, the derivative criteria will also be taken into account
-    rand_sample_flag = 1                        # If 1, the samples will be wide apart to reduce correlation
+    rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     #--------------------------------------------------------------------------
     
@@ -3444,32 +3444,36 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #----------------------------------------------------------
                 else:
                     print 'yoohoo!'
-                    spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_A.txt'
-                    AA = np.genfromtxt(spikes_file, dtype=float, delimiter='\t')
+                    found_flag = 1                    
+                    spikes_file_AA = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_A.txt'
+                    spikes_file_YY = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_Y.txt'
                     
-                    spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_Y.txt'
-                    YY = np.genfromtxt(spikes_file, dtype=float, delimiter='\t')
+                    if 1:
+                        AA = np.genfromtxt(spikes_file_AA, dtype=float, delimiter='\t')
+                        YY = np.genfromtxt(spikes_file_YY, dtype=float, delimiter='\t')
+                        pdb.set_trace()
                 #---------------------------------------------------------------
                 
-                #-------------Add a Row for Theta If Missing From File----------
-                if AA.shape[1] != len(W_temp):
-                    tmp = -YY
-                    tmp = np.reshape(tmp,[len(tmp),1])
-                    pdb.set_trace()
-                    AA = np.hstack([AA,tmp])
-                #---------------------------------------------------------------
-                
-                #------------------Prepare the Submatrix-----------------------
-                if rand_sample_flag:
-                    t_init = np.random.randint(0,t_gap)
-                    t_inds = np.array(range(t_init,block_size,t_gap))
+                if 0:
+                    #-------------Add a Row for Theta If Missing From File----------
+                    if AA.shape[1] != len(W_temp):
+                        tmp = -YY
+                        tmp = np.reshape(tmp,[len(tmp),1])
+                        pdb.set_trace()
+                        AA = np.hstack([AA,tmp])
+                    #---------------------------------------------------------------
                     
-                    aa = AA[t_inds,:]
-                    yy = YY[t_inds]
-                else:
-                    aa = AA
-                    yy = YY
-                #---------------------------------------------------------------
+                    #------------------Prepare the Submatrix-----------------------
+                    if rand_sample_flag:
+                        t_init = np.random.randint(0,t_gap)
+                        t_inds = np.array(range(t_init,block_size,t_gap))
+                        
+                        aa = AA[t_inds,:]
+                        yy = YY[t_inds]
+                    else:
+                        aa = AA
+                        yy = YY
+                    #---------------------------------------------------------------
                 
                 #--------------Assign Weights to the Classes--------------------
                 gg = {}
@@ -3479,7 +3483,10 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #---------------------------------------------------------------
                 
                 #-----------------------Do the Optimization---------------------
-                TcT = len(yy)
+                if 0:
+                    TcT = len(yy)
+                else:
+                    TcT = block_size
                 lamb = .0001/float(TcT)
                 cf = lamb*TcT
                 
@@ -3503,12 +3510,13 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #bb = np.diag(bb.ravel())
                 #bb = np.dot(bb,aa)
                 #pdb.set_trace()
-                bb = aa
-                
-                
-                cb = np.ones([TcT,1]) - 1 * np.dot(bb,W_tot) 
-                opt = {'disp':False,'maxiter':25000}
-                FF = bb.T
+                if 0:
+                    bb = aa
+                    
+                    
+                    cb = np.ones([TcT,1]) - 1 * np.dot(bb,W_tot) 
+                    opt = {'disp':False,'maxiter':25000}
+                    FF = bb.T
                 #res_cons = optimize.minimize(hinge_loss_func_dual, lambda_0, args=(FF,cb,0.5/cf),jac=hinge_jac_dual,bounds=bns,constraints=(),method='L-BFGS-B', options=opt)
                 #FF = np.dot(bb,bb.T)
                 
@@ -3523,15 +3531,18 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     jj = t_inds[ii]
                             
                     #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
-                    ff = gg[yy[ii]]*aa[ii,:]
+                    aa_t = read_spikes_lines(spikes_file_AA,ii,n)
+                    yy_t = read_spikes_lines(spikes_file_YY,ii,1)
+                    
+                    ff = gg[yy_t]*aa_t
                     
                     if theta:
-                        c = 1 + theta * yy[ii]
+                        c = 1 + theta * yy_t
                     else:
                         c = 1
                     
                     
-                    b = cf * (np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(aa[ii,:]),2)
+                    b = cf * (np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(aa_t),2)
                     
                     if (b<=lambda_temp[jj]) and (b >= lambda_temp[jj]-1):
                         d_alp = -b
@@ -3545,7 +3556,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     d_alp_vec[jj] = d_alp_vec[jj] + d_alp
                     #W_temp = W_temp + d_alp * np.reshape(aa[ii,:],[len_v-1,1])/float(cf)
                     #
-                    W_temp = W_temp + 0.0001* np.reshape(aa[ii,:],[n,1]) * hinge_loss_func(W_temp,-aa[ii,:],1,1,0)
+                    W_temp = W_temp + 0.0001* np.reshape(aa_t,[n,1]) * hinge_loss_func(W_temp,-aa_t,1,1,0)
                 #---------------------------------------------------------------
             
                 #----------------------Update the Weights-----------------------
@@ -3560,6 +3571,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
 
                 #------------------Evaluate the Performance---------------------
                 #BB = np.dot(0*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
+                pdb.set_trace()
                 BB = 0*np.ones([TcT,1])
                 print hinge_loss_func(Delta_W_loc,-aa,BB,1,0)
                         
