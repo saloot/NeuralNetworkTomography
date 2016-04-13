@@ -3544,7 +3544,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #d_alp_vec[t_inds] = lam
                 cst = 0
                 cst_y = 0
-                for ss in range(0,20*TcT):
+                for ss in range(0,15*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     if rand_sample_flag:
@@ -3585,9 +3585,9 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     d_alp_vec[jj] = d_alp_vec[jj] + d_alp
                     #W_temp = W_temp + d_alp * np.reshape(aa[ii,:],[len_v-1,1])/float(cf)
                     #
-                    W_temp = W_temp + 0.001* np.reshape(aa_t,[n,1]) * hinge_loss_func(W_temp,-aa_t,0.1,1,0)
+                    W_temp = W_temp + 0.00001* np.reshape(aa_t,[n,1]) * hinge_loss_func(W_temp,-aa_t,1,1,0)
                     
-                    cst = cst + hinge_loss_func(W_temp,-aa_t,0.1,1,0)
+                    cst = cst + hinge_loss_func(W_temp,-aa_t,.1,1,0)
                     if yy_t[0]>0:
                         cst_y = cst_y + hinge_loss_func(W_temp,-aa_t,0.1,1,0)
                 #---------------------------------------------------------------
@@ -3598,7 +3598,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 Delta_W_loc = soft_threshold(W_temp.ravel(),sparse_thr)
                 #Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
                 Delta_W = Delta_W + Delta_W_loc
-                W_tot = W_tot + Delta_W_loc/no_blocks
+                W_tot = W_tot + np.reshape(Delta_W_loc,[len_v-1,1])/no_blocks
                 lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
                 #---------------------------------------------------------------
 
