@@ -3542,7 +3542,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #lam = np.reshape(res_cons['x'],[TcT,1])
                 #lam = np.multiply(lam,(lam > qq.min()).astype(int))
                 #d_alp_vec[t_inds] = lam
-                
+                cst = 0
+                cst_y = 0
                 for ss in range(0,50*TcT):
                             
                     ii = np.random.randint(0,TcT)
@@ -3580,7 +3581,11 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     d_alp_vec[jj] = d_alp_vec[jj] + d_alp
                     #W_temp = W_temp + d_alp * np.reshape(aa[ii,:],[len_v-1,1])/float(cf)
                     #
-                    W_temp = W_temp + 0.0001* np.reshape(aa_t,[n,1]) * hinge_loss_func(W_temp,-aa_t,1,1,0)
+                    W_temp = W_temp + 0.001* np.reshape(aa_t,[n,1]) * hinge_loss_func(W_temp,-aa_t,0.1,1,0)
+                    
+                    cst = cst + hinge_loss_func(W_temp,-aa_t,0.1,1,0)
+                    if yy_t[0]>0:
+                        cst_y = cst_y + hinge_loss_func(W_temp,-aa_t,0.1,1,0)
                 #---------------------------------------------------------------
             
                 #----------------------Update the Weights-----------------------
@@ -3595,24 +3600,30 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
 
                 #------------------Evaluate the Performance---------------------
                 #BB = np.dot(0*np.eye(TcT) + theta * np.diag(YY.ravel()),np.ones([TcT,1]))
-                pdb.set_trace()
-                BB = 0*np.ones([TcT,1])
-                print hinge_loss_func(Delta_W_loc,-aa,BB,1,0)
+                if 0:
+                    BB = 0*np.ones([TcT,1])
+                    print hinge_loss_func(Delta_W_loc,-aa,BB,1,0)
                         
                 block_count = block_count + 1
                 #----------------------------------------------------------
                 
                 #----------------------Calculate Cost----------------------
-                cst = np.dot(AA,Delta_W)
-                if theta:
-                    bb = theta*YY
+                if 0:
+                    cst = np.dot(AA,Delta_W)
+                    if theta:
+                        bb = theta*YY
+                    else:
+                        bb = 0*YY
+                
+                    total_cost[ttau] = total_cost[ttau] + sum(cst.ravel()<bb)
+                    total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,(cst.ravel()<bb).ravel()))
+                    Yk = (YY>0).astype(int)
                 else:
-                    bb = 0*YY
-                #cst = np.dot(AA,W_tot)
-                total_cost[ttau] = total_cost[ttau] + sum(cst.ravel()<bb)
+                    total_cost[ttau] = total_cost[ttau] + cst
+                    total_Y[ttau] = total_Y[ttau] + cst_y
                 #DD = np.dot(np.diag(YY),AA)
                 #DD[:,-1] = -np.ones([block_size])
-                Yk = (YY>0).astype(int)
+                #
                 #cst = np.dot(DD,2*W_tot)
                 
                 
@@ -3623,7 +3634,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #total_Y[ttau] = total_Y[ttau] + sum(Y_orig>0)
                 
                 #total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,np.sign(cst.ravel())!=np.sign(YY)))
-                total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY>0,(cst.ravel()<bb).ravel()))
+                
                 #total_Y[ttau] = total_Y[ttau] + sum(np.multiply(YY<=0,(cst<0).ravel()))
                 #----------------------------------------------------------
                     
