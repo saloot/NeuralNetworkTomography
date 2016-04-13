@@ -3544,7 +3544,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #d_alp_vec[t_inds] = lam
                 cst = 0
                 cst_y = 0
-                for ss in range(0,150*TcT):
+                for ss in range(0,10*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     if rand_sample_flag:
