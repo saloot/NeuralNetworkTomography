@@ -3555,7 +3555,10 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     aa_t = read_spikes_lines_integrated(spikes_file_AA,ii,n)
                     yy_t = read_spikes_lines_integrated(spikes_file_YY,ii,1)
                     
-                    ff = gg[yy_t[0]]*(aa_t)
+                    try:
+                        ff = gg[yy_t[0]]*(aa_t)
+                    except:
+                        pdb.set_trace()
                     
                     if theta:
                         c = 1 + theta * yy_t
