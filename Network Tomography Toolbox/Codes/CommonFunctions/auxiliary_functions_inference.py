@@ -3544,7 +3544,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #d_alp_vec[t_inds] = lam
                 cst = 0
                 cst_y = 0
-                for ss in range(0,10*TcT):
+                for ss in range(0,20*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     if rand_sample_flag:
@@ -3569,12 +3569,16 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     b = cf * (np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(aa_t),2)
                     
-                    if (b<=lambda_temp[jj]) and (b >= lambda_temp[jj]-1):
-                        d_alp = -b
-                    elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
-                        d_alp = -lambda_temp[jj]
-                    else:
-                        d_alp = 1-lambda_temp[jj]
+                    try:
+                        
+                        if (b<=lambda_temp[jj]) and (b >= lambda_temp[jj]-1):
+                            d_alp = -b
+                        elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
+                            d_alp = -lambda_temp[jj]
+                        else:
+                            d_alp = 1-lambda_temp[jj]
+                    except:
+                        pdb.set_trace()
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                             
                     lambda_temp[jj] = lambda_temp[jj] + d_alp
