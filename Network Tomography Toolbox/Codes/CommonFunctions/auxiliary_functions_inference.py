@@ -3476,6 +3476,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #---------------------------------------------------------------
                 
                 #--------------Assign Weights to the Classes--------------------
+                print 'here'
                 gg = {}
                 gg[-1] = c_0
                 gg[1] = c_1
