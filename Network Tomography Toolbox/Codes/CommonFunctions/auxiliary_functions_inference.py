@@ -1017,13 +1017,13 @@ def read_spikes_lines_integrated(file_name,line_no,n):
         if len(a[0]):
             a = a.astype(float)
         else:
-            a = np.zeros([1,n])#[]
+            a = np.zeros([n])#[]
             
         return a
             
     else:
         #pdb.set_trace()
-        return np.zeros([1,n])#[]
+        return np.zeros([n])#[]
     
     
 def read_spikes_lines_delayed(file_name,line_no,n,d_max,dd):
@@ -3554,7 +3554,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
                     aa_t = read_spikes_lines_integrated(spikes_file_AA,ii,n)
                     yy_t = read_spikes_lines_integrated(spikes_file_YY,ii,1)
-                    pdb.set_trace()
+                    
                     ff = gg[yy_t[0]]*(aa_t)
                     
                     if theta:
