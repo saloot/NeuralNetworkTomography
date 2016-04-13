@@ -1007,7 +1007,22 @@ def read_spikes_lines(file_name,line_no,n):
             
     else:
         return []
+
+def read_spikes_lines_integrated(file_name,line_no,n):
     
+    a = linecache.getline(file_name, line_no)
+    if a:
+        a = (a[:-1]).split('\t')
+        a = np.array(a)
+        if len(a[0]):
+            a = a.astype(float)
+        else:
+            a = []
+            
+        return list(a)
+            
+    else:
+        return []
     
     
 def read_spikes_lines_delayed(file_name,line_no,n,d_max,dd):
@@ -3475,8 +3490,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         yy = YY
                     #---------------------------------------------------------------
                 
-                #--------------Assign Weights to the Classes--------------------
-                print 'here'
+                #--------------Assign Weights to the Classes--------------------                
                 gg = {}
                 gg[-1] = c_0
                 gg[1] = c_1
@@ -3527,8 +3541,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #lam = np.reshape(res_cons['x'],[TcT,1])
                 #lam = np.multiply(lam,(lam > qq.min()).astype(int))
                 #d_alp_vec[t_inds] = lam
-                pdb.set_trace()
-                print 'here'
+                
                 for ss in range(0,50*TcT):
                             
                     ii = np.random.randint(0,TcT)
@@ -3538,8 +3551,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         jj = ii
                             
                     #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
-                    aa_t = read_spikes_lines(spikes_file_AA,ii,n)
-                    yy_t = read_spikes_lines(spikes_file_YY,ii,1)
+                    aa_t = read_spikes_lines_integrated(spikes_file_AA,ii,n)
+                    yy_t = read_spikes_lines_integrated(spikes_file_YY,ii,1)
                     
                     ff = gg[yy_t]*aa_t
                     
