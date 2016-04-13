@@ -3500,17 +3500,18 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                 d_alp_vec = np.zeros([block_size,1])
                 
-                qq = np.ones([TcT,2])
-                qq[:,0] = 0
-                qq[:,1] = 1
-                bns = list(qq)
-                bb = c_1 * (yy>0).astype(int) + c_0 * (yy<=0).astype(int)
-                #bb = np.dot(np.reshape(bb,[len(bb),1]),np.ones([1,len_v-1]))
-                #bb = np.multiply(bb,aa)
-                #bb = np.diag(bb.ravel())
-                #bb = np.dot(bb,aa)
-                #pdb.set_trace()
                 if 0:
+                    qq = np.ones([TcT,2])
+                    qq[:,0] = 0
+                    qq[:,1] = 1
+                    bns = list(qq)
+                    bb = c_1 * (yy>0).astype(int) + c_0 * (yy<=0).astype(int)
+                    #bb = np.dot(np.reshape(bb,[len(bb),1]),np.ones([1,len_v-1]))
+                    #bb = np.multiply(bb,aa)
+                    #bb = np.diag(bb.ravel())
+                    #bb = np.dot(bb,aa)
+                    #pdb.set_trace()
+                
                     bb = aa
                     
                     
