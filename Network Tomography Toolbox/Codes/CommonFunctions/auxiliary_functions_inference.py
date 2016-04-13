@@ -3448,7 +3448,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     spikes_file_AA = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_A.txt'
                     spikes_file_YY = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_Y.txt'
                     
-                    if 1:
+                    if 0:
                         AA = np.genfromtxt(spikes_file_AA, dtype=float, delimiter='\t')
                         YY = np.genfromtxt(spikes_file_YY, dtype=float, delimiter='\t')
                         pdb.set_trace()
