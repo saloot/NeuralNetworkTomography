@@ -1017,13 +1017,13 @@ def read_spikes_lines_integrated(file_name,line_no,n):
         if len(a[0]):
             a = a.astype(float)
         else:
-            a = []
+            a = np.zeros([1,n])#[]
             
         return a
             
     else:
-        pdb.set_trace()
-        return []
+        #pdb.set_trace()
+        return np.zeros([1,n])#[]
     
     
 def read_spikes_lines_delayed(file_name,line_no,n,d_max,dd):
