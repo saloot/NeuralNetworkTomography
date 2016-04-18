@@ -129,7 +129,7 @@ for T in T_range:
     if bin_size:
         file_name_ending = file_name_ending + '_bS_' + str(bin_size)
    
-    if 1:
+    if 0:
         file_name_ending = file_name_ending + '_ii_' + str(max_itr_optimization)    
     file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     
