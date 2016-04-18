@@ -3152,7 +3152,8 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             
             fire_t = read_spikes_lines(out_spikes_tot_mat_file,t-1,n)
             x = math.exp(-1/tau_s) * x
-            pdb.set_trace()
+            
+            fire_t = np.array(fire_t).astype(int)
             x[fire_t] = x[fire_t] + 1
             
             v = math.exp(-1/tau_d) * v
