@@ -41,6 +41,7 @@ tau_s = 2.0                                     # The rise time coefficient of t
 
 #-------------------------Initialize Inference Parameters----------------------
 sparsity_flag = 5
+get_from_host = 0
 #------------------------------------------------------------------------------
 
 #--------Calculate the Range to Assess the Effect of Recording Duration--------
@@ -131,7 +132,7 @@ for T in T_range:
         file_name_ending = file_name_ending + '_ii_' + str(max_itr_optimization)    
     file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     
-    if get_from_hots:
+    if get_from_host:
         cmd = 'scp salavati@deneb1.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/Inferred_Graphs/W_Pll_%s_%s_%s.txt" ../Results/Inferred_Graphs/' %(file_name_prefix,file_name_ending,str(ik))                
         os.system(cmd)
         W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
