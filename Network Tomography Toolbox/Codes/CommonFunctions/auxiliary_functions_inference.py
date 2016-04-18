@@ -3250,6 +3250,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
                 if abs(sum(Y_prdct)-sum(Y_orig))<y_min:
                     theta = tht
                     y_min = abs(sum(Y_prdct)-sum(Y_orig))
+                    pdb.set_trace()
                     
             Y_predict = Y_prdct
             Y_predict = np.reshape(Y_predict,[len(Y_predict),1])
