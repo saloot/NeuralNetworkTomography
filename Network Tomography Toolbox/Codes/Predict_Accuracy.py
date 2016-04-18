@@ -129,7 +129,7 @@ for T in T_range:
     if bin_size:
         file_name_ending = file_name_ending + '_bS_' + str(bin_size)
    
-    if 0:
+    if 1:
         file_name_ending = file_name_ending + '_ii_' + str(max_itr_optimization)    
     file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     
@@ -198,7 +198,7 @@ for T in T_range:
     Pres_Reca[itr_T,6] = sum(np.multiply((W_b<0).astype(int),(W_act[:,n_ind]<0).astype(int)))/float(sum(W_b<0))
     #------------------------------------------------------------------------------
     
-    
+    W = W_act[:,n_ind]
     Accur_true_pos,Accur_true_neg = spike_pred_accuracy(file_name_spikes2,T_array,W,n_ind,theta)
     Prediction_true_pos[itr_T,0] = Accur_true_pos
     Prediction_true_neg[itr_T,0] = Accur_true_neg
