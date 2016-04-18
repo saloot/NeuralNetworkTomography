@@ -3208,11 +3208,13 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
         #plt.plot(Y_orig[1000:2000]);plt.plot(Y_predict2[1000:2000],'r');plt.show()
         #plt.plot(Y_orig[1000:2000]);plt.plot(Y_predict[1000:2000],'r');plt.plot(Y_predict2[1000:2000],'g');plt.show()
         #pdb.set_trace()
-        Y_predict = (Y_predict>=theta).astype(int)
+        
         Y_orig = np.reshape(Y_orig,[len(Y_orig),1])
-        Y_predict = np.reshape(Y_predict,[len(Y_predict),1])
+        
         
         if bin_size > 1:
+            Y_predict = (Y_predict>=theta).astype(int)
+            Y_predict = np.reshape(Y_predict,[len(Y_predict),1])
             ll = int(len(Y_predict)/float(bin_size))
             
             Y_orig_binned = np.reshape(Y_orig,[ll,bin_size])
@@ -3236,6 +3238,21 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             #plt.plot(Y_orig_binned);plt.plot(Y_predict_binned,'r');plt.show()
             
         else:
+            
+            ll = int(100 * Y_predict.min())
+            lm = int(100 * Y_predict.max())
+            y_min = 10000000            
+            theta = -10
+            
+            for jk in range(ll,lm):
+                tht = jk/100.0
+                Y_prdct = (Y_predict>=theta).astype(int)
+                if abs(sum(Y_prdct)-sum(Y_orig))<y_min:
+                    theta = tht
+                    y_min = abs(sum(Y_prdct)-sum(Y_orig))
+                    
+            Y_predict = Y_prdct
+            Y_predict = np.reshape(Y_predict,[len(Y_predict),1])
             
             #Y_predict = (Y_predict>=theta).astype(int)
             temp = np.multiply((Y_predict==1).astype(int),(Y_orig==1).astype(int))
