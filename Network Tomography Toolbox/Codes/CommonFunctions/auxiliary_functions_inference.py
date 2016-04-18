@@ -3254,7 +3254,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
                     print y_min
                 
                     
-            Y_predict = Y_prdct
+            Y_predict = Y_prdct = (Y_predict>=tht).astype(int)
             Y_predict = np.reshape(Y_predict,[len(Y_predict),1])
             
             #Y_predict = (Y_predict>=theta).astype(int)
