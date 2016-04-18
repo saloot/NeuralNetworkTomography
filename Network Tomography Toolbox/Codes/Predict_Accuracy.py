@@ -198,7 +198,7 @@ for T in T_range:
     Pres_Reca[itr_T,6] = sum(np.multiply((W_b<0).astype(int),(W_act[:,n_ind]<0).astype(int)))/float(sum(W_b<0))
     #------------------------------------------------------------------------------
     
-    W = W_act[:,n_ind]
+    #W = W_act[:,n_ind]
     Accur_true_pos,Accur_true_neg = spike_pred_accuracy(file_name_spikes2,T_array,W,n_ind,theta)
     Prediction_true_pos[itr_T,0] = Accur_true_pos
     Prediction_true_neg[itr_T,0] = Accur_true_neg
