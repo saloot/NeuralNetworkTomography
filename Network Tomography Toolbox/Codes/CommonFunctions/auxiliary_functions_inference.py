@@ -3470,13 +3470,14 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #------------------Try to Store the Matrix-----------------
                     #pdb.set_trace()
                     try:
+                        spikes_file_AA = spikes_file
                         np.savetxt(spikes_file,AA,'%2.5f',delimiter='\t')
                     except:
                         print 'Integrate file could not be saved'
                         
                     try:
-                        spikes_file = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_Y.txt'
-                        np.savetxt(spikes_file,YY,'%2.1f',delimiter='\t')
+                        spikes_file_YY = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_Y.txt'
+                        np.savetxt(spikes_file_YY,YY,'%2.1f',delimiter='\t')
                     except:
                         print 'Spikes file could not be saved'
                     #----------------------------------------------------------
