@@ -3150,7 +3150,7 @@ def detect_spike_peaks(V,n,t_fire):
             
             #~~~~~~~~~~Remove Current Peak~~~~~~~~~~~
             aa = np.diff(U[ind_max-100:ind_max])
-            for ii in range(len(aa),0,-1):
+            for ii in range(len(aa)-1,-1,-1):
                 if aa[ii] < 0:
                     break
             U[ind_max-ii:ind_max] = 0
