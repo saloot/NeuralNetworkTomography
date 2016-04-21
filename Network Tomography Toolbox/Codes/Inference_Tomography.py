@@ -86,7 +86,7 @@ if (inference_method == 7):
 elif (inference_method == 5):
     inference_method = 7
     file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
-    file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/HC3_ec013_198_processed.txt'
+    #file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/HC3_ec013_198_processed.txt'
     file_name_prefix = 'HC3'
     
 #file_name_spikes = '../Data/Spikes/S_times_n_80_20.txt'
