@@ -3119,7 +3119,7 @@ def detect_spike_peaks(V,n,t_fire):
         n_peak = n_peak + 1
         print n_peak
     
-        #pdb.set_trace()
+    pdb.set_trace()
         
     return peak_inds,peak_values
         
