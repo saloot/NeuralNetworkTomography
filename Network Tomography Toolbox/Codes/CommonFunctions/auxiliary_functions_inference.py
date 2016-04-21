@@ -3125,9 +3125,10 @@ def detect_spike_peaks(V,n,t_fire):
     theta = (V.max() - 0)/float(n)
     code_book= range(0,int(1000*V.max()),int(1000*theta))
     code_book = np.array(code_book)/1000.0
+    pdb.set_trace()
     U_quant = vq(U,code_book)
         
-    pdb.set_trace()
+    
     return peak_inds,peak_values
         
         
