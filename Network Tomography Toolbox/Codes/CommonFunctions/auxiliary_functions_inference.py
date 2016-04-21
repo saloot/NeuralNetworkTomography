@@ -3084,6 +3084,46 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
 #------------------------------------------------------------------------------
 
 
+def detect_spike_peaks(V,n,t_fire):
+    # V is the membrane potential
+    # n is the number of peaks to detect
+    # t_fire contains the actual spiking times.
+    
+    
+    n_peak = 0          # The number of counted peaks so far
+    peak_values = []    # The magnitude of the detected peaks
+    peak_inds = []      # Indices of the peaks
+    U = copy.deepcopy(V)
+    
+    
+    while n_peak < n:
+
+        ind_max = np.argmax(V)
+        p_max = np.max(V)
+        peak_inds.append(ind_max)
+        peak_values.append(p_max)
+        U[ind] = 0
+        #~~~~~~~~~Reset Membrane Potential~~~~~~~
+        temp_fire_orig = copy.deepcopy(t_fire)
+        temp_fire_orig.extend(ind_max)
+        temp_fire_orig.sort()
+        temp_fire_orig = temp_fire_orig.tolist()
+        ind1 = temp_fire_orig.index(ind_max)
+        t_fire_next = t_fire[ind1]
+        
+        U[ind_max+1:t_fire_next] = U[ind_max+1:t_fire_next] - p_max
+        
+        n_peak = n_peak + 1
+        
+    return peak_inds,peak_values
+        
+        
+        
+        
+    
+    pass
+
+
 #------------------------------------------------------------------------------
 def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
     
@@ -3264,7 +3304,12 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             temp = np.multiply((Y_predict==0).astype(int),(Y_orig==0).astype(int))
             opt_score_true_neg = opt_score_true_neg + sum(temp)/(sum(Y_orig==0)+0.0001)
             #opt_score = np.linalg.norm(Y_predict.ravel()-Y_orig.ravel())
+            
+            mem_pot = np.dot(A_orig,W)
+            no_spikes = sum(Y_orig)
+            t_fire = np.nozero(Y_orig)[0]            
             pdb.set_trace()
+            detect_spike_peaks(mem_pot,no_spikes,t_fire)
         #----------------------------------------------------------
     
     opt_score_true_pos = opt_score_true_pos/float(len(T_array))
@@ -3301,7 +3346,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
         T_temp = 1000
         block_size = 500
         
-    range_T = range(T0,TT)
+    range_TT = range(T0,TT)
     #--------------------------------------------------------------------------
     
     #-----------------------------Behavior Flags-------------------------------
@@ -3326,7 +3371,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     else:
         len_v = n+1
     
-    W_infer = np.zeros([int(len(range_T)/float(block_size))+1,len_v])
+    W_infer = np.zeros([int(len(range_TT)/float(block_size))+1,len_v])
     W_inferred = np.zeros([len_v,len_v])
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
@@ -3342,8 +3387,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
         t_last = T0 + T_temp        
         prng = RandomState(int(time()))
         
-        lambda_tot = np.zeros([len(range_T),1])
-        no_blocks = 1+len(range_T)/block_size
+        lambda_tot = np.zeros([len(range_TT),1])
+        no_blocks = 1+len(range_TT)/block_size
         
         W_tot = np.zeros([len_v-1,1])
         Z_tot = np.zeros([len_v-1,1])
