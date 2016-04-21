@@ -42,7 +42,7 @@ tau_s = 2.0                                     # The rise time coefficient of t
 #-------------------------Initialize Inference Parameters----------------------
 sparsity_flag = 5
 get_from_host = 0
-max_itr_optimization = 13
+max_itr_optimization = 8
 #------------------------------------------------------------------------------
 
 #--------Calculate the Range to Assess the Effect of Recording Duration--------
