@@ -59,7 +59,7 @@ T_range = [2225000,2825000,3125000,3425000,3725000,4025000,4625000,5225000]
 T_range = [425000,725000,1025000,1325000,1625000,1925000,2225000,2525000,2825000,3125000,3425000,3725000,4025000]
 T_range = [325000,625000,925000,1225000,1525000,1825000,2125000,2425000,2725000,3025000]
 T_range = range(325000,1225001,300000)
-T_range = [4225000]
+T_range = [no_stimul_rounds]
 #------------------------------------------------------------------------------
 
 #----------------------Initialize the Results Matrices-------------------------
@@ -129,7 +129,7 @@ for T in T_range:
     if bin_size:
         file_name_ending = file_name_ending + '_bS_' + str(bin_size)
    
-    if 0:
+    if 1:
         file_name_ending = file_name_ending + '_ii_' + str(max_itr_optimization)    
     file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     
