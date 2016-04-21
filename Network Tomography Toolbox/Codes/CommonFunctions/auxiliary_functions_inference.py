@@ -3116,8 +3116,9 @@ def detect_spike_peaks(V,n,t_fire):
         
         n_peak = n_peak + 1
         print n_peak
-        pdb.set_trace()
         
+    
+    pdb.set_trace()
     return peak_inds,peak_values
         
         
@@ -3311,7 +3312,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             mem_pot = np.dot(A_orig,W)
             no_spikes = sum(Y_orig)
             t_fire = np.nonzero(Y_orig)[0]            
-            pdb.set_trace()
+            
             peak_inds,peak_values = detect_spike_peaks(mem_pot,no_spikes,t_fire)
             pred_spikes = np.zeros(mem_pot.shape)
             pred_spikes[peak_inds] = 1
