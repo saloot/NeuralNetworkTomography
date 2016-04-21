@@ -3085,6 +3085,7 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
 
 
 def detect_spike_peaks(V,n,t_fire):
+    from scipy.cluster.vq import vq
     # V is the membrane potential
     # n is the number of peaks to detect
     # t_fire contains the actual spiking times.
@@ -3095,32 +3096,38 @@ def detect_spike_peaks(V,n,t_fire):
     peak_inds = []      # Indices of the peaks
     U = copy.deepcopy(V)
     
+    if 0:
+        while n_peak < n:
     
-    while n_peak < n:
-
-        ind_max = np.argmax(U)
-        p_max = np.max(U)
-        peak_inds.append(ind_max)
-        peak_values.append(p_max)
+            ind_max = np.argmax(U)
+            p_max = np.max(U)
+            peak_inds.append(ind_max)
+            peak_values.append(p_max)
+            
+            #~~~~~~~~~Reset Membrane Potential~~~~~~~
+            temp_fire_orig = copy.deepcopy(t_fire).tolist()
+            temp_fire_orig.append(ind_max)
+            temp_fire_orig = np.array(temp_fire_orig)
+            temp_fire_orig.sort()
+            temp_fire_orig = temp_fire_orig.tolist()
+            ind1 = temp_fire_orig.index(ind_max)
+            t_fire_next = t_fire[ind1]
+            t_fire_bef = min(ind_max,t_fire[max(ind1-1,0)])
+            
+            U[t_fire_bef+1:t_fire_next+1] = U[t_fire_bef+1:t_fire_next+1] - p_max
+            U[ind_max] = 0
+            
+            n_peak = n_peak + 1
+            print n_peak
         
-        #~~~~~~~~~Reset Membrane Potential~~~~~~~
-        temp_fire_orig = copy.deepcopy(t_fire).tolist()
-        temp_fire_orig.append(ind_max)
-        temp_fire_orig = np.array(temp_fire_orig)
-        temp_fire_orig.sort()
-        temp_fire_orig = temp_fire_orig.tolist()
-        ind1 = temp_fire_orig.index(ind_max)
-        t_fire_next = t_fire[ind1]
-        t_fire_bef = min(ind_max,t_fire[max(ind1-1,0)])
-        
-        U[t_fire_bef+1:t_fire_next+1] = U[t_fire_bef+1:t_fire_next+1] - p_max
-        U[ind_max] = 0
-        
-        n_peak = n_peak + 1
-        print n_peak
+        pdb.set_trace()
     
+    theta = (V.max() - 0)/floaT(n)
+    code_book= range(0,int(1000*V.max()),int(1000*theta))
+    code_book = np.array(code_book)/1000.0
+    U_quant = vq(U,code_book)
+        
     pdb.set_trace()
-        
     return peak_inds,peak_values
         
         
