@@ -3102,7 +3102,7 @@ def detect_spike_peaks(V,n,t_fire):
         p_max = np.max(U)
         peak_inds.append(ind_max)
         peak_values.append(p_max)
-        U[ind_max] = 0
+        
         #~~~~~~~~~Reset Membrane Potential~~~~~~~
         temp_fire_orig = copy.deepcopy(t_fire).tolist()
         temp_fire_orig.append(ind_max)
@@ -3112,7 +3112,8 @@ def detect_spike_peaks(V,n,t_fire):
         ind1 = temp_fire_orig.index(ind_max)
         t_fire_next = t_fire[ind1]
         
-        U[ind_max+1:t_fire_next+1] = U[ind_max+1:t_fire_next+1] - p_max
+        U[ind_max-3:t_fire_next+1] = U[ind_max+1:t_fire_next+1] - p_max
+        U[ind_max] = 0
         
         n_peak = n_peak + 1
         print n_peak
