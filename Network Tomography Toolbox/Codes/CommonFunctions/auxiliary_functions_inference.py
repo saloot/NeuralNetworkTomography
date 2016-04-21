@@ -3127,7 +3127,7 @@ def detect_spike_peaks(V,n,t_fire):
     
     U = smooth(U.ravel(),window_len=11,window='hanning')
     peakind = signal.find_peaks_cwt(U, np.arange(1,20))
-    peak_vals = U[peakinds]
+    peak_vals = U[peakind]
     
     #U = np.reshape(U,[len(U),1])
     
