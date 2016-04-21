@@ -3083,6 +3083,33 @@ def delayed_inference_constraints_numpy(out_spikes_tot_mat_file,TT,n,max_itr_opt
 
 #------------------------------------------------------------------------------
 
+def smooth(x,window_len=11,window='hanning'):
+    if x.ndim != 1:
+        raise ValueError, "smooth only accepts 1 dimension arrays."
+
+    if x.size < window_len:
+        raise ValueError, "Input vector needs to be bigger than window size."
+
+
+    if window_len<3:
+        return x
+
+
+    if not window in ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']:
+        raise ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
+
+
+    s=numpy.r_[x[window_len-1:0:-1],x,x[-1:-window_len:-1]]
+    #print(len(s))
+    if window == 'flat': #moving average
+        w=numpy.ones(window_len,'d')
+    else:
+        w=eval('numpy.'+window+'(window_len)')
+
+    y=numpy.convolve(w/w.sum(),s,mode='valid')
+    return y
+
+
 
 def detect_spike_peaks(V,n,t_fire):
     from scipy.cluster.vq import vq
@@ -3124,9 +3151,14 @@ def detect_spike_peaks(V,n,t_fire):
     
     theta = (V.max() - 0)/float(n)
     code_book= range(0,int(1000*V.max()),int(1000*theta))
+    code_book = np.reshape(code_book,[len(code_book),1])
     code_book = np.array(code_book)/1000.0
     pdb.set_trace()
+    U = np.multiply(U,(U>0).astype(int))
+    U = smooth(U,window_len=11,window='hanning')
     U_quant = vq(U,code_book)
+    U_quant = np.diff(U_quant[0])
+    U_quant = np.multiply(U_quant,(U_quant>0).astype(int))
         
     
     return peak_inds,peak_values
