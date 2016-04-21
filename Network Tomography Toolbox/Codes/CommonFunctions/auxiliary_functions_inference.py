@@ -3307,7 +3307,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
             
             mem_pot = np.dot(A_orig,W)
             no_spikes = sum(Y_orig)
-            t_fire = np.nozero(Y_orig)[0]            
+            t_fire = np.nonzero(Y_orig)[0]            
             pdb.set_trace()
             detect_spike_peaks(mem_pot,no_spikes,t_fire)
         #----------------------------------------------------------
