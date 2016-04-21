@@ -3121,46 +3121,71 @@ def detect_spike_peaks(V,n,t_fire):
     n_peak = 0          # The number of counted peaks so far
     peak_values = []    # The magnitude of the detected peaks
     peak_inds = []      # Indices of the peaks
-    U = copy.deepcopy(V)
+    U = copy.deepcopy(V)    
+    U = np.multiply(U,(U>0).astype(int))
+    pdb.set_trace()
+    U = smooth(U.ravel(),window_len=11,window='hanning')
+    peakind = signal.find_peaks_cwt(U, np.arange(1,20))
+    peak_vals = U[peakinds]
     
-    if 0:
+    #U = np.reshape(U,[len(U),1])
+    
+    if 1:
         while n_peak < n:
     
-            ind_max = np.argmax(U)
-            p_max = np.max(U)
+            ind_max = np.argmax(peak_vals)
+            p_max = np.max(peak_vals)
             peak_inds.append(ind_max)
             peak_values.append(p_max)
             
             #~~~~~~~~~Reset Membrane Potential~~~~~~~
-            temp_fire_orig = copy.deepcopy(t_fire).tolist()
-            temp_fire_orig.append(ind_max)
-            temp_fire_orig = np.array(temp_fire_orig)
-            temp_fire_orig.sort()
-            temp_fire_orig = temp_fire_orig.tolist()
-            ind1 = temp_fire_orig.index(ind_max)
-            t_fire_next = t_fire[ind1]
-            t_fire_bef = min(ind_max,t_fire[max(ind1-1,0)])
+            aa = np.diff(U[ind_max+1:])
+            aa = np.nonzero(aa>0)[0]
+            aa = aa[0]
+            delta_val = U[aa-1]
+            U[ind_max+1:aa] = 0
+            U[aa:] = U[aa:] - delta_val
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-            U[t_fire_bef+1:t_fire_next+1] = U[t_fire_bef+1:t_fire_next+1] - p_max
+            #~~~~~~~~~~Remove Current Peak~~~~~~~~~~~
+            aa = np.diff(U[ind_max-100:ind_max])
+            for ii in range(len(aa),0,-1):
+                if aa[ii] < 0:
+                    break
+            U[ind_max-ii:ind_max] = 0
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if 0:
+                temp_fire_orig = copy.deepcopy(t_fire).tolist()
+                temp_fire_orig.append(ind_max)
+                temp_fire_orig = np.array(temp_fire_orig)
+                temp_fire_orig.sort()
+                temp_fire_orig = temp_fire_orig.tolist()
+                ind1 = temp_fire_orig.index(ind_max)
+                t_fire_next = t_fire[ind1]
+                t_fire_bef = min(ind_max,t_fire[max(ind1-1,0)])
+                
+                U[t_fire_bef+1:t_fire_next+1] = U[t_fire_bef+1:t_fire_next+1] - p_max
+            
             U[ind_max] = 0
             
             n_peak = n_peak + 1
             print n_peak
         
-        pdb.set_trace()
-    
-    theta = (V.max() - 0)/float(n)
-    code_book= range(0,int(1000*V.max()),int(1000*theta))
-    code_book = np.reshape(code_book,[len(code_book),1])
-    code_book = np.array(code_book)/1000.0
-    
-    U = np.multiply(U,(U>0).astype(int))
     pdb.set_trace()
-    U = smooth(U.ravel(),window_len=11,window='hanning')
-    U = np.reshape(U,[len(U),1])
-    U_quant = vq(U,code_book)
-    U_quant = np.diff(U_quant[0])
-    U_quant = np.multiply(U_quant,(U_quant>0).astype(int))
+    
+    if 0:
+        code_book= range(0,int(1000*U.max()),int(1000*theta))
+        code_book = np.reshape(code_book,[len(code_book),1])
+        code_book = np.array(code_book)/1000.0
+        peakind = signal.find_peaks_cwt(data, np.arange(1,20))
+        U = np.multiply(U,(U>0).astype(int))
+        pdb.set_trace()
+        U = smooth(U.ravel(),window_len=11,window='hanning')
+        U = np.reshape(U,[len(U),1])
+        theta = (U.max() - 0)/float(n)
+        U_quant = vq(U,code_book)
+        U_quant = np.diff(U_quant[0])
+        U_quant = np.multiply(U_quant,(U_quant>0).astype(int))
         
     
     return peak_inds,peak_values
