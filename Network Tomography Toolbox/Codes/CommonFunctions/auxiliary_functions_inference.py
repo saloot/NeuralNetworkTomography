@@ -3134,6 +3134,8 @@ def detect_spike_peaks(V,n,t_fire):
     if 1:
         while n_peak < n:
     
+            peakind = signal.find_peaks_cwt(U, np.arange(1,20))
+            peak_vals = U[peakind]
             ind_max = np.argmax(peak_vals)
             p_max = np.max(peak_vals)
             peak_inds.append(ind_max)
