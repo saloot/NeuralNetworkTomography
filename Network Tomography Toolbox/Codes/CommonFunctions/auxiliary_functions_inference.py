@@ -3113,7 +3113,7 @@ def detect_spike_peaks(V,n,t_fire):
         t_fire_next = t_fire[ind1]
         t_fire_bef = min(ind_max,t_fire[max(ind1-1,0)])
         
-        U[t_fire_bef:t_fire_next+1] = U[t_fire_bef:t_fire_next+1] - p_max
+        U[t_fire_bef+1:t_fire_next+1] = U[t_fire_bef+1:t_fire_next+1] - p_max
         U[ind_max] = 0
         
         n_peak = n_peak + 1
