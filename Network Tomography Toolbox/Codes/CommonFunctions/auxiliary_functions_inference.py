@@ -3099,14 +3099,14 @@ def smooth(x,window_len=11,window='hanning'):
         raise ValueError, "Window is on of 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'"
 
 
-    s=numpy.r_[x[window_len-1:0:-1],x,x[-1:-window_len:-1]]
+    s=np.r_[x[window_len-1:0:-1],x,x[-1:-window_len:-1]]
     #print(len(s))
     if window == 'flat': #moving average
-        w=numpy.ones(window_len,'d')
+        w=np.ones(window_len,'d')
     else:
         w=eval('numpy.'+window+'(window_len)')
 
-    y=numpy.convolve(w/w.sum(),s,mode='valid')
+    y=np.convolve(w/w.sum(),s,mode='valid')
     return y
 
 
@@ -3153,9 +3153,11 @@ def detect_spike_peaks(V,n,t_fire):
     code_book= range(0,int(1000*V.max()),int(1000*theta))
     code_book = np.reshape(code_book,[len(code_book),1])
     code_book = np.array(code_book)/1000.0
-    pdb.set_trace()
+    
     U = np.multiply(U,(U>0).astype(int))
-    U = smooth(U,window_len=11,window='hanning')
+    pdb.set_trace()
+    U = smooth(U.ravel(),window_len=11,window='hanning')
+    U = np.reshape(U,[len(U),1])
     U_quant = vq(U,code_book)
     U_quant = np.diff(U_quant[0])
     U_quant = np.multiply(U_quant,(U_quant>0).astype(int))
