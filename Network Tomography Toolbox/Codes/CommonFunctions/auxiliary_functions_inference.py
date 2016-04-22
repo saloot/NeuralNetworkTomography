@@ -3653,6 +3653,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     TcT = block_size
                 lamb = .1/float(TcT)
                 cf = lamb*TcT
+                ccf = 1/float(cf)
                 
                 #pdb.set_trace()        
                 lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
@@ -3715,24 +3716,44 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         c = 1
                     
                     
-                    b = cf * (np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(aa_t),2)
-                    
-                    try:
+                    mthd = 2
+                    #~~~~~~~~~~~~Method 2~~~~~~~~~~~~~
+                    if mthd == 2:
+                        b = (c-np.dot(W_temp.T,ff))/pow(np.linalg.norm(ff),2)
+                        b = min(ccf,-lambda_temp[jj],b)
+                        b = max(-lambda_temp[jj],b)
+                        try:                            
+                            if (b<=lambda_temp[jj]) and (b >= lambda_temp[jj]-1):
+                                d_alp = -b
+                            elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
+                                d_alp = -lambda_temp[jj]
+                            else:
+                                d_alp = 1-lambda_temp[jj]
+                        except:
+                            pdb.set_trace()
+                    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    else:
+                        b = cf * (np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(aa_t),2)
                         
-                        if (b<=lambda_temp[jj]) and (b >= lambda_temp[jj]-1):
-                            d_alp = -b
-                        elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
-                            d_alp = -lambda_temp[jj]
-                        else:
-                            d_alp = 1-lambda_temp[jj]
-                    except:
-                        pdb.set_trace()
-                    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        try:
+                            
+                            if (b<=lambda_temp[jj]) and (b >= lambda_temp[jj]-1):
+                                d_alp = -b
+                            elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
+                                d_alp = -lambda_temp[jj]
+                            else:
+                                d_alp = 1-lambda_temp[jj]
+                        except:
+                            pdb.set_trace()
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                             
                     lambda_temp[jj] = lambda_temp[jj] + d_alp
                     d_alp_vec[jj] = d_alp_vec[jj] + d_alp
                     #W_temp = W_temp + d_alp * np.reshape(aa[ii,:],[len_v-1,1])/float(cf)
-                    W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
+                    if mthd == 2:
+                        W_temp = W_temp + d_alp * np.reshape(ff,[len_v-1,1])
+                    else:
+                        W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
                     #W_temp = W_temp + 0.001* np.reshape(aa_t,[n,1]) * (hinge_loss_func(W_temp,-aa_t,1,1,0)-0.5)
                     
                     cst = cst + hinge_loss_func(W_temp,-aa_t,.1,1,0)
