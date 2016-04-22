@@ -3716,7 +3716,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         c = 1
                     
                     
-                    mthd = 2
+                    mthd = 3
                     #~~~~~~~~~~~~Method 2~~~~~~~~~~~~~
                     if mthd == 2:
                         b = (c-np.dot(W_temp.T,ff))/(0.00001+pow(np.linalg.norm(ff),2))
@@ -3724,6 +3724,18 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         b = max(-lambda_temp[jj],b)
                         d_alp = b
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    
+                    #~~~~~~~~~~~~Method 3: Sparsity~~~~~~~~~~~~~
+                    elif mthd == 3:
+                        
+                        bns = [-lambda_temp[jj],ccf-lambda_temp[jj]]
+                        res_cons = optimize.minimize(l1_loss, 0, args=(a,b),bounds=bns,constraints=(),method='TNC', options=opt)
+                        pdb.set_trace()
+                        b = res_cons[x]
+                        
+                        d_alp = b
+                    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    
                     else:
                         b = cf * (np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(aa_t),2)
                         
@@ -3742,7 +3754,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     lambda_temp[jj] = lambda_temp[jj] + d_alp
                     d_alp_vec[jj] = d_alp_vec[jj] + d_alp
                     #W_temp = W_temp + d_alp * np.reshape(aa[ii,:],[len_v-1,1])/float(cf)
-                    if mthd == 2:
+                    if (mthd == 2) or (mthd == 3):
                         W_temp = W_temp + d_alp * np.reshape(ff,[len_v-1,1])
                     else:
                         W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
