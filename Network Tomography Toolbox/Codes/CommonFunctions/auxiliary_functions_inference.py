@@ -3716,21 +3716,13 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         c = 1
                     
                     
-                    mthd = 1
+                    mthd = 2
                     #~~~~~~~~~~~~Method 2~~~~~~~~~~~~~
                     if mthd == 2:
-                        b = (c-np.dot(W_temp.T,ff))/pow(np.linalg.norm(ff),2)
+                        b = (c-np.dot(W_temp.T,ff))/(0.00001+pow(np.linalg.norm(ff),2))
                         b = min(ccf,-lambda_temp[jj],b)
                         b = max(-lambda_temp[jj],b)
-                        try:                            
-                            if (b<=lambda_temp[jj]) and (b >= lambda_temp[jj]-1):
-                                d_alp = -b
-                            elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
-                                d_alp = -lambda_temp[jj]
-                            else:
-                                d_alp = 1-lambda_temp[jj]
-                        except:
-                            pdb.set_trace()
+                        d_alp = b
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     else:
                         b = cf * (np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(aa_t),2)
@@ -3822,7 +3814,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             WW = np.zeros([len_v,1])
             WW[0:ijk,0] = W_tot[0:ijk,0]
             WW[ijk+1:,0] = W_tot[ijk:,0]
-            
+            pdb.set_trace()
             
             print total_cost[ttau],total_Y[ttau]
             #pdb.set_trace()
