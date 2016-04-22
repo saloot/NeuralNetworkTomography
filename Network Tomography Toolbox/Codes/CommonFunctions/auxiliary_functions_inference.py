@@ -3736,6 +3736,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     elif mthd == 3:
                         opt = {'disp':True,'maxiter':500}
                         bns = [-lambda_temp[jj],ccf-lambda_temp[jj]]
+                        pdb.set_trace()
                         res_cons = optimize.minimize(l1_loss,[0], args=(W_temp,ff),bounds=bns,constraints=(),method='TNC', options=opt)
                         pdb.set_trace()
                         b = res_cons[x]
