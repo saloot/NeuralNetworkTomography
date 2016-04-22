@@ -1500,6 +1500,13 @@ def hinge_loss_func(x,FF,b,avg,lamb):
     temp = avg*np.sum(temp) + lamb * np.sum(np.abs(x))
     return temp
 
+
+
+def l1_loss(a,b):
+    
+    return sum(np.abs(a+x*b)) - x
+
+
 def hinge_jac(x,FF,b,avg,lamb):
     temp = np.zeros([len(b)])
     for t in range(0,len(b)):
