@@ -1504,7 +1504,7 @@ def hinge_loss_func(x,FF,b,avg,lamb):
 
 def l1_loss(a,b):
     
-    return sum(np.abs(a+x*b)) - x
+    return sum(np.abs(a+x.ravel()*b)) - x.ravel()
 
 
 def hinge_jac(x,FF,b,avg,lamb):
@@ -3736,7 +3736,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     elif mthd == 3:
                         opt = {'disp':True,'maxiter':500}
                         bns = [-lambda_temp[jj],ccf-lambda_temp[jj]]
-                        res_cons = optimize.minimize(l1_loss, 0, args=(W_temp,ff),bounds=bns,constraints=(),method='TNC', options=opt)
+                        res_cons = optimize.minimize(l1_loss,[0], args=(W_temp,ff),bounds=bns,constraints=(),method='TNC', options=opt)
                         pdb.set_trace()
                         b = res_cons[x]
                         
