@@ -3720,7 +3720,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #~~~~~~~~~~~~Method 2~~~~~~~~~~~~~
                     if mthd == 2:
                         b = (c-np.dot(W_temp.T,ff))/(0.00001+pow(np.linalg.norm(ff),2))
-                        b = min(ccf,-lambda_temp[jj],b)
+                        b = min(ccf-lambda_temp[jj],b)
                         b = max(-lambda_temp[jj],b)
                         d_alp = b
                     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
