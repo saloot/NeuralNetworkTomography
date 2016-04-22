@@ -1504,7 +1504,7 @@ def hinge_loss_func(x,FF,b,avg,lamb):
 
 def l1_loss(x,a,b):
     
-    return sum(np.abs(a+x.ravel()*b)) - x.ravel()
+    return sum(np.abs(a.ravel()+x*b.ravel())) - x
 
 
 def hinge_jac(x,FF,b,avg,lamb):
