@@ -3658,7 +3658,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     TcT = len(yy)
                 else:
                     TcT = block_size
-                lamb = .1/float(TcT)
+                lamb = .001/float(TcT)
                 cf = lamb*TcT
                 ccf = 1/float(cf)
                 
@@ -3741,7 +3741,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         aa[:,1] = ccf-lambda_temp[jj]
                         bns = list(aa)
                         
-                        res_cons = optimize.minimize(l1_loss,0, args=(W_temp,ff),bounds=bns,constraints=(),method='TNC', options={'disp':True,'maxiter':500})
+                        res_cons = optimize.minimize(l1_loss,0, args=(W_temp,ff),bounds=bns,constraints=(),method='TNC', options={'disp':False,'maxiter':500})
                         
                         b = res_cons['x']
                         
