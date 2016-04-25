@@ -3730,7 +3730,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         c = 1
                     
                     
-                    mthd = 3
+                    mthd = 1
                     #~~~~~~~~~~~~Method 2~~~~~~~~~~~~~
                     if mthd == 2:
                         b = (c-np.dot(W_temp.T,aa_t))/(0.00001+pow(np.linalg.norm(ff),2))
@@ -3760,10 +3760,10 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         
                         try:
                             
-                            if (b<=lambda_temp[jj]) and (b >= lambda_temp[jj]-1):
+                            if (b<=lambda_temp[jj]+1) and (b >= lambda_temp[jj]-1):
                                 d_alp = -b
                             elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
-                                d_alp = -lambda_temp[jj]
+                                d_alp = -1-lambda_temp[jj]
                             else:
                                 d_alp = 1-lambda_temp[jj]
                         except:
