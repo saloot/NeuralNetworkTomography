@@ -3426,7 +3426,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 300000        
+        block_size = 100000        
         T0 = 50 #max(TT - 1*block_size-10,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
@@ -3619,13 +3619,13 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     spikes_file_AA = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_A.txt'
                     spikes_file_YY = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_Y.txt'
                     
-                    if 0:
+                    if 1:
                         AA = np.genfromtxt(spikes_file_AA, dtype=float, delimiter='\t')
                         YY = np.genfromtxt(spikes_file_YY, dtype=float, delimiter='\t')
                         pdb.set_trace()
                 #---------------------------------------------------------------
                 
-                if 0:
+                if 1:
                     #-------------Add a Row for Theta If Missing From File----------
                     if AA.shape[1] != len(W_temp):
                         tmp = -YY
@@ -3654,7 +3654,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #---------------------------------------------------------------
                 
                 #-----------------------Do the Optimization---------------------
-                if 0:
+                if 1:
                     TcT = len(yy)
                 else:
                     TcT = block_size
@@ -3709,8 +3709,10 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         jj = ii
                             
                     #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
-                    aa_t = read_spikes_lines_integrated(spikes_file_AA,ii+1,n)
-                    yy_t = read_spikes_lines_integrated(spikes_file_YY,ii+1,1)
+                    #aa_t = read_spikes_lines_integrated(spikes_file_AA,ii+1,n)
+                    #yy_t = read_spikes_lines_integrated(spikes_file_YY,ii+1,1)
+                    aa_t = aa[ii,:]
+                    yy_t = yy[ii]
                     
                     try:
                         ff = gg[yy_t[0]]*(aa_t)
