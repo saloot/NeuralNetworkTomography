@@ -3430,7 +3430,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 100000        
+        block_size = 300000        
         T0 = 50 #max(TT - 1*block_size-10,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
@@ -3444,6 +3444,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     der_flag = 0                                # If 1, the derivative criteria will also be taken into account
     rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
+    load_mtx = 0
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3623,13 +3624,13 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     spikes_file_AA = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_A.txt'
                     spikes_file_YY = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_Y.txt'
                     
-                    if 1:
+                    if load_mtx:
                         AA = np.genfromtxt(spikes_file_AA, dtype=float, delimiter='\t')
                         YY = np.genfromtxt(spikes_file_YY, dtype=float, delimiter='\t')
                         #pdb.set_trace()
                 #---------------------------------------------------------------
                 
-                if 1:
+                if load_mtx:
                     #-------------Add a Row for Theta If Missing From File----------
                     if AA.shape[1] != len(W_temp):
                         tmp = -YY
@@ -3716,12 +3717,13 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #aa_t = read_spikes_lines_integrated(spikes_file_AA,ii+1,n)
                     #yy_t = read_spikes_lines_integrated(spikes_file_YY,ii+1,1)
                     #yy_t = yy_t[0]
-                    try:
-                        aa_t = aa[ii,:]
-                        
+                    if load_mtx:
+                        aa_t = aa[ii,:]                        
                         yy_t = yy[ii]
-                    except:
-                        pdb.set_trace()
+                    else:
+                        aa_t = read_spikes_lines_integrated(spikes_file_AA,ii+1,n)
+                        yy_t = read_spikes_lines_integrated(spikes_file_YY,ii+1,1)
+                        yy_t = yy_t[0]
                     
                     try:
                         ff = gg[yy_t]*(aa_t)
@@ -3734,7 +3736,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         c = 1
                     
                     
-                    mthd = 4
+                    mthd = 1
                     #~~~~~~~~~~~~Method 2~~~~~~~~~~~~~
                     if mthd == 2:
                         b = (c-np.dot(W_temp.T,aa_t))/(0.00001+pow(np.linalg.norm(ff),2))
