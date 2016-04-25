@@ -3838,7 +3838,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             WW = np.zeros([len_v,1])
             WW[0:ijk,0] = W_tot[0:ijk,0]
             WW[ijk+1:,0] = W_tot[ijk:,0]
-            pdb.set_trace()
+            #pdb.set_trace()
             
             print total_cost[ttau],total_Y[ttau]
             #pdb.set_trace()
