@@ -3730,7 +3730,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         c = 1
                     
                     
-                    mthd = 1
+                    mthd = 4
                     #~~~~~~~~~~~~Method 2~~~~~~~~~~~~~
                     if mthd == 2:
                         b = (c-np.dot(W_temp.T,aa_t))/(0.00001+pow(np.linalg.norm(ff),2))
@@ -3775,9 +3775,10 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #W_temp = W_temp + d_alp * np.reshape(aa[ii,:],[len_v-1,1])/float(cf)
                     if (mthd == 2) or (mthd == 3):
                         W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])
-                    else:
+                    elif mthd == 1:
                         W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
-                    #W_temp = W_temp + 0.001* np.reshape(aa_t,[n,1]) * (hinge_loss_func(W_temp,-aa_t,1,1,0)-0.5)
+                    else:
+                        W_temp = W_temp + 0.001* np.reshape(aa_t,[n,1]) * (hinge_loss_func(W_temp,-aa_t,1,1,0)-0.5*W_temp)
                     
                     cst = cst + hinge_loss_func(W_temp,-aa_t,.1,1,0)
                     if yy_t:
@@ -3787,8 +3788,16 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #----------------------Update the Weights-----------------------
                 #pdb.set_trace()
                 #Delta_W_loc = np.dot(bb.T,d_alp_vec[t_inds])
-                Delta_W_loc = soft_threshold(W_temp.ravel(),sparse_thr)
-                #Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
+                if mthd == 4:
+                    Delta_W_loc = W_temp
+                    #Delta_W_loc = soft_threshold(W_temp.ravel(),sparse_thr)
+                else:
+                    Delta_W_loc = W_temp
+                    if 0:
+                        if rand_sample_flag:
+                            Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
+                        else:
+                            Delta_W_loc = np.dot(aa.T,d_alp_vec)
                 Delta_W = Delta_W + Delta_W_loc
                 W_tot = W_tot + np.reshape(Delta_W_loc,[len_v-1,1])/no_blocks
                 lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
@@ -3845,10 +3854,10 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
             WW = np.zeros([len_v,1])
             WW[0:ijk,0] = W_tot[0:ijk,0]
             WW[ijk+1:,0] = W_tot[ijk:,0]
-            #pdb.set_trace()
+            
             
             print total_cost[ttau],total_Y[ttau]
-            #pdb.set_trace()
+            pdb.set_trace()
             if ttau > 0:
                 if ((total_cost[ttau] == 0) and (total_cost[ttau-1] == 0)) or (total_cost[ttau] - total_cost[ttau-1] == 0):
                     #pdb.set_trace()
