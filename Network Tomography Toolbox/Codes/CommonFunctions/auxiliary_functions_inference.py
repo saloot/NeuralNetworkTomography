@@ -3445,7 +3445,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0
-    mthd = 1    
+    mthd = 4    
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
