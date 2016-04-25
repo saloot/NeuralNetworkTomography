@@ -3776,7 +3776,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     #W_temp = W_temp + 0.001* np.reshape(aa_t,[n,1]) * (hinge_loss_func(W_temp,-aa_t,1,1,0)-0.5)
                     
                     cst = cst + hinge_loss_func(W_temp,-aa_t,.1,1,0)
-                    if yy_t[0]>0:
+                    if yy_t:
                         cst_y = cst_y + hinge_loss_func(W_temp,-aa_t,0.1,1,0)
                 #---------------------------------------------------------------
             
