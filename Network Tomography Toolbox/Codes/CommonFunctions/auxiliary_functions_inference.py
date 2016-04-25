@@ -3743,10 +3743,10 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     elif mthd == 3:
                         
                         
-                        aa = np.ones([1,2])
-                        aa[:,0] = -lambda_temp[jj]
-                        aa[:,1] = ccf-lambda_temp[jj]
-                        bns = list(aa)
+                        aac = np.ones([1,2])
+                        aac[:,0] = -lambda_temp[jj]
+                        aac[:,1] = ccf-lambda_temp[jj]
+                        bns = list(aac)
                         
                         res_cons = optimize.minimize(l1_loss,0, args=(W_temp,ff),bounds=bns,constraints=(),method='TNC', options={'disp':False,'maxiter':500})
                         
