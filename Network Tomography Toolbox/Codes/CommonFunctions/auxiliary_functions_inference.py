@@ -1501,6 +1501,10 @@ def hinge_loss_func(x,FF,b,avg,lamb):
     return temp
 
 
+def hinge_loss_extnd_func(x,b,thta):
+    temp = max(-x + b,x - thta,0)    
+    #temp = avg*np.sum(temp) + lamb * np.sum(np.abs(x))
+    return temp
 
 def l1_loss(x,a,b):
     
@@ -3778,7 +3782,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     elif mthd == 1:
                         W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
                     else:
-                        W_temp = W_temp + 0.001* np.reshape(aa_t,[n,1]) * (hinge_loss_func(W_temp,-aa_t,1,1,0)-0.5*W_temp)
+                        W_temp = W_temp + 0.001* (np.reshape(aa_t,[n,1]) * hinge_loss_extnd_func(np.dot(W_temp.T,ff),1,10)-0.5*W_temp)
                     
                     cst = cst + hinge_loss_func(W_temp,-aa_t,.1,1,0)
                     if yy_t:
