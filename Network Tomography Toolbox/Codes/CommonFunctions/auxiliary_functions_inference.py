@@ -3430,7 +3430,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 300000        
+        block_size = 100000        
         T0 = 50 #max(TT - 1*block_size-10,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
@@ -3445,7 +3445,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0
-    mthd = 1  
+    mthd = 4
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3785,7 +3785,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     elif mthd == 1:
                         W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
                     else:
-                        W_temp = W_temp + 0.001* (np.reshape(aa_t,[n,1]) * hinge_loss_extnd_func(np.dot(W_temp.T,ff),1,10)-0.5*W_temp)
+                        W_temp = W_temp + 0.001* (np.reshape(aa_t,[n,1]) * hinge_loss_extnd_func(np.dot(W_temp.T,ff),1,10))
                     
                     cst = cst + hinge_loss_func(W_temp,-aa_t,.1,1,0)
                     if yy_t:
