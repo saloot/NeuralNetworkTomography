@@ -3617,14 +3617,18 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     try:
                         spikes_file_YY = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_Y.txt'
                         np.savetxt(spikes_file_YY,YY,'%2.1f',delimiter='\t')
+                        file_saved = 1
                     except:
+                        file_saved = 0
                         print 'Spikes file could not be saved'
                     #----------------------------------------------------------
                 else:
+                    
                     print 'yoohoo!'
                     found_flag = 1                    
                     spikes_file_AA = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_A.txt'
                     spikes_file_YY = out_spikes_tot_mat_file[:-4] + '_b_' + str(block_size) + '_c_' + str(t_0) + '_i_' + str(ijk) + '_Y.txt'
+                    file_saved = 1
                     
                     if load_mtx:
                         AA = np.genfromtxt(spikes_file_AA, dtype=float, delimiter='\t')
@@ -3723,9 +3727,15 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         aa_t = aa[ii,:]                        
                         yy_t = yy[ii]
                     else:
-                        aa_t = read_spikes_lines_integrated(spikes_file_AA,ii+1,n)
-                        yy_t = read_spikes_lines_integrated(spikes_file_YY,ii+1,1)
-                        yy_t = yy_t[0]
+                        if file_saved:
+                            aa_t = read_spikes_lines_integrated(spikes_file_AA,ii+1,n)
+                            yy_t = read_spikes_lines_integrated(spikes_file_YY,ii+1,1)
+                            yy_t = yy_t[0]
+                        else:
+                            if not rand_sample_flag:
+                                aa_t = AA[ii,:]
+                                yy_t = YY[ii]
+                        
                     
                     try:
                         ff = gg[yy_t]*(aa_t)
