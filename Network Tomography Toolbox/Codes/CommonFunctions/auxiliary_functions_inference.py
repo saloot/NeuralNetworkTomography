@@ -3445,7 +3445,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0
-    mthd = 2
+    mthd = 4
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3799,7 +3799,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     elif mthd == 1:
                         W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
                     else:
-                        W_temp = W_temp + 0.001*abs(gg[yy_t]) * (np.reshape(aa_t,[n,1]) * hinge_loss_extnd_func(np.dot(W_temp.T,aa_t),1,10))
+                        xx = np.dot(W_temp.T,aa_t)
+                        W_temp = W_temp + 0.001*abs(gg[yy_t]) * (np.reshape(aa_t,[n,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10))) 
                     
                     cst = cst + np.sign(hinge_loss_func(W_temp,-aa_t,.1,1,0))
                     if yy_t:
