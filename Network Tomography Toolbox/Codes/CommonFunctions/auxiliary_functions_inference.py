@@ -3578,8 +3578,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         print '-------------Neuron %s----------' %str(ijk)
     
-        #---------------------Necessary Initializations------------------------
-        t_last = T0 + T_temp        
+        #---------------------Necessary Initializations------------------------    
         prng = RandomState(int(time()))
         
         lambda_tot = np.zeros([len(range_TT),1])
