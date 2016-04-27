@@ -3491,8 +3491,8 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     #---------------------------------------------------------------------
     
     #---------------Shift Post-Synaptic Spike One to the Left-------------
-    YY = np.roll(YY,-1)
-    YY[-1] = -1
+    Y = np.roll(Y,-1)
+    Y[-1] = -1
     #---------------------------------------------------------------------
     
 
@@ -3504,7 +3504,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     AA = np.delete(AA.T,n_ind,0).T
     #---------------------------------------------------------------------
     
-    return AA,YY,t_start,t_end
+    return AA,Y,t_start,t_end
 
 
 
@@ -3524,6 +3524,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     pool = multiprocessing.Pool(num_process)
 
     print multiprocessing.cpu_count()
+    
+    import time
     #----------------------------------------------------------------------
     
     #----------------------------Initializations---------------------------    
@@ -3596,10 +3598,15 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #------------------Prepare the First Spike Matrix----------------------
         t_step = int(block_size/float(num_process))
         int_results = []
+        tic = time.clock()
+        
         for t_start in range(0,block_size,t_step):
             t_end = t_start + t_step
             func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
             int_results.append( pool.apply_async( calculate_integration_matrix, func_args) )
+        
+        toc = time.clock()
+        print toc - tic
         
         for result in int_results:
             (aa,yy,tt_start,tt_end) = result.get()
