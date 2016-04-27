@@ -3613,6 +3613,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             print toc - tic
         
             print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
+            pdb.set_trace()
             A[t_start:t_end,:] = aa
             Y[t_start:t_end,0] = yy.ravel()
         #----------------------------------------------------------------------
