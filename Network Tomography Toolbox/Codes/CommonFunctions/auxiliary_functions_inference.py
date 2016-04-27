@@ -3703,6 +3703,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
             jj = ii
         
         #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
+        pdb.set_trace()
         aa_t = aa[ii,:]
         yy_t = yy[ii]
         ff = gg[yy_t]*(aa_t)
