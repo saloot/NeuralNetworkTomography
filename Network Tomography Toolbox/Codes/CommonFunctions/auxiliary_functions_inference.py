@@ -3597,12 +3597,12 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #----------------------------------------------------------------------
         
         #------------------Prepare the First Spike Matrix----------------------
-        t_step = int(block_size/float(num_process))-1
+        t_step = int(block_size/float(num_process))
         int_results = []
         
         
         pdb.set_trace()
-        for t_start in range(0,block_size+1,t_step):
+        for t_start in range(0,block_size,t_step):
             t_end = t_start + t_step
             func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
             int_results.append( pool.apply_async( calculate_integration_matrix, func_args) )
@@ -3612,6 +3612,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         for result in int_results:
             tic = time.clock()
             (aa,yy,tt_start,tt_end) = result.get()
+            #aa,yy,tt_start,tt_end = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
             toc = time.clock()
             print toc - tic
             total_spent_time = total_spent_time + toc - tic
@@ -3628,11 +3629,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             t_init = np.random.randint(0,t_gap)
             t_inds = np.array(range(t_init,block_size,t_gap))
                         
-            aa = AA[t_inds,:]
-            yy = YY[t_inds]
+            aa = A[t_inds,:]
+            yy = Y[t_inds]
         else:
-            aa = AA
-            yy = YY
+            aa = A
+            yy = Y
         #---------------------------------------------------------------
         
         print 'Total time %s' %str(total_spent_time)
@@ -3642,6 +3643,12 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 
+
+
+#------------------------------------------------------------------------------
+def infer_w_block(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
+    
+    return W_temp
 
 #------------------------------------------------------------------------------
 def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
