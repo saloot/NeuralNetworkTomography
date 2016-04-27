@@ -3413,6 +3413,210 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
 
 #------------------------------------------------------------------------------
 
+
+def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,tau_s):
+    
+    
+    #----------------------------Initializations---------------------------
+    block_size = t_end - t_start
+    
+    if block_size < 0:
+        return
+    
+    if not theta:
+        len_v = n + 1
+    else:
+        len_v = n
+        
+    X = np.zeros([len_v,block_size])
+    V = np.zeros([len_v,block_size])
+    AA = np.zeros([len_v,block_size])
+    x = np.zeros([len_v,1])
+    v = np.zeros([len_v,1])
+    xx = np.zeros([len_v,1])
+    vv = np.zeros([len_v,1])
+    Y = np.zeros([block_size])
+    #----------------------------------------------------------------------
+    
+    #--------------------------Process the Spikes--------------------------
+    t_tot = 0
+    range_temp = range(t_start,t_end)
+    
+    for t in range_temp:
+                    
+        #........Pre-compute Some of Matrices to Speed Up the Process......
+        fire_t = read_spikes_lines(spikes_file,t,n)
+        yy = -1
+        if (n_ind in fire_t):                
+            yy = 1
+            
+            #~~~~~~~~~~~~~~~~Reset the Membrane Potential~~~~~~~~~~~~~~~~~
+            x = np.zeros([len_v,1])
+            v = np.zeros([len_v,1])
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #.................................................................
+        
+        #......................Read Incoming Spikes.......................
+        fire_t = read_spikes_lines(spikes_file,t-1,n)
+        fire_t = np.array(fire_t).astype(int)
+        
+        x = math.exp(-1/tau_s) * x
+        x[fire_t] = x[fire_t] + 1
+        
+        v = math.exp(-1/tau_d) * v
+        v[fire_t] = v[fire_t] + 1
+        
+        if not theta:
+            v[-1,0] = -1.0
+        #.................................................................
+        
+        #.....................Store the Potentials........................
+        V[:,t_tot] = yy * v.ravel()
+        X[:,t_tot] = yy * x.ravel()
+        Y[t_tot] = yy
+        
+        t_tot = t_tot + 1
+        #.................................................................
+        
+    
+    #-------------------Post Process Spike Matrices-----------------------
+    Y = np.array(Y)
+    V = V[:,0:t_tot]
+    X = X[:,0:t_tot]
+    Y = Y[0:t_tot]
+    
+    #YY = (Y>0).astype(int) - (Y<=0).astype(int)
+    #A = (V-X).T
+    AA = (V).T
+    #---------------------------------------------------------------------
+    
+    #---------------Shift Post-Synaptic Spike One to the Left-------------
+    YY = np.roll(YY,-1)
+    YY[-1] = -1
+    #---------------------------------------------------------------------
+    
+
+    #-------------------Delte Self History---------------------------------                    
+    #AA = np.zeros(A.shape)
+    #for t in range(0,t_tot):
+    #    AA[t,:] = YY[t]*A[t,:]
+                        
+    AA = np.delete(AA.T,n_ind,0).T
+    #---------------------------------------------------------------------
+    
+    return AA,YY,t_start,t_end
+
+
+
+
+#------------------------------------------------------------------------------
+#---------------------inference_constraints_hinge_parallel---------------------
+#------------------------------------------------------------------------------
+
+def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range,num_process):
+    
+    
+    #----------------------Import Necessary Libraries----------------------
+    from auxiliary_functions import soft_threshold
+    import os.path
+    
+    import multiprocessing
+    pool = multiprocessing.Pool(num_process)
+
+    print multiprocessing.cpu_count()
+    #----------------------------------------------------------------------
+    
+    #----------------------------Initializations---------------------------    
+    m = n
+    
+    range_tau = range(0,max_itr_opt)
+    
+    if len(neuron_range) == 0:
+        neuron_range = np.array(range(0,m))
+    
+    
+    T0 = 50                                    # It is the offset, i.e. the time from which on we will consider the firing activity
+    range_TT = range(T0,TT)
+    #----------------------------------------------------------------------
+    
+    #-----------------------------Behavior Flags-------------------------------
+    der_flag = 0                                # If 1, the derivative criteria will also be taken into account
+    rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
+    sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
+    load_mtx = 0                                # If 1, we load spike matrices from file
+    mthd = 2                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
+    #--------------------------------------------------------------------------
+    
+    #---------------------------Neural Parameters------------------------------
+    tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
+    tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
+    h0 = 0.0                                        # The reset membrane voltage (in mV)
+    delta = 0.25                                       # The tanh coefficient to approximate the sign function
+    d_max = 10
+    t_gap = 2                                    # The gap between samples to consider
+    t_avg = 1
+    theta = 0
+    c_1 = 1                                        # This is the weight of class +1 (i.e. y(t) = 1)
+    c_0 = .1                                         # This is the weight of class 0 (i.e. y(t) = 0)
+    if theta:
+        len_v = n        
+    else:
+        len_v = n+1
+    
+    
+    W_infer = np.zeros([int(len(range_TT)/float(block_size))+1,len_v])
+    W_inferred = np.zeros([len_v,len_v])
+    
+    t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
+    U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
+    A = np.zeros([len_v,block_size])
+    Y = np.zeros([block_size,1])
+    #--------------------------------------------------------------------------
+    
+    #---------Identify Incoming Connections to Each Neuron in the List---------
+    for ijk in neuron_range:
+        
+        print '-------------Neuron %s----------' %str(ijk)
+    
+        #---------------------Necessary Initializations------------------------
+        t_last = T0 + T_temp        
+        prng = RandomState(int(time()))
+        
+        lambda_tot = np.zeros([len(range_TT),1])
+        no_blocks = 1+len(range_TT)/block_size
+        
+        W_tot = np.zeros([len_v-1,1])
+        Z_tot = np.zeros([len_v-1,1])
+        
+        dual_gap = np.zeros([len(range_tau),no_blocks])
+        total_cost = np.zeros([len(range_tau),1])
+        total_Y = np.zeros([len(range_tau),1])
+        beta_K = 1        
+        #----------------------------------------------------------------------
+        
+        #------------------Prepare the First Spike Matrix----------------------
+        t_step = int(block_size/float(num_process))
+        int_results = []
+        for t_start in range(0,block_size,t_step):
+            t_end = t_start + t_ste
+            func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
+            int_results.append( pool.apply_async( calculate_integration_matrix, func_args) )
+        
+        for result in int_results:
+            (aa,yy,tt_start,tt_end) = result.get()
+            print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
+            A[t_start:t_end,:] = aa
+            Y[t_start:t_end,0] = yy.ravel()
+        #----------------------------------------------------------------------
+        
+        print 'wow!'
+    
+    
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
+
 #------------------------------------------------------------------------------
 def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
     
