@@ -3597,11 +3597,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #----------------------------------------------------------------------
         
         #------------------Prepare the First Spike Matrix----------------------
-        t_step = int(block_size/float(num_process))
+        t_step = int(block_size/float(num_process))-1
         int_results = []
         
         
-        for t_start in range(0,block_size,t_step):
+        for t_start in range(0,block_size+1,t_step):
             t_end = t_start + t_step
             func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
             int_results.append( pool.apply_async( calculate_integration_matrix, func_args) )
