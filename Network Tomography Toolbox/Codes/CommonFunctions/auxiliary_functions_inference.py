@@ -3429,8 +3429,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
         len_v = n
         
     X = np.zeros([len_v,block_size])
-    V = np.zeros([len_v,block_size])
-    AA = np.zeros([len_v,block_size])
+    V = np.zeros([len_v,block_size])    
     x = np.zeros([len_v,1])
     v = np.zeros([len_v,1])
     xx = np.zeros([len_v,1])
@@ -3571,7 +3570,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
-    A = np.zeros([len_v,block_size])
+    A = np.zeros([block_size,len_v])
     Y = np.zeros([block_size,1])
     #--------------------------------------------------------------------------
     
