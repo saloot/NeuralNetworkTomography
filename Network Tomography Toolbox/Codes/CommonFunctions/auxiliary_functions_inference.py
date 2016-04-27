@@ -3601,6 +3601,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         int_results = []
         
         
+        pdb.set_trace()
         for t_start in range(0,block_size+1,t_step):
             t_end = t_start + t_step
             func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
@@ -3620,6 +3621,19 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             A[tt_start:tt_end,:] = aa
             Y[tt_start:tt_end,0] = yy.ravel()
         #----------------------------------------------------------------------
+        
+        
+        #-------------------Perform Sampling If Necessary----------------------
+        if rand_sample_flag:
+            t_init = np.random.randint(0,t_gap)
+            t_inds = np.array(range(t_init,block_size,t_gap))
+                        
+            aa = AA[t_inds,:]
+            yy = YY[t_inds]
+        else:
+            aa = AA
+            yy = YY
+        #---------------------------------------------------------------
         
         print 'Total time %s' %str(total_spent_time)
     
