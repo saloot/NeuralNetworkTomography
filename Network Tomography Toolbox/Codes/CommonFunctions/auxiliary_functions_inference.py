@@ -3430,7 +3430,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     if TT > 20000:
         
         T_temp = 50                              # The size of the initial batch to calculate the initial inverse matrix
-        block_size = 100000        
+        block_size = 5000000        
         T0 = 50 #max(TT - 1*block_size-10,50)                                  # It is the offset, i.e. the time from which on we will consider the firing activity
     else:
         T0 = 0
@@ -3445,7 +3445,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
     rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0
-    mthd = 4
+    mthd = 2
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3673,7 +3673,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     TcT = len(yy)
                 else:
                     TcT = block_size
-                lamb = .001/float(TcT)
+                lamb = .00001/float(TcT)
                 cf = lamb*TcT
                 ccf = 1/float(cf)
                 
@@ -3715,7 +3715,8 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 #d_alp_vec[t_inds] = lam
                 cst = 0
                 cst_y = 0
-                for ss in range(0,20*TcT):
+                cst_old = 0
+                for ss in range(0,1*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     if rand_sample_flag:
@@ -3755,7 +3756,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                     
                     #~~~~~~~~~~~~Method 2~~~~~~~~~~~~~
                     if mthd == 2:
-                        b = (c-np.dot(W_temp.T,aa_t))/(0.00001+pow(np.linalg.norm(ff),2))
+                        b = (c-np.dot(W_temp.T,aa_t))/(0.00001+pow(np.linalg.norm(aa_t),2))
                         b = min(ccf-lambda_temp[jj],b)
                         b = max(-lambda_temp[jj],b)
                         d_alp = b
@@ -3802,9 +3803,15 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                         xx = np.dot(W_temp.T,aa_t)
                         W_temp = W_temp + 0.001*abs(gg[yy_t]) * (np.reshape(aa_t,[n,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10))) 
                     
+                    
                     cst = cst + np.sign(hinge_loss_func(W_temp,-aa_t,.1,1,0))
                     if yy_t:
                         cst_y = cst_y + hinge_loss_func(W_temp,-aa_t,0.1,1,0)
+                        
+                    if not (ss%1000000):
+                        
+                        print mthd,cst - cst_old
+                        cst_old = cst
                 #---------------------------------------------------------------
             
                 #----------------------Update the Weights-----------------------
