@@ -3607,7 +3607,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
             int_results.append( pool.apply_async( calculate_integration_matrix, func_args) )
         
-        
+        pdb.set_trace()
         total_spent_time = 0
         for result in int_results:
             tic = time.clock()
@@ -3636,6 +3636,12 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             yy = Y
         #---------------------------------------------------------------
         
+        #--------------Assign Weights to the Classes--------------------                
+        gg = {}
+        gg[-1] = c_0
+        gg[1] = c_1        
+        #---------------------------------------------------------------
+        
         print 'Total time %s' %str(total_spent_time)
     
     
@@ -3648,6 +3654,129 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 #------------------------------------------------------------------------------
 def infer_w_block(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
     
+    #------------------------Initializations------------------------
+    TcT = len(yy)
+    lamb = .00001/float(TcT)
+    cf = lamb*TcT
+    ccf = 1/float(cf)
+    cst = 0
+    cst_y = 0
+    cst_old = 0
+    #---------------------------------------------------------------
+    
+    #----------------------Assign Dual Vectors----------------------
+    lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
+    if rand_sample_flag:
+        lambda_0 = lambda_temp[t_inds]
+    else:
+        lambda_0 = lambda_temp
+
+    d_alp_vec = np.zeros([block_size,1])    
+    #---------------------------------------------------------------
+                
+                
+    
+    if 0:
+        if 0:
+            if 0:
+                for ss in range(0,2*TcT):
+                            
+                    ii = np.random.randint(0,TcT)
+                    if rand_sample_flag:
+                        jj = t_inds[ii]
+                    else:
+                        jj = ii
+                            
+                    #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
+                    #aa_t = read_spikes_lines_integrated(spikes_file_AA,ii+1,n)
+                    #yy_t = read_spikes_lines_integrated(spikes_file_YY,ii+1,1)
+                    #yy_t = yy_t[0]
+                    if load_mtx:
+                        aa_t = aa[ii,:]                        
+                        yy_t = yy[ii]
+                    else:
+                        if file_saved:
+                            aa_t = read_spikes_lines_integrated(spikes_file_AA,ii+1,n)
+                            yy_t = read_spikes_lines_integrated(spikes_file_YY,ii+1,1)
+                            yy_t = yy_t[0]
+                        else:
+                            if not rand_sample_flag:
+                                aa_t = AA[ii,:]
+                                yy_t = YY[ii]
+                        
+                    
+                    try:
+                        ff = gg[yy_t]*(aa_t)
+                    except:
+                        pdb.set_trace()
+                    
+                    if theta:
+                        c = 1 + theta * yy_t
+                    else:
+                        c = 1
+                    
+                    
+                    
+                    #~~~~~~~~~~~~Method 2~~~~~~~~~~~~~
+                    if mthd == 2:
+                        b = (c-np.dot(W_temp.T,aa_t))/(0.00001+pow(np.linalg.norm(aa_t),2))
+                        b = min(ccf-lambda_temp[jj],b)
+                        b = max(-lambda_temp[jj],b)
+                        d_alp = b
+                    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    
+                    #~~~~~~~~~~~~Method 3: Sparsity~~~~~~~~~~~~~
+                    elif mthd == 3:
+                        
+                        
+                        aac = np.ones([1,2])
+                        aac[:,0] = -lambda_temp[jj]
+                        aac[:,1] = ccf-lambda_temp[jj]
+                        bns = list(aac)
+                        
+                        res_cons = optimize.minimize(l1_loss,0, args=(W_temp,ff),bounds=bns,constraints=(),method='TNC', options={'disp':False,'maxiter':500})
+                        
+                        b = res_cons['x']
+                        
+                        d_alp = b[0]
+                    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    
+                    else:
+                        b = cf * (np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(aa_t),2)
+                        
+                        try:
+                            if (b<=lambda_temp[jj]+1) and (b >= lambda_temp[jj]-1):
+                                d_alp = -b
+                            elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
+                                d_alp = -1-lambda_temp[jj]
+                            else:
+                                d_alp = 1-lambda_temp[jj]
+                        except:
+                            pdb.set_trace()
+                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            
+                    lambda_temp[jj] = lambda_temp[jj] + d_alp
+                    d_alp_vec[jj] = d_alp_vec[jj] + d_alp
+                    #W_temp = W_temp + d_alp * np.reshape(aa[ii,:],[len_v-1,1])/float(cf)
+                    if (mthd == 2) or (mthd == 3):
+                        W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])
+                    elif mthd == 1:
+                        W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
+                    else:
+                        xx = np.dot(W_temp.T,aa_t)
+                        W_temp = W_temp + 0.001*abs(gg[yy_t]) * (np.reshape(aa_t,[n,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10))) 
+                    
+                    
+                    cst = cst + np.sign(hinge_loss_func(W_temp,-aa_t,.1,1,0))
+                    if yy_t:
+                        cst_y = cst_y + hinge_loss_func(W_temp,-aa_t,0.1,1,0)
+                        
+                    if not (ss%1000000):
+                        
+                        print mthd,cst - cst_old
+                        cst_old = cst
+                #---------------------------------------------------------------
+                
     return W_temp
 
 #------------------------------------------------------------------------------
