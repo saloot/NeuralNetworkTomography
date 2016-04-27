@@ -3570,8 +3570,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
-    A = np.zeros([block_size,len_v])
-    Y = np.zeros([block_size,1])
+    
     #--------------------------------------------------------------------------
     
     #---------Identify Incoming Connections to Each Neuron in the List---------
@@ -3591,7 +3590,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         dual_gap = np.zeros([len(range_tau),no_blocks])
         total_cost = np.zeros([len(range_tau),1])
         total_Y = np.zeros([len(range_tau),1])
-        beta_K = 1        
+        beta_K = 1
+        
+        A = np.zeros([block_size,len_v-1])
+        Y = np.zeros([block_size,1])
         #----------------------------------------------------------------------
         
         #------------------Prepare the First Spike Matrix----------------------
