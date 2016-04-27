@@ -3723,11 +3723,11 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
 
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
         elif mthd == 1:
-            b = cf * (np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(aa_t),2)
+            b = cf * (np.dot(W_temp.T,aa_t) - c)/pow(np.linalg.norm(aa_t),2)
             
             if (b<=lambda_temp[jj]+1) and (b >= lambda_temp[jj]-1):
                 d_alp = -b
-            elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
+            elif pow(b-lambda_temp[jj]-1,2) < pow(b+1-lambda_temp[jj],2):
                 d_alp = -1-lambda_temp[jj]
             else:
                 d_alp = 1-lambda_temp[jj]
