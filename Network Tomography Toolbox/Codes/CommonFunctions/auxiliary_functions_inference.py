@@ -3600,8 +3600,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         t_step = int(block_size/float(num_process))
         int_results = []
         
-        pdb.set_trace()
-        
         tic = time.clock()
         for t_start in range(0,block_size,t_step):
             t_end = t_start + t_step
@@ -3647,14 +3645,20 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #---------------------------------------------------------------
         
         #--------------------------Update Weight------------------------
-        Delta_W_loc,cst,d_alp_vec = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)
+        ccst = np.zeros([20])
+        for ii in range(0,20):            
+
+            Delta_W_loc,cst,d_alp_vec = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)
         
-        Delta_W = Delta_W + Delta_W_loc
-        W_tot = W_tot + np.reshape(Delta_W_loc,[len_v-1,1])/no_blocks
-        lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
+            Delta_W = Delta_W + Delta_W_loc
+            W_tot = W_tot + np.reshape(Delta_W_loc,[len_v-1,1])
+            lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
+            ccst[ii] = cst
+        
         block_count = block_count + 1
         #---------------------------------------------------------------
-        
+    
+        pdb.set_trace()    
         #-----------------------Update Costs----------------------------
         total_cost[ttau] = total_cost[ttau] + cst
         total_Y[ttau] = total_Y[ttau] + cst_y
@@ -3748,7 +3752,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
-        cst = cst + np.sign(hinge_loss_func(W_temp,-aa_t,.1,1,0))
+        cst = cst + (hinge_loss_func(W_temp,-aa_t,.1,1,0))
         if yy_t:
             cst_y = cst_y + hinge_loss_func(W_temp,-aa_t,0.1,1,0)
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
