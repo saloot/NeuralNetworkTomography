@@ -3647,7 +3647,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #---------------------------------------------------------------
         
         #--------------------------Update Weight------------------------
-        Delta_W_loc,cst,d_alp_vec = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd)
+        Delta_W_loc,cst,d_alp_vec = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)
         
         Delta_W = Delta_W + Delta_W_loc
         W_tot = W_tot + np.reshape(Delta_W_loc,[len_v-1,1])/no_blocks
@@ -3670,7 +3670,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
 
 #------------------------------------------------------------------------------
-def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd):
+def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v):
     
     #------------------------Initializations------------------------
     TcT = len(yy)
@@ -3744,7 +3744,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
             W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
         else:
             xx = np.dot(W_temp.T,aa_t)
-            W_temp = W_temp + 0.001*abs(gg[yy_t]) * (np.reshape(aa_t,[n,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10))) 
+            W_temp = W_temp + 0.001*abs(gg[yy_t]) * (np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10))) 
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
