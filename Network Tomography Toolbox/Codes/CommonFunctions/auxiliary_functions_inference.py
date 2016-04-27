@@ -3600,27 +3600,30 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         t_step = int(block_size/float(num_process))
         int_results = []
         
-        
         pdb.set_trace()
+        
+        tic = time.clock()
         for t_start in range(0,block_size,t_step):
             t_end = t_start + t_step
             func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
             int_results.append( pool.apply_async( calculate_integration_matrix, func_args) )
         
-        pdb.set_trace()
+        
         total_spent_time = 0
         for result in int_results:
-            tic = time.clock()
+            
             (aa,yy,tt_start,tt_end) = result.get()
             #aa,yy,tt_start,tt_end = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
-            toc = time.clock()
-            print toc - tic
-            total_spent_time = total_spent_time + toc - tic
+            
+            
+            
             
             print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
             
             A[tt_start:tt_end,:] = aa
             Y[tt_start:tt_end,0] = yy.ravel()
+        toc = time.clock()
+        total_spent_time = total_spent_time + toc - tic
         #----------------------------------------------------------------------
         
         
@@ -3640,6 +3643,20 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         gg = {}
         gg[-1] = c_0
         gg[1] = c_1        
+        #---------------------------------------------------------------
+        
+        #--------------------------Update Weight------------------------
+        Delta_W_loc,cst,d_alp_vec = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd)
+        
+        Delta_W = Delta_W + Delta_W_loc
+        W_tot = W_tot + np.reshape(Delta_W_loc,[len_v-1,1])/no_blocks
+        lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
+        block_count = block_count + 1
+        #---------------------------------------------------------------
+        
+        #-----------------------Update Costs----------------------------
+        total_cost[ttau] = total_cost[ttau] + cst
+        total_Y[ttau] = total_Y[ttau] + cst_y
         #---------------------------------------------------------------
         
         print 'Total time %s' %str(total_spent_time)
@@ -3734,7 +3751,17 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
             cst_y = cst_y + hinge_loss_func(W_temp,-aa_t,0.1,1,0)
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
-    return W_temp,cst,lambda_temp
+    
+    #---------------------------------------------------------------
+    if mthd == 4:
+        Delta_W_loc = W_temp
+        #Delta_W_loc = soft_threshold(W_temp.ravel(),sparse_thr)
+    else:
+        Delta_W_loc = W_temp
+    #---------------------------------------------------------------
+
+            
+    return Delta_W_loc,cst,d_alp_vec
 
 #------------------------------------------------------------------------------
 def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
