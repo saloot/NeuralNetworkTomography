@@ -3607,20 +3607,21 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             int_results.append( pool.apply_async( calculate_integration_matrix, func_args) )
         
         
-        
+        total_spent_time = 0
         for result in int_results:
             tic = time.clock()
             (aa,yy,tt_start,tt_end) = result.get()
             toc = time.clock()
             print toc - tic
-        
+            total_spent_time = total_spent_time + toc - tic
+            
             print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
-            pdb.set_trace()
-            A[t_start:t_end,:] = aa
-            Y[t_start:t_end,0] = yy.ravel()
+            
+            A[tt_start:tt_end,:] = aa
+            Y[tt_start:tt_end,0] = yy.ravel()
         #----------------------------------------------------------------------
         
-        print 'wow!'
+        print 'Total time %s' %str(total_spent_time)
     
     
 #------------------------------------------------------------------------------
