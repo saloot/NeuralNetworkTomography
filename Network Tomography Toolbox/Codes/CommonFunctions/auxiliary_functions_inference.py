@@ -3526,6 +3526,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 
                 #------------This is for the last block-----------
                 if (max(range_T)-t_0) < block_size:
+                    print 'Oops daisy!'
                     continue
                 #-------------------------------------------------
                 
@@ -3716,7 +3717,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                 cst = 0
                 cst_y = 0
                 cst_old = 0
-                for ss in range(0,1*TcT):
+                for ss in range(0,2*TcT):
                             
                     ii = np.random.randint(0,TcT)
                     if rand_sample_flag:
