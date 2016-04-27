@@ -3682,7 +3682,6 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
         print '-------------Neuron %s----------' %str(ijk)
     
         #---------------------Necessary Initializations------------------------
-        t_last = T0 + T_temp        
         prng = RandomState(int(time()))
         
         lambda_tot = np.zeros([len(range_TT),1])
