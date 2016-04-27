@@ -3652,7 +3652,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
 
 #------------------------------------------------------------------------------
-def infer_w_block(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
+def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd):
     
     #------------------------Initializations------------------------
     TcT = len(yy)
@@ -3662,6 +3662,8 @@ def infer_w_block(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,t
     cst = 0
     cst_y = 0
     cst_old = 0
+    
+    W_temp = W_in
     #---------------------------------------------------------------
     
     #----------------------Assign Dual Vectors----------------------
@@ -3673,111 +3675,66 @@ def infer_w_block(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,t
 
     d_alp_vec = np.zeros([block_size,1])    
     #---------------------------------------------------------------
-                
-                
     
-    if 0:
-        if 0:
-            if 0:
-                for ss in range(0,2*TcT):
-                            
-                    ii = np.random.randint(0,TcT)
-                    if rand_sample_flag:
-                        jj = t_inds[ii]
-                    else:
-                        jj = ii
-                            
-                    #~~~~~~~~~~~Find the Optimal Delta-Alpha~~~~~~~~~~~
-                    #aa_t = read_spikes_lines_integrated(spikes_file_AA,ii+1,n)
-                    #yy_t = read_spikes_lines_integrated(spikes_file_YY,ii+1,1)
-                    #yy_t = yy_t[0]
-                    if load_mtx:
-                        aa_t = aa[ii,:]                        
-                        yy_t = yy[ii]
-                    else:
-                        if file_saved:
-                            aa_t = read_spikes_lines_integrated(spikes_file_AA,ii+1,n)
-                            yy_t = read_spikes_lines_integrated(spikes_file_YY,ii+1,1)
-                            yy_t = yy_t[0]
-                        else:
-                            if not rand_sample_flag:
-                                aa_t = AA[ii,:]
-                                yy_t = YY[ii]
-                        
-                    
-                    try:
-                        ff = gg[yy_t]*(aa_t)
-                    except:
-                        pdb.set_trace()
-                    
-                    if theta:
-                        c = 1 + theta * yy_t
-                    else:
-                        c = 1
-                    
-                    
-                    
-                    #~~~~~~~~~~~~Method 2~~~~~~~~~~~~~
-                    if mthd == 2:
-                        b = (c-np.dot(W_temp.T,aa_t))/(0.00001+pow(np.linalg.norm(aa_t),2))
-                        b = min(ccf-lambda_temp[jj],b)
-                        b = max(-lambda_temp[jj],b)
-                        d_alp = b
-                    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    
-                    #~~~~~~~~~~~~Method 3: Sparsity~~~~~~~~~~~~~
-                    elif mthd == 3:
-                        
-                        
-                        aac = np.ones([1,2])
-                        aac[:,0] = -lambda_temp[jj]
-                        aac[:,1] = ccf-lambda_temp[jj]
-                        bns = list(aac)
-                        
-                        res_cons = optimize.minimize(l1_loss,0, args=(W_temp,ff),bounds=bns,constraints=(),method='TNC', options={'disp':False,'maxiter':500})
-                        
-                        b = res_cons['x']
-                        
-                        d_alp = b[0]
-                    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                    
-                    else:
-                        b = cf * (np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(aa_t),2)
-                        
-                        try:
-                            if (b<=lambda_temp[jj]+1) and (b >= lambda_temp[jj]-1):
-                                d_alp = -b
-                            elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
-                                d_alp = -1-lambda_temp[jj]
-                            else:
-                                d_alp = 1-lambda_temp[jj]
-                        except:
-                            pdb.set_trace()
-                        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                            
-                    lambda_temp[jj] = lambda_temp[jj] + d_alp
-                    d_alp_vec[jj] = d_alp_vec[jj] + d_alp
-                    #W_temp = W_temp + d_alp * np.reshape(aa[ii,:],[len_v-1,1])/float(cf)
-                    if (mthd == 2) or (mthd == 3):
-                        W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])
-                    elif mthd == 1:
-                        W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
-                    else:
-                        xx = np.dot(W_temp.T,aa_t)
-                        W_temp = W_temp + 0.001*abs(gg[yy_t]) * (np.reshape(aa_t,[n,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10))) 
-                    
-                    
-                    cst = cst + np.sign(hinge_loss_func(W_temp,-aa_t,.1,1,0))
-                    if yy_t:
-                        cst_y = cst_y + hinge_loss_func(W_temp,-aa_t,0.1,1,0)
-                        
-                    if not (ss%1000000):
-                        
-                        print mthd,cst - cst_old
-                        cst_old = cst
-                #---------------------------------------------------------------
-                
-    return W_temp
+    #--------------------Do One Pass over Data----------------------        
+    for ss in range(0,1*TcT):
+        ii = np.random.randint(0,TcT)
+        if rand_sample_flag:
+            jj = t_inds[ii]
+        else:
+            jj = ii
+        
+        #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
+        aa_t = aa[ii,:]
+        yy_t = yy[ii]
+        ff = gg[yy_t]*(aa_t)
+        c = 1
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
+        if mthd == 2:
+            b = (c-np.dot(W_temp.T,aa_t))/(0.00001+pow(np.linalg.norm(aa_t),2))
+            b = min(ccf-lambda_temp[jj],b)
+            b = max(-lambda_temp[jj],b)
+            d_alp = b
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
+        elif mthd == 1:
+            b = cf * (np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(aa_t),2)
+            
+            if (b<=lambda_temp[jj]+1) and (b >= lambda_temp[jj]-1):
+                d_alp = -b
+            elif pow(b-lambda_temp[jj],2) < pow(b+1-lambda_temp[jj],2):
+                d_alp = -1-lambda_temp[jj]
+            else:
+                d_alp = 1-lambda_temp[jj]
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        
+        #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
+        if (mthd == 1) or (mthd == 3):
+            lambda_temp[jj] = lambda_temp[jj] + d_alp
+            d_alp_vec[jj] = d_alp_vec[jj] + d_alp
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        #~~~~~~~~~~~~~~~~~~~~~Upate Weights~~~~~~~~~~~~~~~~~~~~~~~~~
+        if (mthd == 3): 
+            W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])
+        elif mthd == 1:
+            W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
+        else:
+            xx = np.dot(W_temp.T,aa_t)
+            W_temp = W_temp + 0.001*abs(gg[yy_t]) * (np.reshape(aa_t,[n,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10))) 
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
+        cst = cst + np.sign(hinge_loss_func(W_temp,-aa_t,.1,1,0))
+        if yy_t:
+            cst_y = cst_y + hinge_loss_func(W_temp,-aa_t,0.1,1,0)
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    return W_temp,cst,lambda_temp
 
 #------------------------------------------------------------------------------
 def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
