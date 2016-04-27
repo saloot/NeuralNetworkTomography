@@ -3650,7 +3650,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
             Delta_W_loc,cst,d_alp_vec = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)
         
-            Delta_W = Delta_W + Delta_W_loc
+            #Delta_W = Delta_W + Delta_W_loc
             W_tot = W_tot + np.reshape(Delta_W_loc,[len_v-1,1])
             lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
             ccst[ii] = cst
@@ -4182,7 +4182,7 @@ def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt
                             Delta_W_loc = np.dot(aa.T,d_alp_vec[t_inds])
                         else:
                             Delta_W_loc = np.dot(aa.T,d_alp_vec)
-                #Delta_W = Delta_W + Delta_W_loc
+                Delta_W = Delta_W + Delta_W_loc
                 W_tot = W_tot + np.reshape(Delta_W_loc,[len_v-1,1])/no_blocks
                 lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
                 #---------------------------------------------------------------
