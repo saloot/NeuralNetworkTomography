@@ -3687,8 +3687,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             
             #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~            
-            for result in int_results:            
-                (aa,yy,tt_start,tt_end) = result.get()
+            for result in int_results:
+                try:
+                    (aa,yy,tt_start,tt_end) = result.get()
+                except:
+                    pdb.set_trace()
                 if tt_end > 0:            
                     A[tt_start-block_start:tt_end-block_start,:] = aa
                     Y[tt_start-block_start:tt_end-block_start,0] = yy.ravel()
