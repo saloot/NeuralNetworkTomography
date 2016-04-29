@@ -3745,6 +3745,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     cst_y = 0
     cst_old = 0
     class_samle_flag = 1                # If 1, we try to balance the dataset
+    sample_freq = 0.5                   # With what probability sampling class 1 or 0 should be considered
     if class_samle_flag:        
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
@@ -3776,7 +3777,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
         if class_samle_flag:
             ee = np.random.rand(1)
-            if ee < p1:
+            #if ee < p1:
+            if ee < sample_freq:
                 ii = np.random.randint(0,no_ones)
                 jj = ind_ones[ii]
                 print 1
