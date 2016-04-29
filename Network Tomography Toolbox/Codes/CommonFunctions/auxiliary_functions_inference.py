@@ -3843,7 +3843,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
             xx = np.dot(W_temp.T,ff)
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
             Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * max(0,1-xx)
-        #W_temp = W_temp + 0.001 * Delta_W_loc
+        W_temp = W_temp + 0.0001 * Delta_W_loc
         Delta_W = Delta_W + Delta_W_loc
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
