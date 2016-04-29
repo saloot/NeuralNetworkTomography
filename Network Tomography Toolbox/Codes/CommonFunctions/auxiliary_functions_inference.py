@@ -3659,7 +3659,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
-            #func_args = [W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v]
+            func_args = [W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v]
+            result = pool.apply_async(infer_w_block, func_args)
+            (aa,yy,tt_start,tt_end) = result.get()
+            if 1:
+                pdb.set_trace()
             #int_results.append(pool.apply_async(infer_w_block, func_args) )
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -3682,7 +3686,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     cst = yy                    # This is because of the choice of symbols for result.get()
                     d_alp_vec = tt_start        # This is because of the choice of symbols for result.get()
                     
-                    W_tot = W_tot + np.reshape(Delta_W_loc,[len_v-1,1])
+                    W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
                     lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
                     ccst[ii] = cst
                     #cst_tot = sum(np.dot(aa,W_tot)<0)
@@ -3737,7 +3741,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         no_zeros = len(yy) - no_ones
         p1 = no_ones /float(len(yy))
         
-    W_temp = W_in
+    W_temp = copy.deepcopy(W_in)
+    Delta_W = np.zeros(W_temp.shape)
     #---------------------------------------------------------------
     
     #----------------------Assign Dual Vectors----------------------
@@ -3808,14 +3813,19 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
             d_alp_vec[jj] = d_alp_vec[jj] + d_alp
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
-        #~~~~~~~~~~~~~~~~~~~~~Upate Weights~~~~~~~~~~~~~~~~~~~~~~~~~
-        if (mthd == 3): 
-            W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])
+        #~~~~~~~~~~~~~~~~~~~~~Upate Weights~~~~~~~~~~~~~~~~~~~~~~~~~        
+        if (mthd == 3):
+            Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])
+            
         elif mthd == 1:
-            W_temp = W_temp + d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
+            Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
+            
         else:
             xx = np.dot(W_temp.T,aa_t)
-            W_temp = W_temp + 0.001*abs(gg[yy_t]) * (np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10))) 
+            Delta_W_loc = 0.001*abs(gg[yy_t]) * (np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
+            
+        #W_temp = W_temp + 0.001 * Delta_W_loc
+        Delta_W = Delta_W + Delta_W_loc
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3835,7 +3845,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
 
             
     w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
-    return Delta_W_loc,cst,d_alp_vec,w_flag_for_parallel
+    return Delta_W,cst,d_alp_vec,w_flag_for_parallel
 
 #------------------------------------------------------------------------------
 def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
