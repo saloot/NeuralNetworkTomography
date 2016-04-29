@@ -3660,6 +3660,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
             func_args = [W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v]
+            pdb.set_trace()
             result = pool.apply_async(infer_w_block, func_args)
             (aa,yy,tt_start,tt_end) = result.get()
             if 1:
