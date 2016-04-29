@@ -3806,7 +3806,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         aa_t = aa[ii,:]
         yy_t = yy[ii][0]
         ff = gg[yy_t]*(aa_t)
-        c = 1
+        c = -1
         if (mthd == 1) or (mthd == 3):
             lb = -lambda_temp[jj]-ccf
             ub = -lambda_temp[jj]
