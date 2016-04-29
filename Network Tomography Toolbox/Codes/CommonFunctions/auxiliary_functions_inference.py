@@ -3538,6 +3538,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     T0 = 50                                    # It is the offset, i.e. the time from which on we will consider the firing activity
     range_TT = range(T0,TT)
+    block_start_inds = range(T0,TT,block_size)
     #----------------------------------------------------------------------
     
     #-----------------------------Behavior Flags-------------------------------
@@ -3582,7 +3583,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         prng = RandomState(int(time.time()))
         
         lambda_tot = np.zeros([len(range_TT),1])
-        no_blocks = 1+len(range_TT)/block_size
+        no_blocks = (1+TT-T0)/block_size
         
         W_tot = np.zeros([len_v-1,1])
         Z_tot = np.zeros([len_v-1,1])
@@ -3645,21 +3646,60 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #---------------------------------------------------------------
         
         #--------------------------Update Weight------------------------
-        ccst = np.zeros([20])
-        for ii in range(0,20):            
+        ccst = np.zeros([len(range_tau)])
+        itr_block = 1
+        for ttau in range_tau:
+            
+            #~~~~~~~~~~~~~~~~~~In-loop Initializations~~~~~~~~~~~~~~~~~~
+            block_start = block_start_inds[itr_block]            
+            int_results = []
+            total_spent_time = 0
+            tic = time.clock()
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
+            func_args = [W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v]
+            int_results.append( pool.apply_async( infer_w_block, func_args) )
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-            Delta_W_loc,cst,d_alp_vec = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)
-        
-            #Delta_W = Delta_W + Delta_W_loc
-            W_tot = W_tot + np.reshape(Delta_W_loc,[len_v-1,1])
-            lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
-            ccst[ii] = cst
-            cst_tot = sum(np.dot(aa,W_tot)<0)
+            #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
+            for t_start in range(block_start,block_start + block_size,t_step):
+                t_end = t_start + t_step
+                func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
+                int_results.append( pool.apply_async( calculate_integration_matrix, func_args) )
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            
+            #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~            
+            for result in int_results:            
+                (aa,yy,tt_start,tt_end) = result.get()
+                if tt_end > 0:            
+                    A[tt_start-block_start:tt_end-block_start,:] = aa
+                    Y[tt_start-block_start:tt_end-block_start,0] = yy.ravel()
+                else:
+                    Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
+                    cst = yy                    # This is because of the choice of symbols for result.get()
+                    d_alp_vec = tt_start        # This is because of the choice of symbols for result.get()
+                    
+                    W_tot = W_tot + np.reshape(Delta_W_loc,[len_v-1,1])
+                    lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
+                    ccst[ii] = cst
+                    #cst_tot = sum(np.dot(aa,W_tot)<0)
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            pdb.set_trace()
+            ii = ttaz
+            
+            #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)
+            
+            itr_block = itr_block + 1
+            if (itr_block==no_blocks-1):
+                itr_block = 0
         
         block_count = block_count + 1
         #---------------------------------------------------------------
     
-        pdb.set_trace()    
+        
         #-----------------------Update Costs----------------------------
         total_cost[ttau] = total_cost[ttau] + cst
         total_Y[ttau] = total_Y[ttau] + cst_y
@@ -3790,7 +3830,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     #---------------------------------------------------------------
 
             
-    return Delta_W_loc,cst,d_alp_vec
+    w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
+    return Delta_W_loc,cst,d_alp_vec,w_flag_for_parallel
 
 #------------------------------------------------------------------------------
 def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
