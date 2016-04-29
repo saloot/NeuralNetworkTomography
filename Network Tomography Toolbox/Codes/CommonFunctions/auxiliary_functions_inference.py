@@ -3668,6 +3668,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
             func_args = [W_tot,aa,yy,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
+            Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
+            pdb.set_trace()
             #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
             int_results.append(pool.apply_async(infer_w_block, func_args) )
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3736,7 +3738,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     
     #------------------------Initializations------------------------
     TcT = len(yy)
-    lamb = .00001/float(TcT)
+    lamb = .00001#/float(TcT)
     cf = lamb*TcT
     ccf = 1/float(cf)
     cst = 0
@@ -3768,7 +3770,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,1*TcT):
+    for ss in range(0,2*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
@@ -3777,9 +3779,13 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
             if ee < p1:
                 ii = np.random.randint(0,no_ones)
                 jj = ind_ones[ii]
+                print 1
+                pdb.set_trace()
             else:
                 ii = np.random.randint(0,no_zeros)
                 jj = ind_zeros[ii]
+                print 0
+                pdb.set_trace()
         else:
             ii = np.random.randint(0,TcT)
             if rand_sample_flag:
@@ -3796,6 +3802,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         yy_t = yy[ii][0]
         ff = gg[yy_t]*(aa_t)
         c = 1
+        lb = -lambda_temp[jj]-ccf
+        ub = -lambda_temp[jj]
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
@@ -3808,14 +3816,14 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
 
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
         elif mthd == 1:
-            b = cf * (np.dot(W_temp.T,aa_t) - c)/pow(np.linalg.norm(aa_t),2)
+            b = (-np.dot(W_temp.T,aa_t) - c)/pow(np.linalg.norm(aa_t),2)
             
-            if (b<=lambda_temp[jj]+1) and (b >= lambda_temp[jj]-1):
-                d_alp = -b
-            elif pow(b-lambda_temp[jj]-1,2) < pow(b+1-lambda_temp[jj],2):
-                d_alp = -1-lambda_temp[jj]
+            if (b<= ub ) and (b >= lb):
+                d_alp = b
+            elif pow(lb-b,2) < pow(ub-b,2):
+                d_alp = lb
             else:
-                d_alp = 1-lambda_temp[jj]
+                d_alp = ub
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         
