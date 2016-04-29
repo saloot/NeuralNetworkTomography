@@ -3621,7 +3621,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             A[tt_start:tt_end,:] = aa
             Y[tt_start:tt_end,0] = yy.ravel()
             
-        
+        toc = time.clock()
         total_spent_time = total_spent_time + toc - tic
         print total_spent_time
         
