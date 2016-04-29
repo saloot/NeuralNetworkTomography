@@ -3651,11 +3651,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         for ttau in range_tau:
             
-            #~~~~~~~~~~~~~~~~~~In-loop Initializations~~~~~~~~~~~~~~~~~~
-            try:
-                block_start = block_start_inds[itr_block]
-            except:
-                pdb.set_trace()
+            #~~~~~~~~~~~~~~~~~~In-loop Initializations~~~~~~~~~~~~~~~~~~            
+            block_start = block_start_inds[itr_block]
+
             int_results = []
             total_spent_time = 0
             tic = time.clock()
@@ -3670,8 +3668,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
-                func_args = [W_tot,aa,yy,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
-                #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
+                func_args = [W_tot,A,Y,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
+                #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,A,Y,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
                 #pdb.set_trace()
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3692,10 +3690,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~
                 itr_result = 0
                 for result in int_results:
-                    try:
-                        (aa,yy,tt_start,tt_end) = result.get()
-                    except:
-                        pdb.set_trace()
+                    
+                    (aa,yy,tt_start,tt_end) = result.get()
                         
                     if tt_end > 0:
                         A[tt_start-block_start:tt_end-block_start,:] = aa
