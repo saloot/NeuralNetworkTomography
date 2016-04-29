@@ -3660,13 +3660,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
             func_args = [W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v]
-            #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)
-            pdb.set_trace()
-            result = pool.apply_async(infer_w_block, func_args)
-            (aa,yy,tt_start,tt_end) = result.get()
-            if 1:
-                pdb.set_trace()
-            #int_results.append(pool.apply_async(infer_w_block, func_args) )
+            #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
+            int_results.append(pool.apply_async(infer_w_block, func_args) )
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
@@ -3690,7 +3685,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     
                     W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
                     lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
-                    ccst[ii] = cst
+                    ccst[ttau] = cst
                     #cst_tot = sum(np.dot(aa,W_tot)<0)
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
