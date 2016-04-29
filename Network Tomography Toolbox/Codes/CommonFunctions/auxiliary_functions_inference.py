@@ -3654,6 +3654,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             W_tot = W_tot + np.reshape(Delta_W_loc,[len_v-1,1])
             lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
             ccst[ii] = cst
+            cst_tot = sum(np.dot(aa,W_tot)<0)
         
         block_count = block_count + 1
         #---------------------------------------------------------------
@@ -3684,7 +3685,14 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     cst = 0
     cst_y = 0
     cst_old = 0
-    
+    class_samle_flag = 1                # If 1, we try to balance the dataset
+    if class_samle_flag:        
+        ind_ones = np.nonzero(yy>0)[0]
+        ind_zeros = np.nonzero(yy<0)[0]
+        no_ones = sum(yy>0)
+        no_zeros = len(yy) - no_ones
+        p1 = no_ones /float(len(yy))
+        
     W_temp = W_in
     #---------------------------------------------------------------
     
@@ -3700,11 +3708,27 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     
     #--------------------Do One Pass over Data----------------------        
     for ss in range(0,1*TcT):
-        ii = np.random.randint(0,TcT)
-        if rand_sample_flag:
-            jj = t_inds[ii]
+        
+        
+        #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
+        if class_samle_flag:
+            ee = np.random.rand(1)
+            if ee < p1:
+                ii = np.random.randint(0,no_ones)
+                jj = ind_ones[ii]
+            else:
+                ii = np.random.randint(0,no_zeros)
+                jj = ind_zeros[ii]
         else:
-            jj = ii
+            ii = np.random.randint(0,TcT)
+            if rand_sample_flag:
+                jj = t_inds[ii]
+            else:
+                jj = ii
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+        
+        
+        
         
         #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
         aa_t = aa[ii,:]
