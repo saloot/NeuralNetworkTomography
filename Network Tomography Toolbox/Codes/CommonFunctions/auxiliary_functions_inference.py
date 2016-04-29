@@ -3650,6 +3650,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #--------------------------Update Weight------------------------
         ccst = np.zeros([len(range_tau)])
         itr_block = 1
+        pool = multiprocessing.Pool(num_process)
         for ttau in range_tau:
             
             #~~~~~~~~~~~~~~~~~~In-loop Initializations~~~~~~~~~~~~~~~~~~
