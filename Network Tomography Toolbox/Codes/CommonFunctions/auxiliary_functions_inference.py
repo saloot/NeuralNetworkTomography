@@ -3781,11 +3781,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
             if ee < sample_freq:
                 ii = np.random.randint(0,no_ones)
                 jj = ind_ones[ii]
-                print 1                
             else:
                 ii = np.random.randint(0,no_zeros)
                 jj = ind_zeros[ii]
-                print 0                
         else:
             ii = np.random.randint(0,TcT)
             if rand_sample_flag:
