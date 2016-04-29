@@ -3664,6 +3664,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 bblock_size = TT - block_start
             else:
                 bblock_size = block_size
+                break           # Change this line in future to be able to deal with the "last block"
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
@@ -3713,7 +3714,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             toc = time.clock()
             total_spent_time = total_spent_time + toc - tic
             print 'Time spent on this block = %s'%str(total_spent_time)
-            
+            pdb.set_trace()
             
             itr_block = itr_block + 1
             if (itr_block>=no_blocks-1):
