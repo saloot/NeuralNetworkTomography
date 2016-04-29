@@ -3659,10 +3659,15 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             int_results = []
             total_spent_time = 0
             tic = time.clock()
+            
+            if block_start == block_start_inds.max():
+                bblock_size = TT - block_start
+            else:
+                bblock_size = block_size
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
-            func_args = [W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v]
+            func_args = [W_tot,aa,yy,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
             #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
             int_results.append(pool.apply_async(infer_w_block, func_args) )
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3670,8 +3675,14 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
             for t_start in range(block_start,block_start + block_size,t_step):
                 t_end = t_start + t_step
+                if t_end > TT:
+                    t_end = TT-1
+                    
                 func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
                 int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
+                
+                if t_end == TT-1:
+                    break
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             
@@ -3698,7 +3709,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             
             itr_block = itr_block + 1
-            if (itr_block==no_blocks-1):
+            if (itr_block>=no_blocks-1):
                 itr_block = 0
         
         pdb.set_trace()
