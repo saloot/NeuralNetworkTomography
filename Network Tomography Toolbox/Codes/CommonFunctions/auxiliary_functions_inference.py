@@ -3546,7 +3546,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
-    mthd = 1                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
+    mthd = 4                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3800,8 +3800,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         yy_t = yy[ii][0]
         ff = gg[yy_t]*(aa_t)
         c = 1
-        lb = -lambda_temp[jj]-ccf
-        ub = -lambda_temp[jj]
+        if (mthd == 1) or (mthd == 3):
+            lb = -lambda_temp[jj]-ccf
+            ub = -lambda_temp[jj]
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
@@ -3839,9 +3840,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
             Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
             
         else:
-            xx = np.dot(W_temp.T,aa_t)
-            Delta_W_loc = 0.001*abs(gg[yy_t]) * (np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
-            
+            xx = np.dot(W_temp.T,ff)
+            #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
+            Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * max(0,1-x)
         #W_temp = W_temp + 0.001 * Delta_W_loc
         Delta_W = Delta_W + Delta_W_loc
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
