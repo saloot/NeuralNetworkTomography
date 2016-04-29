@@ -3661,60 +3661,61 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             tic = time.clock()
             
             if block_start == max(block_start_inds):
-                bblock_size = TT - block_start
-                break           # Change this line in future to be able to deal with the "last block"
+                bblock_size = TT - block_start                
+                #break           # Change this line in future to be able to deal with the "last block"
+            
             else:
                 bblock_size = block_size
                 
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
-            func_args = [W_tot,aa,yy,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
-            #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
-            #pdb.set_trace()
-            int_results.append(pool.apply_async(infer_w_block, func_args) )
+                func_args = [W_tot,aa,yy,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
+                #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
+                #pdb.set_trace()
+                int_results.append(pool.apply_async(infer_w_block, func_args) )
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
-            for t_start in range(block_start,block_start + block_size,t_step):
-                t_end = t_start + t_step
-                if t_end > TT:
-                    t_end = TT-1
-                    break               # Change this line in future to be able to deal with the "last block"
-                    
-                func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
-                int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
+                for t_start in range(block_start,block_start + block_size,t_step):
+                    t_end = t_start + t_step
+                    if t_end > TT:
+                        t_end = TT-1
+                        break               # Change this line in future to be able to deal with the "last block"
+                        
+                    func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
+                    int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
                 
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             
             #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~
-            itr_result = 0
-            for result in int_results:
-                try:
-                    (aa,yy,tt_start,tt_end) = result.get()
-                except:
-                    pdb.set_trace()
-                    
-                if tt_end > 0:
-                    A[tt_start-block_start:tt_end-block_start,:] = aa
-                    Y[tt_start-block_start:tt_end-block_start,0] = yy.ravel()
-                else:
-                    Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
-                    cst = yy                    # This is because of the choice of symbols for result.get()
-                    d_alp_vec = tt_start        # This is because of the choice of symbols for result.get()
-                    
-                    W_tot = W_tot + 0.0001 * np.reshape(Delta_W_loc,[len_v-1,1])
-                    if (mthd == 1) or (mthd == 2):
-                        lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
-                    ccst[ttau] = cst
-                    #cst_tot = sum(np.dot(aa,Delta_W_loc)<0)
-                itr_result = itr_result + 1
+                itr_result = 0
+                for result in int_results:
+                    try:
+                        (aa,yy,tt_start,tt_end) = result.get()
+                    except:
+                        pdb.set_trace()
+                        
+                    if tt_end > 0:
+                        A[tt_start-block_start:tt_end-block_start,:] = aa
+                        Y[tt_start-block_start:tt_end-block_start,0] = yy.ravel()
+                    else:
+                        Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
+                        cst = yy                    # This is because of the choice of symbols for result.get()
+                        d_alp_vec = tt_start        # This is because of the choice of symbols for result.get()
+                        
+                        W_tot = W_tot + 0.0001 * np.reshape(Delta_W_loc,[len_v-1,1])
+                        if (mthd == 1) or (mthd == 2):
+                            lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
+                        ccst[ttau] = cst
+                        #cst_tot = sum(np.dot(aa,Delta_W_loc)<0)
+                    itr_result = itr_result + 1
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-            toc = time.clock()
-            total_spent_time = total_spent_time + toc - tic
-            print 'Time spent on this block = %s'%str(total_spent_time)
+                toc = time.clock()
+                total_spent_time = total_spent_time + toc - tic
+                print 'Time spent on this block = %s'%str(total_spent_time)
             pdb.set_trace()
             
             itr_block = itr_block + 1
