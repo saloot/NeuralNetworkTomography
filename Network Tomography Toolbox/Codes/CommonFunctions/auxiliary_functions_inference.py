@@ -3641,8 +3641,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         #--------------Assign Weights to the Classes--------------------                
         gg = {}
-        gg[-1] = c_0
-        gg[1] = c_1        
+        gg[-1] = 1#c_0
+        gg[1] = 1#c_1        
         #---------------------------------------------------------------
         
         #--------------------------Update Weight------------------------
@@ -3702,7 +3702,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
                     lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
                     ccst[ttau] = cst
-                    #cst_tot = sum(np.dot(aa,W_tot)<0)
+                    #cst_tot = sum(np.dot(aa,Delta_W_loc)<0)
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             toc = time.clock()
@@ -3738,14 +3738,14 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     
     #------------------------Initializations------------------------
     TcT = len(yy)
-    lamb = .00001#/float(TcT)
+    lamb = .01/float(TcT)
     cf = lamb*TcT
     ccf = 1/float(cf)
     cst = 0
     cst_y = 0
     cst_old = 0
     class_samle_flag = 1                # If 1, we try to balance the dataset
-    sample_freq = 0.5                   # With what probability sampling class 1 or 0 should be considered
+    sample_freq = 0.25                   # With what probability sampling class 1 or 0 should be considered
     if class_samle_flag:        
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
@@ -3806,7 +3806,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
 
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
         if mthd == 2:
-            b = (c-np.dot(W_temp.T,aa_t))/(0.00001+pow(np.linalg.norm(aa_t),2))
+            b = (-c-np.dot(W_temp.T,ff))/(0.00001+pow(np.linalg.norm(ff),2))
             b = min(ccf-lambda_temp[jj],b)
             b = max(-lambda_temp[jj],b)
             d_alp = b
@@ -3814,7 +3814,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
 
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
         elif mthd == 1:
-            b = (-np.dot(W_temp.T,aa_t) - c)/pow(np.linalg.norm(aa_t),2)
+            b = (-np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(ff),2)
             
             if (b<= ub ) and (b >= lb):
                 d_alp = b
