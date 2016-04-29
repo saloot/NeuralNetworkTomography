@@ -3806,10 +3806,12 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         aa_t = aa[ii,:]
         yy_t = yy[ii][0]
         ff = gg[yy_t]*(aa_t)
-        c = -1
+        c = 1
         if (mthd == 1) or (mthd == 3):
-            lb = -lambda_temp[jj]-ccf
-            ub = -lambda_temp[jj]
+            #lb = -lambda_temp[jj]-ccf
+            #ub = -lambda_temp[jj]
+            lb = -lambda_temp[jj]
+            ub = -lambda_temp[jj]+1
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
@@ -3822,7 +3824,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
 
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
         elif mthd == 1:
-            b = (-np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(ff),2)
+            b = cf * (c-np.dot(W_temp.T,ff))/pow(np.linalg.norm(aa_t),2)
+            #b = (-np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(ff),2)
             
             if (b<= ub ) and (b >= lb):
                 d_alp = b
