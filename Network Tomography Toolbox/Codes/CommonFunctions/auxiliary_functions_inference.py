@@ -3686,13 +3686,15 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             
-            #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~            
+            #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~
+            itr_result = 0
             for result in int_results:
                 try:
                     (aa,yy,tt_start,tt_end) = result.get()
                 except:
                     pdb.set_trace()
-                if tt_end > 0:            
+                    
+                if tt_end > 0:
                     A[tt_start-block_start:tt_end-block_start,:] = aa
                     Y[tt_start-block_start:tt_end-block_start,0] = yy.ravel()
                 else:
@@ -3705,6 +3707,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
                     ccst[ttau] = cst
                     #cst_tot = sum(np.dot(aa,Delta_W_loc)<0)
+                itr_result = itr_result + 1
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             toc = time.clock()
