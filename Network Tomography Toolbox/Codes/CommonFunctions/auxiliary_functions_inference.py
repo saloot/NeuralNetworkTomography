@@ -3624,8 +3624,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         print total_spent_time
         
         block_count = 0
-        
-        pool.join()
         #----------------------------------------------------------------------
         
         
