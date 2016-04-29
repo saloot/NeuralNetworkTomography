@@ -3678,12 +3678,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 t_end = t_start + t_step
                 if t_end > TT:
                     t_end = TT-1
+                    break               # Change this line in future to be able to deal with the "last block"
                     
                 func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
                 int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
                 
-                if t_end == TT-1:
-                    break
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             
