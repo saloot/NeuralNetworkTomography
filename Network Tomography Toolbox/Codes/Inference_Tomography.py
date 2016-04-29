@@ -240,7 +240,7 @@ for T in T_range:
         #W_inferred = delayed_inference_constraints_numpy(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
         
         #W_inferred = delayed_inference_constraints_hinge(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
-        block_size = 300000
+        block_size = 100000
         num_process = 4
         W_inferred = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,num_process)
     #--------------Post-Process the Inferred Matrix---------------

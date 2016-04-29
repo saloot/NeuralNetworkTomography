@@ -3660,6 +3660,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
             func_args = [W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v]
+            #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)
             pdb.set_trace()
             result = pool.apply_async(infer_w_block, func_args)
             (aa,yy,tt_start,tt_end) = result.get()
@@ -3699,7 +3700,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             pdb.set_trace()
             ii = ttaz
             
-            #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)
+            
             
             itr_block = itr_block + 1
             if (itr_block==no_blocks-1):
@@ -3747,13 +3748,16 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     #---------------------------------------------------------------
     
     #----------------------Assign Dual Vectors----------------------
-    lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
-    if rand_sample_flag:
-        lambda_0 = lambda_temp[t_inds]
+    if (mthd == 2) or (mthd == 3):
+        lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
+        if rand_sample_flag:
+            lambda_0 = lambda_temp[t_inds]
+        else:
+            lambda_0 = lambda_temp
+    
+        d_alp_vec = np.zeros([block_size,1])
     else:
-        lambda_0 = lambda_temp
-
-    d_alp_vec = np.zeros([block_size,1])    
+        d_alp_vec = [0]
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
