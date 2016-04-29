@@ -3605,7 +3605,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         for t_start in range(0,block_size,t_step):
             t_end = t_start + t_step
             func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
-            int_results.append( pool.apply_async( calculate_integration_matrix, func_args) )
+            int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
+        
         
         
         total_spent_time = 0
@@ -3613,7 +3614,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             (aa,yy,tt_start,tt_end) = result.get()
             #aa,yy,tt_start,tt_end = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
-            
+            result.task_done()
             print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
             
             A[tt_start:tt_end,:] = aa
@@ -3624,6 +3625,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         print total_spent_time
         
         block_count = 0
+        pool.terminate()
+        pool.join()
         #----------------------------------------------------------------------
         
         
@@ -3659,14 +3662,14 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
             func_args = [W_tot,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v]
-            int_results.append( pool.apply_async( infer_w_block, func_args) )
+            int_results.append(pool.apply_async(infer_w_block, func_args) )
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
             for t_start in range(block_start,block_start + block_size,t_step):
                 t_end = t_start + t_step
                 func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
-                int_results.append( pool.apply_async( calculate_integration_matrix, func_args) )
+                int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             
@@ -3687,6 +3690,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     #cst_tot = sum(np.dot(aa,W_tot)<0)
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
+            toc = time.clock()
+            total_spent_time = total_spent_time + toc - tic
+            print 'Time spent on this block = %s'%str(total_spent_time)
             pdb.set_trace()
             ii = ttaz
             
