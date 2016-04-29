@@ -3704,8 +3704,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
         
         #-----------------------Update Costs----------------------------
-        total_cost[ttau] = total_cost[ttau] + cst
-        total_Y[ttau] = total_Y[ttau] + cst_y
+        #total_cost[ttau] = total_cost[ttau] + cst
+        #total_Y[ttau] = total_Y[ttau] + cst_y
         #---------------------------------------------------------------
         
         print 'Total time %s' %str(total_spent_time)
