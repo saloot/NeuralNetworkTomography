@@ -3613,8 +3613,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         for result in int_results:
             
             (aa,yy,tt_start,tt_end) = result.get()
-            #aa,yy,tt_start,tt_end = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
-            result.task_done()
+            #aa,yy,tt_start,tt_end = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)            
             print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
             
             A[tt_start:tt_end,:] = aa
