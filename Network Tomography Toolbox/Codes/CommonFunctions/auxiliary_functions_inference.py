@@ -3707,7 +3707,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         if (mthd == 1) or (mthd == 2):
                             lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
                         ccst[ttau] = cst
-                        #cst_tot = sum(np.dot(aa,Delta_W_loc)<0)
+                        #cst_tot = sum(np.dot(A,W_tot)<0)
                     itr_result = itr_result + 1
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
@@ -3745,7 +3745,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     
     #------------------------Initializations------------------------
     TcT = len(yy)
-    lamb = .01/float(TcT)
+    lamb = 1/float(TcT)
     cf = lamb*TcT
     ccf = 1/float(cf)
     cst = 0
