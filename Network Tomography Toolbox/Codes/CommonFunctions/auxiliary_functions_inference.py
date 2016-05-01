@@ -3733,6 +3733,13 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         print 'Total time %s' %str(total_spent_time)
     
+        WW = np.zeros([len_v,1])
+        WW[0:ijk,0] = W_tot[0:ijk,0]
+        WW[ijk+1:,0] = W_tot[ijk:,0]
+        
+        W_inferred[0:len_v,ijk] = WW[0:len_v].ravel()
+        
+    return W_inferred
     
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
