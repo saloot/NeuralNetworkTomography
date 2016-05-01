@@ -3745,7 +3745,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     
     #------------------------Initializations------------------------
     TcT = len(yy)
-    lamb = 1/float(TcT)
+    lamb = .001/float(TcT)
     cf = lamb*TcT
     ccf = 1/float(cf)
     cst = 0
@@ -3778,7 +3778,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,2*TcT):
+    for ss in range(0,1*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
