@@ -3703,7 +3703,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         cst = yy                    # This is because of the choice of symbols for result.get()
                         d_alp_vec = tt_start        # This is because of the choice of symbols for result.get()
                         
-                        W_tot = W_tot + 0.01 * np.reshape(Delta_W_loc,[len_v-1,1])
+                        W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
                         if (mthd == 1) or (mthd == 2):
                             lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
                         ccst[ttau] = cst
