@@ -3710,7 +3710,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         #cst_tot = sum(np.dot(A,W_tot)<0)
                     itr_result = itr_result + 1
                     
-                print sum(Y>0)
+                print sum(Y>0),cst
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
                 toc = time.clock()
@@ -3721,7 +3721,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             if (itr_block>=no_blocks-1):
                 itr_block = 0
         
-        #pdb.set_trace()
+        pdb.set_trace()
         toc = time.clock()
         print ccst
         print 'Total time spent = %s'%str(tic_start - toc)
