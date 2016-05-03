@@ -3820,11 +3820,11 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         if (mthd == 1):
             #lb = -lambda_temp[jj]-ccf
             #ub = -lambda_temp[jj]
-            lb = -lambda_temp[jj]
-            ub = -lambda_temp[jj]+1
+            lb = -lambda_temp[jj]-1
+            ub = -lambda_temp[jj]
         elif (mthd == 3):
-            lb = -lambda_temp[jj]
-            ub = -lambda_temp[jj]+1
+            lb1 = -lambda_temp[jj]
+            ub1 = -lambda_temp[jj]+1
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
