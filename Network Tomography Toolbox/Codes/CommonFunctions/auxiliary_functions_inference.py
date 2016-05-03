@@ -3788,7 +3788,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,5*TcT):
+    for ss in range(0,10*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
