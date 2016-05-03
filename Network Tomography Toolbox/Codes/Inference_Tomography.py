@@ -34,7 +34,7 @@ frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensem
 theta = .005                                               # The update threshold of the neurons in the network
 d_window = 2                                          # The time window the algorithm considers to account for pre-synaptic spikes
 sparse_thr0 = 0.0005                                    # The initial sparsity soft-threshold (not relevant in this version)
-max_itr_optimization = 250                             # This is the maximum number of iterations performed by internal optimization algorithm for inference
+max_itr_optimization = 500                             # This is the maximum number of iterations performed by internal optimization algorithm for inference
 tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
 tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
 #------------------------------------------------------------------------------
@@ -81,7 +81,7 @@ file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_750.txt'
 
 if (inference_method == 7):
     file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
-    #file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/Moritz_Spike_Times.txt'
+    file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/Moritz_Spike_Times.txt'
     file_name_prefix = 'Moritz'
 elif (inference_method == 5):
     inference_method = 7
@@ -243,7 +243,7 @@ for T in T_range:
         import multiprocessing
 
         num_process = multiprocessing.cpu_count()
-        block_size = 200000
+        block_size = 400000
         #num_process = 4
         W_inferred = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,num_process)
     #--------------Post-Process the Inferred Matrix---------------
