@@ -3788,7 +3788,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,1*TcT):
+    for ss in range(0,10*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
@@ -3817,9 +3817,12 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         yy_t = yy[ii][0]
         ff = gg[yy_t]*(aa_t)
         c = 1
-        if (mthd == 1) or (mthd == 3):
+        if (mthd == 1):
             #lb = -lambda_temp[jj]-ccf
             #ub = -lambda_temp[jj]
+            lb = -lambda_temp[jj]
+            ub = -lambda_temp[jj]+1
+        elif (mthd == 3):
             lb = -lambda_temp[jj]
             ub = -lambda_temp[jj]+1
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3863,8 +3866,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
             xx = np.dot(W_temp.T,ff)
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
             Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * max(0,1-xx)
-        #W_temp = W_temp + 0.001 * Delta_W_loc
+                
         Delta_W = Delta_W + Delta_W_loc
+        W_temp = W_temp + Delta_W_loc
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
