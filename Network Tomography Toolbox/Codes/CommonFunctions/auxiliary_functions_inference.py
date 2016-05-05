@@ -3694,7 +3694,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 print YA.shape
                 pdb.set_trace()
                 func_args = [W_tot,A,YA,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
-                #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,A,Y,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
+                #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,A,YA,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
                 #pdb.set_trace()
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3851,7 +3851,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         
         #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
         aa_t = aa[ii,:]
-        yy_t = yy[ii][0]
+        yy_t = yy[ii]#[0]
         ff = gg[yy_t]*(aa_t)
         c = 1
         if (mthd == 1):            
