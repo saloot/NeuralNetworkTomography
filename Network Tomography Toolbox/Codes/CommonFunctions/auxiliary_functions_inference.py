@@ -3632,7 +3632,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #aa,yy,tt_start,tt_end = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)            
             print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
             
-            A[tt_start:tt_end,:] = X.T
+            A[tt_start:tt_end,:] = X
             Y[tt_start:tt_end,0] = YA.ravel()
             #del aa
             #del yy
