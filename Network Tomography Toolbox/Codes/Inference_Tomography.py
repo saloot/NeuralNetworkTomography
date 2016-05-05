@@ -2,6 +2,7 @@
 from time import time
 import numpy as np
 import sys,getopt,os
+import resource
 try:
     import matplotlib.pyplot as plt
 except:
@@ -245,6 +246,7 @@ for T in T_range:
         num_process = multiprocessing.cpu_count()
         block_size = 200000
         #num_process = 4
+        print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
         W_inferred = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,num_process)
     #--------------Post-Process the Inferred Matrix---------------
     if 0:#len(non_zero_neurons) != n:
