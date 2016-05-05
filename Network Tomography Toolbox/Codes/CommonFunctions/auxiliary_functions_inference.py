@@ -3415,7 +3415,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
 #------------------------------------------------------------------------------
 
 
-def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,tau_s,V,Y):
+def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,tau_s):
     
     
     #----------------------------Initializations---------------------------
@@ -3430,8 +3430,8 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
         len_v = n
         
     #X = np.zeros([len_v,block_size])
-    #V = np.zeros([len_v,block_size])
-    #Y = np.zeros([block_size])
+    V = np.zeros([len_v,block_size])
+    Y = np.zeros([block_size])
     x = np.zeros([len_v,1])
     v = np.zeros([len_v,1])
     #----------------------------------------------------------------------
@@ -3485,7 +3485,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     
     #YY = (Y>0).astype(int) - (Y<=0).astype(int)
     #A = (V-X).T
-    AA = (V).T
+    #AA = (V).T
     #---------------------------------------------------------------------
     
     #---------------Shift Post-Synaptic Spike One to the Left-------------
@@ -3502,7 +3502,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     #AA = np.delete(AA.T,n_ind,0).T
     #---------------------------------------------------------------------
     
-    return AA,Y,t_start,t_end
+    return V.T,Y,t_start,t_end
 
 
 
@@ -3623,7 +3623,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         print 'memory so far at before parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         for t_start in range(0,block_size,t_step):
             t_end = t_start + t_step
-            func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,A[t_start:t_end,:].T,YA[t_start:t_end]]
+            func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
             int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         #pool.close()
         #pool.join()
@@ -3700,7 +3700,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         t_end = TT-1
                         break               # Change this line in future to be able to deal with the "last block"
                         
-                    func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,A[t_start-block_start:t_end-block_start,:],YA[t_start-block_start:t_end-block_start]]
+                    func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
                     int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
                 
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
