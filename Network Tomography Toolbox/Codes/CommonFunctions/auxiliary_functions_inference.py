@@ -3585,8 +3585,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     A = np.zeros([block_size,len_v-1])      # This should contain current block
     YA = np.zeros([block_size])
         
-    B = np.zeros([block_size,len_v-1])      # This should contain the next block
-    YB = np.zeros([block_size])
     
     tic_start = time.clock()
     
@@ -3702,7 +3700,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         t_end = TT-1
                         break               # Change this line in future to be able to deal with the "last block"
                         
-                    func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,B[t_start-block_start:t_end-block_start,:],YB[t_start-block_start:t_end-block_start]]
+                    func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,A[t_start-block_start:t_end-block_start,:],YA[t_start-block_start:t_end-block_start]]
                     int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
                 
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3716,8 +3714,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     (aa,yy,tt_start,tt_end) = result.get()
                     
                     if tt_end > 0:
-                        B[tt_start-block_start:tt_end-block_start,:] = aa
-                        YB[tt_start-block_start:tt_end-block_start] = yy
+                        A[tt_start-block_start:tt_end-block_start,:] = aa
+                        YA[tt_start-block_start:tt_end-block_start] = yy
                     else:
                         Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
                         cst = yy                    # This is because of the choice of symbols for result.get()
@@ -3730,8 +3728,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         #cst_tot = sum(np.dot(A,W_tot)<0)
                     itr_result = itr_result + 1
                 
-                A = B
-                YA = YB
+                
                 print sum(YA>0),cst
                 total_cost[itr_cost] = total_cost[itr_cost] + cst
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
