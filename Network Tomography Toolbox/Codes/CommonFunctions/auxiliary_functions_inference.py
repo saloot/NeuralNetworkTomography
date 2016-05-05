@@ -3566,6 +3566,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         len_v = n+1
     
     
+    total_memory = 0
+    
     W_infer = np.zeros([int(len(range_TT)/float(block_size))+1,len_v])
     W_inferred = np.zeros([len_v,len_v])
     
@@ -3585,6 +3587,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         lambda_tot = np.zeros([len(range_TT),1])
         no_blocks = (1+TT-T0)/block_size
+        total_memory = total_memory + lambda_tot.nbytes
+        print 'mem for lambda %s' %str(lambda_tot.nbytes)
         
         W_tot = np.zeros([len_v-1,1])
         Z_tot = np.zeros([len_v-1,1])
@@ -3625,6 +3629,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         total_spent_time = total_spent_time + toc - tic
         print total_spent_time
         
+        total_memory = total_memory + A.nbytes
+        total_memory = total_memory + Y.nbytes
+        print 'mem for A %s' %str(A.nbytes)
+        print 'mem for Y %s' %str(Y.nbytes)
+        
         block_count = 0
         #----------------------------------------------------------------------
         
@@ -3634,11 +3643,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             t_init = np.random.randint(0,t_gap)
             t_inds = np.array(range(t_init,block_size,t_gap))
                         
-            aa = A[t_inds,:]
-            yy = Y[t_inds]
-        else:
-            aa = A
-            yy = Y
+            A = A[t_inds,:]
+            Y = Y[t_inds]
         #---------------------------------------------------------------
         
         #--------------Assign Weights to the Classes--------------------                
@@ -3694,14 +3700,25 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 for result in int_results:
                     
                     (aa,yy,tt_start,tt_end) = result.get()
-                        
+                    
+                    
+        
                     if tt_end > 0:
                         A[tt_start-block_start:tt_end-block_start,:] = aa
                         Y[tt_start-block_start:tt_end-block_start,0] = yy.ravel()
+                        
+                        total_memory = total_memory + A.nbytes
+                        print 'mem for A %s at itr %s' %(str(A.nbytes),str(ttau))
+                        total_memory = total_memory + Y.nbytes
+                        print 'mem for Y %s at itr %s' %str((Y.nbytes),str(ttau))
+                        
                     else:
                         Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
                         cst = yy                    # This is because of the choice of symbols for result.get()
                         d_alp_vec = tt_start        # This is because of the choice of symbols for result.get()
+                        
+                        total_memory = total_memory + d_alp_vec.nbytes
+                        print 'mem for d_alp_vec %s' %str(d_alp_vec.nbytes)
                         
                         W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
                         if (mthd == 1) or (mthd == 2):
