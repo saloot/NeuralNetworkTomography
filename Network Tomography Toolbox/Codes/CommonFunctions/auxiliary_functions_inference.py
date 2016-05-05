@@ -3469,8 +3469,8 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
         #.................................................................
         
         #.....................Store the Potentials........................
-        V[:,t_tot] = yy * v.ravel()
-        #X[:,t_tot] = yy * x.ravel()
+        V[:,t_tot] = yy * (np.delete(v.T,n_ind,0)).ravel()
+        #X[:,t_tot] = yy * (np.delete(x.T,n_ind,0)).ravel()
         Y[t_tot] = yy
         
         t_tot = t_tot + 1
@@ -3499,7 +3499,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     #for t in range(0,t_tot):
     #    AA[t,:] = YY[t]*A[t,:]
                         
-    AA = np.delete(AA.T,n_ind,0).T
+    #AA = np.delete(AA.T,n_ind,0).T
     #---------------------------------------------------------------------
     
     return AA,Y,t_start,t_end
