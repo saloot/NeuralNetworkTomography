@@ -3429,12 +3429,10 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     else:
         len_v = n
         
-    X = np.zeros([len_v,block_size])
+    #X = np.zeros([len_v,block_size])
     V = np.zeros([len_v,block_size])    
     x = np.zeros([len_v,1])
     v = np.zeros([len_v,1])
-    xx = np.zeros([len_v,1])
-    vv = np.zeros([len_v,1])
     Y = np.zeros([block_size])
     #----------------------------------------------------------------------
     
@@ -3451,8 +3449,8 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
             yy = 1
             
             #~~~~~~~~~~~~~~~~Reset the Membrane Potential~~~~~~~~~~~~~~~~~
-            x = np.zeros([len_v,1])
-            v = np.zeros([len_v,1])
+            x = 0*x#np.zeros([len_v,1])
+            v = 0*v#np.zeros([len_v,1])
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #.................................................................
         
@@ -3472,7 +3470,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
         
         #.....................Store the Potentials........................
         V[:,t_tot] = yy * v.ravel()
-        X[:,t_tot] = yy * x.ravel()
+        #X[:,t_tot] = yy * x.ravel()
         Y[t_tot] = yy
         
         t_tot = t_tot + 1
@@ -3482,7 +3480,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     #-------------------Post Process Spike Matrices-----------------------
     Y = np.array(Y)
     V = V[:,0:t_tot]
-    X = X[:,0:t_tot]
+    #X = X[:,0:t_tot]
     Y = Y[0:t_tot]
     
     #YY = (Y>0).astype(int) - (Y<=0).astype(int)
@@ -3631,9 +3629,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             A[tt_start:tt_end,:] = aa
             Y[tt_start:tt_end,0] = yy.ravel()
-            del aa
-            del yy
-            gc.collect()
+            #del aa
+            #del yy
+            #gc.collect()
             
         toc = time.clock()
         total_spent_time = total_spent_time + toc - tic
@@ -3712,8 +3710,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     
                     (aa,yy,tt_start,tt_end) = result.get()
                     
-                    
-        
                     if tt_end > 0:
                         A[tt_start-block_start:tt_end-block_start,:] = aa
                         Y[tt_start-block_start:tt_end-block_start,0] = yy.ravel()
