@@ -11,6 +11,7 @@ import numpy as np
 import math
 from default_values import *
 import time
+import resource
 from time import time
 from numpy.random import randint
 from numpy.random import RandomState
@@ -3698,6 +3699,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~
                 itr_result = 0
+                print 'memory so far up to iterations %s is %s' %(str(ttau),str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
                 for result in int_results:
                     
                     (aa,yy,tt_start,tt_end) = result.get()
