@@ -3810,7 +3810,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     #---------------------------------------------------------------
     
     #----------------------Assign Dual Vectors----------------------
-    if (mthd == 1) or (mthd == 2):
+    if (mthd == 1) or (mthd == 3):
         lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
         if rand_sample_flag:
             lambda_0 = lambda_temp[t_inds]
