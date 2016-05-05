@@ -3622,7 +3622,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             t_end = t_start + t_step
             func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,X,V,YA]
             int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
-        
+        pool.close()
+        pool.join()
         
         
         total_spent_time = 0
@@ -3631,7 +3632,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             (X,YA,tt_start,tt_end) = result.get()
             #aa,yy,tt_start,tt_end = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)            
             print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
-            print 'memory so far after parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+            
             A[tt_start:tt_end,:] = X
             Y[tt_start:tt_end,0] = YA.ravel()
             #del aa
