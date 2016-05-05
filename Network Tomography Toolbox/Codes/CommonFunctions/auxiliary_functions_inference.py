@@ -3539,8 +3539,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         neuron_range = np.array(range(0,m))
     
     
-    T0 = 50                                    # It is the offset, i.e. the time from which on we will consider the firing activity
-    range_TT = range(T0,TT)
+    T0 = 50                                    # It is the offset, i.e. the time from which on we will consider the firing activity    
     block_start_inds = range(T0,TT,block_size)
     #----------------------------------------------------------------------
     
@@ -3571,7 +3570,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     total_memory = 0
     
-    W_infer = np.zeros([int(len(range_TT)/float(block_size))+1,len_v])
+    W_infer = np.zeros([int((TT-T0)/float(block_size))+1,len_v])
     W_inferred = np.zeros([len_v,len_v])
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
@@ -3590,7 +3589,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #---------------------Necessary Initializations------------------------    
         prng = RandomState(int(time.time()))
         
-        lambda_tot = np.zeros([len(range_TT),1])
+        lambda_tot = np.zeros([TT-T0,1])
         no_blocks = (1+TT-T0)/block_size
         
         total_memory = total_memory + lambda_tot.nbytes
