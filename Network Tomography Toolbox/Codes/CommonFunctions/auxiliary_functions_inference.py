@@ -3430,7 +3430,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
         len_v = n
         
     #X = np.zeros([len_v-1,block_size])
-    V = np.zeros([len_v-1,block_size])
+    V = np.zeros([len_v,block_size])
     Y = np.zeros([block_size])
     x = np.zeros([len_v,1])
     v = np.zeros([len_v,1])
@@ -3469,7 +3469,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
         #.................................................................
         
         #.....................Store the Potentials........................
-        V[:,t_tot] = yy * (np.delete(v,n_ind,0)).ravel()
+        V[:,t_tot] = yy * v.ravel()#(np.delete(v,n_ind,0)).ravel()
         #X[:,t_tot] = yy * (np.delete(x,n_ind,0)).ravel()
         Y[t_tot] = yy
         
@@ -3500,9 +3500,12 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     #    AA[t,:] = YY[t]*A[t,:]
                         
     #AA = np.delete(AA.T,n_ind,0).T
+    
+    V = V.T
+    V = np.delete(V.T,n_ind,0).T
     #---------------------------------------------------------------------
     
-    return V.T,Y,t_start,t_end
+    return V,Y,t_start,t_end
 
 
 
@@ -3687,6 +3690,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
+                print A.shape
+                print YA.shape
+                pdb.set_trace()
                 func_args = [W_tot,A,YA,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
                 #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,A,Y,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
                 #pdb.set_trace()
