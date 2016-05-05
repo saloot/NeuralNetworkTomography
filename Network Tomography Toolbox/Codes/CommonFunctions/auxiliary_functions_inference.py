@@ -3737,7 +3737,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
             if itr_cost >= 1:
-                if abs(total_cost[itr_cost]-total_cost[itr_cost])/total_cost[itr_cost-1] < 0.00001:
+                if abs(total_cost[itr_cost]-total_cost[itr_cost-1])/total_cost[itr_cost-1] < 0.00001:
                     break
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
@@ -3750,7 +3750,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             
         
-        #pdb.set_trace()
+        pdb.set_trace()
         toc = time.clock()
         print ccst[0:ttau]
         print 'Total time spent = %s'%str(tic_start - toc)
