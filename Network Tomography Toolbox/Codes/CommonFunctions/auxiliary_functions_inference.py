@@ -3650,7 +3650,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #--------------------------Update Weight------------------------
         ccst = np.zeros([len(range_tau)])
         itr_block = 1
-        
+        itr_cost = 0
         for ttau in range_tau:
             
             #~~~~~~~~~~~~~~~~~~In-loop Initializations~~~~~~~~~~~~~~~~~~            
@@ -3711,15 +3711,27 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     itr_result = itr_result + 1
                     
                 print sum(Y>0),cst
+                total_cost[itr_cost] = total_cost[itr_cost] + cst
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
                 toc = time.clock()
                 total_spent_time = total_spent_time + toc - tic
                 print 'Time spent on this block = %s'%str(total_spent_time)
-                
+            
+            #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
+            if itr_cost >= 1:
+                if abs(total_cost[itr_cost]-total_cost[itr_cost])/total_cost[itr_cost-1] < 0.001:
+                    break
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            
+            
             itr_block = itr_block + 1
             if (itr_block>=no_blocks-1):
                 itr_block = 0
+                itr_cost = itr_cost + 1
+            
+            
         
         pdb.set_trace()
         toc = time.clock()
