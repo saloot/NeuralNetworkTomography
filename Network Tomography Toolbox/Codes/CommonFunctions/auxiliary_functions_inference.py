@@ -3415,7 +3415,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
 #------------------------------------------------------------------------------
 
 
-def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,tau_s,X,V,Y):
+def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,tau_s,V,Y):
     
     
     #----------------------------Initializations---------------------------
@@ -3578,9 +3578,15 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     t_step = int(block_size/float(num_process))
     
-    X = np.zeros([len_v,t_step])
-    V = np.zeros([len_v,t_step])
-    YA = np.zeros([t_step])
+    #X = np.zeros([len_v,t_step])
+    #V = np.zeros([len_v,t_step])
+    #YA = np.zeros([t_step])
+    
+    A = np.zeros([block_size,len_v-1])      # This should contain current block
+    YA = np.zeros([block_size])
+        
+    B = np.zeros([block_size,len_v-1])      # This should contain the next block
+    YB = np.zeros([block_size])
     
     tic_start = time.clock()
     
@@ -3608,8 +3614,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         total_Y = np.zeros([len(range_tau),1])
         beta_K = 1
         
-        A = np.zeros([block_size,len_v-1])
-        Y = np.zeros([block_size,1])
+        
         #----------------------------------------------------------------------
         
         #------------------Prepare the First Spike Matrix----------------------
@@ -3620,7 +3625,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         print 'memory so far at before parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         for t_start in range(0,block_size,t_step):
             t_end = t_start + t_step
-            func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,X,V,YA]
+            func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,A[tt_start:tt_end,:].T,YA[tt_start:tt_end]]
             int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         #pool.close()
         #pool.join()
@@ -3629,12 +3634,12 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         total_spent_time = 0
         for result in int_results:
             
-            (X,YA,tt_start,tt_end) = result.get()
+            (A[tt_start:tt_end,:],YA[tt_start:tt_end],tt_start,tt_end) = result.get()
             #aa,yy,tt_start,tt_end = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)            
             print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
             
-            A[tt_start:tt_end,:] = X
-            Y[tt_start:tt_end,0] = YA.ravel()
+            #A[tt_start:tt_end,:] = X
+            #YA[tt_start:tt_end] = YA.ravel()
             del result
             #del yy
             gc.collect()
@@ -3644,7 +3649,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         print total_spent_time
         
         total_memory = total_memory + A.nbytes
-        total_memory = total_memory + Y.nbytes
+        total_memory = total_memory + YA.nbytes
         print 'memory so far after parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         
         
@@ -3658,7 +3663,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             t_inds = np.array(range(t_init,block_size,t_gap))
                         
             A = A[t_inds,:]
-            Y = Y[t_inds]
+            YA = YA[t_inds]
         #---------------------------------------------------------------
         
         #--------------Assign Weights to the Classes--------------------                
@@ -3690,7 +3695,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
-                func_args = [W_tot,A,Y,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
+                func_args = [W_tot,A,YA,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
                 #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,A,Y,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
                 #pdb.set_trace()
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
@@ -3703,7 +3708,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         t_end = TT-1
                         break               # Change this line in future to be able to deal with the "last block"
                         
-                    func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,X,V,YA]
+                    func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,B[tt_start-block_start:tt_end-block_start,:],YB[tt_start-block_start:tt_end-block_start]]
                     int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
                 
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3717,8 +3722,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     (aa,yy,tt_start,tt_end) = result.get()
                     
                     if tt_end > 0:
-                        A[tt_start-block_start:tt_end-block_start,:] = aa
-                        Y[tt_start-block_start:tt_end-block_start,0] = yy.ravel()
+                        B[tt_start-block_start:tt_end-block_start,:] = aa
+                        YB[tt_start-block_start:tt_end-block_start] = yy
                     else:
                         Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
                         cst = yy                    # This is because of the choice of symbols for result.get()
@@ -3730,7 +3735,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         ccst[ttau] = cst
                         #cst_tot = sum(np.dot(A,W_tot)<0)
                     itr_result = itr_result + 1
-                    
+                
+                A = B
+                YA = YB
                 print sum(Y>0),cst
                 total_cost[itr_cost] = total_cost[itr_cost] + cst
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
