@@ -3817,11 +3817,11 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         yy_t = yy[ii][0]
         ff = gg[yy_t]*(aa_t)
         c = 1
-        if (mthd == 1):
-            #lb = -lambda_temp[jj]-ccf
+        if (mthd == 1):            
+            #lb = -lambda_temp[jj]-1
             #ub = -lambda_temp[jj]
-            lb = -lambda_temp[jj]-1
-            ub = -lambda_temp[jj]
+            ub = ccf-lambda_temp[jj]
+            lb = -lambda_temp[jj]
         elif (mthd == 3):
             h0 = 1
             h1 = 1
@@ -3845,14 +3845,15 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
         elif mthd == 1:
             b = cf * (c-np.dot(W_temp.T,ff))/pow(np.linalg.norm(aa_t),2)
-            #b = (-np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(ff),2)
+            b = (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
+            d_alp = min(ub,max(lb,b))
             
-            if (b<= ub ) and (b >= lb):
-                d_alp = b
-            elif pow(lb-b,2) < pow(ub-b,2):
-                d_alp = lb
-            else:
-                d_alp = ub
+            #if (b<= ub ) and (b >= lb):
+            #    d_alp = b
+            #elif pow(lb-b,2) < pow(ub-b,2):
+            #    d_alp = lb
+            #else:
+            #    d_alp = ub
         elif mthd == 3:
             b0 = (a0-np.dot(W_temp.T,ff))/pow(np.linalg.norm(aa_t),2)
             b1 = (a0-np.dot(W_temp.T,ff))/pow(np.linalg.norm(aa_t),2)
