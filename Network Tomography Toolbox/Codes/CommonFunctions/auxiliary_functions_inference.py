@@ -3631,8 +3631,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             A[tt_start:tt_end,:] = aa
             Y[tt_start:tt_end,0] = yy.ravel()
-            aa = np.zeros([1])
-            yy = np.zeros([1])
+            del aa
+            del yy
             gc.collect()
             
         toc = time.clock()
@@ -3643,8 +3643,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         total_memory = total_memory + Y.nbytes
         print 'memory so far after parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         
-        print 'mem for A %s' %str(A.nbytes)
-        print 'mem for Y %s' %str(Y.nbytes)
         
         block_count = 0
         #----------------------------------------------------------------------
@@ -3719,19 +3717,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     if tt_end > 0:
                         A[tt_start-block_start:tt_end-block_start,:] = aa
                         Y[tt_start-block_start:tt_end-block_start,0] = yy.ravel()
-                        
-                        total_memory = total_memory + A.nbytes
-                        print 'mem for A %s at itr %s' %(str(A.nbytes),str(ttau))
-                        total_memory = total_memory + Y.nbytes
-                        print 'mem for Y %s at itr %s' %(str(Y.nbytes),str(ttau))
-                        
                     else:
                         Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
                         cst = yy                    # This is because of the choice of symbols for result.get()
                         d_alp_vec = tt_start        # This is because of the choice of symbols for result.get()
-                        
-                        total_memory = total_memory + d_alp_vec.nbytes
-                        print 'mem for d_alp_vec %s' %str(d_alp_vec.nbytes)
                         
                         W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
                         if (mthd == 1) or (mthd == 2):
