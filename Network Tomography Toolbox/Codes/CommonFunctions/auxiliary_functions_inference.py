@@ -3546,7 +3546,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
-    mthd = 3                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
+    mthd = 1                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3767,7 +3767,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     
     #------------------------Initializations------------------------
     TcT = len(yy)
-    lamb = .01/float(TcT)
+    lamb = .0001#/float(TcT)
     cf = lamb*TcT
     ccf = 1/float(cf)
     cst = 0
