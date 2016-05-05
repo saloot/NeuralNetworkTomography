@@ -3516,6 +3516,8 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
 def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range,num_process):
     
     
+    print 'memory so far at the beginning is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+    
     #----------------------Import Necessary Libraries----------------------
     from auxiliary_functions import soft_threshold
     import os.path
@@ -3576,6 +3578,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
     
     tic_start = time.clock()
+    
+    print 'memory so far at the initialization is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
     #--------------------------------------------------------------------------
     
     #---------Identify Incoming Connections to Each Neuron in the List---------
@@ -3610,6 +3614,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         tic = time.clock()
         
+        print 'memory so far at before parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         for t_start in range(0,block_size,t_step):
             t_end = t_start + t_step
             func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
@@ -3633,6 +3638,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         total_memory = total_memory + A.nbytes
         total_memory = total_memory + Y.nbytes
+        print 'memory so far after parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+        
         print 'mem for A %s' %str(A.nbytes)
         print 'mem for Y %s' %str(Y.nbytes)
         
