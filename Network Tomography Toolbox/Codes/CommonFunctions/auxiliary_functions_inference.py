@@ -3802,7 +3802,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
         no_ones = sum(yy>0)
-        no_zeros = len(yy) - no_ones
+        no_zeros = sum(yy<0)
         p1 = no_ones /float(len(yy))
         
     W_temp = copy.deepcopy(W_in)
