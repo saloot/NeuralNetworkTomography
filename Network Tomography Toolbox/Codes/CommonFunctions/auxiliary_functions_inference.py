@@ -3587,6 +3587,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         lambda_tot = np.zeros([len(range_TT),1])
         no_blocks = (1+TT-T0)/block_size
+        
         total_memory = total_memory + lambda_tot.nbytes
         print 'mem for lambda %s' %str(lambda_tot.nbytes)
         
@@ -3710,7 +3711,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         total_memory = total_memory + A.nbytes
                         print 'mem for A %s at itr %s' %(str(A.nbytes),str(ttau))
                         total_memory = total_memory + Y.nbytes
-                        print 'mem for Y %s at itr %s' %str((Y.nbytes),str(ttau))
+                        print 'mem for Y %s at itr %s' %(str(Y.nbytes),str(ttau))
                         
                     else:
                         Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
