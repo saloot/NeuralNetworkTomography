@@ -3429,8 +3429,8 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     else:
         len_v = n
         
-    #X = np.zeros([len_v,block_size])
-    V = np.zeros([len_v,block_size])
+    #X = np.zeros([len_v-1,block_size])
+    V = np.zeros([len_v-1,block_size])
     Y = np.zeros([block_size])
     x = np.zeros([len_v,1])
     v = np.zeros([len_v,1])
