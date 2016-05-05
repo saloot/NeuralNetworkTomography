@@ -3599,7 +3599,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         no_blocks = (1+TT-T0)/block_size
         
         total_memory = total_memory + lambda_tot.nbytes
-        print 'mem for lambda %s' %str(lambda_tot.nbytes)
         
         W_tot = np.zeros([len_v-1,1])
         Z_tot = np.zeros([len_v-1,1])
@@ -3629,12 +3628,12 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         total_spent_time = 0
         for result in int_results:
             
-            (aa,yy,tt_start,tt_end) = result.get()
+            (X,YA,tt_start,tt_end) = result.get()
             #aa,yy,tt_start,tt_end = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)            
             print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
             
-            A[tt_start:tt_end,:] = aa
-            Y[tt_start:tt_end,0] = yy.ravel()
+            A[tt_start:tt_end,:] = X.T
+            Y[tt_start:tt_end,0] = YA.ravel()
             #del aa
             #del yy
             #gc.collect()
