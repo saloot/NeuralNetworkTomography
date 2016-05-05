@@ -3415,7 +3415,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
 #------------------------------------------------------------------------------
 
 
-def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,tau_s):
+def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,tau_s,X,V,Y):
     
     
     #----------------------------Initializations---------------------------
@@ -3430,10 +3430,10 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
         len_v = n
         
     #X = np.zeros([len_v,block_size])
-    V = np.zeros([len_v,block_size])    
+    #V = np.zeros([len_v,block_size])
+    #Y = np.zeros([block_size])
     x = np.zeros([len_v,1])
     v = np.zeros([len_v,1])
-    Y = np.zeros([block_size])
     #----------------------------------------------------------------------
     
     #--------------------------Process the Spikes--------------------------
@@ -3575,6 +3575,13 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
     
+    
+    t_step = int(block_size/float(num_process))
+    
+    X = np.zeros([len_v,t_step])
+    V = np.zeros([len_v,t_step])
+    YA = np.zeros([t_step])
+    
     tic_start = time.clock()
     
     print 'memory so far at the initialization is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
@@ -3607,7 +3614,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #----------------------------------------------------------------------
         
         #------------------Prepare the First Spike Matrix----------------------
-        t_step = int(block_size/float(num_process))
         int_results = []
         
         tic = time.clock()
@@ -3615,7 +3621,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         print 'memory so far at before parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         for t_start in range(0,block_size,t_step):
             t_end = t_start + t_step
-            func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
+            func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,X,V,YA]
             int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         
         
@@ -3697,7 +3703,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         t_end = TT-1
                         break               # Change this line in future to be able to deal with the "last block"
                         
-                    func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
+                    func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,X,V,YA]
                     int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
                 
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
