@@ -3735,7 +3735,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         pdb.set_trace()
         toc = time.clock()
-        print ccst
+        print ccst[0:ttau]
         print 'Total time spent = %s'%str(tic_start - toc)
         block_count = block_count + 1
         #---------------------------------------------------------------
