@@ -3528,6 +3528,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     print multiprocessing.cpu_count()
     
     import time
+    import gc
     #----------------------------------------------------------------------
     
     #----------------------------Initializations---------------------------    
@@ -3630,6 +3631,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             A[tt_start:tt_end,:] = aa
             Y[tt_start:tt_end,0] = yy.ravel()
+            aa = np.zeros([1])
+            yy = np.zeros([1])
+            gc.collect()
             
         toc = time.clock()
         total_spent_time = total_spent_time + toc - tic
