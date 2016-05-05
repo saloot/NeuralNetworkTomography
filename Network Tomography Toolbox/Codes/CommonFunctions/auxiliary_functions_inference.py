@@ -3626,6 +3626,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         print 'memory so far at before parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         for t_start in range(0,block_size,t_step):
             t_end = t_start + t_step
+            if t_end > block_size:
+                break
             func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
             int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         #pool.close()
@@ -3698,7 +3700,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
                 for t_start in range(block_start,block_start + block_size,t_step):
                     t_end = t_start + t_step
-                    if t_end > TT:
+                    if t_end > block_start + block_size:
                         t_end = TT-1
                         break               # Change this line in future to be able to deal with the "last block"
                         
