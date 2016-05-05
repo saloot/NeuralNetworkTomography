@@ -3692,8 +3692,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
                 func_args = [W_tot,A,YA,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
-                #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,A,YA,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
-                pdb.set_trace()
+                #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,A,YA,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)                            
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -3827,30 +3826,34 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
-        if class_samle_flag:
-            ee = np.random.rand(1)
-            #if ee < p1:
-            if ee < sample_freq:
-                ii = np.random.randint(0,no_ones)
-                jj = ind_ones[ii]
+        try:
+            if class_samle_flag:
+                ee = np.random.rand(1)
+                #if ee < p1:
+                if ee < sample_freq:
+                    ii = np.random.randint(0,no_ones)
+                    jj = ind_ones[ii]
+                else:
+                    ii = np.random.randint(0,no_zeros)
+                    jj = ind_zeros[ii]
             else:
-                ii = np.random.randint(0,no_zeros)
-                jj = ind_zeros[ii]
-        else:
-            ii = np.random.randint(0,TcT)
-            if rand_sample_flag:
-                jj = t_inds[ii]
-            else:
-                jj = ii
+                ii = np.random.randint(0,TcT)
+                if rand_sample_flag:
+                    jj = t_inds[ii]
+                else:
+                    jj = ii
+        
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
         
         
         
         
         #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
-        aa_t = aa[ii,:]
-        yy_t = yy[ii]#[0]
-        ff = gg[yy_t]*(aa_t)
+            aa_t = aa[ii,:]
+            yy_t = yy[ii]#[0]
+            ff = gg[yy_t]*(aa_t)
+        except:
+            pdb.set_trace()
         c = 1
         if (mthd == 1):            
             #lb = -lambda_temp[jj]-1
