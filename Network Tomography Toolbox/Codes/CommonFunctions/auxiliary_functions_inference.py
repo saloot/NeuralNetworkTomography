@@ -3720,7 +3720,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
             if itr_cost >= 1:
-                if abs(total_cost[itr_cost]-total_cost[itr_cost])/total_cost[itr_cost-1] < 0.001:
+                if abs(total_cost[itr_cost]-total_cost[itr_cost])/total_cost[itr_cost-1] < 0.00001:
                     break
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
@@ -3909,7 +3909,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
             Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])
             
         elif mthd == 1:
-            Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
+            Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])#/float(cf)
             
         else:
             xx = np.dot(W_temp.T,ff)
