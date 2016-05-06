@@ -3551,6 +3551,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
     mthd = 1                                  # 1 for Stochastic Coordinate Descent, 4 for Perceptron
+    cpu_flag = 1                                # If 1, the algorithms tries to scale with respect to the number of available cores
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3619,47 +3620,48 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #----------------------------------------------------------------------
         
         #------------------Prepare the First Spike Matrix----------------------
-        int_results = []
-        
-        tic = time.clock()
-        
-        print 'memory so far at before parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
-        for t_start in range(0,block_size,t_step):
-            t_end = t_start + t_step
-            if t_end > block_size:
-                break
-            func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
-            int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
-        #pool.close()
-        #pool.join()
-        
-        
-        total_spent_time = 0
-        for result in int_results:
+        if not cpu_flag:
+            int_results = []
             
-            (aa,yy,tt_start,tt_end) = result.get()
-            #aa,yy,tt_start,tt_end = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)            
-            print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
+            tic = time.clock()
             
-            A[tt_start:tt_end,:] = aa
-            YA[tt_start:tt_end] = yy.ravel()
+            print 'memory so far at before parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+            for t_start in range(0,block_size,t_step):
+                t_end = t_start + t_step
+                if t_end > block_size:
+                    break
+                func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
+                int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
+            #pool.close()
+            #pool.join()
             
-        del int_results
-        gc.collect()
-        print 'memory so far after parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
-        
-        
-        block_count = 0
+            
+            total_spent_time = 0
+            for result in int_results:
+                
+                (aa,yy,tt_start,tt_end) = result.get()
+                #aa,yy,tt_start,tt_end = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)            
+                print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
+                
+                A[tt_start:tt_end,:] = aa
+                YA[tt_start:tt_end] = yy.ravel()
+                
+            del int_results
+            gc.collect()
+            print 'memory so far after parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+            
+            
+            block_count = 0
         #----------------------------------------------------------------------
         
         
         #-------------------Perform Sampling If Necessary----------------------
-        if rand_sample_flag:
-            t_init = np.random.randint(0,t_gap)
-            t_inds = np.array(range(t_init,block_size,t_gap))
-                        
-            A = A[t_inds,:]
-            YA = YA[t_inds]
+            if rand_sample_flag:
+                t_init = np.random.randint(0,t_gap)
+                t_inds = np.array(range(t_init,block_size,t_gap))
+                            
+                A = A[t_inds,:]
+                YA = YA[t_inds]
         #---------------------------------------------------------------
         
         #--------------Assign Weights to the Classes--------------------                
@@ -3691,22 +3693,44 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
-                func_args = [W_tot,A,YA,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
-                #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,A,YA,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
-                #pdb.set_trace()
-                int_results.append(pool.apply_async(infer_w_block, func_args) )
+                if not cpu_flag:
+                    func_args = [W_tot,A,YA,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
+                    #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,A,YA,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
+                    #pdb.set_trace()
+                    int_results.append(pool.apply_async(infer_w_block, func_args) )
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
-                for t_start in range(block_start,block_start + block_size,t_step):
-                    t_end = t_start + t_step
-                    if t_end > block_start + block_size:
-                        t_end = TT-1
-                        break               # Change this line in future to be able to deal with the "last block"
+                    for t_start in range(block_start,block_start + block_size,t_step):
+                        t_end = t_start + t_step
+                        if t_end > block_start + block_size:
+                            t_end = TT-1
+                            break               # Change this line in future to be able to deal with the "last block"
+                            
+                        func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
+                        int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
+                else:
+                    int_results = []
+                    for inp in range(0,num_process):
+                        block_start = block_start_inds[itr_block]
+                        t_start = block_start
+                        t_end = block_start + block_size
+                            
+                        if t_end >= TT:
+                            t_end = TT - 1
+                            bblock_size = t_end - t_start
+                        else:
+                            bblock_size = block_size
+                            
+                        lambda_temp = lambda_tot[t_start:t_end]
+                        func_args = [W_tot,gg,lambda_temp,rand_sample_flag,mthd,n,ijk,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s]
+                        int_results.append(pool.apply_async(read_spikes_and_infer_w, func_args) )
                         
-                    func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
-                    int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
-                
+                        itr_block = itr_block + 1
+                        if (itr_block>=no_blocks-1):
+                            itr_block = 0
+                        
+                        #read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s)
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             
@@ -3715,26 +3739,34 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 print 'memory so far up to iterations %s is %s' %(str(ttau),str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
                 for result in int_results:
                     
-                    (aa,yy,tt_start,tt_end) = result.get()
-                    
-                    if tt_end > 0:
-                        A[tt_start-block_start:tt_end-block_start,:] = aa
-                        YA[tt_start-block_start:tt_end-block_start] = yy
-                    else:
-                        Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
-                        cst = yy                    # This is because of the choice of symbols for result.get()
-                        d_alp_vec = tt_start        # This is because of the choice of symbols for result.get()
+                    if not cpu_flag:
+                        (aa,yy,tt_start,tt_end) = result.get()
                         
+                        if tt_end > 0:
+                            A[tt_start-block_start:tt_end-block_start,:] = aa
+                            YA[tt_start-block_start:tt_end-block_start] = yy
+                        else:
+                            Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
+                            cst = yy                    # This is because of the choice of symbols for result.get()
+                            d_alp_vec = tt_start        # This is because of the choice of symbols for result.get()
+                            
+                            W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
+                            if (mthd == 1) or (mthd == 2):
+                                lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
+                            ccst[ttau] = cst
+                            #cst_tot = sum(np.dot(A,W_tot)<0)
+                    else:
+                        (Delta_W_loc,cst,d_alp_vec,tt_start,tt_end) = result.get()
                         W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
-                        if (mthd == 1) or (mthd == 2):
-                            lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
-                        ccst[ttau] = cst
-                        #cst_tot = sum(np.dot(A,W_tot)<0)
+                        lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/no_blocks)
+                        
+                        print itr_result,cst
+                        total_cost[ttau] = total_cost[ttau] + cst
                     itr_result = itr_result + 1
                 
-                
-                print sum(YA>0),cst
-                total_cost[itr_cost] = total_cost[itr_cost] + cst
+                if not cpu_flag:
+                    print sum(YA>0),cst
+                    total_cost[itr_cost] = total_cost[itr_cost] + cst
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
                 toc = time.clock()
@@ -3787,7 +3819,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
 
 #------------------------------------------------------------------------------
-def read_spikes_and_infer_w(W_in,gg,lambda_temp,block_count,block_size,rand_sample_flag,mthd,n,n_ind,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s):
+def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s):
     
     #-----------------------Do Necessary Initializations-----------------------
     if not theta:
@@ -3802,17 +3834,17 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,block_count,block_size,rand_samp
     #--------------------------------------------------------------------------
 
     #-------------------------Perform Inference--------------------------------    
-    Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_in,aa,yy,gg,lambda_temp,block_count,block_size,rand_sample_flag,mthd,len_v)            
+    Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v)            
     #--------------------------------------------------------------------------
 
-    return Delta_W_loc,cst,d_alp_vec,w_flag_for_parallel
+    return Delta_W_loc,cst,d_alp_vec,t_start,t_end
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 
 
 #------------------------------------------------------------------------------
-def infer_w_block(W_in,aa,yy,gg,lambda_temp,block_count,block_size,rand_sample_flag,mthd,len_v):
+def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v):
     
     #------------------------Initializations------------------------
     TcT = len(yy)
@@ -3842,7 +3874,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,block_count,block_size,rand_sample_f
         else:
             lambda_0 = lambda_temp
     
-        d_alp_vec = np.zeros([block_size,1])
+        d_alp_vec = np.zeros([len(lambda_temp),1])
     else:
         d_alp_vec = [0]
     #---------------------------------------------------------------
