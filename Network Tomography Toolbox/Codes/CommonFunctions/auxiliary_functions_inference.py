@@ -3553,7 +3553,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
     mthd = 1                                  # 1 for Stochastic Coordinate Descent, 4 for Perceptron
-    cpu_flag = 0                               # If 1, the algorithms tries to scale with respect to the number of available cores
+    cpu_flag = 1                              # If 1, the algorithms tries to scale with respect to the number of available cores
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3730,9 +3730,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                             
                         if t_end >= TT:
                             t_end = TT - 1
-                            bblock_size = t_end - t_start
-                        else:
-                            bblock_size = block_size
                             
                         lambda_temp = lambda_tot[t_start:t_end]
                         func_args = [W_tot,gg,lambda_temp,rand_sample_flag,mthd,n,ijk,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s]
