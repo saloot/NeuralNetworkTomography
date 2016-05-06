@@ -3784,239 +3784,35 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 #------------------------------------------------------------------------------
 
 
-#------------------------------------------------------------------------------
-#---------------------inference_constraints_hinge_parallel---------------------
-#------------------------------------------------------------------------------
 
-def inference_constraints_hinge_parallel_CPU(out_spikes_tot_mat_file,TT,block_size,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range,num_process):
-    
-    
-    print 'memory so far at the beginning is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
-    
-    #----------------------Import Necessary Libraries----------------------
-    from auxiliary_functions import soft_threshold
-    import os.path
-    
-    import multiprocessing
-    pool = multiprocessing.Pool(num_process)
 
-    print multiprocessing.cpu_count()
+#------------------------------------------------------------------------------
+def read_spikes_and_infer_w(W_in,gg,lambda_temp,block_count,block_size,rand_sample_flag,mthd,n,n_ind,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s):
     
-    import time
-    import gc
-    #----------------------------------------------------------------------
-    
-    #----------------------------Initializations---------------------------    
-    m = n
-    
-    range_tau = range(0,max_itr_opt)
-    
-    if len(neuron_range) == 0:
-        neuron_range = np.array(range(0,m))
-    
-    
-    T0 = 50                                    # It is the offset, i.e. the time from which on we will consider the firing activity    
-    block_start_inds = range(T0,TT,block_size)
-    #----------------------------------------------------------------------
-    
-    #-----------------------------Behavior Flags-------------------------------
-    der_flag = 0                                # If 1, the derivative criteria will also be taken into account
-    rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
-    sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
-    load_mtx = 0                                # If 1, we load spike matrices from file
-    mthd = 1                                  # 1 for Stochastic Coordinate Descent, 4 for Perceptron
-    #--------------------------------------------------------------------------
-    
-    #---------------------------Neural Parameters------------------------------
-    tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
-    tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
-    h0 = 0.0                                        # The reset membrane voltage (in mV)
-    delta = 0.25                                       # The tanh coefficient to approximate the sign function
-    d_max = 10
-    t_gap = 2                                    # The gap between samples to consider
-    t_avg = 1
-    theta = 0
-    c_1 = 1                                        # This is the weight of class +1 (i.e. y(t) = 1)
-    c_0 = .1                                         # This is the weight of class 0 (i.e. y(t) = 0)
-    if theta:
-        len_v = n        
-    else:
+    #-----------------------Do Necessary Initializations-----------------------
+    if not theta:
         len_v = n+1
+    else:
+        len_v = n
+    #--------------------------------------------------------------------------    
     
     
-    total_memory = 0
-    
-    W_infer = np.zeros([int((TT-T0)/float(block_size))+1,len_v])
-    W_inferred = np.zeros([len_v,len_v])
-    
-    t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
-    U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
-    
-    
-    t_step = int(block_size/float(num_process))
-    
-    #X = np.zeros([len_v,t_step])
-    #V = np.zeros([len_v,t_step])
-    #YA = np.zeros([t_step])
-    
-    A = np.zeros([block_size,len_v-1])      # This should contain current block
-    YA = np.zeros([block_size])
-        
-    
-    tic_start = time.clock()
-    
-    print 'memory so far at the initialization is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+    #----------------------------Read the Spikes-------------------------------
+    aa,yy,tt_start,tt_end = calculate_integration_matrix(n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
     #--------------------------------------------------------------------------
-    
-    #---------Identify Incoming Connections to Each Neuron in the List---------
-    for ijk in neuron_range:
-        
-        print '-------------Neuron %s----------' %str(ijk)
-    
-        #---------------------Necessary Initializations------------------------    
-        prng = RandomState(int(time.time()))
-        
-        lambda_tot = np.zeros([TT-T0,1])
-        no_blocks = (1+TT-T0)/block_size
-        
-        total_memory = total_memory + lambda_tot.nbytes
-        
-        W_tot = np.zeros([len_v-1,1])
-        Z_tot = np.zeros([len_v-1,1])
-        
-        dual_gap = np.zeros([len(range_tau),no_blocks])
-        total_cost = np.zeros([len(range_tau),1])
-        total_Y = np.zeros([len(range_tau),1])
-        beta_K = 1
-        
-        
-        #----------------------------------------------------------------------
-        
-        #--------------Assign Weights to the Classes--------------------                
-        gg = {}
-        gg[-1] = 1#c_0
-        gg[1] = 1#c_1        
-        #---------------------------------------------------------------
-        
-        #--------------------------Update Weight------------------------
-        ccst = np.zeros([len(range_tau)])
-        itr_block = 1
-        itr_cost = 0
-        for ttau in range_tau:
-            
-            #~~~~~~~~~~~~~~~~~~In-loop Initializations~~~~~~~~~~~~~~~~~~            
-            block_start = block_start_inds[itr_block]
 
-            int_results = []
-            total_spent_time = 0
-            tic = time.clock()
-            
-            if block_start == max(block_start_inds):
-                bblock_size = TT - block_start                
-                #break           # Change this line in future to be able to deal with the "last block"
-            
-            else:
-                bblock_size = block_size
-                
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
+    #-------------------------Perform Inference--------------------------------    
+    Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_in,aa,yy,gg,lambda_temp,block_count,block_size,rand_sample_flag,mthd,len_v)            
+    #--------------------------------------------------------------------------
 
-            #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
-                for t_start in range(block_start,block_start + block_size,t_step):
-                    t_end = t_start + t_step
-                    if t_end > block_start + block_size:
-                        t_end = TT-1
-                        break               # Change this line in future to be able to deal with the "last block"
-                        
-                    func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
-                    int_results.append(pool.apply_async(infer_w_block_integration, func_args) )
-            
-            
-                    #calculate_integration_matrix
-                    ##??
-                    func_args = [W_tot,A,YA,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
-                #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,A,YA,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
-                #pdb.set_trace()
-                int_results.append(pool.apply_async(infer_w_block, func_args) )    
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            
-            #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~
-                itr_result = 0
-                print 'memory so far up to iterations %s is %s' %(str(ttau),str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
-                for result in int_results:
-                    
-                    (aa,yy,tt_start,tt_end) = result.get()
-                    
-                    if tt_end > 0:
-                        A[tt_start-block_start:tt_end-block_start,:] = aa
-                        YA[tt_start-block_start:tt_end-block_start] = yy
-                    else:
-                        Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
-                        cst = yy                    # This is because of the choice of symbols for result.get()
-                        d_alp_vec = tt_start        # This is because of the choice of symbols for result.get()
-                        
-                        W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
-                        if (mthd == 1) or (mthd == 2):
-                            lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
-                        ccst[ttau] = cst
-                        #cst_tot = sum(np.dot(A,W_tot)<0)
-                    itr_result = itr_result + 1
-                
-                
-                print sum(YA>0),cst
-                total_cost[itr_cost] = total_cost[itr_cost] + cst
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-                toc = time.clock()
-                total_spent_time = total_spent_time + toc - tic
-                print 'Time spent on this block = %s'%str(total_spent_time)
-            
-            #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
-            if itr_cost >= 1:
-                if abs(total_cost[itr_cost]-total_cost[itr_cost-1])/total_cost[itr_cost-1] < 0.00001:
-                    break
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            
-            
-            itr_block = itr_block + 1
-            if (itr_block>=no_blocks-1):
-                itr_block = 0
-                itr_cost = itr_cost + 1
-            
-            
-        
-        pdb.set_trace()
-        toc = time.clock()
-        print ccst[0:ttau]
-        print 'Total time spent = %s'%str(tic_start - toc)
-        block_count = block_count + 1
-        #---------------------------------------------------------------
-    
-        
-        #-----------------------Update Costs----------------------------
-        #total_cost[ttau] = total_cost[ttau] + cst
-        #total_Y[ttau] = total_Y[ttau] + cst_y
-        #---------------------------------------------------------------
-        
-        print 'Total time %s' %str(total_spent_time)
-    
-        WW = np.zeros([len_v,1])
-        WW[0:ijk,0] = W_tot[0:ijk,0]
-        WW[ijk+1:,0] = W_tot[ijk:,0]
-        
-        W_inferred[0:len_v,ijk] = WW[0:len_v].ravel()
-        
-    return W_inferred
-    
+    return Delta_W_loc,cst,d_alp_vec,w_flag_for_parallel
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 
 
 #------------------------------------------------------------------------------
-def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v):
+def infer_w_block(W_in,aa,yy,gg,lambda_temp,block_count,block_size,rand_sample_flag,mthd,len_v):
     
     #------------------------Initializations------------------------
     TcT = len(yy)
@@ -4040,8 +3836,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     #---------------------------------------------------------------
     
     #----------------------Assign Dual Vectors----------------------
-    if (mthd == 1) or (mthd == 3):
-        lambda_temp = lambda_tot[block_count*block_size:(block_count+1)*block_size]
+    if (mthd == 1) or (mthd == 3):        
         if rand_sample_flag:
             lambda_0 = lambda_temp[t_inds]
         else:
@@ -4087,8 +3882,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
             pdb.set_trace()
         c = 1
         if (mthd == 1):            
-            lb = 1-lambda_temp[jj]
-            ub = -lambda_temp[jj]
+            ub = 1-lambda_temp[jj]
+            lb = -lambda_temp[jj]
             if 0:
                 if yy_t>0:
                     ub = ccf-lambda_temp[jj]
