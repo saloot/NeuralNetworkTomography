@@ -3707,8 +3707,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                             
                     lambda_temp = lambda_tot[t_start:t_end]
                     func_args = [W_tot,A,YA,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end]                    
-                    #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,A,YA,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
-                    pdb.set_trace()
+                    #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,A,YA,gg,lambda_tot,rand_sample_flag,mthd,len_v,t_start,t_end)            
+                    #pdb.set_trace()
                     int_results.append(pool.apply_async(infer_w_block, func_args) )
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -3845,7 +3845,7 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
     
     
     #----------------------------Read the Spikes-------------------------------
-    aa,yy,tt_start,tt_end = calculate_integration_matrix(n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
+    aa,yy,tt_start,tt_end,spike_flag = calculate_integration_matrix(n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
     #--------------------------------------------------------------------------
 
     #-------------------------Perform Inference--------------------------------    
@@ -4045,7 +4045,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
 
             
     w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
-    return Delta_W,d_alp_vec,t_start,t_ind,cst
+    return Delta_W,d_alp_vec,t_start,t_end,cst
 
 #------------------------------------------------------------------------------
 def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
