@@ -3759,8 +3759,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                             YA[tt_start-block_start:tt_end-block_start] = yy
                         else:
                             Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
-                            cst = yy                    # This is because of the choice of symbols for result.get()
-                            d_alp_vec = tt_start        # This is because of the choice of symbols for result.get()
+                            d_alp_vec = yy              # This is because of the choice of symbols for result.get()
+                            cst = spike_flag            # This is because of the choice of symbols for result.get()
                             
                             W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
                             if (mthd == 1) or (mthd == 2):
