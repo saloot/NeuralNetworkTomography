@@ -3541,8 +3541,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         neuron_range = np.array(range(0,m))
     
     
-    T0 = 50                                    # It is the offset, i.e. the time from which on we will consider the firing activity    
-    block_start_inds = range(T0,TT,block_size)
+    T0 = 50                                    # It is the offset, i.e. the time from which on we will consider the firing activity
+    
     #----------------------------------------------------------------------
     
     #-----------------------------Behavior Flags-------------------------------
@@ -3582,10 +3582,13 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     t_step = int(block_size/float(num_process))
     
-    #X = np.zeros([len_v,t_step])
-    #V = np.zeros([len_v,t_step])
-    #YA = np.zeros([t_step])
-    
+    if not cpu_flag:
+        block_start_inds = range(T0,TT,block_size)
+    else:
+        #block_size = int(min(block_size,(TT-T0)/float(num_process)))
+        block_size = int(block_size/float(num_process))
+        block_start_inds = range(T0,TT,block_size)
+        
     A = np.zeros([block_size,len_v-1])      # This should contain current block
     YA = np.zeros([block_size])
         
@@ -3826,6 +3829,9 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
         len_v = n+1
     else:
         len_v = n
+        
+        
+    print 'Optimization started for block [%s,%s]' %(str(t_start),str(t_end))
     #--------------------------------------------------------------------------    
     
     
