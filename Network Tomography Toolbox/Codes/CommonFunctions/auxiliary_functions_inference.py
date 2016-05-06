@@ -3551,7 +3551,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
     mthd = 1                                  # 1 for Stochastic Coordinate Descent, 4 for Perceptron
-    cpu_flag = 1                                # If 1, the algorithms tries to scale with respect to the number of available cores
+    cpu_flag = 0                                # If 1, the algorithms tries to scale with respect to the number of available cores
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3848,7 +3848,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v):
     
     #------------------------Initializations------------------------
     TcT = len(yy)
-    lamb = 1/float(TcT)
+    lamb = .1/float(TcT)
     cf = lamb*TcT
     ccf = 1/float(cf)
     cst = 0
@@ -3916,6 +3916,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v):
         if (mthd == 1):            
             ub = 1-lambda_temp[jj]
             lb = -lambda_temp[jj]
+            
+            ub = ccf-lambda_temp[jj]
+            lb = -lambda_temp[jj]
             if 0:
                 if yy_t>0:
                     ub = ccf-lambda_temp[jj]
@@ -3946,7 +3949,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v):
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
         elif mthd == 1:
             b = cf * (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
-            #b = (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
+            b = (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
             #b = yy_t * b
             d_alp = min(ub,max(lb,b))
             
@@ -3999,7 +4002,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v):
             Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])
             
         elif mthd == 1:
-            Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])/float(cf)
+            Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])#/float(cf)
             
         else:
             xx = np.dot(W_temp.T,ff)
