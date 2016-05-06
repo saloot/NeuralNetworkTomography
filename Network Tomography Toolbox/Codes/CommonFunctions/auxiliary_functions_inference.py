@@ -3553,7 +3553,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
     mthd = 1                                  # 1 for Stochastic Coordinate Descent, 4 for Perceptron
-    cpu_flag = 1                              # If 1, the algorithms tries to scale with respect to the number of available cores
+    cpu_flag = 0                               # If 1, the algorithms tries to scale with respect to the number of available cores
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3926,7 +3926,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             pdb.set_trace()
         c = 1
         if (mthd == 1):            
-            ub = 1-lambda_temp[jj]
+            ub = ccf-lambda_temp[jj]
             lb = -lambda_temp[jj]
             
             ub = ccf-lambda_temp[jj]
@@ -3960,7 +3960,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
 
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
         elif mthd == 1:
-            b = cf * (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
+            #b = cf * (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
             b = (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
             #b = yy_t * b
             d_alp = min(ub,max(lb,b))
