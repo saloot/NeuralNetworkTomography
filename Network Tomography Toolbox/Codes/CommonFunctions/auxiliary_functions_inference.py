@@ -3859,8 +3859,12 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
         if (mthd == 1):            
             #lb = -lambda_temp[jj]-1
             #ub = -lambda_temp[jj]
-            ub = ccf-yy_t*lambda_temp[jj]
-            lb = -yy_t*lambda_temp[jj]
+            if yy_t>0:
+                ub = ccf-lambda_temp[jj]
+                lb = -lambda_temp[jj]
+            else:
+                lb = -ccf-lambda_temp[jj]
+                ub = -lambda_temp[jj]
         elif (mthd == 3):
             h0 = 1
             h1 = 1
