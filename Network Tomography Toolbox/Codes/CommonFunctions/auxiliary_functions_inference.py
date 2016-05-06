@@ -4087,8 +4087,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
             pdb.set_trace()
         c = 1
         if (mthd == 1):            
-            ub = 1-lambda_temp[jj]
-            lb = -lambda_temp[jj]
+            lb = -1-lambda_temp[jj]
+            ub = -lambda_temp[jj]
             if 0:
                 if yy_t>0:
                     ub = ccf-lambda_temp[jj]
@@ -4118,7 +4118,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
 
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
         elif mthd == 1:
-            b = cf * (c-np.dot(W_temp.T,ff))/pow(np.linalg.norm(aa_t),2)
+            b = cf * (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
             #b = (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
             #b = yy_t * b
             d_alp = min(ub,max(lb,b))
