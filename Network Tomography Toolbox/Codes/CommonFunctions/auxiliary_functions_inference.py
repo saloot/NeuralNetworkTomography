@@ -3505,7 +3505,9 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     V = np.delete(V.T,n_ind,0).T
     #---------------------------------------------------------------------
     
-    return V,Y,t_start,t_end
+    flag_for_parallel_spikes = -1
+    
+    return V,Y,t_start,t_end,flag_for_parallel_spikes
 
 
 
@@ -3551,7 +3553,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
     mthd = 1                                  # 1 for Stochastic Coordinate Descent, 4 for Perceptron
-    cpu_flag = 1                               # If 1, the algorithms tries to scale with respect to the number of available cores
+    cpu_flag = 0                               # If 1, the algorithms tries to scale with respect to the number of available cores
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3642,7 +3644,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             total_spent_time = 0
             for result in int_results:
                 
-                (aa,yy,tt_start,tt_end) = result.get()
+                (aa,yy,tt_start,tt_end,flag_spikes) = result.get()
                 #aa,yy,tt_start,tt_end = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)            
                 print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
                 
@@ -3697,7 +3699,14 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
                 if not cpu_flag:
-                    func_args = [W_tot,A,YA,gg,lambda_tot,block_count,bblock_size,rand_sample_flag,mthd,len_v]
+                    t_start = block_start
+                    t_end = block_start + block_size
+                            
+                    if t_end >= TT:
+                        t_end = TT - 1
+                            
+                    lambda_temp = lambda_tot[t_start:t_end]
+                    func_args = [W_tot,A,YA,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end]
                     #Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_tot,A,YA,gg,lambda_tot,block_count,block_size,rand_sample_flag,mthd,len_v)            
                     #pdb.set_trace()
                     int_results.append(pool.apply_async(infer_w_block, func_args) )
@@ -3743,9 +3752,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 for result in int_results:
                     
                     if not cpu_flag:
-                        (aa,yy,tt_start,tt_end) = result.get()
+                        (aa,yy,tt_start,tt_end,spike_flag) = result.get()
                         
-                        if tt_end > 0:
+                        if spike_flag < 0:
                             A[tt_start-block_start:tt_end-block_start,:] = aa
                             YA[tt_start-block_start:tt_end-block_start] = yy
                         else:
@@ -3755,7 +3764,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                             
                             W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
                             if (mthd == 1) or (mthd == 2):
-                                lambda_tot[block_count*block_size:(block_count+1)*block_size] = lambda_tot[block_count*block_size:(block_count+1)*block_size] + d_alp_vec * (beta_K/no_blocks)
+                                lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/no_blocks)
                             ccst[ttau] = cst
                             #cst_tot = sum(np.dot(A,W_tot)<0)
                     else:
@@ -3840,7 +3849,7 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
     #--------------------------------------------------------------------------
 
     #-------------------------Perform Inference--------------------------------    
-    Delta_W_loc,cst,d_alp_vec,w_parallel_flag = infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v)            
+    Delta_W_loc,d_alp_vec,t_start,t_ind,cst = infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end)
     #--------------------------------------------------------------------------
 
     return Delta_W_loc,cst,d_alp_vec,t_start,t_end
@@ -3850,7 +3859,7 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
 
 
 #------------------------------------------------------------------------------
-def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v):
+def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end):
     
     #------------------------Initializations------------------------
     TcT = len(yy)
@@ -3886,7 +3895,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v):
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,10*TcT):
+    for ss in range(0,2*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
@@ -4036,7 +4045,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v):
 
             
     w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
-    return Delta_W,cst,d_alp_vec,w_flag_for_parallel
+    return Delta_W,d_alp_vec,t_start,t_ind,cst
 
 #------------------------------------------------------------------------------
 def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
