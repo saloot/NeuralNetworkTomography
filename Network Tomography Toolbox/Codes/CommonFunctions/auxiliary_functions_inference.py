@@ -4020,7 +4020,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
     
     #------------------------Initializations------------------------
     TcT = len(yy)
-    lamb = .0001#/float(TcT)
+    lamb = 1/float(TcT)
     cf = lamb*TcT
     ccf = 1/float(cf)
     cst = 0
@@ -4087,7 +4087,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_tot,block_count,block_size,rand_sample_fl
             pdb.set_trace()
         c = 1
         if (mthd == 1):            
-            lb = -1-lambda_temp[jj]
+            lb = 1-lambda_temp[jj]
             ub = -lambda_temp[jj]
             if 0:
                 if yy_t>0:
