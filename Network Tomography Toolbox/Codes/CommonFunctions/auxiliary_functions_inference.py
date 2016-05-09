@@ -3589,6 +3589,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     else:
         #block_size = int(min(block_size,(TT-T0)/float(num_process)))
         block_size = int(block_size/float(num_process))
+        #block_size = int((1+TT-T0)/float(num_process))
         block_start_inds = range(T0,TT,block_size)
         
     A = np.zeros([block_size,len_v-1])      # This should contain current block
@@ -3677,8 +3678,13 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         #--------------------------Update Weight------------------------
         ccst = np.zeros([len(range_tau)])
-        itr_block = 1
+        if not cpu_flag:
+            itr_block = 1
+        else:
+            itr_block = 0
+        itr_block_w = 0
         itr_cost = 0
+        Delta_W = np.zeros([n,1])
         for ttau in range_tau:
             
             #~~~~~~~~~~~~~~~~~~In-loop Initializations~~~~~~~~~~~~~~~~~~            
@@ -3738,6 +3744,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         itr_block = itr_block + 1
                         if (itr_block>=no_blocks-1):
                             itr_block = 0
+                            break
                         
                         #read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s)
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3759,18 +3766,38 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                             d_alp_vec = yy              # This is because of the choice of symbols for result.get()
                             cst = spike_flag            # This is because of the choice of symbols for result.get()
                             
-                            W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
-                            if (mthd == 1) or (mthd == 2):
+                            Delta_W = Delta_W + Delta_W_loc
+                            #W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
+                            if (mthd == 1) or (mthd == 3):
                                 lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/no_blocks)
-                            ccst[ttau] = cst
+                            
+                            ccst[itr_cost] = ccst[itr_cost] + cst
                             #cst_tot = sum(np.dot(A,W_tot)<0)
+                            itr_block = itr_block + 1
+                            if (itr_block>=no_blocks-1):
+                                itr_block = 0
+                                itr_cost = itr_cost + 1
+                                W_tot = W_tot + (beta_K/no_blocks) * np.reshape(Delta_W,[len_v-1,1])
+                                Delta_W = np.zeros([n,1])
+                
                     else:
                         (Delta_W_loc,cst,d_alp_vec,tt_start,tt_end) = result.get()
-                        W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
-                        lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/no_blocks)
+                        if (mthd == 1) or (mthd == 3):
+                            lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/no_blocks)
                         
+                        Delta_W = Delta_W + Delta_W_loc
+                        total_cost[itr_cost] = total_cost[itr_cost] + cst
+                        itr_block_w = itr_block_w + 1
+                        
+                        if (itr_block_w>=no_blocks-1):
+                            itr_block_w = 0
+                            Delta_W = np.zeros([n,1])
+                            #W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
+                            W_tot = W_tot + (beta_K/no_blocks) * np.reshape(Delta_W,[len_v-1,1])
+                            itr_cost = itr_cost + 1
+                            
                         print itr_result,cst
-                        total_cost[ttau] = total_cost[ttau] + cst
+                        #total_cost[ttau] = total_cost[ttau] + cst
                     itr_result = itr_result + 1
                 
                 if not cpu_flag:
@@ -3787,15 +3814,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 if abs(total_cost[itr_cost]-total_cost[itr_cost-1])/total_cost[itr_cost-1] < 0.00001:
                     break
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            
-            
-            itr_block = itr_block + 1
-            if (itr_block>=no_blocks-1):
-                itr_block = 0
-                itr_cost = itr_cost + 1
-            
-            
         
         pdb.set_trace()
         toc = time.clock()
@@ -3860,7 +3878,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     
     #------------------------Initializations------------------------
     TcT = len(yy)
-    lamb = .1/float(TcT)
+    lamb = .4/float(TcT)
     cf = lamb*TcT
     ccf = 1/float(cf)
     cst = 0
@@ -3919,7 +3937,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         
         
         #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
-            aa_t = aa[ii,:]
+            aa_t = aa[ii,:]/float(cf)
             yy_t = yy[ii]#[0]
             ff = gg[yy_t]*(aa_t)
         except:
@@ -4039,8 +4057,12 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     else:
         Delta_W_loc = W_temp
     #---------------------------------------------------------------
-
-            
+    
+    
+    #--------------In Compliance with Jaggi's Work------------------
+    Delta_W = np.dot(aa.T,d_alp_vec)
+    #---------------------------------------------------------------
+    
     w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
     return Delta_W,d_alp_vec,t_start,t_end,cst
 
