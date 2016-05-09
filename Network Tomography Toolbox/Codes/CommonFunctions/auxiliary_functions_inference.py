@@ -3533,6 +3533,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     import time
     import gc
+    
+    output_queue = multiprocessing.Queue()
     #----------------------------------------------------------------------
     
     #----------------------------Initializations---------------------------    
@@ -3752,7 +3754,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         
                         lambda_temp = lambda_tot[t_start:t_end]
                         
-                        func_args = [W_tot,gg,lambda_temp,rand_sample_flag,mthd,n,ijk,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s,num_process_per_spike]
+                        func_args = [W_tot,gg,lambda_temp,rand_sample_flag,mthd,n,ijk,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s,num_process_per_spike,output_queue]
                         ppp = multiprocessing.Process(target=calculate_integration_matrix, args=func_args)                        
                         int_results.append(ppp)
                         ppp.start()
@@ -3831,7 +3833,13 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                                 tic = time.time()#.clock()
                 
                     else:
-                        (Delta_W_loc,cst,d_alp_vec,tt_start,tt_end) = result.get()
+                        result.join()
+                        
+                if not cpu_flag:
+                    for result in int_results:
+                        
+                        (Delta_W_loc,cst,d_alp_vec,tt_start,tt_end) = output_queue.get()
+                        
                         if (mthd == 1) or (mthd == 3):
                             lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/no_blocks)
                         
@@ -3901,7 +3909,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
 
 #------------------------------------------------------------------------------
-def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s,num_process_per_spike):
+def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s,num_process_per_spike,output_queue):
     
     #-----------------------Do Necessary Initializations-----------------------
     if not theta:
@@ -3947,6 +3955,7 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
     Delta_W_loc,d_alp_vec,t_start,t_ind,cst = infer_w_block(W_in,A,YA,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end)
     #--------------------------------------------------------------------------
 
+    output_queue.put([Delta_W_loc,cst,d_alp_vec,t_start,t_end])
     return Delta_W_loc,cst,d_alp_vec,t_start,t_end
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
