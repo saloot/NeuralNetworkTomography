@@ -3691,7 +3691,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
             int_results = []
             total_spent_time = 0
-            tic = time.clock()
+            tic = time.time()#time.clock()
             
             if block_start == max(block_start_inds):
                 bblock_size = TT - block_start                
@@ -3793,14 +3793,15 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         
                         if (itr_block_w>=no_blocks-1):
                             itr_block_w = 0
-                            toc = time.clock()
+                            toc = time.time()#time.clock()
                             
                             print 'Total time to process %s blocks was %s' %(str(no_blocks),str(toc-tic))
                             Delta_W = np.zeros([n,1])
                             #W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
                             W_tot = W_tot + (beta_K/no_blocks) * np.reshape(Delta_W,[len_v-1,1])
                             itr_cost = itr_cost + 1
-                            tic = time.clock()
+                            #tic = time.clock()
+                            tic = time.time()
                             
                         print itr_result,cst
                         #total_cost[ttau] = total_cost[ttau] + cst
@@ -3821,7 +3822,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     break
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
-        #pdb.set_trace()
+        pdb.set_trace()
         toc = time.clock()
         print ccst[0:ttau]
         print 'Total time spent = %s'%str(tic_start - toc)
