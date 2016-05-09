@@ -3930,6 +3930,7 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
     
     
     t_step = int((t_end - t_start)/float(num_process_per_spike))
+    int_results = []
     for tt_start in range(t_start,t_end,t_step):
         tt_end = tt_start + t_step
         if tt_end >= t_end-1:
