@@ -3755,7 +3755,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         lambda_temp = lambda_tot[t_start:t_end]
                         
                         func_args = [W_tot,gg,lambda_temp,rand_sample_flag,mthd,n,ijk,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s,num_process_per_spike,output_queue]
-                        ppp = multiprocessing.Process(target=calculate_integration_matrix, args=func_args)                        
+                        ppp = multiprocessing.Process(target=read_spikes_and_infer_w, args=func_args)                        
                         int_results.append(ppp)
                         ppp.start()
                         #int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
