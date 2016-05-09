@@ -3584,7 +3584,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
     
     
-    num_process_sp = max(1,int(num_process/4.0))
+    num_process_sp = max(2,int(num_process/4.0))
     num_process_w = max(1,num_process - num_process_sp)
     t_step = int(block_size/float(num_process_sp))
     t_step_w = int(block_size/float(num_process_w))
