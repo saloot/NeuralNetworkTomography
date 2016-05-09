@@ -3644,7 +3644,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         print 'memory so far after parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         #----------------------------------------------------------------------
         
-        pdb.set_trace()
+
         #-------------------Perform Sampling If Necessary----------------------
         if rand_sample_flag:
             t_init = np.random.randint(0,t_gap)
@@ -3683,10 +3683,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
                 if t_end - t_start < 10:
                     continue
-                        
                     
                 lambda_temp = lambda_tot[t_start:t_end]
                 func_args = [W_tot,A[t_start-block_start:t_end-block_start,:],YA[t_start-block_start:t_end-block_start],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end]
+                infer_w_block(W_tot,A[t_start-block_start:t_end-block_start,:],YA[t_start-block_start:t_end-block_start],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end)
+                pdb.set_trace()
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
                 t_end_last = t_end
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
