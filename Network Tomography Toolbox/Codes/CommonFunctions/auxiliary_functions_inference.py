@@ -3553,7 +3553,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
     mthd = 1                                  # 1 for Stochastic Coordinate Descent, 4 for Perceptron
-    cpu_flag = 0                               # If 1, the algorithms tries to scale with respect to the number of available cores
+    cpu_flag = 1                               # If 1, the algorithms tries to scale with respect to the number of available cores
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3626,10 +3626,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #----------------------------------------------------------------------
         
         #------------------Prepare the First Spike Matrix----------------------
+        tic = time.clock()
         if not cpu_flag:
             int_results = []
-            
-            tic = time.clock()
             
             print 'memory so far at before parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
             for t_start in range(0,block_size,t_step):
@@ -3779,6 +3778,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                                 itr_cost = itr_cost + 1
                                 W_tot = W_tot + (beta_K/no_blocks) * np.reshape(Delta_W,[len_v-1,1])
                                 Delta_W = np.zeros([n,1])
+                                toc = time.clock()
+                                print 'Total time to process %s blocks was %s' %(str(no_blocks),str(toc-tic))
+                                tic = time.clock()
                 
                     else:
                         (Delta_W_loc,cst,d_alp_vec,tt_start,tt_end) = result.get()
@@ -3791,10 +3793,14 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         
                         if (itr_block_w>=no_blocks-1):
                             itr_block_w = 0
+                            toc = time.clock()
+                            
+                            print 'Total time to process %s blocks was %s' %(str(no_blocks),str(toc-tic))
                             Delta_W = np.zeros([n,1])
                             #W_tot = W_tot + 0.001 * np.reshape(Delta_W_loc,[len_v-1,1])
                             W_tot = W_tot + (beta_K/no_blocks) * np.reshape(Delta_W,[len_v-1,1])
                             itr_cost = itr_cost + 1
+                            tic = time.clock()
                             
                         print itr_result,cst
                         #total_cost[ttau] = total_cost[ttau] + cst
@@ -3805,9 +3811,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     total_cost[itr_cost] = total_cost[itr_cost] + cst
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-                toc = time.clock()
-                total_spent_time = total_spent_time + toc - tic
-                print 'Time spent on this block = %s'%str(total_spent_time)
+                #toc = time.clock()
+                #total_spent_time = total_spent_time + toc - tic
+                #print 'Time spent on this block = %s'%str(total_spent_time)
             
             #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
             if itr_cost >= 1:
