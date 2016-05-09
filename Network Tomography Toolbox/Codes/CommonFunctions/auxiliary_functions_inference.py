@@ -3592,12 +3592,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     A = np.zeros([block_size,len_v-1])      # This should contain current block
     YA = np.zeros([block_size])
     
-    
     block_start_inds = range(T0,TT,block_size)
-        
-    
-        
-    
     tic_start = time.clock()
     
     print 'memory so far at the initialization is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
