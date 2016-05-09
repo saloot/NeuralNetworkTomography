@@ -3943,8 +3943,8 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
         (aa,yy,tt_start,tt_end,flag_spikes) = result.get()
         print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
                 
-        A[tt_start:tt_end,:] = aa
-        YA[tt_start:tt_end] = yy.ravel()
+        A[tt_start-t_start:tt_end-t_start,:] = aa
+        YA[tt_start-t_start:tt_end-t_start] = yy.ravel()
 
     pool2.join()
     pool2.close()
