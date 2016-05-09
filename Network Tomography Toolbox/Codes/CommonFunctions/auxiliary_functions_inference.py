@@ -3935,7 +3935,7 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
         if tt_end >= t_end-1:
             tt_end = t_end-1
         
-        func_args = [ijk,out_spikes_tot_mat_file,n,theta,tt_start,tt_end,tau_d,tau_s]
+        func_args = [n_ind,out_spikes_tot_mat_file,n,theta,tt_start,tt_end,tau_d,tau_s]
         int_results.append(pool2.apply_async( calculate_integration_matrix, func_args) )
             
     for result in int_results:
