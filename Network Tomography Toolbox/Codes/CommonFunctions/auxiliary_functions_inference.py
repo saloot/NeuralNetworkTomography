@@ -3749,7 +3749,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                             
                                 func_args = [ijk,out_spikes_tot_mat_file,n,theta,t0,t1,tau_d,tau_s]
                                 int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
-                                
+                        
+                        lambda_temp = lambda_tot[t_start:t_end]
                         func_args = [W_tot,A,YA,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end,num_process_per_spike,pool]
                         int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
                         itr_block = itr_block + 1
