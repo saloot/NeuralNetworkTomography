@@ -3699,6 +3699,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             t_end_last = t_end
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+            pdb.set_trace()
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
             for t_start in range(block_start,block_end,t_step):
                 t_end = t_start + t_step
@@ -3758,7 +3759,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         pdb.set_trace()
         print ccst[0:ttau]
         #---------------------------------------------------------------
-    
         
         print 'Total time %s' %str(total_spent_time)
     
