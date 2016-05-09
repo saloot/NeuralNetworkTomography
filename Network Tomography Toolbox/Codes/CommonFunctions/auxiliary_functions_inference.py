@@ -3840,7 +3840,10 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     
     #------------------------Initializations------------------------
     TcT = len(yy)
-    lamb = .4/float(TcT)
+    try:
+        lamb = .4/float(TcT)
+    except:
+        pdb.set_trace()
     cf = lamb*TcT
     ccf = 1/float(cf)
     cst = 0
