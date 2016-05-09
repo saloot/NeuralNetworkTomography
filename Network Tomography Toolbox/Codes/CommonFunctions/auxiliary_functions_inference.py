@@ -3835,7 +3835,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     else:
                         result.join()
                         
-                if not cpu_flag:
+                if cpu_flag:
                     for result in int_results:
                         
                         (Delta_W_loc,cst,d_alp_vec,tt_start,tt_end) = output_queue.get()
