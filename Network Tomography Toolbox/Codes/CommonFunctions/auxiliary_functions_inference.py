@@ -3751,7 +3751,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                                 int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
                         
                         lambda_temp = lambda_tot[t_start:t_end]
-                        func_args = [W_tot,A,YA,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end,num_process_per_spike,pool]
+                        func_args = [W_tot,A,YA,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end,num_process_per_spike]
                         int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
                         itr_block = itr_block + 1
                         if (itr_block>=no_blocks-1):
@@ -3895,7 +3895,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
 
 #------------------------------------------------------------------------------
-def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s,num_process_per_spike,pool):
+def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s,num_process_per_spike):
     
     #-----------------------Do Necessary Initializations-----------------------
     if not theta:
@@ -3904,6 +3904,10 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
         len_v = n
         
         
+    import multiprocessing
+    pool2 = multiprocessing.Pool(num_process)
+
+    
     print 'Optimization started for block [%s,%s]' %(str(t_start),str(t_end))
     #--------------------------------------------------------------------------
     block_size = t_end-t_start
@@ -3918,7 +3922,7 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
             tt_end = t_end-1
         
         func_args = [ijk,out_spikes_tot_mat_file,n,theta,tt_start,tt_end,tau_d,tau_s]
-        int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
+        int_results.append(pool2.apply_async( calculate_integration_matrix, func_args) )
             
     for result in int_results:
         (aa,yy,tt_start,tt_end,flag_spikes) = result.get()
@@ -3927,6 +3931,8 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
         A[tt_start:tt_end,:] = aa
         YA[tt_start:tt_end] = yy.ravel()
 
+    pool2.join()
+    pool2.close()
     #----------------------------Read the Spikes-------------------------------
     #aa,yy,tt_start,tt_end,spike_flag = calculate_integration_matrix(n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
     #--------------------------------------------------------------------------
