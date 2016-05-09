@@ -3682,9 +3682,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
             for t_start in range(block_start,block_end,t_step_w):
-                t_end = t_start + t_step
+                t_end = t_start + t_step_w
                 if t_end >= block_end-1:
                     t_end = block_end-1
+                    continue
                         
                     
                 lambda_temp = lambda_tot[t_start:t_end]
@@ -3695,11 +3696,13 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             pdb.set_trace()
+            #A,YA,tt_start,tt_end,spike_flag = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
             for t_start in range(block_start,block_end,t_step):
                 t_end = t_start + t_step
                 if t_end >= block_end-1:
                     t_end = block_end-1
+                    continue
                         
                 func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
                 int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
