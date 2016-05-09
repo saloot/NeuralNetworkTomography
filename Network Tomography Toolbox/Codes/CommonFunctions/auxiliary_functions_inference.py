@@ -3584,8 +3584,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
     
     
-    t_step = int(block_size/float(num_process))
-    t_step_w = int(block_size/float(num_process))
+    num_process_sp = max(1,int(num_process/4.0))
+    num_process_w = max(1,num_process - num_process_sp)
+    t_step = int(block_size/float(num_process_sp))
+    t_step_w = int(block_size/float(num_process_w))
     
     A = np.zeros([block_size,len_v-1])      # This should contain current block
     YA = np.zeros([block_size])
@@ -3642,10 +3644,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
         total_spent_time = 0
         for result in int_results:
-                
             (aa,yy,tt_start,tt_end,flag_spikes) = result.get()
-            #aa,yy,tt_start,tt_end = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)            
-        
+            
             A[tt_start:tt_end,:] = aa
             YA[tt_start:tt_end] = yy.ravel()
                 
