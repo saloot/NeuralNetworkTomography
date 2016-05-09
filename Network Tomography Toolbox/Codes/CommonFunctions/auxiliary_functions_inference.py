@@ -3731,7 +3731,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 else:
                     #..........In Parallel, Process Spike Files..........
                     int_results = []
-                    for inp in range(0,num_process_calc_spike):
+                    for inp in range(0,num_process):
                         block_start = block_start_inds[itr_block]
                         t_start = block_start
                         t_end = block_start + block_size
