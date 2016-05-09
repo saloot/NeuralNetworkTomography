@@ -3533,8 +3533,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     import time
     import gc
-    
-    output_queue = multiprocessing.Queue()
     #----------------------------------------------------------------------
     
     #----------------------------Initializations---------------------------    
@@ -3629,9 +3627,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
         print 'memory so far at before parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         for t_start in range(0,block_size,t_step):
-            t_end = t_start + t_step
-            if t_end > block_size:
-                break
+            t_end = min(block_size-1,t_start + t_step)
+            
             func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
             int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         #pool.close()
@@ -3647,7 +3644,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         print 'memory so far after parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         #----------------------------------------------------------------------
         
-        
+        pdb.set_trace()
         #-------------------Perform Sampling If Necessary----------------------
         if rand_sample_flag:
             t_init = np.random.randint(0,t_gap)
