@@ -3553,7 +3553,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
     mthd = 1                                  # 1 for Stochastic Coordinate Descent, 4 for Perceptron
-    cpu_flag = 1                               # If 1, the algorithms tries to scale with respect to the number of available cores
+    cpu_flag = 0                               # If 1, the algorithms tries to scale with respect to the number of available cores
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3684,6 +3684,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         itr_block_w = 0
         itr_cost = 0
         Delta_W = np.zeros([n,1])
+        tic = time.time()#time.clock()
         for ttau in range_tau:
             
             #~~~~~~~~~~~~~~~~~~In-loop Initializations~~~~~~~~~~~~~~~~~~            
@@ -3691,7 +3692,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
             int_results = []
             total_spent_time = 0
-            tic = time.time()#time.clock()
             
             if block_start == max(block_start_inds):
                 bblock_size = TT - block_start                
@@ -3778,9 +3778,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                                 itr_cost = itr_cost + 1
                                 W_tot = W_tot + (beta_K/no_blocks) * np.reshape(Delta_W,[len_v-1,1])
                                 Delta_W = np.zeros([n,1])
-                                toc = time.clock()
+                                toc = time.time()#clock()
                                 print 'Total time to process %s blocks was %s' %(str(no_blocks),str(toc-tic))
-                                tic = time.clock()
+                                tic = time.time()#.clock()
                 
                     else:
                         (Delta_W_loc,cst,d_alp_vec,tt_start,tt_end) = result.get()
