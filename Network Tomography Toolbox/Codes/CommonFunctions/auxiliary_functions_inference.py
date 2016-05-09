@@ -3945,6 +3945,8 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
                 
         A[tt_start-t_start:tt_end-t_start,:] = aa
         YA[tt_start-t_start:tt_end-t_start] = yy.ravel()
+        
+        #disp 1
 
     pool2.join()
     pool2.close()
