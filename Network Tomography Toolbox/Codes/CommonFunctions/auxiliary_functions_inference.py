@@ -3690,13 +3690,15 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     
                 lambda_temp = lambda_tot[t_start:t_end]
                 func_args = [W_tot,A[t_start:t_end,:],YA[t_start:t_end],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end]
-                    
+                pdb.set_trace()    
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
-            t_end_last = t_end
+                t_end_last = t_end
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             pdb.set_trace()
-            #A,YA,tt_start,tt_end,spike_flag = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
+            #aa,yy,tt_start,tt_end,spike_flag = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
+            #lambda_temp = lambda_tot[300000:350000]
+            #Delta_W_loc,d_alp_vec,tt_start,tt_ind,cst = infer_w_block(W_tot,A[300000:350000,:],YA[300000:350000],gg,lambda_temp,rand_sample_flag,mthd,len_v,300000,350000)
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
             for t_start in range(block_start,block_end,t_step):
                 t_end = t_start + t_step
