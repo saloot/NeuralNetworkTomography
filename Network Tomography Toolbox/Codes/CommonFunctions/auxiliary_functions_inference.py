@@ -3528,6 +3528,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     import multiprocessing
     pool = multiprocessing.Pool(num_process)
 
+    num_process_per_spike = int(max(multiprocessing.cpu_count(),num_process)/float(num_process))
     print multiprocessing.cpu_count()
     
     import time
@@ -3553,7 +3554,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
     mthd = 1                                  # 1 for Stochastic Coordinate Descent, 4 for Perceptron
-    cpu_flag = 0                               # If 1, the algorithms tries to scale with respect to the number of available cores
+    cpu_flag = 1                               # If 1, the algorithms tries to scale with respect to the number of available cores
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3584,16 +3585,17 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     t_step = int(block_size/float(num_process))
     
-    if not cpu_flag:
-        block_start_inds = range(T0,TT,block_size)
-    else:
+    A = np.zeros([block_size,len_v-1])      # This should contain current block
+    YA = np.zeros([block_size])
+    
+    if cpu_flag:
         #block_size = int(min(block_size,(TT-T0)/float(num_process)))
         block_size = int(block_size/float(num_process))
         #block_size = int((1+TT-T0)/float(num_process))
-        block_start_inds = range(T0,TT,block_size)
         
-    A = np.zeros([block_size,len_v-1])      # This should contain current block
-    YA = np.zeros([block_size])
+    block_start_inds = range(T0,TT,block_size)
+        
+    
         
     
     tic_start = time.clock()
@@ -3727,23 +3729,62 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
                         int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
                 else:
+                    #..........In Parallel, Process Spike Files..........
                     int_results = []
-                    for inp in range(0,num_process):
+                    for inp in range(0,num_process_calc_spike):
                         block_start = block_start_inds[itr_block]
                         t_start = block_start
                         t_end = block_start + block_size
                             
                         if t_end >= TT:
                             t_end = TT - 1
-                            
-                        lambda_temp = lambda_tot[t_start:t_end]
-                        func_args = [W_tot,gg,lambda_temp,rand_sample_flag,mthd,n,ijk,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s]
-                        int_results.append(pool.apply_async(read_spikes_and_infer_w, func_args) )
                         
+                        if 0:
+                            t_step = int((t_start-t_end)/float(num_process_per_spike))
+                            for t0 in range(t_start,t_end,t_step):
+                                t1 = t0 + t_step
+                                if (t_1>=t_end-1):
+                                    t_1 = t_end -1
+                                
+                            
+                                func_args = [ijk,out_spikes_tot_mat_file,n,theta,t0,t1,tau_d,tau_s]
+                                int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
+                                
+                        func_args = [W_tot,A,YA,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end,num_process_per_spike,pool]
+                        int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
                         itr_block = itr_block + 1
                         if (itr_block>=no_blocks-1):
                             itr_block = 0
                             break
+                    #....................................................
+                    
+                    #..............Read the Processed Spikes.............
+                    if 0:
+                        for result in int_results:
+                            (aa,yy,tt_start,tt_end,spike_flag) = result.get()
+                            
+                            if spike_flag < 0:
+                                A[tt_start-block_start:tt_end-block_start,:] = aa
+                                YA[tt_start-block_start:tt_end-block_start] = yy
+                        #....................................................
+                        
+                        
+                        #......Submit the Jobs for Optimizing the Weights....
+                        for inp in range(0,num_process_calc_spike):
+                            block_start = block_start_inds[itr_block]
+                            t_start = block_start
+                            t_end = block_start + block_size
+                                
+                            if t_end >= TT:
+                                t_end = TT - 1
+                                
+                            lambda_temp = lambda_tot[t_start:t_end]
+                            #func_args = [W_tot,gg,lambda_temp,rand_sample_flag,mthd,n,ijk,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s]
+                            int_results.append(pool.apply_async(read_spikes_and_infer_w, func_args) )
+                            func_args = [W_tot,A,YA,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end]
+                            int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
+                            
+                    #....................................................   
                         
                         #read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s)
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3853,7 +3894,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
 
 #------------------------------------------------------------------------------
-def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s):
+def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,out_spikes_tot_mat_file,theta,t_start,t_end,tau_d,tau_s,num_process_per_spike,pool):
     
     #-----------------------Do Necessary Initializations-----------------------
     if not theta:
@@ -3863,15 +3904,34 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
         
         
     print 'Optimization started for block [%s,%s]' %(str(t_start),str(t_end))
-    #--------------------------------------------------------------------------    
+    #--------------------------------------------------------------------------
+    block_size = t_end-t_start
+    A = np.zeros([block_size,len_v-1])      # This should contain current block
+    YA = np.zeros([block_size])
     
     
+    t_step = int((t_end - t_start)/float(num_process_per_spike))
+    for tt_start in range(t_start,t_end,t_step):
+        tt_end = tt_start + t_step
+        if tt_end >= t_end-1:
+            tt_end = t_end-1
+        
+        func_args = [ijk,out_spikes_tot_mat_file,n,theta,tt_start,tt_end,tau_d,tau_s]
+        int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
+            
+    for result in int_results:
+        (aa,yy,tt_start,tt_end,flag_spikes) = result.get()
+        print("Result: the integration for %s to %s is done" % (str(tt_start), str(tt_end)) )
+                
+        A[tt_start:tt_end,:] = aa
+        YA[tt_start:tt_end] = yy.ravel()
+
     #----------------------------Read the Spikes-------------------------------
-    aa,yy,tt_start,tt_end,spike_flag = calculate_integration_matrix(n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
+    #aa,yy,tt_start,tt_end,spike_flag = calculate_integration_matrix(n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
     #--------------------------------------------------------------------------
 
     #-------------------------Perform Inference--------------------------------    
-    Delta_W_loc,d_alp_vec,t_start,t_ind,cst = infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end)
+    Delta_W_loc,d_alp_vec,t_start,t_ind,cst = infer_w_block(W_in,A,YA,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end)
     #--------------------------------------------------------------------------
 
     return Delta_W_loc,cst,d_alp_vec,t_start,t_end
