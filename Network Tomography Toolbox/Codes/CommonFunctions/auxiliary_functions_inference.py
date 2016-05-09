@@ -3690,6 +3690,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     
                 lambda_temp = lambda_tot[t_start:t_end]
                 func_args = [W_tot,A[t_start:t_end,:],YA[t_start:t_end],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end]
+                Delta_W_loc,d_alp_vec,tt_start,tt_ind,cst = infer_w_block(W_tot,A[t_start:t_end,:],YA[t_start:t_end],gg,lambda_temp,rand_sample_flag,mthd,len_v,300000,350000)
                 pdb.set_trace()    
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
                 t_end_last = t_end
