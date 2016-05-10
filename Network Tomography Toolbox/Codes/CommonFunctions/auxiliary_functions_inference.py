@@ -4035,23 +4035,23 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
-        cst = cst + max(0,1-np.dot(W_temp.T,aa_t))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
+        cst = cst + sign(max(0,1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
         if yy_t:
             cst_y = cst_y + max(0,1-np.dot(W_temp.T,aa_t))#hinge_loss_func(W_temp,-aa_t,0.1,1,0)
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     
     #---------------------------------------------------------------
-    if mthd == 4:
-        Delta_W_loc = W_temp
-        #Delta_W_loc = soft_threshold(W_temp.ravel(),sparse_thr)
-    else:
-        Delta_W_loc = W_temp
+    #if mthd == 4:
+    #    Delta_W_loc = W_temp
+    #    #Delta_W_loc = soft_threshold(W_temp.ravel(),sparse_thr)
+    #else:
+    #    Delta_W_loc = W_temp
     #---------------------------------------------------------------
     
     
     #--------------In Compliance with Jaggi's Work------------------
-    Delta_W = np.dot(aa.T,d_alp_vec)
+    #Delta_W = np.dot(aa.T,d_alp_vec)
     #---------------------------------------------------------------
     
     w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
