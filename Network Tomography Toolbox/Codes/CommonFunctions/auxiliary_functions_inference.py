@@ -3604,7 +3604,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #---------------------Necessary Initializations------------------------    
         prng = RandomState(int(time.time()))
         
-        lambda_tot = np.zeros([TT-T0,1])
+        lambda_tot = np.zeros([TT,1])
         no_blocks = (1+TT-T0)/block_size
         
         total_memory = total_memory + lambda_tot.nbytes
@@ -3673,8 +3673,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             block_start_w = block_start_inds[itr_block_w]
             block_end_w = min(block_start_w + block_size,TT-1)
 
-            if itr_block_w == len(block_start_inds)-1:
-                pdb.set_trace()
+            #if itr_block_w == len(block_start_inds)-1:
+            #    pdb.set_trace()
             
             int_results = []
             total_spent_time = 0
@@ -3690,7 +3690,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 lambda_temp = lambda_tot[t_start:t_end_w]
                 
                 func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w]
-                #infer_w_block(W_tot,A[t_start-block_start:t_end-block_start,:],YA[t_start-block_start:t_end-block_start],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end)
+                #infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w)
                 #pdb.set_trace()
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
                 t_end_last_w = t_end_w
@@ -3751,7 +3751,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             
             if itr_block_w >= len(block_start_inds):
-                pdb.set_trace()
+                
                 itr_block_w = 0
                 
                 W_tot = W_tot + (beta_K/no_blocks) * np.reshape(Delta_W,[len_v-1,1])
@@ -3760,7 +3760,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
                 tic = time.time()#.clock()
                 itr_cost = itr_cost + 1
-
+                pdb.set_trace()
+                
             print sum(YA>0),cst
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
