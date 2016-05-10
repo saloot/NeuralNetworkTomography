@@ -3670,22 +3670,22 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         for ttau in range_tau:
             
             #~~~~~~~~~~~~~~~~~~In-loop Initializations~~~~~~~~~~~~~~~~~~            
-            block_start = block_start_inds[itr_block]
-            block_end = min(block_start + block_size,TT-1)
+            block_start_w = block_start_inds[itr_block-1]
+            block_end_w = min(block_start_w + block_size,TT-1)
 
             int_results = []
             total_spent_time = 0
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
-            for t_start in range(block_start,block_end,t_step_w):
-                t_end = min(t_start + t_step_w,block_end-1)
+            for t_start in range(block_start_w,block_end_w,t_step_w):
+                t_end = min(t_start + t_step_w,block_end_w-1)
                 
                 if t_end - t_start < 10:
                     continue
                     
                 lambda_temp = lambda_tot[t_start:t_end]
-                func_args = [W_tot,A[t_start-block_start:t_end-block_start,:],YA[t_start-block_start:t_end-block_start],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end]
+                func_args = [W_tot,A[t_start-block_start_w:t_end-block_start_w,:],YA[t_start-block_start_w:t_end-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end]
                 #infer_w_block(W_tot,A[t_start-block_start:t_end-block_start,:],YA[t_start-block_start:t_end-block_start],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end)
                 #pdb.set_trace()
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
@@ -3697,6 +3697,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #lambda_temp = lambda_tot[300000:350000]
             #Delta_W_loc,d_alp_vec,tt_start,tt_ind,cst = infer_w_block(W_tot,A[300000:350000,:],YA[300000:350000],gg,lambda_temp,rand_sample_flag,mthd,len_v,300000,350000)
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
+            block_start = block_start_inds[itr_block-1]
+            block_end = min(block_start + block_size,TT-1)
             for t_start in range(block_start,block_end,t_step):
                 t_end = min(t_start + t_step,block_end-1)
                 
@@ -3707,6 +3709,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
+            print A.shape
             print 'memory so far up to iterations %s is %s' %(str(ttau),str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
             
             #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~
@@ -3728,12 +3731,15 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/no_blocks)
                             
                     ccst[itr_cost] = ccst[itr_cost] + cst
-                    #cst_tot = sum(np.dot(A,W_tot)<0)
+                    #cst_tot = sum(np.dot(A,W_tot)<=0)
                     
                     if tt_end == t_end_last:
                         itr_block = itr_block + 1
-                        
+                        pdb.set_trace()
+            
+            
             if (t_end_last == TT-1):
+                pdb.set_trace()
                 itr_block = 0
                 
                 W_tot = W_tot + (beta_K/no_blocks) * np.reshape(Delta_W,[len_v-1,1])
@@ -3898,7 +3904,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         
         
         #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
-            aa_t = aa[ii,:]/float(cf)
+            aa_t = aa[ii,:]#/float(cf)
             yy_t = yy[ii]#[0]
             ff = gg[yy_t]*(aa_t)
         except:
@@ -4005,9 +4011,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
-        cst = cst + (hinge_loss_func(W_temp,-aa_t,.1,1,0))
+        cst = cst + max(0,1-np.dot(W_temp.T,aa_t))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
         if yy_t:
-            cst_y = cst_y + hinge_loss_func(W_temp,-aa_t,0.1,1,0)
+            cst_y = cst_y + max(0,1-np.dot(W_temp.T,aa_t))#hinge_loss_func(W_temp,-aa_t,0.1,1,0)
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     
