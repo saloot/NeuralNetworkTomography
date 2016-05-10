@@ -4030,7 +4030,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])
             
         elif mthd == 1:
-            Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])#/float(cf)
+            Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1]) * yy_t#/float(cf)
             
         else:
             xx = np.dot(W_temp.T,ff)
