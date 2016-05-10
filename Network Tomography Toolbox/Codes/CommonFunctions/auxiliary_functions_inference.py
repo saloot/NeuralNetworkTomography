@@ -3698,7 +3698,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 #pdb.set_trace()
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
                 t_end_last_w = t_end_w
-                print 'oops %s,%s,%s' %(str(sum(YA==0)),str(t_start),str(t_end))
+                print 'oops %s,%s,%s' %(str(sum(YA==0)),str(t_start),str(t_end_w))
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             
