@@ -3740,10 +3740,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     Delta_W = Delta_W + Delta_W_loc
                     
                     if (mthd == 1) or (mthd == 3):
-                        lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/no_blocks)
+                        lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/float(no_blocks)) 
                             
                     ccst[itr_cost] = ccst[itr_cost] + cst
-                    #cst_tot = sum(np.dot(A,W_tot)<=0)
+                    #cst_tot = sum(np.dot(A,Delta_W_loc)<=0)
+                    print sum(YA[tt_start:tt_end]>0),cst
                     
                     if tt_end == t_end_last_w:
                         itr_block_w = itr_block_w + 1
@@ -3754,7 +3755,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
                 itr_block_w = 0
                 
-                W_tot = W_tot + (beta_K/no_blocks) * np.reshape(Delta_W,[len_v-1,1])
+                W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
                 Delta_W = np.zeros([n,1])
                 toc = time.time()#clock()
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
@@ -3762,7 +3763,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 itr_cost = itr_cost + 1
                 pdb.set_trace()
                 
-            print sum(YA>0),cst
+            
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
                 
