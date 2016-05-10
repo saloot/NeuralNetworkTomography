@@ -3698,7 +3698,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 #pdb.set_trace()
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
                 t_end_last_w = t_end_w
-                print 'oops %s,%s,%s' %(str(sum(YA==0)),str(t_start),str(t_end_w))
+                print 'oops %s,%s,%s' %(str(sum(YA[t_start-block_start_w:t_end_w-block_start_w]==0)),str(t_start),str(t_end_w))
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             
@@ -3749,7 +3749,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                             
                     ccst[itr_cost] = ccst[itr_cost] + cst
                     #cst_tot = sum(np.dot(A[tt_start:tt_end,:],Delta_W_loc)<=0)
-                    print sum(YA[tt_start:tt_end]>0),cst
+                    b_st = block_start_inds[itr_block_w]
+                    print sum(YA[tt_start-b_st:tt_end-b_st]>0),cst
                     
                     pdb.set_trace()
                     
@@ -3772,8 +3773,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 Delta_W = np.zeros([n,1])
                 
                 
-            A = copy.deepcopy(B)
-            YA = copy.deepcopy(YB)
+            A = B
+            YA = YB
             B = 0*B
             YB = 0*YB
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
