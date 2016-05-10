@@ -3705,6 +3705,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #lambda_temp = lambda_tot[300000:350000]
             #Delta_W_loc,d_alp_vec,tt_start,tt_ind,cst = infer_w_block(W_tot,A[300000:350000,:],YA[300000:350000],gg,lambda_temp,rand_sample_flag,mthd,len_v,300000,350000)
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
+            A = 0*A
+            YA = 0*YA
             block_start = block_start_inds[itr_block_t]
             block_end = min(block_start + block_size,TT-1)
             
@@ -3727,8 +3729,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 (aa,yy,tt_start,tt_end,spike_flag) = result.get()
                         
                 if spike_flag < 0:
-                    B[tt_start-block_start:tt_end-block_start,:] = aa
-                    YB[tt_start-block_start:tt_end-block_start] = yy
+                    A[tt_start-block_start:tt_end-block_start,:] = aa
+                    YA[tt_start-block_start:tt_end-block_start] = yy
                     
                     if tt_end == t_end_last_t:
                         itr_block_t = itr_block_t + 1
@@ -3765,19 +3767,19 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 itr_block_w = 0
                 
                 W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
-                total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,Delta_W)<=0)
+                total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,W_tot)<0)
                 toc = time.time()#clock()
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
                 tic = time.time()#.clock()
-                pdb.set_trace()
+                #pdb.set_trace()
                 itr_cost = itr_cost + 1
-                Delta_W = np.zeros([n,1])
+                Delta_W = 0*Delta_W#np.zeros([n,1])
                 
                 
-            A = B
-            YA = YB
-            B = 0*B
-            YB = 0*YB
+            #A = B
+            #YA = YB
+            #B = 0*B
+            #YB = 0*YB
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
                 
