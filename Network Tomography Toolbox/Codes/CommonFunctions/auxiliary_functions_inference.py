@@ -3661,16 +3661,16 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         #--------------------------Update Weight------------------------
         ccst = np.zeros([len(range_tau)])
-        itr_block = 1
-        
+        itr_block_t = 1
         itr_block_w = 0
+        
         itr_cost = 0
         Delta_W = np.zeros([n,1])
         tic = time.time()#time.clock()
         for ttau in range_tau:
             
             #~~~~~~~~~~~~~~~~~~In-loop Initializations~~~~~~~~~~~~~~~~~~            
-            block_start_w = block_start_inds[itr_block-1]
+            block_start_w = block_start_inds[itr_block_w]
             block_end_w = min(block_start_w + block_size,TT-1)
 
             int_results = []
@@ -3689,7 +3689,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 #infer_w_block(W_tot,A[t_start-block_start:t_end-block_start,:],YA[t_start-block_start:t_end-block_start],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end)
                 #pdb.set_trace()
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
-                t_end_last = t_end_w
+                t_end_last_w = t_end_w
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             
@@ -3697,8 +3697,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #lambda_temp = lambda_tot[300000:350000]
             #Delta_W_loc,d_alp_vec,tt_start,tt_ind,cst = infer_w_block(W_tot,A[300000:350000,:],YA[300000:350000],gg,lambda_temp,rand_sample_flag,mthd,len_v,300000,350000)
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
-            block_start = block_start_inds[itr_block-1]
+            block_start = block_start_inds[itr_block_t]
             block_end = min(block_start + block_size,TT-1)
+            
             for t_start in range(block_start,block_end,t_step):
                 t_end = min(t_start + t_step,block_end-1)
                 
@@ -3707,6 +3708,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         
                 func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
                 int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
+                t_end_last_t = t_end
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             print A.shape
@@ -3720,6 +3722,12 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 if spike_flag < 0:
                     A[tt_start-block_start:tt_end-block_start,:] = aa
                     YA[tt_start-block_start:tt_end-block_start] = yy
+                    
+                    if tt_end == t_end_last_t:
+                        itr_block_t = itr_block_t + 1
+                        if itr_block_t >= len(block_start_inds):
+                            itr_block_t = 0
+                            
                 else:
                     Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
                     d_alp_vec = yy              # This is because of the choice of symbols for result.get()
@@ -3733,14 +3741,14 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     ccst[itr_cost] = ccst[itr_cost] + cst
                     #cst_tot = sum(np.dot(A,W_tot)<=0)
                     
-                    if tt_end == t_end_last:
-                        itr_block = itr_block + 1
-                        pdb.set_trace()
+                    if tt_end == t_end_last_w:
+                        itr_block_w = itr_block_w + 1
+                        
             
             
-            if (t_end_last == TT-1):
+            if itr_block_w >= len(block_start_inds):
                 pdb.set_trace()
-                itr_block = 0
+                itr_block_w = 0
                 
                 W_tot = W_tot + (beta_K/no_blocks) * np.reshape(Delta_W,[len_v-1,1])
                 Delta_W = np.zeros([n,1])
