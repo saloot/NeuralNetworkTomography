@@ -3705,8 +3705,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #lambda_temp = lambda_tot[300000:350000]
             #Delta_W_loc,d_alp_vec,tt_start,tt_ind,cst = infer_w_block(W_tot,A[300000:350000,:],YA[300000:350000],gg,lambda_temp,rand_sample_flag,mthd,len_v,300000,350000)
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
-            A = 0*A
-            YA = 0*YA
+            #A = 0*A
+            #YA = 0*YA
             block_start = block_start_inds[itr_block_t]
             block_end = min(block_start + block_size,TT-1)
             
