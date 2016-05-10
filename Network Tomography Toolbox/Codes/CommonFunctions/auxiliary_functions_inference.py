@@ -3590,6 +3590,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     A = np.zeros([block_size,len_v-1])      # This should contain current block
     YA = np.zeros([block_size])
     
+    B = np.zeros([block_size,len_v-1])      # This should contain current block
+    YB = np.zeros([block_size])
+    
     block_start_inds = range(T0,TT,block_size)
     tic_start = time.clock()
     
@@ -3724,8 +3727,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 (aa,yy,tt_start,tt_end,spike_flag) = result.get()
                         
                 if spike_flag < 0:
-                    A[tt_start-block_start:tt_end-block_start,:] = aa
-                    YA[tt_start-block_start:tt_end-block_start] = yy
+                    B[tt_start-block_start:tt_end-block_start,:] = aa
+                    YB[tt_start-block_start:tt_end-block_start] = yy
                     
                     if tt_end == t_end_last_t:
                         itr_block_t = itr_block_t + 1
@@ -3743,7 +3746,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/float(no_blocks)) 
                             
                     ccst[itr_cost] = ccst[itr_cost] + cst
-                    #cst_tot = sum(np.dot(A,Delta_W_loc)<=0)
+                    #cst_tot = sum(np.dot(A[tt_start:tt_end,:],Delta_W_loc)<=0)
                     print sum(YA[tt_start:tt_end]>0),cst
                     
                     if tt_end == t_end_last_w:
@@ -3756,14 +3759,19 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 itr_block_w = 0
                 
                 W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
-                Delta_W = np.zeros([n,1])
+                
                 toc = time.time()#clock()
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
                 tic = time.time()#.clock()
-                itr_cost = itr_cost + 1
                 pdb.set_trace()
+                itr_cost = itr_cost + 1
+                Delta_W = np.zeros([n,1])
                 
-            
+                
+            A = B
+            YA = YB
+            B = 0*B
+            YB = 0*YB
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
                 
