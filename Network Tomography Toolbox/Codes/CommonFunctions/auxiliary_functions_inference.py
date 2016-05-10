@@ -3644,7 +3644,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             A[tt_start:tt_end,:] = aa
             YA[tt_start:tt_end] = yy.ravel()
         
-        pdb.set_trace()        
+                
         print 'memory so far after parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         #----------------------------------------------------------------------
         
@@ -3698,7 +3698,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 #pdb.set_trace()
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
                 t_end_last_w = t_end_w
-                print 'oops %s' %str(sum(YA==0))
+                print 'oops %s,%s,%s' %(str(sum(YA==0)),str(t_start),str(t_end))
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             
@@ -3750,6 +3750,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     ccst[itr_cost] = ccst[itr_cost] + cst
                     #cst_tot = sum(np.dot(A[tt_start:tt_end,:],Delta_W_loc)<=0)
                     print sum(YA[tt_start:tt_end]>0),cst
+                    
+                    pdb.set_trace()
                     
                     if tt_end == t_end_last_w:
                         itr_block_w = itr_block_w + 1
