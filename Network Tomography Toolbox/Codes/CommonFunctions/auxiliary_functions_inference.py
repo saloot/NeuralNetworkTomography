@@ -3673,6 +3673,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             block_start_w = block_start_inds[itr_block_w]
             block_end_w = min(block_start_w + block_size,TT-1)
 
+            if itr_block_w == len(block_start_inds)-1:
+                pdb.set_trace()
+            
             int_results = []
             total_spent_time = 0
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3685,6 +3688,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     continue
                     
                 lambda_temp = lambda_tot[t_start:t_end_w]
+                
                 func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w]
                 #infer_w_block(W_tot,A[t_start-block_start:t_end-block_start,:],YA[t_start-block_start:t_end-block_start],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end)
                 #pdb.set_trace()
