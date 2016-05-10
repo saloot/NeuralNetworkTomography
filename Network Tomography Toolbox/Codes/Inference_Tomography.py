@@ -243,9 +243,9 @@ for T in T_range:
         #W_inferred = delayed_inference_constraints_hinge(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
         import multiprocessing
 
-        num_process = min(8,multiprocessing.cpu_count())
-        block_size = 200000
-        num_process = 8
+        num_process = min(16,multiprocessing.cpu_count())
+        block_size = 800000
+        #num_process = 8
         print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
         W_inferred = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,num_process)
     #--------------Post-Process the Inferred Matrix---------------
