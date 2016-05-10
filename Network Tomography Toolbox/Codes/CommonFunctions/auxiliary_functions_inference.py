@@ -3643,7 +3643,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             A[tt_start:tt_end,:] = aa
             YA[tt_start:tt_end] = yy.ravel()
-                
+        
+        pdb.set_trace()        
         print 'memory so far after parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         #----------------------------------------------------------------------
         
