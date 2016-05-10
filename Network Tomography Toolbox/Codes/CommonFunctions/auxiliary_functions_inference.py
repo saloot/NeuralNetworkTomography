@@ -3941,7 +3941,13 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         if (mthd == 1):            
             ub = ccf-lambda_temp[jj]
             lb = -lambda_temp[jj]
-            if 0:
+            
+            c = 1 * yy_t
+            
+            ub = ccf-lambda_temp[jj]
+            lb = -lambda_temp[jj]
+            
+            if 1:
                 if yy_t>0:
                     ub = ccf-lambda_temp[jj]
                     lb = -lambda_temp[jj]
