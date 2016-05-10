@@ -3942,7 +3942,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             ub = ccf-lambda_temp[jj]
             lb = -lambda_temp[jj]
             
-            c = 1 * yy_t
+            #c = 1 * yy_t
             
             ub = ccf-lambda_temp[jj]
             lb = -lambda_temp[jj]
@@ -3978,7 +3978,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         elif mthd == 1:
             #b = cf * (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
             b = (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
-            #b = yy_t * b
+            b = yy_t * b
             d_alp = min(ub,max(lb,b))
             
             #if (b<= ub ) and (b >= lb):
