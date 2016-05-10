@@ -3719,7 +3719,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 t_end_last_t = t_end
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-            print A.shape
             print 'memory so far up to iterations %s is %s' %(str(ttau),str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
             
             #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~
@@ -3740,18 +3739,19 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
                     d_alp_vec = yy              # This is because of the choice of symbols for result.get()
                     cst = spike_flag            # This is because of the choice of symbols for result.get()
-                            
+                    
+                    
                     Delta_W = Delta_W + Delta_W_loc
                     
                     if (mthd == 1) or (mthd == 3):
                         lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/float(no_blocks)) 
                             
                     ccst[itr_cost] = ccst[itr_cost] + cst
+                    
                     #cst_tot = sum(np.dot(A[tt_start:tt_end,:],Delta_W_loc)<=0)
                     b_st = block_start_inds[itr_block_w]
                     print sum(YA[tt_start-b_st:tt_end-b_st]>0),cst
                     
-                    pdb.set_trace()
                     
                     if tt_end == t_end_last_w:
                         itr_block_w = itr_block_w + 1
@@ -3760,10 +3760,12 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
             if itr_block_w >= len(block_start_inds):
                 
+                #Delta_W_loc = np.dot(A.T,lambda_tot[b_st:t_end_last_w+2])
+                
                 itr_block_w = 0
                 
                 W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
-                
+                total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,Delta_W)<=0)
                 toc = time.time()#clock()
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
                 tic = time.time()#.clock()
@@ -3878,7 +3880,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     cst_y = 0
     cst_old = 0
     class_samle_flag = 1                # If 1, we try to balance the dataset
-    sample_freq = 0.2                   # With what probability sampling class 1 or 0 should be considered
+    sample_freq = 0.35                  # With what probability sampling class 1 or 0 should be considered
     if class_samle_flag:        
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
@@ -3903,7 +3905,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,2*TcT):
+    for ss in range(0,5*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
