@@ -3692,10 +3692,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     continue
                     
                 lambda_temp = lambda_tot[t_start:t_end_w]
-                
-                aa = A[t_start-block_start_w:t_end_w-block_start_w,:]
-                yy = YA[t_start-block_start_w:t_end_w-block_start_w]
-                func_args = [W_tot,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w]
+
+                func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w]
                 #infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w)
                 #pdb.set_trace()
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
@@ -3772,8 +3770,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 Delta_W = np.zeros([n,1])
                 
                 
-            A = B
-            YA = YB
+            A = copy.deepcopy(B)
+            YA = copy.deepcopy(YB)
             B = 0*B
             YB = 0*YB
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
