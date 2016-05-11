@@ -4022,12 +4022,6 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         
-        #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
-        if (mthd == 1) or (mthd == 3):
-            lambda_temp[jj] = lambda_temp[jj] + d_alp
-            d_alp_vec[jj] = d_alp_vec[jj] + d_alp
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
         #~~~~~~~~~~~~~~~~~~~~~Upate Weights~~~~~~~~~~~~~~~~~~~~~~~~~        
         if (mthd == 3):
             Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])
@@ -4037,11 +4031,19 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             
         else:
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
-            Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
+            d_alp = max(0,1-np.dot(W_temp.T,ff))
+            Delta_W_loc = 0.001**d_alp * np.reshape(aa_t,[len_v-1,1])
+            #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
         Delta_W = Delta_W + Delta_W_loc
-        W_temp = W_temp + Delta_W_loc
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        #W_temp = W_temp + Delta_W_loc
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
+        if (mthd == 1) or (mthd == 3):
+            lambda_temp[jj] = lambda_temp[jj] + d_alp
+            d_alp_vec[jj] = d_alp_vec[jj] + d_alp
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
         cst = cst + np.sign(max(0,1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
