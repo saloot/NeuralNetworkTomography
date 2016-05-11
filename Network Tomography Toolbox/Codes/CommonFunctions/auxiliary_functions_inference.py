@@ -4025,18 +4025,20 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         #~~~~~~~~~~~~~~~~~~~~~Upate Weights~~~~~~~~~~~~~~~~~~~~~~~~~        
         if (mthd == 3):
             Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])
-            
+            Delta_W = Delta_W + Delta_W_loc
         elif mthd == 1:
             Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1]) * yy_t#/float(cf)
-            
+            Delta_W = Delta_W + Delta_W_loc
         else:
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
             d_alp = max(0,1-np.dot(W_temp.T,ff))
             if d_alp:
                 Delta_W_loc = 0.001*np.reshape(ff,[len_v-1,1])
+                Delta_W = Delta_W + Delta_W_loc
+                
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
-        Delta_W = Delta_W + Delta_W_loc
+        
         #W_temp = W_temp + Delta_W_loc
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
