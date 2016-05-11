@@ -3773,7 +3773,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
                 tic = time.time()#.clock()
                 #pdb.set_trace()
+                pdb.set_trace()
                 itr_cost = itr_cost + 1
+                
                 Delta_W = 0*Delta_W#np.zeros([n,1])
                 
                 
