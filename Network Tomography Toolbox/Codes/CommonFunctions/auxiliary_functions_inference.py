@@ -3785,12 +3785,12 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
                 
             #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
-            if itr_cost >= 1:
+            if itr_cost >= 2:
                 if abs(total_cost[itr_cost]-total_cost[itr_cost-1])/(0.001+total_cost[itr_cost-1]) < 0.00001:
                     break
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
-        #pdb.set_trace()
+        pdb.set_trace()
         print ccst[0:ttau]
         #---------------------------------------------------------------
         
