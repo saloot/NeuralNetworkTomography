@@ -3787,11 +3787,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
             #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
             if itr_cost >= 3:
-                if abs(total_cost[itr_cost-1]-total_cost[itr_cost-2])/(0.001+total_cost[itr_cost-2]) < 0.00001:
+                if abs(total_cost[itr_cost-1]-total_cost[itr_cost-2])/(0.001+total_cost[itr_cost-2]) < 0.0000001:
                     break
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
-        pdb.set_trace()
+        #pdb.set_trace()
         print ccst[0:ttau]
         #---------------------------------------------------------------
         
@@ -3884,7 +3884,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     cst_y = 0
     cst_old = 0
     class_samle_flag = 1                # If 1, we try to balance the dataset
-    sample_freq = 0.25                  # With what probability sampling class 1 or 0 should be considered
+    sample_freq = 0.15                  # With what probability sampling class 1 or 0 should be considered
     if class_samle_flag:        
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
@@ -4034,14 +4034,14 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
             d_alp = max(0,1-np.dot(W_temp.T,ff))
             if d_alp:
-                Delta_W_loc = np.reshape(ff,[len_v-1,1])
+                Delta_W_loc =0.001*np.reshape(ff,[len_v-1,1])
                 Delta_W = Delta_W + Delta_W_loc
                 
                 
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
         
-        #W_temp = W_temp + Delta_W_loc
+        W_temp = W_temp + Delta_W_loc
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
