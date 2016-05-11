@@ -3767,7 +3767,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
                 itr_block_w = 0
                 
-                W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
+                W_tot = W_tot + (beta_K/float(TT)) * np.reshape(Delta_W,[len_v-1,1])
                 
                 toc = time.time()#clock()
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
@@ -4035,7 +4035,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
             d_alp = max(0,1-np.dot(W_temp.T,ff))
             if d_alp:
-                Delta_W_loc = 0.001*np.reshape(ff,[len_v-1,1])
+                Delta_W_loc = np.reshape(ff,[len_v-1,1])
                 Delta_W = Delta_W + Delta_W_loc
                 
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
