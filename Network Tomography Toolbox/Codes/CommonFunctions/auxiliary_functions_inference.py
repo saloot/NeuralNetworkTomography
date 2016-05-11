@@ -3553,7 +3553,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
-    mthd = 1                                   # 1 for Stochastic Coordinate Descent, 4 for Perceptron
+    mthd = 4                                   # 1 for Stochastic Coordinate Descent, 4 for Perceptron
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3750,15 +3750,16 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/float(no_blocks)) 
                             
                     ccst[itr_cost] = ccst[itr_cost] + cst
-                    total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,W_tot)<0)
+                    #total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,W_tot)<0)
                     
                     #cst_tot = sum(np.dot(A[tt_start:tt_end,:],Delta_W_loc)<=0)
                     b_st = block_start_inds[itr_block_w]
-                    print sum(YA[tt_start-b_st:tt_end-b_st]>0),cst
+                    #print sum(YA[tt_start-b_st:tt_end-b_st]>0),cst
                     
                     
                     if tt_end == t_end_last_w:
                         itr_block_w = itr_block_w + 1
+                        print ccst[itr_cost]
                         
             
             
@@ -3791,7 +3792,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #        break
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
-        #pdb.set_trace()
+        pdb.set_trace()
         print ccst[0:ttau]
         #---------------------------------------------------------------
         
@@ -4034,8 +4035,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
             d_alp = max(0,1-np.dot(W_temp.T,ff))
             if d_alp:
-                Delta_W_loc =0.001*np.reshape(ff,[len_v-1,1])
-                Delta_W = Delta_W + Delta_W_loc
+                Delta_W_loc = np.reshape(ff,[len_v-1,1])
+                Delta_W = Delta_W + 0.1*Delta_W_loc
                 
                 
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
