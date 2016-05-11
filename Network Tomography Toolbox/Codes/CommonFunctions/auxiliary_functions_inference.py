@@ -3553,7 +3553,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
-    mthd = 1                                  # 1 for Stochastic Coordinate Descent, 4 for Perceptron
+    mthd = 4                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3590,8 +3590,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     A = np.zeros([block_size,len_v-1])      # This should contain current block
     YA = np.zeros([block_size])
     
-    B = np.zeros([block_size,len_v-1])      # This should contain current block
-    YB = np.zeros([block_size])
+    #B = np.zeros([block_size,len_v-1])      # This should contain current block
+    #YB = np.zeros([block_size])
     
     block_start_inds = range(T0,TT,block_size)
     tic_start = time.clock()
@@ -3883,7 +3883,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     cst_y = 0
     cst_old = 0
     class_samle_flag = 1                # If 1, we try to balance the dataset
-    sample_freq = 0.25                  # With what probability sampling class 1 or 0 should be considered
+    sample_freq = 0.15                  # With what probability sampling class 1 or 0 should be considered
     if class_samle_flag:        
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
@@ -4036,9 +4036,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1]) * yy_t#/float(cf)
             
         else:
-            xx = np.dot(W_temp.T,ff)
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
-            Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * max(0,1-xx)
+            Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
         Delta_W = Delta_W + Delta_W_loc
         W_temp = W_temp + Delta_W_loc
