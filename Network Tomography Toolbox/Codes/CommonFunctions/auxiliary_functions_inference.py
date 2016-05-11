@@ -3553,7 +3553,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
-    mthd = 1                                   # 1 for Stochastic Coordinate Descent, 4 for Perceptron
+    mthd = 4                                   # 1 for Stochastic Coordinate Descent, 4 for Perceptron
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3785,8 +3785,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
                 
             #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
-            if itr_cost >= 2:
-                if abs(total_cost[itr_cost]-total_cost[itr_cost-1])/(0.001+total_cost[itr_cost-1]) < 0.00001:
+            if itr_cost >= 3:
+                if abs(total_cost[itr_cost-1]-total_cost[itr_cost-2])/(0.001+total_cost[itr_cost-2]) < 0.00001:
                     break
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
@@ -3937,7 +3937,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
             aa_t = aa[ii,:]#/float(cf)
             yy_t = yy[ii]#[0]
-            ff = gg[yy_t]*(aa_t)
+            ff = gg[yy_t]*(aa_t)/np.linalg.norm(aa_t)
         except:
             pdb.set_trace()
         c = 1
@@ -4032,7 +4032,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         else:
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
             d_alp = max(0,1-np.dot(W_temp.T,ff))
-            Delta_W_loc = 0.001*d_alp * np.reshape(aa_t,[len_v-1,1])
+            if d_alp:
+                Delta_W_loc = 0.001*np.reshape(ff,[len_v-1,1])
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
         Delta_W = Delta_W + Delta_W_loc
