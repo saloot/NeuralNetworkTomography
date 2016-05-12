@@ -4043,7 +4043,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
             d_alp = max(0,1-np.dot(W_temp.T,aa_t))
             if d_alp:
-                Delta_W_loc = d_alp*np.reshape(aa_t,[len_v-1,1])/pow(np.linalg.norm(aa_t),2)
+                Delta_W_loc = d_alp*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
                 Delta_W = Delta_W + Delta_W_loc
                 
                 
