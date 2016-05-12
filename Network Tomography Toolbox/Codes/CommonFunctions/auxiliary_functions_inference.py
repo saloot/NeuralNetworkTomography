@@ -3553,7 +3553,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
-    mthd = 3                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
+    mthd = 1                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3670,6 +3670,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         itr_cost = 0
         Delta_W = np.zeros([n,1])
+        Z = np.zeros([n,1])
         tic = time.time()#time.clock()
         for ttau in range_tau:
             
@@ -3696,7 +3697,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
                 #infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w)
                 #pdb.set_trace()
-                func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w]
+                func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w,Z]
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
                 t_end_last_w = t_end_w
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3770,6 +3771,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 itr_block_w = 0
                 
                 W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
+                W_tot = W_tot/(0.0001+np.linalg.norm(W_tot))
+                Z = soft_threshold(W_tot,0.001)
                 
                 toc = time.time()#clock()
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
@@ -3871,7 +3874,7 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
 
 
 #------------------------------------------------------------------------------
-def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end):
+def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end,Z):
     
     #------------------------Initializations------------------------
     TcT = len(yy)
@@ -3910,7 +3913,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,5*TcT):
+    for ss in range(0,3*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
@@ -3970,7 +3973,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
 
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
         if mthd == 2:
-            b = (-c-np.dot(W_temp.T,ff))/(0.00001+pow(np.linalg.norm(ff),2))
+            b = (-c-np.dot((W_temp-Z).T,ff))/(0.00001+pow(np.linalg.norm(ff),2))
             b = min(ccf-lambda_temp[jj],b)
             b = max(-lambda_temp[jj],b)
             d_alp = b
@@ -3979,7 +3982,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
         elif mthd == 1:
             #b = cf * (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
-            b = (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
+            b = (c-np.dot((W_temp-Z).T,aa_t))/pow(np.linalg.norm(aa_t),2)
             b = yy_t * b
             d_alp = min(ub,max(lb,b))
             
