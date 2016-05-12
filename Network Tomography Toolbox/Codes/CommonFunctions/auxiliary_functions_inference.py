@@ -3792,7 +3792,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #        break
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
-        pdb.set_trace()
+        #pdb.set_trace()
         print ccst[0:ttau]
         #---------------------------------------------------------------
         
@@ -3876,7 +3876,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #------------------------Initializations------------------------
     TcT = len(yy)
     try:
-        lamb = .001/float(TcT)
+        lamb = .1/float(TcT)
     except:
         pdb.set_trace()
     cf = lamb*TcT
@@ -3910,7 +3910,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,1*TcT):
+    for ss in range(0,5*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
@@ -3937,16 +3937,13 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         
         
         #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
-            aa_t = aa[jj,:]#/float(cf)
+            aa_t = aa[jj,:]/float(cf)
             yy_t = yy[jj]#[0]
             ff = gg[yy_t]*(aa_t)/np.linalg.norm(aa_t)
         except:
             pdb.set_trace()
         c = 1
         if (mthd == 1):            
-            ub = ccf-lambda_temp[jj]
-            lb = -lambda_temp[jj]
-            
             #c = 1 * yy_t
             
             ub = ccf-lambda_temp[jj]
