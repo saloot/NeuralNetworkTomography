@@ -3553,7 +3553,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
-    mthd = 1                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
+    mthd = 3                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3876,7 +3876,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #------------------------Initializations------------------------
     TcT = len(yy)
     try:
-        lamb = .1/float(TcT)
+        lamb = .01/float(TcT)
     except:
         pdb.set_trace()
     cf = lamb*TcT
@@ -3910,7 +3910,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,1*TcT):
+    for ss in range(0,5*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
@@ -3962,10 +3962,10 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             a0 = 1
             a1 = 10
             
-            lb0 = -lambda_temp[jj]-ccf*h0
-            ub0 = -lambda_temp[jj]
-            lb1 = -lambda_temp[jj]
-            ub1 = -lambda_temp[jj]+ccf*h1
+            lb0 = -lambda_temp[jj]
+            ub0 = ccf*h0-lambda_temp[jj]
+            lb1 = -lambda_temp[jj]-ccf*h1
+            ub1 = -lambda_temp[jj]
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
@@ -3990,34 +3990,45 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             #else:
             #    d_alp = ub
         elif mthd == 3:
-            b0 = (a0-np.dot(W_temp.T,ff))/pow(np.linalg.norm(aa_t),2)
-            b1 = (a0-np.dot(W_temp.T,ff))/pow(np.linalg.norm(aa_t),2)
+            b0 = (a0-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
+            b1 = (a1-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
             #b = (-np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(ff),2)
+            d_alp0 = min(ub0,max(lb0,b0))
+            val0 = pow(d_alp0-b0,2)
             
-            if (b0<= ub0 ) and (b0 >= lb0):
-                d_alp0 = b0
-                min_val0 = 0
-            elif pow(lb0-b0,2) < pow(ub0-b0,2):
-                d_alp0 = lb0
-                min_val0 = pow(lb0-b0,2)
-            else:
-                d_alp0 = ub0
-                min_val0 = pow(ub0-b0,2)
-                
-            if (b1<= ub1 ) and (b1 >= lb1):
-                d_alp1 = b1
-                min_val1 = 0
-            elif pow(lb1-b1,2) < pow(ub1-b1,2):
-                d_alp1 = lb1
-                min_val1 = pow(lb1-b1,2)
-            else:
-                d_alp1 = ub1
-                min_val1 = pow(ub1-b1,2)
-                
-            if min_val1 < min_val0:
+            d_alp1 = min(ub1,max(lb1,b1))
+            val1 = pow(d_alp1-b1,2)
+            
+            if val1 < val0:
                 d_alp = d_alp1
             else:
                 d_alp = d_alp0
+            
+            if 0:
+                if (b0<= ub0 ) and (b0 >= lb0):
+                    d_alp0 = b0
+                    min_val0 = 0
+                elif pow(lb0-b0,2) < pow(ub0-b0,2):
+                    d_alp0 = lb0
+                    min_val0 = pow(lb0-b0,2)
+                else:
+                    d_alp0 = ub0
+                    min_val0 = pow(ub0-b0,2)
+                    
+                if (b1<= ub1 ) and (b1 >= lb1):
+                    d_alp1 = b1
+                    min_val1 = 0
+                elif pow(lb1-b1,2) < pow(ub1-b1,2):
+                    d_alp1 = lb1
+                    min_val1 = pow(lb1-b1,2)
+                else:
+                    d_alp1 = ub1
+                    min_val1 = pow(ub1-b1,2)
+                    
+                if min_val1 < min_val0:
+                    d_alp = d_alp1
+                else:
+                    d_alp = d_alp0
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         
