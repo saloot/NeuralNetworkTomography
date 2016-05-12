@@ -3910,7 +3910,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,5*TcT):
+    for ss in range(0,1*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
@@ -3937,7 +3937,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         
         
         #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
-            aa_t = aa[jj,:]#/float(cf)
+            aa_t = aa[jj,:]/np.linalg.norm(aa_t)#/float(cf)
             yy_t = yy[jj]#[0]
             ff = gg[yy_t]*(aa_t)/np.linalg.norm(aa_t)
         except:
@@ -4051,10 +4051,11 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
         
-        W_temp_last = W_temp
-        W_temp = W_temp + Delta_W_loc
-        if np.linalg.norm(W_temp)-np.linalg.norm(W_temp_last)>1:
-            pdb.set_trace()
+        #W_temp_last = W_temp
+        #W_temp = W_temp + Delta_W_loc
+        
+        #if np.linalg.norm(W_temp)-np.linalg.norm(W_temp_last)>1:
+        #    pdb.set_trace()
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
