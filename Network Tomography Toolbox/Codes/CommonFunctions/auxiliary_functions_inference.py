@@ -3885,7 +3885,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     cst_y = 0
     cst_old = 0
     class_samle_flag = 1                # If 1, we try to balance the dataset
-    sample_freq = 0.15                  # With what probability sampling class 1 or 0 should be considered
+    sample_freq = 0.35                  # With what probability sampling class 1 or 0 should be considered
     if class_samle_flag:        
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
@@ -4045,13 +4045,16 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             if d_alp:
                 Delta_W_loc = d_alp*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
                 Delta_W = Delta_W + Delta_W_loc
-                pdb.set_trace()
+                #pdb.set_trace()
                 
                 
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
         
+        
         W_temp = W_temp + Delta_W_loc
+        if not (ss % TcT):
+            print np.linalg.norm(W_temp)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
