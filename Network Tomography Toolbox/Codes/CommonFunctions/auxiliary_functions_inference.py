@@ -3792,7 +3792,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #        break
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
-        #pdb.set_trace()
+        pdb.set_trace()
         print ccst[0:ttau]
         #---------------------------------------------------------------
         
