@@ -3778,7 +3778,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
                 tic = time.time()#.clock()
                 itr_cost = itr_cost + 1
-                
+                pdb.set_trace()
                 Delta_W = 0*Delta_W#np.zeros([n,1])
                 
                 
@@ -3982,7 +3982,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
         elif mthd == 1:
             #b = cf * (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
-            b = (c-np.dot((W_temp-Z).T,aa_t))/pow(np.linalg.norm(aa_t),2)
+            b = (c-np.dot((W_temp+Z).T,aa_t))/pow(np.linalg.norm(aa_t),2)
             b = yy_t * b
             d_alp = min(ub,max(lb,b))
             
