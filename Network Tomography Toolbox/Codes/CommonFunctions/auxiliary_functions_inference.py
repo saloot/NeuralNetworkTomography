@@ -4051,10 +4051,10 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
         
-        
+        W_temp_last = W_temp
         W_temp = W_temp + Delta_W_loc
-        if not (ss % TcT):
-            print np.linalg.norm(W_temp)
+        if np.linalg.norm(W_temp)-np.linalg.norm(W_temp_last)>1:
+            pdb.set_trace()
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
