@@ -3550,10 +3550,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     #-----------------------------Behavior Flags-------------------------------
     der_flag = 0                                # If 1, the derivative criteria will also be taken into account
-    rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
+    rand_sample_flag = 1                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
-    mthd = 4                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
+    mthd = 1                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3648,14 +3648,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         print 'memory so far after parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         #----------------------------------------------------------------------
         
-
-        #-------------------Perform Sampling If Necessary----------------------
-        if rand_sample_flag:
-            t_init = np.random.randint(0,t_gap)
-            t_inds = np.array(range(t_init,block_size,t_gap))
-            A = A[t_inds,:]
-            YA = YA[t_inds]
-        #---------------------------------------------------------------
         
         #--------------Assign Weights to the Classes--------------------                
         gg = {}
@@ -3683,6 +3675,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             int_results = []
             total_spent_time = 0
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
             
             #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
             for t_start in range(block_start_w,block_end_w,t_step_w):
@@ -3875,6 +3868,13 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
 def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end):
     
     #------------------------Initializations------------------------
+    #---------------------------------------------------------------
+    if rand_sample_flag:
+        t_init = np.random.randint(0,t_gap)
+        t_inds = np.array(range(t_init,t_end-t_start,t_gap))
+        aa = aa[t_inds,:]
+        yy = yy[t_inds]
+        
     TcT = len(yy)
     try:
         lamb = .1/float(TcT)
@@ -3896,16 +3896,16 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         
     W_temp = copy.deepcopy(W_in)
     Delta_W = np.zeros(W_temp.shape)
-    #---------------------------------------------------------------
+    t_gap = 5
     
+        
     #----------------------Assign Dual Vectors----------------------
-    if (mthd == 1) or (mthd == 3):        
-        if rand_sample_flag:
-            lambda_0 = lambda_temp[t_inds]
-        else:
-            lambda_0 = lambda_temp
-    
+    if (mthd == 1) or (mthd == 3):
         d_alp_vec = np.zeros([len(lambda_temp),1])
+        if rand_sample_flag:
+            lambda_temp = lambda_temp[t_inds]
+        
+        
     else:
         d_alp_vec = [0]
     #---------------------------------------------------------------
@@ -4070,7 +4070,10 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
         if (mthd == 1) or (mthd == 3):
             lambda_temp[jj] = lambda_temp[jj] + d_alp
-            d_alp_vec[jj] = d_alp_vec[jj] + d_alp
+            if rand_sample_flag:
+                d_alp_vec[t_inds[jj]] = d_alp_vec[t_inds[jj]] + d_alp
+            else:
+                d_alp_vec[jj] = d_alp_vec[jj] + d_alp
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
