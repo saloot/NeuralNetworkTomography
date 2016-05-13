@@ -3553,7 +3553,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
-    mthd = 4                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
+    mthd = 1                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3793,7 +3793,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #        break
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
-        pdb.set_trace()
+        #pdb.set_trace()
         print ccst[0:ttau]
         #---------------------------------------------------------------
         
@@ -3877,7 +3877,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #------------------------Initializations------------------------
     TcT = len(yy)
     try:
-        lamb = .01/float(TcT)
+        lamb = .1/float(TcT)
     except:
         pdb.set_trace()
     cf = lamb*TcT
@@ -3911,7 +3911,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,1*TcT):
+    for ss in range(0,5*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
