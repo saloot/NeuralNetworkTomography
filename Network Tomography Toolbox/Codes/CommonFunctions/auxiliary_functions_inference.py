@@ -3482,7 +3482,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     V = V[:,0:t_tot]
     #X = X[:,0:t_tot]
     Y = Y[0:t_tot]
-    
+    pdb.set_trace()
     #YY = (Y>0).astype(int) - (Y<=0).astype(int)
     #A = (V-X).T
     #AA = (V).T
@@ -3506,6 +3506,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     #---------------------------------------------------------------------
     
     flag_for_parallel_spikes = -1
+    pdb.set_trace()
     
     return V,Y,t_start,t_end,flag_for_parallel_spikes
 
@@ -3632,6 +3633,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         for t_start in range(0,block_size,t_step):
             t_end = min(block_size-1,t_start + t_step)
             
+            
+            calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
+            pdb.set_trace()
             func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
             int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         #pool.close()
