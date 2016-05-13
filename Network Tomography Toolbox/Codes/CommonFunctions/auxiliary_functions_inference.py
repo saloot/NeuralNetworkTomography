@@ -3907,7 +3907,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         
     W_temp = copy.deepcopy(W_in)
     Delta_W = np.zeros(W_temp.shape)
-    
+    W_temp[-1] = 0.1
     
         
     #----------------------Assign Dual Vectors----------------------
@@ -4074,7 +4074,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
-        
+        W_temp[-1] = .1
         #W_temp_last = W_temp
         #W_temp = W_temp + Delta_W_loc
         
