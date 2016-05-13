@@ -3869,6 +3869,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     
     #------------------------Initializations------------------------
     #---------------------------------------------------------------
+    t_gap = 5
     if rand_sample_flag:
         t_init = np.random.randint(0,t_gap)
         t_inds = np.array(range(t_init,t_end-t_start,t_gap))
@@ -3896,7 +3897,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         
     W_temp = copy.deepcopy(W_in)
     Delta_W = np.zeros(W_temp.shape)
-    t_gap = 5
+    
     
         
     #----------------------Assign Dual Vectors----------------------
