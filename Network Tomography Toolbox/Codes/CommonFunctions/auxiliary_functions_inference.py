@@ -3869,7 +3869,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     
     #------------------------Initializations------------------------
     #---------------------------------------------------------------
-    t_gap = 10
+    t_gap = 5
     if rand_sample_flag:
         t_init = np.random.randint(0,t_gap)
         t_inds = np.array(range(t_init,t_end-t_start,t_gap))
@@ -3883,6 +3883,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         pdb.set_trace()
     cf = lamb*TcT
     ccf = 1/float(cf)
+    #ccf = 0.1
     cst = 0
     cst_y = 0
     cst_old = 0
@@ -3943,9 +3944,11 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             print 'some y where 0'
             continue
         c = 1
-        if (mthd == 1):            
+        if (mthd == 1):
+            c = 0.1
             #c = 1 * yy_t
-            
+            gamma_t = 0.5* ( (1+yy_t) * no_ones + (1-yy_t) * no_zeros)
+            ccf = gamma_t
             ub = ccf-lambda_temp[jj]
             lb = -lambda_temp[jj]
             
