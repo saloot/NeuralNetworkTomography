@@ -3489,8 +3489,10 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     #---------------------------------------------------------------------
     
     #---------------Shift Post-Synaptic Spike One to the Left-------------
-    Y = np.roll(Y,-1)
-    Y[-1] = -1
+    #Y = np.roll(Y,1)
+    #Y[-1] = -1
+    #Y[0] = -1
+    #Y[1] = -1
     #---------------------------------------------------------------------
     
 
@@ -3690,7 +3692,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 lambda_temp = lambda_tot[t_start:t_end_w]
 
                 
-                pdb.set_trace()
+                
                 infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w)
                 pdb.set_trace()
                 func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w]
@@ -3943,6 +3945,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
             aa_t = aa[jj,:]#/np.linalg.norm(aa_t)#/float(cf)
             yy_t = yy[jj]#[0]
+            pdb.set_trace()
             ff = gg[yy_t]*(aa_t)/np.linalg.norm(aa_t)
         except:
             print 'some y where 0'
