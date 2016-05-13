@@ -3696,8 +3696,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
                 
                 
-                #infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w)
-                #pdb.set_trace()
+                infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w)
+                pdb.set_trace()
                 func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w]
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
                 t_end_last_w = t_end_w
@@ -3908,7 +3908,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     W_temp = copy.deepcopy(W_in)
     Delta_W = np.zeros(W_temp.shape)
     W_temp[-1] = 0.1
-    
+    no_pos_updates = 0
+    no_neg_updates = 0
         
     #----------------------Assign Dual Vectors----------------------
     if (mthd == 1) or (mthd == 3):
@@ -4072,10 +4073,16 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 Delta_W = Delta_W + Delta_W_loc
                 W_temp = W_temp + Delta_W_loc
                 
-                
+        
+        if yy_t>0:
+            no_pos_updates = no_pos_updates + 1
+        else:
+            no_neg_updates = no_neg_updates + 1
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
         
+        if (ss>100000):
+            pdb.set_trace()
         #W_temp_last = W_temp
         #W_temp = W_temp + Delta_W_loc
         
