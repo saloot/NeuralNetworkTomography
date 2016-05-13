@@ -3886,7 +3886,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     cst_y = 0
     cst_old = 0
     class_samle_flag = 1                # If 1, we try to balance the dataset
-    sample_freq = 0.35                  # With what probability sampling class 1 or 0 should be considered
+    sample_freq = 0.15                  # With what probability sampling class 1 or 0 should be considered
     if class_samle_flag:        
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
@@ -4037,9 +4037,11 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         if (mthd == 3):
             Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])
             Delta_W = Delta_W + Delta_W_loc
+            W_temp = W_temp + Delta_W_loc
         elif mthd == 1:
             Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1]) * yy_t#/float(cf)
             Delta_W = Delta_W + Delta_W_loc
+            W_temp = W_temp + Delta_W_loc
         else:
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
             d_alp = max(0,1-np.dot(W_temp.T,aa_t))
@@ -4052,13 +4054,14 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 
                 Delta_W_loc = Delta_W_loc - 0.01*W_temp
                 Delta_W = Delta_W + Delta_W_loc
+                W_temp = W_temp + Delta_W_loc
                 
                 
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
         
         #W_temp_last = W_temp
-        W_temp = W_temp + Delta_W_loc
+        #W_temp = W_temp + Delta_W_loc
         
         #if np.linalg.norm(W_temp)-np.linalg.norm(W_temp_last)>1:
         #    pdb.set_trace()
