@@ -3946,6 +3946,10 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             aa_t = aa[jj,:]#/np.linalg.norm(aa_t)#/float(cf)
             yy_t = yy[jj]#[0]
             ff = gg[yy_t]*(aa_t)/np.linalg.norm(aa_t)
+            
+            if yy_t * sum(aa_t[:-1])<0:
+                print 'something bad is happening!'
+                pdb.set_trace()
         except:
             print 'some y where 0'
             continue
@@ -4063,7 +4067,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 Delta_W_loc = Delta_W_loc - 0.01*W_temp
                 Delta_W = Delta_W + Delta_W_loc
                 W_temp = W_temp + Delta_W_loc
-                pdb.set_trace()
+                
                 
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
