@@ -3558,7 +3558,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     rand_sample_flag = 1                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
-    mthd = 4                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
+    mthd = 1                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3772,8 +3772,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 itr_block_w = 0
                 
                 W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
-                #W_tot = W_tot/np.linalg.norm(W_tot)
-                pdb.set_trace()
+                W_tot = W_tot - W_tot.mean()
+                W_tot = W_tot/np.linalg.norm(W_tot)
+                #pdb.set_trace()
                 toc = time.time()#clock()
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
                 tic = time.time()#.clock()
@@ -3897,7 +3898,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     cst_y = 0
     cst_old = 0
     class_samle_flag = 1                # If 1, we try to balance the dataset
-    sample_freq = 0.15                  # With what probability sampling class 1 or 0 should be considered
+    sample_freq = 0.25                  # With what probability sampling class 1 or 0 should be considered
     if 1:        
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
@@ -3961,8 +3962,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         if (mthd == 1):
             c = 0.1
             #c = 1 * yy_t
-            gamma_t = 0.5* ( (1+yy_t) * no_ones + (1-yy_t) * no_zeros)
-            ccf = gamma_t
+            #gamma_t = 0.5* ( (1+yy_t) * no_ones + (1-yy_t) * no_zeros)
+            #ccf = gamma_t
+            ccf = 1
             ub = ccf-lambda_temp[jj]
             lb = -lambda_temp[jj]
             
