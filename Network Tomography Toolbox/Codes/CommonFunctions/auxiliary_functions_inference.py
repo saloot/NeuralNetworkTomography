@@ -3774,6 +3774,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
                 W_tot = W_tot - W_tot.mean()
                 W_tot = W_tot/np.linalg.norm(W_tot)
+                sparse_thr = W_tot.std()/2.5
+                W_tot = soft_threshold(W_tot,sparse_thr)
                 #pdb.set_trace()
                 toc = time.time()#clock()
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
@@ -3925,7 +3927,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,5*TcT):
+    for ss in range(0,1*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
@@ -4063,7 +4065,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             W_temp = W_temp + Delta_W_loc
         else:
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
-            d_alp = max(0,1-np.dot(W_temp.T,aa_t))
+            d_alp = max(0,.1-np.dot(W_temp.T,aa_t))
             if d_alp:
                 Delta_W_loc = d_alp*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
                 #if yy_t > 0:
@@ -4074,7 +4076,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 Delta_W_loc = Delta_W_loc - 0.000001*W_temp
                 Delta_W_loc[-1] = .1
                 Delta_W = Delta_W + Delta_W_loc
-                W_temp = W_temp + Delta_W_loc
+                #W_temp = W_temp + Delta_W_loc
                 
         
         if yy_t>0:
@@ -4084,9 +4086,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
         W_temp = W_temp - W_temp.mean()
-        if ((ss+1)%1000) == 0:
-            sparse_thr = W_temp.std()/2.0
-            W_temp = soft_threshold(W_temp,sparse_thr)
+        #if ((ss+1)%1000) == 0:
+        #    sparse_thr = W_temp.std()/2.0
+        #    W_temp = soft_threshold(W_temp,sparse_thr)
         #    pdb.set_trace()
         #W_temp_last = W_temp
         #W_temp = W_temp + Delta_W_loc
