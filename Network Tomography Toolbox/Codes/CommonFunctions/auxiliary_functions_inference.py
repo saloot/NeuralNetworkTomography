@@ -3877,6 +3877,7 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
 #------------------------------------------------------------------------------
 def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end):
     
+    from auxiliary_functions import soft_threshold
     #------------------------Initializations------------------------
     #---------------------------------------------------------------
     t_gap = 5
@@ -4083,7 +4084,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
         W_temp = W_temp - W_temp.mean()
-        #if (ss>10000):
+        if ((ss+1)%1000) == 0:
+            sparse_thr = W_temp.std()/2.0
+            W_temp = soft_threshold(W_temp,sparse_thr)
         #    pdb.set_trace()
         #W_temp_last = W_temp
         #W_temp = W_temp + Delta_W_loc
