@@ -3924,7 +3924,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,15*TcT):
+    for ss in range(0,5*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
@@ -4071,7 +4071,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 #    Delta_W_loc = Delta_W_loc/float(no_zeros)
                 
                 Delta_W_loc = Delta_W_loc - 0.000001*W_temp
-                Delta_W_loc[-1] = 0.1
+                #Delta_W_loc[-1] = 0.1
                 Delta_W = Delta_W + Delta_W_loc
                 W_temp = W_temp + Delta_W_loc
                 
