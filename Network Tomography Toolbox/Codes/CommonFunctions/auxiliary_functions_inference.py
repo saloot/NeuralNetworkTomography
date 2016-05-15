@@ -4082,7 +4082,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             no_neg_updates = no_neg_updates + 1
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
-        
+        W_temp = W_temp - W_temp.mean()
         #if (ss>10000):
         #    pdb.set_trace()
         #W_temp_last = W_temp
