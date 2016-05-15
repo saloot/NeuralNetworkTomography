@@ -3776,8 +3776,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 W_tot = W_tot - W_tot.mean()
                 W_tot = W_tot/np.linalg.norm(W_tot)
                 print np.linalg.norm(W_tot)
-                sparse_thr = W_tot.std()/5.
-                W_tot = soft_threshold(W_tot,sparse_thr)
+                sparse_thr = W_tot[:-1].std()/5.
+                W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr)
                 print np.linalg.norm(W_tot)
                 #pdb.set_trace()
                 toc = time.time()#clock()
