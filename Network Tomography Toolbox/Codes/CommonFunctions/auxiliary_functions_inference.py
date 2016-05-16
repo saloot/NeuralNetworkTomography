@@ -4086,7 +4086,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 Delta_W_loc = Delta_W_loc - 0.001*W_temp
                 Delta_W_loc[-1] = .5
                 Delta_W = Delta_W + Delta_W_loc
-                W_temp = W_temp + 0.001*Delta_W_loc
+                W_temp = W_temp + Delta_W_loc
                 
         
         if yy_t>0:
