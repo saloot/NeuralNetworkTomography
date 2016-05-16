@@ -3696,8 +3696,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
                 
                 
-                infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w)
-                pdb.set_trace()
+                #infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w)
+                #pdb.set_trace()
                 func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w]
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
                 t_end_last_w = t_end_w
@@ -3779,7 +3779,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 sparse_thr = W_tot[:-1].std()/15.
                 W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr)
                 print np.linalg.norm(W_tot)
-                #pdb.set_trace()
+                pdb.set_trace()
                 toc = time.time()#clock()
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
                 tic = time.time()#.clock()
@@ -4077,8 +4077,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
             d_alp = max(0,.1-np.dot(W_temp.T,aa_t))
             if d_alp:
-                #d_alp = d_alp-max(0,1-np.dot(W_temp.T,aa_t))
-                Delta_W_loc = d_alp*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
+                Delta_W_loc = max(0,1-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
                 #if yy_t > 0:
                 #    Delta_W_loc = Delta_W_loc/float(no_ones)
                 #else:
@@ -4087,12 +4086,12 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 Delta_W_loc = Delta_W_loc - 0.001*W_temp
                 Delta_W_loc[-1] = .1
                 Delta_W = Delta_W + Delta_W_loc
-                pdb.set_trace()
+                #pdb.set_trace()
                 #W_temp2 = W_temp + 1.0*Delta_W_loc
                 #d_alp-max(0,.1-np.dot(W_temp2.T,aa_t))
                 W_temp = W_temp + 1.0*Delta_W_loc
                 cst = cst + d_alp-max(0,.1-np.dot(W_temp.T,aa_t))
-                
+                W_temp = W_temp - W_temp.mean()
                 
         
         if yy_t>0:
@@ -4101,7 +4100,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             no_neg_updates = no_neg_updates + 1
             #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
                 
-        W_temp = W_temp - W_temp.mean()
+        
         #if ((ss+1)%1000) == 0:
         #    sparse_thr = W_temp.std()/2.0
         #    W_temp = soft_threshold(W_temp,sparse_thr)
