@@ -3779,7 +3779,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 sparse_thr = W_tot[:-1].std()/2.5
                 W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr)
                 print np.linalg.norm(W_tot)
-                pdb.set_trace()
+                #pdb.set_trace()
                 toc = time.time()#clock()
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
                 tic = time.time()#.clock()
@@ -4083,7 +4083,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 #else:
                 #    Delta_W_loc = Delta_W_loc/float(no_zeros)
                 
-                Delta_W_loc = 0.1*Delta_W_loc - 0.001*W_temp
+                Delta_W_loc = 1*Delta_W_loc - 0.01*W_temp
                 Delta_W_loc[-1] = .1
                 Delta_W = Delta_W + Delta_W_loc
                 #pdb.set_trace()
