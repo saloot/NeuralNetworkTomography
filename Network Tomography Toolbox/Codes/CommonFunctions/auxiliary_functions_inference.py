@@ -3883,11 +3883,15 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
 def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end):
     
     from auxiliary_functions import soft_threshold
+    from numpy.random import RandomState
+    from time import time
+    prng = RandomState(int(time()))
     #------------------------Initializations------------------------
     #---------------------------------------------------------------
     t_gap = 5
     if rand_sample_flag:
-        t_init = np.random.randint(0,t_gap)
+        #t_init = np.random.randint(0,t_gap)
+        t_init = prng.randint(0,t_gap)
         t_inds = np.array(range(t_init,t_end-t_start,t_gap))
         aa = aa[t_inds,:]
         yy = yy[t_inds]
@@ -3904,7 +3908,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     cst_y = 0
     cst_old = 0
     class_samle_flag = 1                # If 1, we try to balance the dataset
-    sample_freq = 0.1                  # With what probability sampling class 1 or 0 should be considered
+    sample_freq = 0.25                  # With what probability sampling class 1 or 0 should be considered
     if 1:        
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
@@ -3930,7 +3934,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #---------------------------------------------------------------
     
     #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,1*TcT):
+    for ss in range(0,5*TcT):
         
         
         #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
@@ -3939,13 +3943,16 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 ee = np.random.rand(1)
                 #if ee < p1:
                 if ee < sample_freq:
-                    ii = np.random.randint(0,no_ones)
+                    #ii = np.random.randint(0,no_ones)
+                    ii = prng.randint(0,no_ones)
                     jj = ind_ones[ii]
                 else:
-                    ii = np.random.randint(0,no_zeros)
+                    #ii = np.random.randint(0,no_zeros)
+                    ii = prng.randint(0,no_zeros)
                     jj = ind_zeros[ii]
             else:
-                ii = np.random.randint(0,TcT)
+                #ii = np.random.randint(0,TcT)
+                ii = prng.randint(0,TcT)
                 jj = ii
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
@@ -3962,7 +3969,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 print 'something bad is happening!'
                 pdb.set_trace()
         except:
-            print 'some y where 0'
+            print 'some y where 0 %s,%s' %(str(ss),str(yy_t))
             continue
         c = 1
         if (mthd == 1):
@@ -4076,10 +4083,10 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 #else:
                 #    Delta_W_loc = Delta_W_loc/float(no_zeros)
                 
-                Delta_W_loc = Delta_W_loc - 0.00001*W_temp
-                Delta_W_loc[-1] = .1
+                Delta_W_loc = Delta_W_loc - 0.001*W_temp
+                Delta_W_loc[-1] = .5
                 Delta_W = Delta_W + Delta_W_loc
-                #W_temp = W_temp + Delta_W_loc
+                W_temp = W_temp + Delta_W_loc
                 
         
         if yy_t>0:
