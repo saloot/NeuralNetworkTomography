@@ -3750,7 +3750,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     
                     if (mthd == 1) or (mthd == 3):
                         lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/float(no_blocks)) 
-                            
+                    
                     ccst[itr_cost] = ccst[itr_cost] + cst
                     #total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,W_tot)<0)
                     
@@ -4086,7 +4086,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 Delta_W_loc = Delta_W_loc - 0.001*W_temp
                 Delta_W_loc[-1] = .5
                 Delta_W = Delta_W + Delta_W_loc
-                W_temp = W_temp + Delta_W_loc
+                W_temp = W_temp + 0.001*Delta_W_loc
                 
         
         if yy_t>0:
@@ -4117,9 +4117,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
-        cst = cst + np.sign(max(0,1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
+        cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
         if yy_t:
-            cst_y = cst_y + max(0,1-np.dot(W_temp.T,aa_t))#hinge_loss_func(W_temp,-aa_t,0.1,1,0)
+            cst_y = cst_y + max(0,.1-np.dot(W_temp.T,aa_t))#hinge_loss_func(W_temp,-aa_t,0.1,1,0)
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     
