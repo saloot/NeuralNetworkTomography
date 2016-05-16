@@ -3696,8 +3696,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
                 
                 
-                #infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w)
-                #pdb.set_trace()
+                infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w)
+                pdb.set_trace()
                 func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w]
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
                 t_end_last_w = t_end_w
@@ -4087,6 +4087,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 Delta_W_loc = Delta_W_loc - 0.001*W_temp
                 Delta_W_loc[-1] = .5
                 Delta_W = Delta_W + Delta_W_loc
+                pdb.set_trace()
+                #W_temp2 = W_temp + 1.0*Delta_W_loc
+                #d_alp-max(0,1-np.dot(W_temp2.T,aa_t))
                 W_temp = W_temp + 1.0*Delta_W_loc
                 cst = cst + d_alp-max(0,1-np.dot(W_temp.T,aa_t))
                 
