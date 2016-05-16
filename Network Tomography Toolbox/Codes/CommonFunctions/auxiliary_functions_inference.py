@@ -4087,7 +4087,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 Delta_W_loc = Delta_W_loc - 0.001*W_temp
                 Delta_W_loc[-1] = .5
                 Delta_W = Delta_W + Delta_W_loc
-                W_temp = W_temp + 0.001*Delta_W_loc
+                W_temp = W_temp + 1.0*Delta_W_loc
+                cst = cst + d_alp-max(0,1-np.dot(W_temp.T,aa_t))
+                
                 
         
         if yy_t>0:
@@ -4118,7 +4120,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
-        cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
+        #cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
         if yy_t:
             cst_y = cst_y + max(0,.1-np.dot(W_temp.T,aa_t))#hinge_loss_func(W_temp,-aa_t,0.1,1,0)
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
