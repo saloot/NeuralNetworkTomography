@@ -3961,7 +3961,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         
         
         #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
-            aa_t = aa[jj,:]/(0.00001+ np.linalg.norm(aa_t))#/float(cf)
+            aa_t = aa[jj,:]/(0.00001+ np.linalg.norm(aa[jj,:]))#/float(cf)
             yy_t = yy[jj]#[0]
             ff = gg[yy_t]*(aa_t)/np.linalg.norm(aa_t)
             
