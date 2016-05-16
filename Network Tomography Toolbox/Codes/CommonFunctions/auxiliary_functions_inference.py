@@ -4089,7 +4089,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 #pdb.set_trace()
                 #W_temp2 = W_temp + 1.0*Delta_W_loc
                 #d_alp-max(0,.1-np.dot(W_temp2.T,aa_t))
-                W_temp = W_temp + 1.0*Delta_W_loc
+                W_temp = W_temp + .01*Delta_W_loc
                 cst = cst + d_alp-max(0,.1-np.dot(W_temp.T,aa_t))
                 W_temp = W_temp - W_temp.mean()
                 
