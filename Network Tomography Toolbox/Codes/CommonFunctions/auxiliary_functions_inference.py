@@ -3974,7 +3974,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 ff = gg[yy_t]*(aa_t)/np.linalg.norm(aa_t)
                 
                 
-                no_firings_per_neurons = no_firings_per_neurons + ((yy_t*aa_t)>0.9).astype(int)
+                no_firings_per_neurons = no_firings_per_neurons + np.reshape(((yy_t*aa_t.ravel())>0.9).astype(int),[len_v-1,1])
                 if yy_t * sum(aa_t[:-1])<0:
                     print 'something bad is happening!'
                     pdb.set_trace()
