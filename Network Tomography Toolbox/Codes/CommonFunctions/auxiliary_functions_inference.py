@@ -4083,8 +4083,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             else:
                 #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
                 d_alp = max(0,.1-np.dot(W_temp.T,aa_t))
-                if yy_t<0:
-                    d_alp = max(d_alp,max(0,6+np.dot(W_temp.T,aa_t)))
+                #if yy_t<0:
+                #    d_alp = max(d_alp,max(0,6+np.dot(W_temp.T,aa_t)))
                 if d_alp:
                     if 0:
                         if np.dot(W_temp.T,aa_t)<0.1:
