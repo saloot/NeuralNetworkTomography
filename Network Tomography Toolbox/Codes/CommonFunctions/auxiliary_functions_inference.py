@@ -3774,9 +3774,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
                 print np.linalg.norm(Delta_W)
                 W_tot = W_tot - W_tot.mean()
-                #W_tot = W_tot/np.linalg.norm(W_tot)
+                W_tot = W_tot/np.linalg.norm(W_tot)
                 print np.linalg.norm(W_tot)
-                sparse_thr = W_tot[:-1].std()/1.0
+                sparse_thr = W_tot[:-1].std()/2.5
                 W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr)
                 print np.linalg.norm(W_tot)
                 #pdb.set_trace()
@@ -4076,8 +4076,13 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         else:
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
             d_alp = max(0,.1-np.dot(W_temp.T,aa_t))
+            if yy_t<0:
+                d_alp = max(d_alp,max(0,3+np.dot(W_temp.T,aa_t)))
             if d_alp:
-                Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
+                if np.dot(W_temp.T,aa_t)<0.1:
+                    Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
+                else:
+                    Delta_W_loc = -max(0,3.002+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
                 #if yy_t > 0:
                 #    Delta_W_loc = Delta_W_loc/float(no_ones)
                 #else:
