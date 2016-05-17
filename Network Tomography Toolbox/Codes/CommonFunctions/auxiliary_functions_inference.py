@@ -3915,247 +3915,251 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         no_ones = sum(yy>0)
         no_zeros = sum(yy<0)
         p1 = no_ones /float(len(yy))
-        
+    
     W_temp = copy.deepcopy(W_in)
     Delta_W = np.zeros(W_temp.shape)
-    W_temp[-1] = 0.1
-    no_pos_updates = 0
-    no_neg_updates = 0
-        
+    
     #----------------------Assign Dual Vectors----------------------
     if (mthd == 1) or (mthd == 3):
         d_alp_vec = np.zeros([len(lambda_temp),1])
         if rand_sample_flag:
             lambda_temp = lambda_temp[t_inds]
-        
-        
     else:
         d_alp_vec = [0]
     #---------------------------------------------------------------
+        
+    if no_ones and no_zeros: 
+        
+        W_temp[-1] = 0.1
+        no_pos_updates = 0
+        no_neg_updates = 0
+            
+        
+        
+        #--------------------Do One Pass over Data----------------------        
+        for ss in range(0,5*TcT):
+            
+            
+            #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
+            try:
+                if class_samle_flag:
+                    ee = np.random.rand(1)
+                    #if ee < p1:
+                    if ee < sample_freq:
+                        #ii = np.random.randint(0,no_ones)
+                        ii = prng.randint(0,no_ones)
+                        jj = ind_ones[ii]
+                    else:
+                        #ii = np.random.randint(0,no_zeros)
+                        ii = prng.randint(0,no_zeros)
+                        jj = ind_zeros[ii]
+                else:
+                    #ii = np.random.randint(0,TcT)
+                    ii = prng.randint(0,TcT)
+                    jj = ii
+            except:
+                print 'something is fishy: ee = %s,no_ones = %s,no_zeros=%s, ii = %s,jj=%s' %(str(ee),str(no_ones),str(no_zeros),str(ii),str(jj))
+                continue
+            
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+            
+            
+            
+            
+            #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
+            try:
+                aa_t = aa[jj,:]/(0.00001+ np.linalg.norm(aa[jj,:]))#/float(cf)
+                yy_t = yy[jj]#[0]
+                ff = gg[yy_t]*(aa_t)/np.linalg.norm(aa_t)
+                
+                if yy_t * sum(aa_t[:-1])<0:
+                    print 'something bad is happening!'
+                    pdb.set_trace()
+            except:
+                print 'some y where 0 %s,%s' %(str(ss),str(yy_t))
+                continue
+            c = 1
+            if (mthd == 1):
+                c = 0.1
+                #c = 1 * yy_t
+                #gamma_t = 0.5* ( (1+yy_t) * no_ones + (1-yy_t) * no_zeros)
+                #ccf = gamma_t
+                ccf = 1
+                ub = ccf-lambda_temp[jj]
+                lb = -lambda_temp[jj]
+                
+                if 1:
+                    if yy_t>0:
+                        ub = ccf-lambda_temp[jj]
+                        lb = -lambda_temp[jj]
+                    else:
+                        lb = -ccf-lambda_temp[jj]
+                        ub = -lambda_temp[jj]
+            elif (mthd == 3):
+                h0 = 1
+                h1 = 1
+                a0 = 1
+                a1 = 10
+                
+                lb0 = -lambda_temp[jj]
+                ub0 = ccf*h0-lambda_temp[jj]
+                lb1 = -lambda_temp[jj]-ccf*h1
+                ub1 = -lambda_temp[jj]
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
-    #--------------------Do One Pass over Data----------------------        
-    for ss in range(0,5*TcT):
-        
-        
-        #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
-        try:
-            if class_samle_flag:
-                ee = np.random.rand(1)
-                #if ee < p1:
-                if ee < sample_freq:
-                    #ii = np.random.randint(0,no_ones)
-                    ii = prng.randint(0,no_ones)
-                    jj = ind_ones[ii]
-                else:
-                    #ii = np.random.randint(0,no_zeros)
-                    ii = prng.randint(0,no_zeros)
-                    jj = ind_zeros[ii]
-            else:
-                #ii = np.random.randint(0,TcT)
-                ii = prng.randint(0,TcT)
-                jj = ii
-        except:
-            print 'something is fishy: ee = %s,no_ones = %s,no_zeros=%s, ii = %s,jj=%s' %(str(ee),str(no_ones),str(no_zeros),str(ii),str(jj))
-            continue
-        
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
-        
-        
-        
-        
-        #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
-        try:
-            aa_t = aa[jj,:]/(0.00001+ np.linalg.norm(aa[jj,:]))#/float(cf)
-            yy_t = yy[jj]#[0]
-            ff = gg[yy_t]*(aa_t)/np.linalg.norm(aa_t)
-            
-            if yy_t * sum(aa_t[:-1])<0:
-                print 'something bad is happening!'
-                pdb.set_trace()
-        except:
-            print 'some y where 0 %s,%s' %(str(ss),str(yy_t))
-            continue
-        c = 1
-        if (mthd == 1):
-            c = 0.1
-            #c = 1 * yy_t
-            #gamma_t = 0.5* ( (1+yy_t) * no_ones + (1-yy_t) * no_zeros)
-            #ccf = gamma_t
-            ccf = 1
-            ub = ccf-lambda_temp[jj]
-            lb = -lambda_temp[jj]
-            
-            if 1:
-                if yy_t>0:
-                    ub = ccf-lambda_temp[jj]
-                    lb = -lambda_temp[jj]
-                else:
-                    lb = -ccf-lambda_temp[jj]
-                    ub = -lambda_temp[jj]
-        elif (mthd == 3):
-            h0 = 1
-            h1 = 1
-            a0 = 1
-            a1 = 10
-            
-            lb0 = -lambda_temp[jj]
-            ub0 = ccf*h0-lambda_temp[jj]
-            lb1 = -lambda_temp[jj]-ccf*h1
-            ub1 = -lambda_temp[jj]
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
-        if mthd == 2:
-            b = (-c-np.dot(W_temp.T,ff))/(0.00001+pow(np.linalg.norm(ff),2))
-            b = min(ccf-lambda_temp[jj],b)
-            b = max(-lambda_temp[jj],b)
-            d_alp = b
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
-        elif mthd == 1:
-            #b = cf * (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
-            b = (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
-            b = yy_t * b
-            d_alp = min(ub,max(lb,b))
-            
-            #if (b<= ub ) and (b >= lb):
-            #    d_alp = b
-            #elif pow(lb-b,2) < pow(ub-b,2):
-            #    d_alp = lb
-            #else:
-            #    d_alp = ub
-        elif mthd == 3:
-            b0 = (a0-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
-            b1 = (a1-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
-            #b = (-np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(ff),2)
-            d_alp0 = min(ub0,max(lb0,b0))
-            val0 = pow(d_alp0-b0,2)
-            
-            d_alp1 = min(ub1,max(lb1,b1))
-            val1 = pow(d_alp1-b1,2)
-            
-            if val1 < val0:
-                d_alp = d_alp1
-            else:
-                d_alp = d_alp0
-            
-            if 0:
-                if (b0<= ub0 ) and (b0 >= lb0):
-                    d_alp0 = b0
-                    min_val0 = 0
-                elif pow(lb0-b0,2) < pow(ub0-b0,2):
-                    d_alp0 = lb0
-                    min_val0 = pow(lb0-b0,2)
-                else:
-                    d_alp0 = ub0
-                    min_val0 = pow(ub0-b0,2)
-                    
-                if (b1<= ub1 ) and (b1 >= lb1):
-                    d_alp1 = b1
-                    min_val1 = 0
-                elif pow(lb1-b1,2) < pow(ub1-b1,2):
-                    d_alp1 = lb1
-                    min_val1 = pow(lb1-b1,2)
-                else:
-                    d_alp1 = ub1
-                    min_val1 = pow(ub1-b1,2)
-                    
-                if min_val1 < min_val0:
+            #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
+            if mthd == 2:
+                b = (-c-np.dot(W_temp.T,ff))/(0.00001+pow(np.linalg.norm(ff),2))
+                b = min(ccf-lambda_temp[jj],b)
+                b = max(-lambda_temp[jj],b)
+                d_alp = b
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+            #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
+            elif mthd == 1:
+                #b = cf * (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
+                b = (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
+                b = yy_t * b
+                d_alp = min(ub,max(lb,b))
+                
+                #if (b<= ub ) and (b >= lb):
+                #    d_alp = b
+                #elif pow(lb-b,2) < pow(ub-b,2):
+                #    d_alp = lb
+                #else:
+                #    d_alp = ub
+            elif mthd == 3:
+                b0 = (a0-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
+                b1 = (a1-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
+                #b = (-np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(ff),2)
+                d_alp0 = min(ub0,max(lb0,b0))
+                val0 = pow(d_alp0-b0,2)
+                
+                d_alp1 = min(ub1,max(lb1,b1))
+                val1 = pow(d_alp1-b1,2)
+                
+                if val1 < val0:
                     d_alp = d_alp1
                 else:
                     d_alp = d_alp0
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
-        
-        #~~~~~~~~~~~~~~~~~~~~~Upate Weights~~~~~~~~~~~~~~~~~~~~~~~~~        
-        if (mthd == 3):
-            Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])
-            Delta_W = Delta_W + Delta_W_loc
-            W_temp = W_temp + Delta_W_loc
-        elif mthd == 1:
-            Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1]) * yy_t#/float(cf)
-            Delta_W = Delta_W + Delta_W_loc
-            W_temp = W_temp + Delta_W_loc
-        else:
-            #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
-            d_alp = max(0,.1-np.dot(W_temp.T,aa_t))
-            if yy_t<0:
-                d_alp = max(d_alp,max(0,6+np.dot(W_temp.T,aa_t)))
-            if d_alp:
-                if 1:
-                    if np.dot(W_temp.T,aa_t)<0.1:
-                        Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
+                
+                if 0:
+                    if (b0<= ub0 ) and (b0 >= lb0):
+                        d_alp0 = b0
+                        min_val0 = 0
+                    elif pow(lb0-b0,2) < pow(ub0-b0,2):
+                        d_alp0 = lb0
+                        min_val0 = pow(lb0-b0,2)
                     else:
-                        Delta_W_loc = -max(0,6.002+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
-                else:
-                    Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
-                    s = prng.randint(0,4,[len_v-1,1])
-                    s = (s>=3).astype(int)
-                    Delta_W_loc = np.multiply(Delta_W_loc,s)
-                #if yy_t > 0:
-                #    Delta_W_loc = Delta_W_loc/float(no_ones)
-                #else:
-                #    Delta_W_loc = Delta_W_loc/float(no_zeros)
-                
-                Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
-                Delta_W_loc[-1] = .1
+                        d_alp0 = ub0
+                        min_val0 = pow(ub0-b0,2)
+                        
+                    if (b1<= ub1 ) and (b1 >= lb1):
+                        d_alp1 = b1
+                        min_val1 = 0
+                    elif pow(lb1-b1,2) < pow(ub1-b1,2):
+                        d_alp1 = lb1
+                        min_val1 = pow(lb1-b1,2)
+                    else:
+                        d_alp1 = ub1
+                        min_val1 = pow(ub1-b1,2)
+                        
+                    if min_val1 < min_val0:
+                        d_alp = d_alp1
+                    else:
+                        d_alp = d_alp0
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            
+            #~~~~~~~~~~~~~~~~~~~~~Upate Weights~~~~~~~~~~~~~~~~~~~~~~~~~        
+            if (mthd == 3):
+                Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])
                 Delta_W = Delta_W + Delta_W_loc
-                #pdb.set_trace()
-                #W_temp2 = W_temp + 1.0*Delta_W_loc
-                #d_alp-max(0,.1-np.dot(W_temp2.T,aa_t))
-                W_temp = W_temp + 1*Delta_W_loc
-                cst = cst + d_alp-max(0,.1-np.dot(W_temp.T,aa_t))
-                W_temp = W_temp - W_temp.mean()
-                
-        
-        if yy_t>0:
-            no_pos_updates = no_pos_updates + 1
-        else:
-            no_neg_updates = no_neg_updates + 1
-            #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
-                
-        
-        #if ((ss+1)%1000) == 0:
-        #    sparse_thr = W_temp.std()/2.0
-        #    W_temp = soft_threshold(W_temp,sparse_thr)
-        #    pdb.set_trace()
-        #W_temp_last = W_temp
-        #W_temp = W_temp + Delta_W_loc
-        
-        #if np.linalg.norm(W_temp)-np.linalg.norm(W_temp_last)>1:
-        #    pdb.set_trace()
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
-        #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
-        if (mthd == 1) or (mthd == 3):
-            lambda_temp[jj] = lambda_temp[jj] + d_alp
-            if rand_sample_flag:
-                d_alp_vec[t_inds[jj]] = d_alp_vec[t_inds[jj]] + d_alp
+                W_temp = W_temp + Delta_W_loc
+            elif mthd == 1:
+                Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1]) * yy_t#/float(cf)
+                Delta_W = Delta_W + Delta_W_loc
+                W_temp = W_temp + Delta_W_loc
             else:
-                d_alp_vec[jj] = d_alp_vec[jj] + d_alp
+                #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
+                d_alp = max(0,.1-np.dot(W_temp.T,aa_t))
+                if yy_t<0:
+                    d_alp = max(d_alp,max(0,6+np.dot(W_temp.T,aa_t)))
+                if d_alp:
+                    if 0:
+                        if np.dot(W_temp.T,aa_t)<0.1:
+                            Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
+                        else:
+                            Delta_W_loc = -max(0,6.002+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
+                    else:
+                        Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
+                        s = prng.randint(0,4,[len_v-1,1])
+                        s = (s>=3).astype(int)
+                        Delta_W_loc = np.multiply(Delta_W_loc,s)
+                    #if yy_t > 0:
+                    #    Delta_W_loc = Delta_W_loc/float(no_ones)
+                    #else:
+                    #    Delta_W_loc = Delta_W_loc/float(no_zeros)
+                    
+                    Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
+                    Delta_W_loc[-1] = .1
+                    Delta_W = Delta_W + Delta_W_loc
+                    #pdb.set_trace()
+                    #W_temp2 = W_temp + 1.0*Delta_W_loc
+                    #d_alp-max(0,.1-np.dot(W_temp2.T,aa_t))
+                    W_temp = W_temp + 1*Delta_W_loc
+                    cst = cst + d_alp-max(0,.1-np.dot(W_temp.T,aa_t))
+                    W_temp = W_temp - W_temp.mean()
+                    
+            
+            if yy_t>0:
+                no_pos_updates = no_pos_updates + 1
+            else:
+                no_neg_updates = no_neg_updates + 1
+                #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
+                    
+            
+            #if ((ss+1)%1000) == 0:
+            #    sparse_thr = W_temp.std()/2.0
+            #    W_temp = soft_threshold(W_temp,sparse_thr)
+            #    pdb.set_trace()
+            #W_temp_last = W_temp
+            #W_temp = W_temp + Delta_W_loc
+            
+            #if np.linalg.norm(W_temp)-np.linalg.norm(W_temp_last)>1:
+            #    pdb.set_trace()
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
+            if (mthd == 1) or (mthd == 3):
+                lambda_temp[jj] = lambda_temp[jj] + d_alp
+                if rand_sample_flag:
+                    d_alp_vec[t_inds[jj]] = d_alp_vec[t_inds[jj]] + d_alp
+                else:
+                    d_alp_vec[jj] = d_alp_vec[jj] + d_alp
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
+            #cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
+            if yy_t:
+                cst_y = cst_y + max(0,.1-np.dot(W_temp.T,aa_t))#hinge_loss_func(W_temp,-aa_t,0.1,1,0)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
-    #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
-        #cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
-        if yy_t:
-            cst_y = cst_y + max(0,.1-np.dot(W_temp.T,aa_t))#hinge_loss_func(W_temp,-aa_t,0.1,1,0)
-    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
-    
-    #---------------------------------------------------------------
-    #if mthd == 4:
-    #    Delta_W_loc = W_temp
-    #    #Delta_W_loc = soft_threshold(W_temp.ravel(),sparse_thr)
-    #else:
-    #    Delta_W_loc = W_temp
-    #---------------------------------------------------------------
-    
-    
-    #--------------In Compliance with Jaggi's Work------------------
-    #Delta_W = np.dot(aa.T,d_alp_vec)
-    #---------------------------------------------------------------
-    
+        
+        
+        #---------------------------------------------------------------
+        #if mthd == 4:
+        #    Delta_W_loc = W_temp
+        #    #Delta_W_loc = soft_threshold(W_temp.ravel(),sparse_thr)
+        #else:
+        #    Delta_W_loc = W_temp
+        #---------------------------------------------------------------
+        
+        
+        #--------------In Compliance with Jaggi's Work------------------
+        #Delta_W = np.dot(aa.T,d_alp_vec)
+        #---------------------------------------------------------------
+    else:
+        print 'no ones!'
     w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
     return Delta_W,d_alp_vec,t_start,t_end,cst
 
