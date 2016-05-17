@@ -4077,12 +4077,12 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
             d_alp = max(0,.1-np.dot(W_temp.T,aa_t))
             if yy_t<0:
-                d_alp = max(d_alp,max(0,3+np.dot(W_temp.T,aa_t)))
+                d_alp = max(d_alp,max(0,6+np.dot(W_temp.T,aa_t)))
             if d_alp:
                 if np.dot(W_temp.T,aa_t)<0.1:
                     Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
                 else:
-                    Delta_W_loc = -max(0,3.002+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
+                    Delta_W_loc = -max(0,6.002+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
                 #if yy_t > 0:
                 #    Delta_W_loc = Delta_W_loc/float(no_ones)
                 #else:
