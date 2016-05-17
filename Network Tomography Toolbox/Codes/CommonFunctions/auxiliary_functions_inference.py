@@ -3954,6 +3954,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 #ii = np.random.randint(0,TcT)
                 ii = prng.randint(0,TcT)
                 jj = ii
+        except:
+            print 'something is fishy: ee = %s,no_ones = %s,no_zeros=%s, ii = %s,jj=%s' %(str(ee),str(no_ones),str(no_zeros),str(ii),str(jj))
+            continue
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
         
@@ -3961,6 +3964,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         
         
         #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
+        try:
             aa_t = aa[jj,:]/(0.00001+ np.linalg.norm(aa[jj,:]))#/float(cf)
             yy_t = yy[jj]#[0]
             ff = gg[yy_t]*(aa_t)/np.linalg.norm(aa_t)
