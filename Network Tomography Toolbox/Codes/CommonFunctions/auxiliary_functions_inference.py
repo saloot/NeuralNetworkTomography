@@ -4079,16 +4079,22 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             if yy_t<0:
                 d_alp = max(d_alp,max(0,6+np.dot(W_temp.T,aa_t)))
             if d_alp:
-                if np.dot(W_temp.T,aa_t)<0.1:
-                    Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
+                if 0:
+                    if np.dot(W_temp.T,aa_t)<0.1:
+                        Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
+                    else:
+                        Delta_W_loc = -max(0,6.002+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
                 else:
-                    Delta_W_loc = -max(0,6.002+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
+                    Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
+                s = prng.randint(0,4,[len_v-1,1])
+                s = (s>=3).astype(int)
+                Delta_W_loc = np.multiply(Delta_W_loc,s)
                 #if yy_t > 0:
                 #    Delta_W_loc = Delta_W_loc/float(no_ones)
                 #else:
                 #    Delta_W_loc = Delta_W_loc/float(no_zeros)
                 
-                Delta_W_loc = 1*Delta_W_loc - 0.01*W_temp
+                Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
                 Delta_W_loc[-1] = .1
                 Delta_W = Delta_W + Delta_W_loc
                 #pdb.set_trace()
