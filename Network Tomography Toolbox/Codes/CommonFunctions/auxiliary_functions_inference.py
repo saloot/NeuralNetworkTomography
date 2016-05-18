@@ -3918,7 +3918,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     
     W_temp = copy.deepcopy(W_in)
     Delta_W = np.zeros(W_temp.shape)
-    no_firings_per_neurons = np.ones(W_temp.shape)
+    no_firings_per_neurons = 2*np.ones(W_temp.shape)
     
     #----------------------Assign Dual Vectors----------------------
     if (mthd == 1) or (mthd == 3):
@@ -4081,7 +4081,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 W_temp = W_temp + Delta_W_loc
             elif mthd == 1:
                 Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1]) * yy_t#/float(cf)
-                
+                Delta_W_loc = np.divide(Delta_W_loc,np.log(no_firings_per_neurons))
                 if 0:
                     s = prng.randint(0,5,[len_v-1,1])
                     s = (s>=4).astype(int)
