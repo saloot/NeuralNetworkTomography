@@ -3983,7 +3983,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 continue
             c = 1
             if (mthd == 1):
-                c = 0.1
+                #c = 0.1
                 #c = 1 * yy_t
                 #gamma_t = 0.5* ( (1+yy_t) * no_ones + (1-yy_t) * no_zeros)
                 #ccf = gamma_t
