@@ -3908,7 +3908,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     cst_y = 0
     cst_old = 0
     class_samle_flag = 1                # If 1, we try to balance the dataset
-    sample_freq = 0.1                   # With what probability sampling class 1 or 0 should be considered
+    sample_freq = 0.3                   # With what probability sampling class 1 or 0 should be considered
     if 1:        
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
@@ -3938,7 +3938,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         
         
         #--------------------Do One Pass over Data----------------------        
-        for ss in range(0,5*TcT):
+        for ss in range(0,25*TcT):
             
             
             #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
@@ -3983,7 +3983,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 continue
             c = 1
             if (mthd == 1):
-                #c = 0.1
+                c = 0.1
                 #c = 1 * yy_t
                 #gamma_t = 0.5* ( (1+yy_t) * no_ones + (1-yy_t) * no_zeros)
                 #ccf = gamma_t
@@ -4082,10 +4082,11 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             elif mthd == 1:
                 Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1]) * yy_t#/float(cf)
                 
-                s = prng.randint(0,5,[len_v-1,1])
-                s = (s>=4).astype(int)
-                Delta_W_loc = np.multiply(Delta_W_loc,s)
-                Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
+                if 0:
+                    s = prng.randint(0,5,[len_v-1,1])
+                    s = (s>=4).astype(int)
+                    Delta_W_loc = np.multiply(Delta_W_loc,s)
+                    Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
                 
                 Delta_W = Delta_W + Delta_W_loc
                 W_temp = W_temp + Delta_W_loc
