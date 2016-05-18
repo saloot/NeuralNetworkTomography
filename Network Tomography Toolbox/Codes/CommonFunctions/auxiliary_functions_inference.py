@@ -3938,7 +3938,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         
         
         #--------------------Do One Pass over Data----------------------        
-        for ss in range(0,5*TcT):
+        for ss in range(0,25*TcT):
             
             
             #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
@@ -4082,10 +4082,10 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             elif mthd == 1:
                 Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1]) * yy_t#/float(cf)
                 
-                s = prng.randint(0,5,[len_v-1,1])
-                s = (s>=4).astype(int)
-                Delta_W_loc = np.multiply(Delta_W_loc,s)
-                Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
+                #s = prng.randint(0,5,[len_v-1,1])
+                #s = (s>=4).astype(int)
+                #Delta_W_loc = np.multiply(Delta_W_loc,s)
+                #Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
                 
                 Delta_W = Delta_W + Delta_W_loc
                 W_temp = W_temp + Delta_W_loc
