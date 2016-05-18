@@ -3558,7 +3558,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     rand_sample_flag = 1                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
-    mthd = 1                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
+    mthd = 4                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
@@ -3884,6 +3884,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     from numpy.random import RandomState
     from time import time
     prng = RandomState(int(time()))
+    if not np.linalg.norm(W_in):
+        W_in = np.random.rand([W_in.shape[0],W_in.shape[1]])
     #------------------------Initializations------------------------
     #---------------------------------------------------------------
     t_gap = 5
