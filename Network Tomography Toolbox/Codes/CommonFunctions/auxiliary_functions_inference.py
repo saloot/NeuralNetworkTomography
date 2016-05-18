@@ -3718,7 +3718,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
                 if t_end - t_start < 10:
                     continue
-                        
+                
+                print t_start,t_end
                 func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
                 int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
                 t_end_last_t = t_end
@@ -3732,8 +3733,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 (aa,yy,tt_start,tt_end,spike_flag) = result.get()
                         
                 if spike_flag < 0:
-                    print tt_start,tt_end
-                    print aa
+                    
                     A[tt_start-block_start:tt_end-block_start,:] = aa
                     YA[tt_start-block_start:tt_end-block_start] = yy
                     
