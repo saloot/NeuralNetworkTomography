@@ -3774,8 +3774,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
                 W_tot = W_tot - W_tot.mean()
                 W_tot = W_tot/np.linalg.norm(W_tot)
-                sparse_thr = W_tot[:-1].std()/10.5
+                sparse_thr = W_tot[:-1].std()/2.5
                 W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr)
+                
                 #pdb.set_trace()
                 toc = time.time()#clock()
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
@@ -4092,11 +4093,14 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                         else:
                             Delta_W_loc = -max(0,6.002+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
                     else:
-                        Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
-                        s = prng.randint(0,4,[len_v-1,1])
-                        s = (s>=3).astype(int)
-                        #Delta_W_loc = np.multiply(Delta_W_loc,s)
-                        Delta_W_loc = np.divide(Delta_W_loc,no_firings_per_neurons)
+                        
+                        s = prng.randint(0,5,[len_v-1,1])
+                        s = (s>=4).astype(int)
+                        Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
+                        Delta_W_loc = np.multiply(Delta_W_loc,s)
+                        Delta_W_loc = Delta_W_loc /(0.0001+pow(np.linalg.norm(np.multiply(aa_t,s)),2))
+                        
+                        #Delta_W_loc = np.divide(Delta_W_loc,no_firings_per_neurons)
                     #if yy_t > 0:
                     #    Delta_W_loc = Delta_W_loc/float(no_ones)
                     #else:
