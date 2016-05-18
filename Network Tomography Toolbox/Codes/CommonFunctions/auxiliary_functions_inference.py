@@ -3885,7 +3885,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     from time import time
     prng = RandomState(int(time()))
     if not np.linalg.norm(W_in):
-        W_in = np.random.rand([W_in.shape[0],W_in.shape[1]])
+        W_in = np.random.rand(W_in.shape[0],W_in.shape[1])
     #------------------------Initializations------------------------
     #---------------------------------------------------------------
     t_gap = 5
@@ -4081,8 +4081,18 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 W_temp = W_temp + Delta_W_loc
             elif mthd == 1:
                 Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1]) * yy_t#/float(cf)
+                
+                s = prng.randint(0,5,[len_v-1,1])
+                s = (s>=4).astype(int)
+                Delta_W_loc = np.multiply(Delta_W_loc,s)
+                Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
+                
                 Delta_W = Delta_W + Delta_W_loc
                 W_temp = W_temp + Delta_W_loc
+                
+                
+                        
+                        
             else:
                 #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
                 d_alp = max(0,.1-np.dot(W_temp.T,aa_t))
@@ -4115,7 +4125,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                     #W_temp2 = W_temp + 1.0*Delta_W_loc
                     #d_alp-max(0,.1-np.dot(W_temp2.T,aa_t))
                     W_temp = W_temp + 1*Delta_W_loc
-                    cst = cst + d_alp-max(0,.1-np.dot(W_temp.T,aa_t))
+                    #cst = cst + d_alp-max(0,.1-np.dot(W_temp.T,aa_t))
                     W_temp = W_temp - W_temp.mean()
                     
             
@@ -4147,7 +4157,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
-            #cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
+            cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
             if yy_t:
                 cst_y = cst_y + max(0,.1-np.dot(W_temp.T,aa_t))#hinge_loss_func(W_temp,-aa_t,0.1,1,0)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
