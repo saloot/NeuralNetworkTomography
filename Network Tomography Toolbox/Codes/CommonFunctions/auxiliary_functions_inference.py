@@ -3555,7 +3555,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     #-----------------------------Behavior Flags-------------------------------
     der_flag = 0                                # If 1, the derivative criteria will also be taken into account
-    rand_sample_flag = 1                        # If 1, the samples will be wide apart to reduce correlation
+    rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
     mthd = 4                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
@@ -3918,7 +3918,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     
     W_temp = copy.deepcopy(W_in)
     Delta_W = np.zeros(W_temp.shape)
-    no_firings_per_neurons = 2*np.ones(W_temp.shape)
+    no_firings_per_neurons = np.ones(W_temp.shape)
     
     #----------------------Assign Dual Vectors----------------------
     if (mthd == 1) or (mthd == 3):
@@ -4099,7 +4099,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                         s = prng.randint(0,4,[len_v-1,1])
                         s = (s>=3).astype(int)
                         #Delta_W_loc = np.multiply(Delta_W_loc,s)
-                        Delta_W_loc = np.divide(Delta_W_loc,np.log(no_firings_per_neurons))
+                        Delta_W_loc = np.divide(Delta_W_loc,no_firings_per_neurons)
                     #if yy_t > 0:
                     #    Delta_W_loc = Delta_W_loc/float(no_ones)
                     #else:
