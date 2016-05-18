@@ -3555,7 +3555,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     #-----------------------------Behavior Flags-------------------------------
     der_flag = 0                                # If 1, the derivative criteria will also be taken into account
-    rand_sample_flag = 0                        # If 1, the samples will be wide apart to reduce correlation
+    rand_sample_flag = 1                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
     load_mtx = 0                                # If 1, we load spike matrices from file
     mthd = 4                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
@@ -3772,13 +3772,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 itr_block_w = 0
                 
                 W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
-                print np.linalg.norm(Delta_W)
                 W_tot = W_tot - W_tot.mean()
                 W_tot = W_tot/np.linalg.norm(W_tot)
-                print np.linalg.norm(W_tot)
-                sparse_thr = W_tot[:-1].std()/2.5
+                sparse_thr = W_tot[:-1].std()/10.5
                 W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr)
-                print np.linalg.norm(W_tot)
                 #pdb.set_trace()
                 toc = time.time()#clock()
                 print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
