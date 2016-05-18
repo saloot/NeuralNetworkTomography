@@ -3718,8 +3718,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
                 if t_end - t_start < 10:
                     continue
-                
-                print t_start,t_end
+                        
                 func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
                 int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
                 t_end_last_t = t_end
@@ -3733,8 +3732,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 (aa,yy,tt_start,tt_end,spike_flag) = result.get()
                         
                 if spike_flag < 0:
-                    print tt_start,tt_end
-                    print aa.shape
                     A[tt_start-block_start:tt_end-block_start,:] = aa
                     YA[tt_start-block_start:tt_end-block_start] = yy
                     
@@ -4101,7 +4098,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                         s = (s>=4).astype(int)
                         Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
                         Delta_W_loc = np.multiply(Delta_W_loc,s)
-                        Delta_W_loc = Delta_W_loc /(0.0001+pow(np.linalg.norm(np.multiply(aa_t,s)),2))
+                        Delta_W_loc = Delta_W_loc /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
                         
                         #Delta_W_loc = np.divide(Delta_W_loc,no_firings_per_neurons)
                     #if yy_t > 0:
