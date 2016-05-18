@@ -3733,7 +3733,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 (aa,yy,tt_start,tt_end,spike_flag) = result.get()
                         
                 if spike_flag < 0:
-                    
+                    print tt_start,tt_end
+                    print aa.shape
                     A[tt_start-block_start:tt_end-block_start,:] = aa
                     YA[tt_start-block_start:tt_end-block_start] = yy
                     
