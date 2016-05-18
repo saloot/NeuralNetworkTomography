@@ -3906,7 +3906,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     cst_y = 0
     cst_old = 0
     class_samle_flag = 1                # If 1, we try to balance the dataset
-    sample_freq = 0.05                  # With what probability sampling class 1 or 0 should be considered
+    sample_freq = 0.1                   # With what probability sampling class 1 or 0 should be considered
     if 1:        
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
