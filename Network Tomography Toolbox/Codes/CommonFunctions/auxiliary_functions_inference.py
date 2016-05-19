@@ -3624,8 +3624,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         total_cost = np.zeros([len(range_tau),1])
         total_Y = np.zeros([len(range_tau),1])
         beta_K = 1
-        
-        
         #----------------------------------------------------------------------
         
         #------------------Prepare the First Spike Matrix----------------------
@@ -3773,7 +3771,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
                 W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
                 W_tot = W_tot - W_tot.mean()
-                W_tot = W_tot/np.linalg.norm(W_tot)
+                #W_tot = W_tot/np.linalg.norm(W_tot)
                 sparse_thr = W_tot[:-1].std()/2.5
                 W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr)
                 
@@ -3908,7 +3906,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     cst_y = 0
     cst_old = 0
     class_samle_flag = 1                # If 1, we try to balance the dataset
-    sample_freq = 0.6                   # With what probability sampling class 1 or 0 should be considered
+    sample_freq = 0.3                   # With what probability sampling class 1 or 0 should be considered
     if 1:        
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
