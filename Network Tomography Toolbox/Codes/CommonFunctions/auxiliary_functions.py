@@ -83,6 +83,10 @@ def multi_picks(v):
 def soft_threshold(W,thr):
     WW = np.multiply(W-thr,W>thr) + np.multiply(W+thr,W<-thr)
     return WW
+
+def soft_threshold_double(W,thr_pos,thr_neg):
+    WW = np.multiply(W-thr_pos,W>thr_pos) + np.multiply(W+thr_neg,W<-thr_neg)
+    return WW
 #==============================================================================
 #==============================================================================
 
