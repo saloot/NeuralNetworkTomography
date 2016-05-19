@@ -3886,7 +3886,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         W_in = np.random.rand(W_in.shape[0],W_in.shape[1])
     #------------------------Initializations------------------------
     #---------------------------------------------------------------
-    t_gap = 3
+    t_gap = 5
     if rand_sample_flag:
         #t_init = np.random.randint(0,t_gap)
         t_init = prng.randint(0,t_gap)

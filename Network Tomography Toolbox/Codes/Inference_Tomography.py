@@ -35,7 +35,7 @@ frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensem
 theta = .005                                               # The update threshold of the neurons in the network
 d_window = 2                                          # The time window the algorithm considers to account for pre-synaptic spikes
 sparse_thr0 = 0.0005                                    # The initial sparsity soft-threshold (not relevant in this version)
-max_itr_optimization = 400                             # This is the maximum number of iterations performed by internal optimization algorithm for inference
+max_itr_optimization = 1200                             # This is the maximum number of iterations performed by internal optimization algorithm for inference
 tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
 tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
 #------------------------------------------------------------------------------
