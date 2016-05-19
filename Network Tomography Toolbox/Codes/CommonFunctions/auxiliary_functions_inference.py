@@ -3772,7 +3772,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
                 W_tot = W_tot - W_tot.mean()
                 W_tot = W_tot/np.linalg.norm(W_tot)
-                sparse_thr = W_tot[:-1].std()#/2.5
+                sparse_thr = W_tot[:-1].std()/2.5
                 W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr)
                 
                 #pdb.set_trace()
@@ -3886,7 +3886,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         W_in = np.random.rand(W_in.shape[0],W_in.shape[1])
     #------------------------Initializations------------------------
     #---------------------------------------------------------------
-    t_gap = 5
+    t_gap = 3
     if rand_sample_flag:
         #t_init = np.random.randint(0,t_gap)
         t_init = prng.randint(0,t_gap)
