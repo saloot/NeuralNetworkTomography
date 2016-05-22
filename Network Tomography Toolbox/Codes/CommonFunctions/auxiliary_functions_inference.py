@@ -3911,7 +3911,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     cst_y = 0
     cst_old = 0
     class_samle_flag = 1                # If 1, we try to balance the dataset
-    sample_freq = 0.3                   # With what probability sampling class 1 or 0 should be considered
+    sample_freq = 0.05                   # With what probability sampling class 1 or 0 should be considered
     if 1:        
         ind_ones = np.nonzero(yy>0)[0]
         ind_zeros = np.nonzero(yy<0)[0]
@@ -4084,7 +4084,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 W_temp = W_temp + Delta_W_loc
             elif mthd == 1:
                 Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1]) * yy_t#/float(cf)
-                Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
+                #Delta_W_loc = np.divide(Delta_W_loc,np.log(no_firings_per_neurons))
                 if 0:
                     s = prng.randint(0,5,[len_v-1,1])
                     s = (s>=4).astype(int)
