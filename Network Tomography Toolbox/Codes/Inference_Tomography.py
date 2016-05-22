@@ -244,7 +244,7 @@ for T in T_range:
         import multiprocessing
 
         num_process = min(24,multiprocessing.cpu_count())
-        block_size = 200000
+        block_size = 400000
         #num_process = 8
         print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
         W_inferred = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,num_process)
