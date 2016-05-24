@@ -4092,8 +4092,15 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                     Delta_W_loc = np.multiply(Delta_W_loc,s)
                     Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
                 
-                Delta_W = Delta_W + Delta_W_loc
-                W_temp = W_temp + Delta_W_loc
+                
+                if max(0,.1-np.dot(W_temp.T,aa_t)):
+                    s_size = max(0,.1-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
+                else:
+                    s_size = 1
+                    
+                Delta_W = Delta_W + s_size * Delta_W_loc
+                W_temp = W_temp + s_size * Delta_W_loc
+                #W_temp2 = W_temp - Delta_W_loc
                 
                 if max(0,.1-np.dot(W_temp.T,aa_t)):
                     pdb.set_trace()
