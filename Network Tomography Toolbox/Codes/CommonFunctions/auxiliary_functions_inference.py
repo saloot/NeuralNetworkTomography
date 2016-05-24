@@ -3887,8 +3887,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     from numpy.random import RandomState
     from time import time
     prng = RandomState(int(time()))
-    if not np.linalg.norm(W_in):
-        W_in = np.random.rand(W_in.shape[0],W_in.shape[1])
+    #if not np.linalg.norm(W_in):
+    #    W_in = np.random.rand(W_in.shape[0],W_in.shape[1])
+    #    W_in = W_in/np.linalg.norm(W_in)
     #------------------------Initializations------------------------
     #---------------------------------------------------------------
     t_gap = 5
@@ -3986,7 +3987,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 continue
             c = 1
             if (mthd == 1):
-                c = 0.1
+                c = 0.2
                 #c = 1 * yy_t
                 #gamma_t = 0.5* ( (1+yy_t) * no_ones + (1-yy_t) * no_zeros)
                 #ccf = gamma_t
@@ -4092,8 +4093,6 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                     Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
                 
                 Delta_W = Delta_W + Delta_W_loc
-                pdb.set_trace()
-                max(0,.1-np.dot(W_temp.T,aa_t))
                 W_temp = W_temp + Delta_W_loc
                 
                 
