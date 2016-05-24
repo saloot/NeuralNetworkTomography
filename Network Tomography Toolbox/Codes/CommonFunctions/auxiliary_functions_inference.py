@@ -3995,7 +3995,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 ub = ccf-lambda_temp[jj]
                 lb = -lambda_temp[jj]
                 
-                if 1:
+                if 0:
                     if yy_t>0:
                         ub = ccf-lambda_temp[jj]
                         lb = -lambda_temp[jj]
@@ -4026,7 +4026,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             elif mthd == 1:
                 #b = cf * (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
                 b = (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
-                b = yy_t * b
+                #b = yy_t * b
                 d_alp = min(ub,max(lb,b))
                 
                 #if (b<= ub ) and (b >= lb):
@@ -4084,7 +4084,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 Delta_W = Delta_W + Delta_W_loc
                 W_temp = W_temp + Delta_W_loc
             elif mthd == 1:
-                Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1]) * yy_t#/float(cf)
+                Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])# * yy_t#/float(cf)
                 #Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
                 if 0:
                     s = prng.randint(0,5,[len_v-1,1])
