@@ -4084,7 +4084,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 W_temp = W_temp + Delta_W_loc
             elif mthd == 1:
                 Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1]) * yy_t#/float(cf)
-                Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
+                #Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
                 if 0:
                     s = prng.randint(0,5,[len_v-1,1])
                     s = (s>=4).astype(int)
@@ -4092,6 +4092,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                     Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
                 
                 Delta_W = Delta_W + Delta_W_loc
+                pdb.set_trace()
+                max(0,.1-np.dot(W_temp.T,aa_t))
                 W_temp = W_temp + Delta_W_loc
                 
                 
