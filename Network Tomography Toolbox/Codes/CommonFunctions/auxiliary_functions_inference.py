@@ -4093,7 +4093,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                     Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
                 
                 
-                if max(0,.1-np.dot(W_temp.T,aa_t)):
+                if d_alp !=0:
                     s_size = max(0,c-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
                 else:
                     s_size = 1
