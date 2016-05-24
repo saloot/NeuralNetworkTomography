@@ -82,7 +82,7 @@ file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_750.txt'
 
 if (inference_method == 7):
     file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
-    #file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/Moritz_Spike_Times.txt'
+    file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/Moritz_Spike_Times.txt'
     file_name_prefix = 'Moritz'
 elif (inference_method == 5):
     inference_method = 7
