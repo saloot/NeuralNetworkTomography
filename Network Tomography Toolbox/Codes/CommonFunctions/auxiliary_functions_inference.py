@@ -4094,8 +4094,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 
                 Delta_W = Delta_W + Delta_W_loc
                 W_temp = W_temp + Delta_W_loc
-                pdb.set_trace()
-                max(0,.1-np.dot(W_temp.T,aa_t))
+                
+                if max(0,.1-np.dot(W_temp.T,aa_t)):
+                    pdb.set_trace()
                 
                         
                         
