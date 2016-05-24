@@ -4094,7 +4094,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                 
                 
                 if max(0,.1-np.dot(W_temp.T,aa_t)):
-                    s_size = max(0,.1-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
+                    s_size = max(0,c-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
                 else:
                     s_size = 1
                     
