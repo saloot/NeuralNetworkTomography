@@ -1,5 +1,5 @@
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
-from time import time
+import time
 import numpy as np
 import sys,getopt,os
 import resource

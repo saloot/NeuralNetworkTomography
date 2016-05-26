@@ -694,7 +694,7 @@ def parse_commands_inf_algo(input_opts):
                 file_name_data = str(arg)                           # The folder to store results
             elif opt == '-Q':
                 no_processes = int(arg)                             # The number of cpu cores to use for simulaitons
-            elif opt == '-n':
+            elif opt == '-N':
                 no_neurons = int(arg)                               # Number of observed eurons
             elif opt == '-M':
                 inference_method = int(arg)                         # The inference method
