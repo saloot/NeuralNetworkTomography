@@ -3602,12 +3602,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #pool.join()
             
         total_memory_init = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        temp_mem = total_memory_init
         max_memory = total_memory_init
         print 'memory so far at before parallel is %s' %(total_memory_init)
         
         total_spent_time = 0
-        max_memory
         for result in int_results:
             (aa,yy,tt_start,tt_end,flag_spikes,memory_used) = result.get()
             max_memory = max_memory + memory_used
@@ -3682,10 +3680,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             
-            total_memory_init = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - temp_mem
-            #temp_mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            total_memory_init = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
             
-            print 'memory so far up to iterations %s is %s' %(str(ttau),str(total_memory))
+            print 'memory so far up to iterations %s is %s' %(str(ttau),str(total_memory_init))
             
             #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~
             itr_result = 0
