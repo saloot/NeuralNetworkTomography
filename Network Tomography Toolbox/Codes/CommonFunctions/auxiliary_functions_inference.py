@@ -12,7 +12,6 @@ import math
 from default_values import *
 import time
 import resource
-from time import time
 from numpy.random import randint
 from numpy.random import RandomState
 import linecache
@@ -3845,8 +3844,7 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     initial_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     from auxiliary_functions import soft_threshold
     from numpy.random import RandomState
-    from time import time
-    prng = RandomState(int(time()))
+    prng = RandomState(int(time.time()))
     #if not np.linalg.norm(W_in):
     #    W_in = np.random.rand(W_in.shape[0],W_in.shape[1])
     #    W_in = W_in/np.linalg.norm(W_in)
