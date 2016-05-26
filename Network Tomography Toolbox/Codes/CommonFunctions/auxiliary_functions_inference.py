@@ -691,7 +691,11 @@ def parse_commands_inf_algo(input_opts):
             if opt == '-T':
                 no_stimul_rounds = int(arg)                         # Number of times we inject stimulus to the network
             elif opt == '-A':
-                file_name_data = str(arg)                      # The folder to store results
+                file_name_data = str(arg)                           # The folder to store results
+            elif opt == '-Q':
+                no_processes = int(arg)                             # The number of cpu cores to use for simulaitons
+            elif opt == '-n':
+                no_neurons = int(arg)                               # Number of observed eurons
             elif opt == '-M':
                 inference_method = int(arg)                         # The inference method
             elif opt == '-Y':
@@ -702,12 +706,10 @@ def parse_commands_inf_algo(input_opts):
                 beta = int(arg)                                     # Specify the update probability paramter (p = 1/beta) in STOCHASTIC NEUINF
             elif opt == '-Z': 
                 alpha0 = float(arg)                                 # Specify the update learnining rate
-            elif opt == '-p': 
-                p_miss = float(arg)                                 # The probability of missing a spike
-            elif opt == '-j': 
-                jitt = int(arg)                                     # Maximum  amount of randomjitter added to spike times (in miliseconds)
             elif opt == '-b': 
                 bin_size = int(arg)                                 # If it is nonzero, the spikes will be placed within bins of size "bin_size"
+            elif opt == '-S': 
+                block_size = int(arg)                               # The size of the smaller blocks to divide the spike file into
             elif opt == '-o': 
                 temp = (arg).split(',')                             # The range of neurons to identify the connections
                 neuron_range = []
@@ -726,11 +728,15 @@ def parse_commands_inf_algo(input_opts):
         print('ATTENTION: The default value of %s for infer_itr_max is considered.\n' %str(infer_itr_max))
         
     if 'no_stimul_rounds' not in locals():        
-        no_stimul_rounds = NO_STIMUL_ROUNDS_DEFAULT
-        print('ATTENTION: The default value of %s for no_stimul_rounds is considered.\n' %str(no_stimul_rounds))
+        no_stimul_rounds = 0#NO_STIMUL_ROUNDS_DEFAULT
+        #print('ATTENTION: The default value of %s for no_stimul_rounds is considered.\n' %str(no_stimul_rounds))
 
     if 'file_name_data' not in locals():
         file_name_data = ''
+        
+    if 'no_processes' not in locals():
+        no_processes = NO_CPUS_DEFAULT
+        print('ATTENTION: The default value of %s for no_processes is considered.\n' %str(NO_CPUS_DEFAULT))
 
     if 'ternary_mode' not in locals():
         ternary_mode = TERNARY_MODE_DEFAULT;
@@ -744,6 +750,11 @@ def parse_commands_inf_algo(input_opts):
         inference_method = INFERENCE_METHOD_DEFAULT;
         print('ATTENTION: The default value of %s for inference_method is considered.\n' %str(inference_method))
 
+
+    if 'block_size' not in locals():
+        block_size = BLOCK_SIZE_DEFAULT;
+        print('ATTENTION: The default value of %s for block_size is considered.\n' %str(block_size))
+        
     if 'sparsity_flag' not in locals():
         sparsity_flag = SPARSITY_FLAG_DEFAULT;
         print('ATTENTION: The default value of %s for sparsity_flag is considered.\n' %str(sparsity_flag))
@@ -756,17 +767,12 @@ def parse_commands_inf_algo(input_opts):
         alpha0 = ALPHA0_DEFAULT
         print('ATTENTION: The default value of %s for alpha0 is considered.\n' %str(alpha0))
         
-    if 'p_miss' not in locals():
-        p_miss = P_MISS_DEFAULT
-        print('ATTENTION: The default value of %s for p_miss is considered.\n' %str(p_miss))
-    
-    if 'jitt' not in locals():
-        jitt = JITTER_DEFAULT
-        print('ATTENTION: The default value of %s for jitt is considered.\n' %str(jitt))
-        
     if 'bin_size' not in locals():
         bin_size = BIN_SIZE_DEFAULT
         print('ATTENTION: The default value of %s for bin_size is considered.\n' %str(bin_size))
+    
+    if 'no_neurons' not in locals():
+        no_neurons = 0
     #------------------------------------------------------------------------------
 
     #------------------Create the Necessary Directories if Necessary---------------
@@ -774,6 +780,9 @@ def parse_commands_inf_algo(input_opts):
         os.makedirs(file_name_base_results)    
     if not os.path.isdir(file_name_base_results+'/Inferred_Graphs'):
         temp = file_name_base_results + '/Inferred_Graphs'
+        os.makedirs(temp)
+    if not os.path.isdir(file_name_base_results+'/Spent_Resources'):
+        temp = file_name_base_results + '/Spent_Resources'
         os.makedirs(temp)
     if not os.path.isdir(file_name_base_results+'/Accuracies'):
         temp = file_name_base_results + '/Accuracies'
@@ -784,7 +793,7 @@ def parse_commands_inf_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return no_stimul_rounds,file_name_data,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,infer_itr_max,p_miss,jitt,bin_size,neuron_range
+    return no_stimul_rounds,no_neurons,file_name_data,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,infer_itr_max,bin_size,no_processes,block_size,neuron_range
 #==============================================================================
 #==============================================================================
 
@@ -3478,7 +3487,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
 #---------------------inference_constraints_hinge_parallel---------------------
 #------------------------------------------------------------------------------
 
-def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range,num_process):
+def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n,max_itr_opt,sparse_thr_0,alpha0,theta,n_ind,num_process):
     
     
     print 'memory so far at the beginning is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
@@ -3502,9 +3511,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     m = n
     
     range_tau = range(0,max_itr_opt)
-    
-    if len(neuron_range) == 0:
-        neuron_range = np.array(range(0,m))
     
     
     T0 = 50                                    # It is the offset, i.e. the time from which on we will consider the firing activity
@@ -3539,7 +3545,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     total_memory = 0
     
     W_infer = np.zeros([int((TT-T0)/float(block_size))+1,len_v])
-    W_inferred = np.zeros([len_v,len_v])
+    W_inferred = np.zeros([len_v,1])
     
     t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
@@ -3563,7 +3569,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     #--------------------------------------------------------------------------
     
     #---------Identify Incoming Connections to Each Neuron in the List---------
-    for ijk in neuron_range:
+    if 1:
+        ijk = n_ind
         
         print '-------------Neuron %s----------' %str(ijk)
     
@@ -3769,7 +3776,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         WW[0:ijk,0] = W_tot[0:ijk,0]
         WW[ijk+1:,0] = W_tot[ijk:,0]
         
-        W_inferred[0:len_v,ijk] = WW[0:len_v].ravel()
+        W_inferred[0:len_v,0] = WW[0:len_v].ravel()
         
     return W_inferred
     

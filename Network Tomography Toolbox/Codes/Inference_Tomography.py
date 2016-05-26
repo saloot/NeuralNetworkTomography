@@ -18,16 +18,27 @@ from CommonFunctions.auxiliary_functions_inference import *
 from CommonFunctions.Neurons_and_Networks import *
 # reload(CommonFunctions.auxiliary_functions_inference)
 #from sklearn import metrics
+import multiprocessing
 
 os.system('clear')                                              # Clear the commandline window
 #==============================================================================
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:X:Y:C:V:J:U:Z:b:p:j:o:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hN:Q:T:S:D:A:F:R:L:M:B:X:Y:C:V:J:U:Z:b:p:j:o:")
 
-no_stimul_rounds,file_name_spikes,file_name_base_results,inference_method,sparsity_flag,verify_flag,beta,alpha0,max_itr_optimization,p_miss,jitt,bin_size,neuron_range = parse_commands_inf_algo(input_opts)
+T,no_neurons,file_name_spikes,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,max_itr_optimization,no_processes,block_size,bin_size,neuron_range = parse_commands_inf_algo(input_opts)
 #==============================================================================
 
+
+#==================DO SANITY CHECK ON THE ENTERED PARAMETERS===================
+if not no_neurons:
+    print 'Sorry you should specify the number of observed neurons'
+    exit
+
+if not T:
+    print 'Sorry you should specify the duration of recorded samples in miliseconds'
+    exit
+#==============================================================================
 
 #================================INITIALIZATIONS===============================
 
@@ -37,6 +48,9 @@ d_window = 2                                          # The time window the algo
 sparse_thr0 = 0.0005                                    # The initial sparsity soft-threshold (not relevant in this version)
 tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
 tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
+
+num_process = min(no_processes,multiprocessing.cpu_count())
+block_size = min(block_size,T)
 #------------------------------------------------------------------------------
 
 #-------------------------Initialize Inference Parameters----------------------
@@ -54,8 +68,6 @@ inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d
 #===============================READ THE SPIKES================================
     
 #----------------------------Read and Sort Spikes------------------------------
-
-
 if not file_name_spikes:
     file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
     file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/Moritz_Spike_Times.txt'
@@ -70,239 +82,73 @@ if not file_name_spikes:
     ll = ll[-1]
     file_name_prefix = ll.split('.txt')
 #------------------------------------------------------------------------------
-    
-#--------Calculate the Range to Assess the Effect of Recording Duration--------
-T_range = [no_stimul_rounds]
+        
+#---------------------Preprocess the Spikes If Necessary-----------------------
+file_name_spikes2 = file_name_spikes[:-4] + '_file.txt'
+if not os.path.isfile(file_name_spikes2):            
+    out_spikes = np.genfromtxt(file_name_spikes, dtype=float, delimiter='\t')            
+    spike_file = open(file_name_spikes2,'w')
+    fire_matx = [''] * (T+1)
+    LL = out_spikes.shape[0]
+    nn = -1
+    for l in range(0,LL):
+        last_nn = nn
+        nn = int(out_spikes[l,0])
+        tt = int(1000*out_spikes[l,1])
+        if tt<=T:
+            temp = fire_matx[tt]
+            try:
+                if str(nn) not in temp:
+                    if len(temp):
+                        temp = temp + ' ' + str(nn)
+                    else:
+                        temp = str(nn)
+                else:
+                    print 'What the ...?'
+                    pdb.set_trace()
+                        
+                if tt<=T:
+                    fire_matx[tt] = temp
+            except:
+                pdb.set_trace()
+    spike_file.write('\n'.join(fire_matx))
+    spike_file.close()
 #------------------------------------------------------------------------------
-    
-#==============================================================================
 
-#====================READ THE GROUND TRUTH IF POSSIBLE=========================
-#file_name = '../Data/Graphs/Moritz_Actual_Connectivity.txt'
-#file_name = '../Data/Graphs/Connectivity_Matrix2.txt'
-#W_act = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-#n,m = W_act.shape
-#DD_act = 1.5 * abs(np.sign(W_act))
 #==============================================================================
 
 #============================INFER THE CONNECTIONS=============================
-       
-#--------------------------Infer the Graph For Each T--------------------------
-for T in T_range:
-        
-    #.......................Assign Inference Parameters........................
-    if p_miss or jitt:
-        
-        for itr in range(0,10):
-            if p_miss:
-                out_spikes_tot_mat_orig,out_spikes_tot_nonzero,non_zero_neurons = combine_spikes_matrix(Neural_Spikes,T,jitt,int(1/p_miss))
-            else:
-                out_spikes_tot_mat_orig,out_spikes_tot_nonzero,non_zero_neurons = combine_spikes_matrix(Neural_Spikes,T,jitt,0)
-        
-            if bin_size:    
-                #out_spikes_tot = spike_binning(out_spikes_tot_mat_orig,bin_size)
-                out_spikes_tot_mat = spike_binning(out_spikes_tot_nonzero,bin_size)
-            else:
-                out_spikes_tot_mat = out_spikes_tot_mat_orig
-        
-            n = max(non_zero_neurons) + 1
-            m = n
-            W_estimated = np.zeros([n,m])    
-            fixed_entries = np.zeros([n,m])
-            #..........................................................................
-        
-            #............................Perfrom Inference.............................
-        
-            #-------------------Perform the Inference Step----------------
-            W_temp,cost,Inf_Delays = inference_alg_per_layer(out_spikes_tot_mat,out_spikes_tot_mat,inference_method,inferece_params,W_estimated,0,'R',neuron_range)
-            
-            if itr == 0:
-                W_inferred = W_temp
-            else:
-                W_inferred = W_inferred + W_temp
-            #-------------------------------------------------------------
-        
-        W_inferred = np.divide(W_inferred,float(itr+1))
-        
-    else:
-        W_act = W_act[0:n,0:n]              # This line should be changed later
-        DD_act = DD_act[0:n,0:n]            # This lineshould be chaged later
-        #W_act = W_act.T                     # This lineshould be chaged later
-        #DD_act = DD_act.T                   # This lineshould be chaged later
-        
-        file_name_spikes2 = file_name_spikes[:-4] + '_file.txt'
-        
-        if not os.path.isfile(file_name_spikes2):            
-            out_spikes = np.genfromtxt(file_name_spikes, dtype=float, delimiter='\t')            
-            spike_file = open(file_name_spikes2,'w')
-            #aa = np.nonzero(out_spikes_tot_mat)
-            #pdb.set_trace()
-            
-            fire_matx = [''] * (T+1)
-            LL = out_spikes.shape[0]
-            nn = -1
-            for l in range(0,LL):
-                last_nn = nn
-                nn = int(out_spikes[l,0])
-                tt = int(1000*out_spikes[l,1])
-                if tt<=T:
-                    temp = fire_matx[tt]
-                    try:
-                        if str(nn) not in temp:
-                            if len(temp):
-                                temp = temp + ' ' + str(nn)
-                            else:
-                                temp = str(nn)
-                        else:
-                            print 'What the ...?'
-                            pdb.set_trace()
-                        
-                        if tt<=T:
-                            fire_matx[tt] = temp
-                    except:
-                        pdb.set_trace()
-                
-                
-                
-                #if not (l % 500000):
-                if (last_nn != nn):
-                    print 'results for neuron %s is beginning' %str(nn)
-                        
-            if 0 :
-                fire_times = (1000*out_spikes[:,1]).astype(int)
-                fire_inds = out_spikes[:,0]
-                fire_inds = fire_inds[:-1]
-                fire_times = fire_times[:-1]
-                for t in range(0,T):
-                    temp = ''
-                    for item in np.where(fire_times==t)[0]:
-                        temp = temp + str(fire_inds[item]) + ' '
-                    
-                    #if len(temp):
-                    #    fire_matx.append(temp[:-1])
-                    #else:
-                    #    fire_matx.append(' ')
-                    fire_matx[t] = temp
-                    if not (t % 100000):
-                        print t
-            spike_file.write('\n'.join(fire_matx))
-            
-            spike_file.close()
-        
-        if file_name_prefix == 'Moritz':
-            n = 999
-        elif file_name_prefix == 'HC3':
-            n = 94
-        #W_inferred,Inf_Delays = delayed_inference_constraints_memory(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,W_act,DD_act)
-        #W_inferred, = delayed_inference_constraints_cvxopt(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
-        #W_inferred = delayed_inference_constraints_numpy(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
-        
-        #W_inferred = delayed_inference_constraints_hinge(file_name_spikes2,T,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range)
-        import multiprocessing
-
-        num_process = min(24,multiprocessing.cpu_count())
-        block_size = 200000
-        #num_process = 8
-        print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
-        W_inferred = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,n,max_itr_optimization,sparse_thr0,alpha0,theta,neuron_range,num_process)
-    #--------------Post-Process the Inferred Matrix---------------
-    if 0:#len(non_zero_neurons) != n:
-        m,c = W_inferred.shape
-        W = np.zeros([n,m])
-        itr = 0
-        for i in range(0,n):
-            if i in non_zero_neurons:
-                W[i,:] = W_inferred[itr,:]
-                itr = itr + 1
-            
-        W_inferred = np.zeros([n,n])
-        itr = 0
-        for i in range(0,n):            
-            if i in non_zero_neurons:
-                W_inferred[:,i] = W[:,itr]
-                itr = itr + 1
-                    
-            W_inferred[i,i] = 0
+for n_ind in neuron_range:
     
-    W_inferred = np.array(W_inferred)        
-    #WW = W_inferred + np.random.rand(n,n)/1000000000.0
-    #WW = whiten(W_inferred)
-    WW = (W_inferred)
-    #pdb.set_trace()
-    #W_region = np.zeros([n,n])
-    #for i in range(0,n):
-    #    for j in range(i,n):
-    #        #W_region[i,j] = (W_deg[i,6]+1) * (W_deg[j,6]+1)
-    #        W_region[i,j] = W_deg[i,6] - W_deg[j,6]
-    #        W_region[j,i] = W_region[i,j]
-    #        
-    #plt.subplot(1,2,1);plt.imshow(WW);plt.subplot(1,2,2);plt.imshow(W_region);plt.show()
-    #plt.subplot(1,2,1);plt.imshow(np.log(Inf_Delays));plt.subplot(1,2,2);plt.imshow(np.multiply(abs(np.sign(W_act)),D_act));plt.show()
-    #plt.plot(np.log(0.000001+Inf_Delays[1,:]));plt.plot(1000*DD_act[1,:],'r');plt.show()
-    #-------------------------------------------------------------
-        
-        
-    #..........................................................................
-        
+    print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    t_start = time.time()                           # starting time of the algorithm
+    
+    W_inferred = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,n,max_itr_optimization,sparse_thr0,alpha0,theta,n_ind,num_process)
+    W_inferred = np.array(W_inferred)
+    
     #.........................Save the Belief Matrices.........................
     file_name_ending = 'I_' + str(inference_method) + '_S_' + str(sparsity_flag) + '_T_' + str(T)
-    if p_miss:
-        file_name_ending = file_name_ending + '_pM_' + str(p_miss)
-    if jitt:
-        file_name_ending = file_name_ending + '_jt_' + str(jitt)
+    file_name_ending = file_name_ending + '_C_' + str(num_process) + '_B_' + str(block_size)
+
     if bin_size:
         file_name_ending = file_name_ending + '_bS_' + str(bin_size)
     
-    file_name_ending = file_name_ending + '_ii_' + str(max_itr_optimization)    
-    
-        
-    
-    if len(neuron_range) == 0:
-        file_name =  file_name_base_results + "/Inferred_Graphs/W_%s.txt" %file_name_ending
-        np.savetxt(file_name,WW,'%2.5f',delimiter='\t')
-    else:        
-        for ik in neuron_range:
-            file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(ik))
-            tmp = WW[:,ik]
-            tmp = tmp/np.linalg.norm(tmp)
-            tmp = tmp/(np.abs(tmp).max())
-            np.savetxt(file_name,tmp.T,'%2.6f',delimiter='\t')
-
+    file_name_ending = file_name_ending + '_ii_' + str(max_itr_optimization)
+    file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
+    tmp = W_inferred
+    tmp = tmp/np.linalg.norm(tmp)
+    tmp = tmp/(np.abs(tmp).max())
+    np.savetxt(file_name,tmp.T,'%2.6f',delimiter='\t')
     #..........................................................................
     
-    print 'Inference successfully completed for T = %s ms' %str(T/1000.0)    
-    #----------------------------------------------------------------------
-
-
-    #--------------------------Calculate Accuracy-------------------------
-    #WW = (W>0).astype(int)
-    #fpr, tpr, thresholds = metrics.roc_curve(WW.ravel(),whiten(W_inferred).ravel())    
-    #print('\n==> AUC = '+ str(metrics.auc(fpr,tpr))+'\n');
-    #----------------------------------------------------------------------
+    print 'Inference successfully completed for T = %s ms. The results are saved on %s' %(str(T/1000.0),file_name)
     
+    #....................Store Spent Time and Memory............................
+    used_ram = 0
+    t_end = time.time()                           # The ending time of the algorithm    
+    file_name =  file_name_base_results + "/Spent_Resources/CPU_RAM_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
+    tmp = [T,t_end-t_start,used_ram]
+    np.savetxt(file_name,tmp,delimiter='\t')
+    #..........................................................................
     
-#for i in range(0,n):
-#    W_inferred[i,i] = 0
-#plt.subplot(1,2,1);plt.imshow(whiten(W_inferred));plt.subplot(1,2,2);plt.imshow(np.sign(W));plt.show()
-#pdb.set_trace()
-#plt.plot(fpr,tpr)
-
-
-
-#--------------Evaluate Quality of Delay Estimation----------------
-if 0 :
-    tau_m = 10.0
-    DD = np.log(1e-10 + abs(Inf_Delays))
-    #DD = abs(Inf_Delays)/(.6)
-    DD = np.multiply(DD,(DD>0).astype(int))
-    #DD = DD*tau_m
-    #plt.plot(DD[1,:]);plt.plot(1000*DD_act[1,:],'r');plt.show()
-    AA = np.sum(np.multiply((DD>0),(DD_act)>0))
-    rec = AA/float(sum(DD_act>0))
-    prec = AA/float(sum(DD>0))
-    dist = np.linalg.norm(DD-DD_act)
-
-
-    W_act2 = W_act
-    for i in range(0,n):
-        W_act2[i,i] = -0.002
+#==============================================================================
