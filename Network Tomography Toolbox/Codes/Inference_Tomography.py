@@ -122,6 +122,7 @@ if not os.path.isfile(file_name_spikes2):
 for n_ind in neuron_range:
     
     print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+    pdb.set_trace()
     t_start = time.time()                           # starting time of the algorithm
     
     W_inferred,used_ram = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,n,max_itr_optimization,sparse_thr0,alpha0,theta,n_ind,num_process)
