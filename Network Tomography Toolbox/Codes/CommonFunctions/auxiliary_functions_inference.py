@@ -3385,6 +3385,8 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     
     
     #----------------------------Initializations---------------------------
+    initial_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    print 'initial memory is %s' %str(initial_memory)
     block_size = t_end - t_start
     
     if block_size < 0:
@@ -3477,8 +3479,8 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     #---------------------------------------------------------------------
     
     flag_for_parallel_spikes = -1
-    
-    return V,Y,t_start,t_end,flag_for_parallel_spikes
+    memory_used = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - initial_memory
+    return V,Y,t_start,t_end,flag_for_parallel_spikes,memory_used
 
 
 
@@ -3489,8 +3491,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
 
 def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n,max_itr_opt,sparse_thr_0,alpha0,theta,n_ind,num_process):
     
-    
-    print 'memory so far at the beginning is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+    max_memory = 0
     
     #----------------------Import Necessary Libraries----------------------
     from auxiliary_functions import soft_threshold
@@ -3541,9 +3542,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     else:
         len_v = n+1
     
-    
-    total_memory = 0
-    
     W_infer = np.zeros([int((TT-T0)/float(block_size))+1,len_v])
     W_inferred = np.zeros([len_v,1])
     
@@ -3564,8 +3562,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     block_start_inds = range(T0,TT,block_size)
     tic_start = time.clock()
-    
-    print 'memory so far at the initialization is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
     #--------------------------------------------------------------------------
     
     #---------Identify Incoming Connections to Each Neuron in the List---------
@@ -3580,8 +3576,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         lambda_tot = np.zeros([TT,1])
         no_blocks = (1+TT-T0)/block_size
         
-        total_memory = total_memory + lambda_tot.nbytes
-        
         W_tot = np.zeros([len_v-1,1])
         Z_tot = np.zeros([len_v-1,1])
         
@@ -3593,10 +3587,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         #------------------Prepare the First Spike Matrix----------------------
         tic = time.clock()
-
+        Delta_W = np.zeros([n,1])
         int_results = []
-            
-        print 'memory so far at before parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+        
+        
         for t_start in range(0,block_size,t_step):
             t_end = min(block_size-1,t_start + t_step)
             
@@ -3608,15 +3602,17 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #pool.close()
         #pool.join()
             
+        total_memory_init = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        temp_mem = total_memory_init
+        print 'memory so far at before parallel is %s' %(total_memory_init)
+        
         total_spent_time = 0
         for result in int_results:
-            (aa,yy,tt_start,tt_end,flag_spikes) = result.get()
+            (aa,yy,tt_start,tt_end,flag_spikes,memory_used) = result.get()
+            total_memory_init = total_memory_init + memory_used
             
             A[tt_start:tt_end,:] = aa
             YA[tt_start:tt_end] = yy.ravel()
-        
-                
-        print 'memory so far after parallel is %s' %(str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
         #----------------------------------------------------------------------
         
         
@@ -3632,7 +3628,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         itr_block_w = 0
         
         itr_cost = 0
-        Delta_W = np.zeros([n,1])
+        
         tic = time.time()#time.clock()
         for ttau in range_tau:
             
@@ -3667,9 +3663,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
             
-            #aa,yy,tt_start,tt_end,spike_flag = calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
-            #lambda_temp = lambda_tot[300000:350000]
-            #Delta_W_loc,d_alp_vec,tt_start,tt_ind,cst = infer_w_block(W_tot,A[300000:350000,:],YA[300000:350000],gg,lambda_temp,rand_sample_flag,mthd,len_v,300000,350000)
             #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
             #A = 0*A
             #YA = 0*YA
@@ -3687,13 +3680,16 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 t_end_last_t = t_end
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-            print 'memory so far up to iterations %s is %s' %(str(ttau),str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss))
+            temp_mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - temp_mem
+            total_memory = total_memory_init + resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - temp_mem
+            
+            print 'memory so far up to iterations %s is %s' %(str(ttau),str(total_memory))
             
             #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~
             itr_result = 0
             for result in int_results:
-                (aa,yy,tt_start,tt_end,spike_flag) = result.get()
-                        
+                (aa,yy,tt_start,tt_end,spike_flag,memory_used) = result.get()
+                total_memory = total_memory + memory_used
                 if spike_flag < 0:
                     A[tt_start-block_start:tt_end-block_start,:] = aa
                     YA[tt_start-block_start:tt_end-block_start] = yy
@@ -3728,6 +3724,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                         
             
             
+            
             if itr_block_w >= len(block_start_inds):
                 
                 #Delta_W_loc = np.dot(A.T,lambda_tot[b_st:t_end_last_w+2])
@@ -3751,15 +3748,13 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 itr_cost = itr_cost + 1
                 
                 Delta_W = 0*Delta_W#np.zeros([n,1])
-                
-                
-            #A = B
-            #YA = YB
-            #B = 0*B
-            #YB = 0*YB
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            total_memory = total_memory + resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - temp_mem - temp_mem
+            if total_memory>max_memory:
+                max_memory = total_memory
             
-                
+            print 'Total memory after iteration %s is %s' %(str(ttau),str(max_memory))
+            
             #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
             #if itr_cost >= 3:
             #    if abs(total_cost[itr_cost-1]-total_cost[itr_cost-2])/(0.001+total_cost[itr_cost-2]) < 0.0000001:
@@ -3847,6 +3842,7 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
 #------------------------------------------------------------------------------
 def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end):
     
+    initial_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     from auxiliary_functions import soft_threshold
     from numpy.random import RandomState
     from time import time
@@ -4160,7 +4156,9 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     else:
         print 'no ones!'
     w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
-    return Delta_W,d_alp_vec,t_start,t_end,cst
+    
+    memory_used = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - initial_memory
+    return Delta_W,d_alp_vec,t_start,t_end,cst,memory_used
 
 #------------------------------------------------------------------------------
 def delayed_inference_constraints_hinge(out_spikes_tot_mat_file,TT,n,max_itr_opt,sparse_thr_0,alpha0,theta,neuron_range):
