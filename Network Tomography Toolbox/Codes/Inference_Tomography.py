@@ -25,7 +25,7 @@ os.system('clear')                                              # Clear the comm
 #==========================PARSE COMMAND LINE ARGUMENTS========================
 input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:X:Y:C:V:J:U:Z:b:p:j:o:")
 
-frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,verify_flag,beta,alpha0,infer_itr_max,p_miss,jitt,bin_size,neuron_range = parse_commands_inf_algo(input_opts)
+no_stimul_rounds,file_name_spikes,file_name_base_results,inference_method,sparsity_flag,verify_flag,beta,alpha0,max_itr_optimization,p_miss,jitt,bin_size,neuron_range = parse_commands_inf_algo(input_opts)
 #==============================================================================
 
 
@@ -35,33 +35,15 @@ frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensem
 theta = .005                                               # The update threshold of the neurons in the network
 d_window = 2                                          # The time window the algorithm considers to account for pre-synaptic spikes
 sparse_thr0 = 0.0005                                    # The initial sparsity soft-threshold (not relevant in this version)
-max_itr_optimization = 400                             # This is the maximum number of iterations performed by internal optimization algorithm for inference
 tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
 tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
 #------------------------------------------------------------------------------
 
 #-------------------------Initialize Inference Parameters----------------------
-#inference_method = 7
-sparsity_flag = 5
 if len(neuron_range)>1:
     neuron_range = range(neuron_range[0],neuron_range[1])
-print neuron_range
-#...........................SOTCHASTIC NEUINF Approach.........................
-if (inference_method == 3) or (inference_method == 2):        
-    beta = 10
-    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size]
-#..............................................................................
 
-#...........................Cross Correlogram Approach.........................
-elif (inference_method == 4):
-    d_window = 15                                           # The time window the algorithm considers to compare shifted versions of two spiking patterns
-    inferece_params = [d_window]            
-#..............................................................................
-
-#.................................MSE-based Approach...........................
-if (inference_method == 7) or (inference_method == 5):
-    alpha0 = 0.05
-    inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size]
+inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size]
 #..............................................................................
 
 #------------------------------------------------------------------------------
@@ -72,60 +54,35 @@ if (inference_method == 7) or (inference_method == 5):
 #===============================READ THE SPIKES================================
     
 #----------------------------Read and Sort Spikes------------------------------
-#file_name = '../Data/Spikes/fluorescence_mocktest_adapted.txt'
 
 
-#file_name = '../Data/Spikes/Spikes_exc.txt'
-file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_Reduced_More.txt'
-file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_Reduced.txt'
-file_name_spikes = '../Data/Spikes/Moritz_Spike_Times_750.txt'
-
-if (inference_method == 7):
+if not file_name_spikes:
     file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
     file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/Moritz_Spike_Times.txt'
-    file_name_prefix = 'Moritz'
-elif (inference_method == 5):
-    inference_method = 7
-    file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
-    file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/HC3_ec013_198_processed.txt'
-    file_name_prefix = 'HC3'
+    #file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
+    #file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/HC3_ec013_198_processed.txt'
     
-#file_name_spikes = '../Data/Spikes/S_times_n_80_20.txt'
-#file_name_spikes = '../Data/Spikes/Spike_Times2.txt'
-#Neural_Spikes,T_max = read_spikes(file_name_spikes)
+    try:
+        ll = file_name_spikes.split('/')
+    except:
+        ll = file_name_spikes.split('/')
+    
+    ll = ll[-1]
+    file_name_prefix = ll.split('.txt')
 #------------------------------------------------------------------------------
     
 #--------Calculate the Range to Assess the Effect of Recording Duration--------
-T_max = 7199000
-T_max = 500000
-#no_stimul_rounds = 100000
-#T_max = 5000
-#T_max = 100000
-#T_max = int(1000*T_max)
-#T_step = int(T_max/6.0)if len(non_zero_neurons) != n:
-#T_range = range(T_step, T_max+1, T_step)
-#print T_range
-
 T_range = [no_stimul_rounds]
 #------------------------------------------------------------------------------
     
 #==============================================================================
 
 #====================READ THE GROUND TRUTH IF POSSIBLE=========================
-#file_name = '../Data/Graphs/network_mocktest_adapted.txt'
-
-#file_name = '../Data/Graphs/Matrix_Accurate.txt'
-file_name = '../Data/Graphs/Moritz_Actual_Connectivity.txt'
+#file_name = '../Data/Graphs/Moritz_Actual_Connectivity.txt'
 #file_name = '../Data/Graphs/Connectivity_Matrix2.txt'
-#file_name = '../Data/Graphs/W_n_80_20.txt'
-W_act = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-n,m = W_act.shape
-DD_act = 1.5 * abs(np.sign(W_act))
-#file_name = '../Data/Graphs/Delay_Matrix2.txt'
-#D_act = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-#DD_act = np.multiply(np.sign(abs(W_act)),D_act)
-#DD_act = (np.ceil(1000 * DD_act)).astype(int)
-
+#W_act = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+#n,m = W_act.shape
+#DD_act = 1.5 * abs(np.sign(W_act))
 #==============================================================================
 
 #============================INFER THE CONNECTIONS=============================

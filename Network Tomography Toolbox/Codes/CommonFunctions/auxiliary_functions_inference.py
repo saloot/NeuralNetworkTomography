@@ -688,34 +688,16 @@ def parse_commands_inf_algo(input_opts):
     neuron_range = []
     if (input_opts):
         for opt, arg in input_opts:
-            if opt == '-Q':
-                frac_stimulated_neurons = float(arg)                # Fraction of neurons in the input layer that will be excited by a stimulus
-            elif opt == '-T':
+            if opt == '-T':
                 no_stimul_rounds = int(arg)                         # Number of times we inject stimulus to the network
-            elif opt == '-S':
-                ensemble_size = int(arg)                            # The number of random networks that will be generated                
             elif opt == '-A':
-                file_name_base_data = str(arg)                      # The folder to store results
-            elif opt == '-F':
-                ensemble_count_init = int(arg)                      # The ensemble to start simulations from        
-            elif opt == '-R':
-                random_delay_flag = int(arg)                        # The ensemble to start simulations from                        
+                file_name_data = str(arg)                      # The folder to store results
             elif opt == '-M':
                 inference_method = int(arg)                         # The inference method
-            elif opt == '-G':
-                generate_data_mode = str(arg)                       # The data generating method            
             elif opt == '-Y':
                 sparsity_flag = int(arg)                            # The flag that determines if sparsity should be observed during inference
             elif opt == '-X':
                 infer_itr_max = int(arg)                            # The flag that determines if sparsity should be observed during inference            
-            elif opt == '-K':
-                we_know_topology = str(arg)                         # The flag that determines if we know the location of neurons (with respect to each other) (Y/N)
-            elif opt == '-C': 
-                pre_synaptic_method = str(arg)                      # The flag that determines if all previous-layers neurons count as  pre-synaptic (A/O)
-            elif opt == '-V': 
-                verify_flag = int(arg)                              # If 1, the post-synaptic states will be predicted
-            elif opt == '-J': 
-                delay_known_flag = str(arg)                         # If 'Y', we assume that the delay is known during the inference algorithm
             elif opt == '-U': 
                 beta = int(arg)                                     # Specify the update probability paramter (p = 1/beta) in STOCHASTIC NEUINF
             elif opt == '-Z': 
@@ -739,10 +721,6 @@ def parse_commands_inf_algo(input_opts):
         
         
     #------------Set the Default Values if Variables are not Defines---------------
-    if 'frac_stimulated_neurons' not in locals():
-        frac_stimulated_neurons = FRAC_STIMULATED_NEURONS_DEFAULT
-        print('ATTENTION: The default value of %s for frac_stimulated_neurons is considered.\n' %str(frac_stimulated_neurons))
-
     if 'infer_itr_max' not in locals():
         infer_itr_max = INFERENCE_ITR_MAX_DEFAULT
         print('ATTENTION: The default value of %s for infer_itr_max is considered.\n' %str(infer_itr_max))
@@ -751,18 +729,9 @@ def parse_commands_inf_algo(input_opts):
         no_stimul_rounds = NO_STIMUL_ROUNDS_DEFAULT
         print('ATTENTION: The default value of %s for no_stimul_rounds is considered.\n' %str(no_stimul_rounds))
 
-    if 'ensemble_size' not in locals():            
-        ensemble_size = ENSEMBLE_SIZE_DEFAULT
-        print('ATTENTION: The default value of %s for ensemble_size is considered.\n' %str(ensemble_size))
-    
-    if 'file_name_base_data' not in locals():
-        file_name_base_data = FILE_NAME_BASE_DATA_DEFAULT;
-        print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_data))
+    if 'file_name_data' not in locals():
+        file_name_data = ''
 
-    if 'ensemble_count_init' not in locals():
-        ensemble_count_init = ENSEMBLE_COUNT_INIT_DEFAULT;
-        print('ATTENTION: The default value of %s for ensemble_count_init is considered.\n' %str(ensemble_count_init))
-    
     if 'ternary_mode' not in locals():
         ternary_mode = TERNARY_MODE_DEFAULT;
         print('ATTENTION: The default value of %s for ternary_mode is considered.\n' %str(ternary_mode))
@@ -778,18 +747,6 @@ def parse_commands_inf_algo(input_opts):
     if 'sparsity_flag' not in locals():
         sparsity_flag = SPARSITY_FLAG_DEFAULT;
         print('ATTENTION: The default value of %s for sparsity_flag is considered.\n' %str(sparsity_flag))
-    
-    if 'generate_data_mode' not in locals():
-        generate_data_mode = GENERATE_DATA_MODE_DEFAULT
-        print('ATTENTION: The default value of %s for generate_data_mode is considered.\n' %str(generate_data_mode))
-
-    if 'we_know_topology' not in locals():
-        we_know_topology = WE_KNOW_TOPOLOGY_DEFAULT
-        print('ATTENTION: The default value of %s for we_know_topology is considered.\n' %str(we_know_topology))
-
-    if 'verify_flag' not in locals():
-        verify_flag = VERIFY_FLAG_DEFAULT
-        print('ATTENTION: The default value of %s for verify_flag is considered.\n' %str(verify_flag))
     
     if 'beta' not in locals():
         beta = BETA_DEFAULT
@@ -827,7 +784,7 @@ def parse_commands_inf_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return frac_stimulated_neurons,no_stimul_rounds,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,verify_flag,beta,alpha0,infer_itr_max,p_miss,jitt,bin_size,neuron_range
+    return no_stimul_rounds,file_name_data,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,infer_itr_max,p_miss,jitt,bin_size,neuron_range
 #==============================================================================
 #==============================================================================
 
