@@ -3603,12 +3603,14 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
         total_memory_init = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         temp_mem = total_memory_init
+        max_memory = total_memory_init
         print 'memory so far at before parallel is %s' %(total_memory_init)
         
         total_spent_time = 0
+        max_memory
         for result in int_results:
             (aa,yy,tt_start,tt_end,flag_spikes,memory_used) = result.get()
-            total_memory_init = total_memory_init + memory_used
+            max_memory = max_memory + memory_used
             
             A[tt_start:tt_end,:] = aa
             YA[tt_start:tt_end] = yy.ravel()
@@ -3679,16 +3681,18 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 t_end_last_t = t_end
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-            temp_mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - temp_mem
-            total_memory = total_memory_init + resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - temp_mem
+            
+            total_memory_init = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - temp_mem
+            #temp_mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
             
             print 'memory so far up to iterations %s is %s' %(str(ttau),str(total_memory))
             
             #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~
             itr_result = 0
+            mem_temp = 0
             for result in int_results:
                 (aa,yy,tt_start,tt_end,spike_flag,memory_used) = result.get()
-                total_memory = total_memory + memory_used
+                mem_temp = mem_temp + memory_used
                 if spike_flag < 0:
                     A[tt_start-block_start:tt_end-block_start,:] = aa
                     YA[tt_start-block_start:tt_end-block_start] = yy
@@ -3748,7 +3752,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
                 Delta_W = 0*Delta_W#np.zeros([n,1])
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            total_memory = total_memory + resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - temp_mem - temp_mem
+            total_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss + mem_temp
             if total_memory>max_memory:
                 max_memory = total_memory
             
@@ -4134,8 +4138,8 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             if yy_t:
                 cst_y = cst_y + max(0,.1-np.dot(W_temp.T,aa_t))#hinge_loss_func(W_temp,-aa_t,0.1,1,0)
                 
-            if ((ss+1)%50000) == 0:
-                print cst
+            #if ((ss+1)%50000) == 0:
+            #    print cst
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         
