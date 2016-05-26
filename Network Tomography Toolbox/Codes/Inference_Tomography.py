@@ -123,7 +123,7 @@ for n_ind in neuron_range:
     print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
     t_start = time.time()                           # starting time of the algorithm
     
-    W_inferred = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,n,max_itr_optimization,sparse_thr0,alpha0,theta,n_ind,num_process)
+    W_inferred,used_ram = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,n,max_itr_optimization,sparse_thr0,alpha0,theta,n_ind,num_process)
     W_inferred = np.array(W_inferred)
     
     #.........................Save the Belief Matrices.........................
@@ -144,7 +144,6 @@ for n_ind in neuron_range:
     print 'Inference successfully completed for T = %s ms. The results are saved on %s' %(str(T/1000.0),file_name)
     
     #....................Store Spent Time and Memory............................
-    used_ram = 0
     t_end = time.time()                           # The ending time of the algorithm    
     file_name =  file_name_base_results + "/Spent_Resources/CPU_RAM_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     tmp = [T,t_end-t_start,used_ram]

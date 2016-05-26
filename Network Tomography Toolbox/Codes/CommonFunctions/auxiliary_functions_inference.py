@@ -3773,7 +3773,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         W_inferred[0:len_v,0] = WW[0:len_v].ravel()
         
-    return W_inferred
+    return W_inferred,max_memory
     
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
