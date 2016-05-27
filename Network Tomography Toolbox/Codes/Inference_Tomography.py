@@ -46,12 +46,15 @@ if not T:
 #---------------------Initialize Simulation Variables--------------------------
 theta = 0                                               # The update threshold of the neurons in the network
 d_window = 2                                          # The time window the algorithm considers to account for pre-synaptic spikes
-sparse_thr0 = 0.0005                                    # The initial sparsity soft-threshold (not relevant in this version)
+sparse_thr0 = 1.0                                    # The initial sparsity soft-threshold (not relevant in this version)
 tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
 tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
-class_sample_freq = 0.25                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
+class_sample_freq = 0.2                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
 rand_sample_flag = 1                            # If 1, the spikes are sampled randomly on intervals
 kernel_choice = 'E'
+
+no_itr_over_dataset = max_itr_optimization
+max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
 
 num_process = min(no_processes,multiprocessing.cpu_count())
 block_size = min(block_size,T)
@@ -63,6 +66,8 @@ if len(neuron_range)>1:
 
 inferece_params = [inference_method,alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size,class_sample_freq,rand_sample_flag,kernel_choice]
 #..............................................................................
+
+#python Inference_Tomography.py -M 1 -T 1400000 -S 200000 -o "0,1" -Q 16 -Y 1 -X 100 -A '../Data/Spikes/Moritz_Spike_Times.txt' -N 1000
 
 #------------------------------------------------------------------------------
 
@@ -78,13 +83,13 @@ if not file_name_spikes:
     #file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
     #file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/HC3_ec013_198_processed.txt'
     
-    try:
-        ll = file_name_spikes.split('/')
-    except:
-        ll = file_name_spikes.split('/')
+try:
+    ll = file_name_spikes.split('/')
+except:
+    ll = file_name_spikes.split('/')
     
-    ll = ll[-1]
-    file_name_prefix = ll.split('.txt')
+ll = ll[-1]
+file_name_prefix = ll.split('.txt')
 #------------------------------------------------------------------------------
         
 #---------------------Preprocess the Spikes If Necessary-----------------------
@@ -139,11 +144,12 @@ for n_ind in neuron_range:
     file_name_ending = 'I_' + str(inference_method) + '_S_' + str(sparsity_flag) + '_T_' + str(T)
     file_name_ending = file_name_ending + '_C_' + str(num_process) + '_B_' + str(block_size)
     file_name_ending = file_name_ending + '_K_' + kernel_choice + '_H_' + str(class_sample_freq)
+    file_name_ending = file_name_ending + '_F_' + str(class_sample_freq) 
 
     if bin_size:
         file_name_ending = file_name_ending + '_bS_' + str(bin_size)
     
-    file_name_ending = file_name_ending + '_ii_' + str(max_itr_optimization)
+    file_name_ending = file_name_ending + '_ii_' + str(no_itr_over_dataset)
     
     file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     tmp = W_inferred
