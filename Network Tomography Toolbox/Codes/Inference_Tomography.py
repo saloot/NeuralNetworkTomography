@@ -49,6 +49,8 @@ d_window = 2                                          # The time window the algo
 sparse_thr0 = 0.0005                                    # The initial sparsity soft-threshold (not relevant in this version)
 tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
 tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
+class_sample_freq = 0.25                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
+
 
 num_process = min(no_processes,multiprocessing.cpu_count())
 block_size = min(block_size,T)
