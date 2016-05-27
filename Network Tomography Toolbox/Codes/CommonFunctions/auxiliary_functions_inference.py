@@ -3544,6 +3544,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     #---------------------Necessary Initializations------------------------    
     prng = RandomState(int(time.time()))
+    block_start_inds = range(T0,TT,block_size)
+    no_blocks = (1+TT-T0)/block_size
     
     if (mthd == 1) or (mthd == 2):
         lambda_tot = np.zeros([TT,1])
@@ -3558,8 +3560,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     A = np.zeros([block_size,len_v-1])      # This should contain current block
     YA = np.zeros([block_size])
     
-    block_start_inds = range(T0,TT,block_size)
-    no_blocks = (1+TT-T0)/block_size
+    
     
     Delta_W = np.zeros([n,1])
     
