@@ -49,7 +49,7 @@ d_window = 2                                          # The time window the algo
 sparse_thr0 = 1.0                                    # The initial sparsity soft-threshold (not relevant in this version)
 tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
 tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
-class_sample_freq = 0.2                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
+class_sample_freq = 0.5                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
 rand_sample_flag = 1                            # If 1, the spikes are sampled randomly on intervals
 kernel_choice = 'E'
 
@@ -67,7 +67,7 @@ if len(neuron_range)>1:
 inferece_params = [inference_method,alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size,class_sample_freq,rand_sample_flag,kernel_choice]
 #..............................................................................
 
-#python Inference_Tomography.py -M 1 -T 1400000 -S 200000 -o "0,1" -Q 16 -Y 1 -X 100 -A '../Data/Spikes/Moritz_Spike_Times.txt' -N 1000
+#python Inference_Tomography.py -M 1 -T 1400000 -S 200000 -o "0,1" -Q 16 -Y 1 -X 10 -A '../Data/Spikes/Moritz_Spike_Times.txt' -N 1000
 
 #------------------------------------------------------------------------------
 
