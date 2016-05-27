@@ -3582,7 +3582,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     for t_start in range(0,block_size,t_step):
         t_end = min(block_size-1,t_start + t_step)
         
-        func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
+        func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
         int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         #pool.close()
         #pool.join()
@@ -3638,7 +3638,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             if t_end - t_start < 10:
                 continue
                         
-            func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
+            func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
             int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
             t_end_last_t = t_end
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3716,8 +3716,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
     
     WW = np.zeros([len_v,1])
-    WW[0:ijk,0] = W_tot[0:ijk,0]
-    WW[ijk+1:,0] = W_tot[ijk:,0]
+    WW[0:n_ind,0] = W_tot[0:n_ind,0]
+    WW[n_ind+1:,0] = W_tot[n_ind:,0]
         
         
     return WW[0:len_v].ravel(),max_memory
