@@ -3411,42 +3411,45 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     range_temp = range(t_start,t_end)
     
     for t in range_temp:
-                    
-        #........Pre-compute Some of Matrices to Speed Up the Process......
-        fire_t = read_spikes_lines(spikes_file,t,n)
-        yy = -1
-        if (n_ind in fire_t):                
-            yy = 1
+        
+        try:           
+            #........Pre-compute Some of Matrices to Speed Up the Process......
+            fire_t = read_spikes_lines(spikes_file,t,n)
+            yy = -1
+            if (n_ind in fire_t):                
+                yy = 1
+                
             
-        
-        #.................................................................
-        
-        #......................Read Incoming Spikes.......................
-        fire_t = read_spikes_lines(spikes_file,t-1,n)
-        fire_t = np.array(fire_t).astype(int)
-        
-        x = math.exp(-1/tau_s) * x
-        x[fire_t] = x[fire_t] + 1
-        
-        v = math.exp(-1/tau_d) * v
-        v[fire_t] = v[fire_t] + 1
-        
-        if not theta:
-            v[-1,0] = -1.0
-        #.................................................................
-        
-        #.....................Store the Potentials........................
-        V[:,t_tot] = yy * v.ravel()#(np.delete(v,n_ind,0)).ravel()
-        #X[:,t_tot] = yy * (np.delete(x,n_ind,0)).ravel()
-        Y[t_tot] = yy
-        
-        if yy>0:
-            #~~~~~~~~~~~~~~~~Reset the Membrane Potential~~~~~~~~~~~~~~~~~
-            x = 0*x#np.zeros([len_v,1])
-            v = 0*v#np.zeros([len_v,1])
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
-        t_tot = t_tot + 1
+            #.................................................................
+            
+            #......................Read Incoming Spikes.......................
+            fire_t = read_spikes_lines(spikes_file,t-1,n)
+            fire_t = np.array(fire_t).astype(int)
+            
+            x = math.exp(-1/tau_s) * x
+            x[fire_t] = x[fire_t] + 1
+            
+            v = math.exp(-1/tau_d) * v
+            v[fire_t] = v[fire_t] + 1
+            
+            if not theta:
+                v[-1,0] = -1.0
+            #.................................................................
+            
+            #.....................Store the Potentials........................
+            V[:,t_tot] = yy * v.ravel()#(np.delete(v,n_ind,0)).ravel()
+            #X[:,t_tot] = yy * (np.delete(x,n_ind,0)).ravel()
+            Y[t_tot] = yy
+            
+            if yy>0:
+                #~~~~~~~~~~~~~~~~Reset the Membrane Potential~~~~~~~~~~~~~~~~~
+                x = 0*x#np.zeros([len_v,1])
+                v = 0*v#np.zeros([len_v,1])
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            t_tot = t_tot + 1
+        except:
+            pdb.set_trace()
         #.................................................................
         
     
