@@ -126,7 +126,7 @@ for n_ind in neuron_range:
     print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
     t_start = time.time()                           # starting time of the algorithm
     
-    
+    pdb.set_trace()
     W_inferred,used_ram = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params)
 
     W_inferred = np.array(W_inferred)
