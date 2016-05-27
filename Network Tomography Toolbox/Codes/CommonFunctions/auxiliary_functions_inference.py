@@ -3384,6 +3384,9 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     
     
     #----------------------------Initializations---------------------------
+    t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
+    U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
+    
     initial_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     print 'initial memory is %s' %str(initial_memory)
     block_size = t_end - t_start
@@ -3488,8 +3491,8 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
 #---------------------inference_constraints_hinge_parallel---------------------
 #------------------------------------------------------------------------------
 
-def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n,max_itr_opt,sparse_thr_0,alpha0,theta,n_ind,num_process):
-    
+def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n,n_ind,num_process,inferece_params):
+
     max_memory = 0
     
     #----------------------Import Necessary Libraries----------------------
@@ -3502,278 +3505,220 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
     num_process_per_spike = int(max(multiprocessing.cpu_count(),num_process)/float(num_process))
     print multiprocessing.cpu_count()
-    
-    import time
+
     import gc
     #----------------------------------------------------------------------
     
+    #---------------------Read Inference Parameters------------------------
+    mthd = inferece_params[0]
+    sparse_thr_0 = inferece_params[2]
+    sparsity_flag = inferece_params[3]
+    theta = inferece_params[4]
+    #----------------------------------------------------------------------
+    
     #----------------------------Initializations---------------------------    
-    m = n
-    
     range_tau = range(0,max_itr_opt)
-    
     
     T0 = 50                                    # It is the offset, i.e. the time from which on we will consider the firing activity
     
+    print '-------------Neuron %s----------' %str(n_ind)
     #----------------------------------------------------------------------
     
     #-----------------------------Behavior Flags-------------------------------
     der_flag = 0                                # If 1, the derivative criteria will also be taken into account
-    rand_sample_flag = 1                        # If 1, the samples will be wide apart to reduce correlation
     sketch_flag = 0                             # If 1, random sketching will be included in the algorithm as well
-    load_mtx = 0                                # If 1, we load spike matrices from file
-    mthd = 1                                    # 1 for Stochastic Coordinate Descent, 4 for Perceptron
     #--------------------------------------------------------------------------
     
     #---------------------------Neural Parameters------------------------------
     tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
     tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
-    h0 = 0.0                                        # The reset membrane voltage (in mV)
-    delta = 0.25                                       # The tanh coefficient to approximate the sign function
+    h0 = 0.0                                        # The reset membrane voltage (in mV
     d_max = 10
-    t_gap = 2                                    # The gap between samples to consider
-    t_avg = 1
-    theta = 0
-    c_1 = 1                                        # This is the weight of class +1 (i.e. y(t) = 1)
-    c_0 = .1                                         # This is the weight of class 0 (i.e. y(t) = 0)
+
     if theta:
         len_v = n        
     else:
         len_v = n+1
+    #--------------------------------------------------------------------------
     
-    W_infer = np.zeros([int((TT-T0)/float(block_size))+1,len_v])
-    W_inferred = np.zeros([len_v,1])
+    #---------------------Necessary Initializations------------------------    
+    prng = RandomState(int(time.time()))
     
-    t0 = math.log(tau_d/tau_s) /((1/tau_s) - (1/tau_d))
-    U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
+    if (mthd == 1) or (mthd == 2):
+        lambda_tot = np.zeros([TT,1])
+        dual_gap = np.zeros([len(range_tau),no_blocks])
+        beta_K = 1
+        
+    W_tot = np.zeros([len_v-1,1])
+    Z_tot = np.zeros([len_v-1,1])    
+        
+    total_cost = np.zeros([len(range_tau)])
+        
+    A = np.zeros([block_size,len_v-1])      # This should contain current block
+    YA = np.zeros([block_size])
     
+    block_start_inds = range(T0,TT,block_size)
+    no_blocks = (1+TT-T0)/block_size
     
+    Delta_W = np.zeros([n,1])
+    
+    itr_block_t = 1
+    itr_block_w = 0
+    itr_cost = 0
+    #--------------------------------------------------------------------------    
+        
+    #---Distribute Resources for Reading Spike Activity and Infer the Weights--
     num_process_sp = max(3,int(num_process/4.0))
     num_process_w = max(1,num_process - num_process_sp)
     t_step = int(block_size/float(num_process_sp))
     t_step_w = int(block_size/float(num_process_w))
-    
-    A = np.zeros([block_size,len_v-1])      # This should contain current block
-    YA = np.zeros([block_size])
-    
-    #B = np.zeros([block_size,len_v-1])      # This should contain current block
-    #YB = np.zeros([block_size])
-    
-    block_start_inds = range(T0,TT,block_size)
-    tic_start = time.clock()
     #--------------------------------------------------------------------------
     
-    #---------Identify Incoming Connections to Each Neuron in the List---------
-    if 1:
-        ijk = n_ind
+    #--------------------Prepare the First Spike Matrix------------------------
+    int_results = []
         
-        print '-------------Neuron %s----------' %str(ijk)
-    
-        #---------------------Necessary Initializations------------------------    
-        prng = RandomState(int(time.time()))
+    for t_start in range(0,block_size,t_step):
+        t_end = min(block_size-1,t_start + t_step)
         
-        lambda_tot = np.zeros([TT,1])
-        no_blocks = (1+TT-T0)/block_size
-        
-        W_tot = np.zeros([len_v-1,1])
-        Z_tot = np.zeros([len_v-1,1])
-        
-        dual_gap = np.zeros([len(range_tau),no_blocks])
-        total_cost = np.zeros([len(range_tau),1])
-        total_Y = np.zeros([len(range_tau),1])
-        beta_K = 1
-        #----------------------------------------------------------------------
-        
-        #------------------Prepare the First Spike Matrix----------------------
-        tic = time.clock()
-        Delta_W = np.zeros([n,1])
-        int_results = []
-        
-        
-        for t_start in range(0,block_size,t_step):
-            t_end = min(block_size-1,t_start + t_step)
-            
-            
-            #calculate_integration_matrix(ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
-            #pdb.set_trace()
-            func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
-            int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
+        func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
+        int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         #pool.close()
         #pool.join()
+    
+    max_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    
+    for result in int_results:
+        (aa,yy,tt_start,tt_end,flag_spikes,memory_used) = result.get()
+        max_memory = max_memory + memory_used
+            
+        A[tt_start:tt_end,:] = aa
+        YA[tt_start:tt_end] = yy.ravel()
+    #--------------------------------------------------------------------------
+        
+    #---------------------------Infer the Connections--------------------------
+    for ttau in range_tau:
+            
+        #~~~~~~~~~~~~~~~~~~~~~~~In-loop Initializations~~~~~~~~~~~~~~~~~~~~~~~~
+        block_start_w = block_start_inds[itr_block_w]
+        block_end_w = min(block_start_w + block_size,TT-1)
+        int_results = []
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+        #~~~~~~~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~~~~~~
+        for t_start in range(block_start_w,block_end_w,t_step_w):
+            t_end_w = min(t_start + t_step_w,block_end_w-1)
+                
+            if t_end_w - t_start < 10:
+                continue
+            
+            if (mthd == 1) or (mthd == 2):
+                lambda_temp = lambda_tot[t_start:t_end_w]
+            else:
+                lambda_temp = []
+
+                
+                
+            #infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w)
+            #pdb.set_trace()
+                
+            func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
+            int_results.append(pool.apply_async(infer_w_block, func_args) )
+            t_end_last_w = t_end_w
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        #~~~~~~~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~~~~~~
+        block_start = block_start_inds[itr_block_t]
+        block_end = min(block_start + block_size,TT-1)
+            
+        for t_start in range(block_start,block_end,t_step):
+            t_end = min(t_start + t_step,block_end-1)
+                
+            if t_end - t_start < 10:
+                continue
+                        
+            func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
+            int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
+            t_end_last_t = t_end
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
         total_memory_init = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        max_memory = total_memory_init
-        print 'memory so far at before parallel is %s' %(total_memory_init)
-        
-        total_spent_time = 0
+        print 'memory so far up to iterations %s is %s' %(str(ttau),str(total_memory_init))
+            
+        #~~~~~~~~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~~~~~
+        mem_temp = 0
         for result in int_results:
-            (aa,yy,tt_start,tt_end,flag_spikes,memory_used) = result.get()
-            max_memory = max_memory + memory_used
-            
-            A[tt_start:tt_end,:] = aa
-            YA[tt_start:tt_end] = yy.ravel()
-        #----------------------------------------------------------------------
-        
-        
-        #--------------Assign Weights to the Classes--------------------                
-        gg = {}
-        gg[-1] = 1#c_0
-        gg[1] = 1#c_1        
-        #---------------------------------------------------------------
-        
-        #--------------------------Update Weight------------------------
-        ccst = np.zeros([len(range_tau)])
-        itr_block_t = 1
-        itr_block_w = 0
-        
-        itr_cost = 0
-        
-        tic = time.time()#time.clock()
-        for ttau in range_tau:
-            
-            #~~~~~~~~~~~~~~~~~~In-loop Initializations~~~~~~~~~~~~~~~~~~            
-            block_start_w = block_start_inds[itr_block_w]
-            block_end_w = min(block_start_w + block_size,TT-1)
-
-            #if itr_block_w == len(block_start_inds)-1:
-            #    pdb.set_trace()
-            
-            int_results = []
-            total_spent_time = 0
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            
-            #~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~
-            for t_start in range(block_start_w,block_end_w,t_step_w):
-                t_end_w = min(t_start + t_step_w,block_end_w-1)
-                
-                if t_end_w - t_start < 10:
-                    continue
+            (aa,yy,tt_start,tt_end,spike_flag,memory_used) = result.get()
+            mem_temp = mem_temp + memory_used
+            if spike_flag < 0:
+                A[tt_start-block_start:tt_end-block_start,:] = aa
+                YA[tt_start-block_start:tt_end-block_start] = yy
                     
-                lambda_temp = lambda_tot[t_start:t_end_w]
-
-                
-                
-                #infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w)
-                #pdb.set_trace()
-                func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end_w]
-                int_results.append(pool.apply_async(infer_w_block, func_args) )
-                t_end_last_w = t_end_w
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-            
-            #~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~
-            #A = 0*A
-            #YA = 0*YA
-            block_start = block_start_inds[itr_block_t]
-            block_end = min(block_start + block_size,TT-1)
-            
-            for t_start in range(block_start,block_end,t_step):
-                t_end = min(t_start + t_step,block_end-1)
-                
-                if t_end - t_start < 10:
-                    continue
-                        
-                func_args = [ijk,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
-                int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
-                t_end_last_t = t_end
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            
-            total_memory_init = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-            
-            print 'memory so far up to iterations %s is %s' %(str(ttau),str(total_memory_init))
-            
-            #~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~
-            itr_result = 0
-            mem_temp = 0
-            for result in int_results:
-                (aa,yy,tt_start,tt_end,spike_flag,memory_used) = result.get()
-                mem_temp = mem_temp + memory_used
-                if spike_flag < 0:
-                    A[tt_start-block_start:tt_end-block_start,:] = aa
-                    YA[tt_start-block_start:tt_end-block_start] = yy
-                    
-                    if tt_end == t_end_last_t:
-                        itr_block_t = itr_block_t + 1
-                        if itr_block_t >= len(block_start_inds):
-                            itr_block_t = 0
+                if tt_end == t_end_last_t:
+                    itr_block_t = itr_block_t + 1
+                    if itr_block_t >= len(block_start_inds):
+                        itr_block_t = 0
                             
-                else:
-                    Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
-                    d_alp_vec = yy              # This is because of the choice of symbols for result.get()
-                    cst = spike_flag            # This is because of the choice of symbols for result.get()
+            else:
+                Delta_W_loc = aa            # This is because of the choice of symbols for result.get()
+                d_alp_vec = yy              # This is because of the choice of symbols for result.get()
+                cst = spike_flag            # This is because of the choice of symbols for result.get()
                     
                     
-                    Delta_W = Delta_W + Delta_W_loc
-                    
-                    if (mthd == 1) or (mthd == 3):
-                        lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/float(no_blocks)) 
-                    
-                    ccst[itr_cost] = ccst[itr_cost] + cst
-                    #total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,W_tot)<0)
-                    
-                    #cst_tot = sum(np.dot(A[tt_start:tt_end,:],Delta_W_loc)<=0)
-                    b_st = block_start_inds[itr_block_w]
-                    #print sum(YA[tt_start-b_st:tt_end-b_st]>0),cst
-                    
-                    
-                    if tt_end == t_end_last_w:
-                        itr_block_w = itr_block_w + 1
-                        print ccst[itr_cost]
-                        
-            
-            
-            
-            if itr_block_w >= len(block_start_inds):
+                Delta_W = Delta_W + Delta_W_loc
                 
-                #Delta_W_loc = np.dot(A.T,lambda_tot[b_st:t_end_last_w+2])
-                
-                itr_block_w = 0
-                
-                W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
-                W_tot = W_tot - W_tot.mean()
-                W_tot = W_tot/np.linalg.norm(W_tot)
+                if (mthd == 1) or (mthd == 3):
+                    lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/float(no_blocks)) 
+                    
+                #total_cost[itr_cost] = total_cost[itr_cost] + cst
+                total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,W_tot)<0)
+                    
+                if tt_end == t_end_last_w:
+                    itr_block_w = itr_block_w + 1
+                    print total_cost[itr_cost]
+            
+        if itr_block_w >= len(block_start_inds):
+            #Delta_W_loc = np.dot(A.T,lambda_tot[b_st:t_end_last_w+2])
+            itr_block_w = 0
+            
+            W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
+            W_tot = W_tot - W_tot.mean()
+            W_tot = W_tot/np.linalg.norm(W_tot)
+            if sparsity_flag:
                 sparse_thr = W_tot[:-1].std()/2.5
                 sparse_thr_pos = np.multiply(W_tot[:-1],(W_tot[:-1]>=0).astype(int)).std()/1.0
                 sparse_thr_neg = np.multiply(W_tot[:-1],(W_tot[:-1]<0).astype(int)).std()/1.0
                 W_tot[:-1] = soft_threshold_double(W_tot[:-1],sparse_thr_pos,sparse_thr_neg)
-                #print sparse_thr_pos,sparse_thr_neg
                 #W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr)
                 
-                #pdb.set_trace()
-                toc = time.time()#clock()
-                print 'Total time to process %s blocks was %s, with cost being %s' %(str(no_blocks),str(toc-tic),str(ccst[itr_cost]))
-                tic = time.time()#.clock()
-                itr_cost = itr_cost + 1
                 
-                Delta_W = 0*Delta_W#np.zeros([n,1])
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            total_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss + mem_temp
-            if total_memory>max_memory:
-                max_memory = total_memory
-            
-            print 'Total memory after iteration %s is %s' %(str(ttau),str(max_memory))
-            
-            #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
-            #if itr_cost >= 3:
-            #    if abs(total_cost[itr_cost-1]-total_cost[itr_cost-2])/(0.001+total_cost[itr_cost-2]) < 0.0000001:
-            #        break
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
-        #pdb.set_trace()
-        print ccst[0:ttau]
-        #---------------------------------------------------------------
-        
-        print 'Total time %s' %str(total_spent_time)
+            print 'Processing %s blocks was finished, with cost being %s' %(str(no_blocks),str(total_cost[itr_cost]))
     
-        WW = np.zeros([len_v,1])
-        WW[0:ijk,0] = W_tot[0:ijk,0]
-        WW[ijk+1:,0] = W_tot[ijk:,0]
+            itr_cost = itr_cost + 1
+            Delta_W = 0*Delta_W#np.zeros([n,1])
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        total_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss + mem_temp
+        if total_memory>max_memory:
+            max_memory = total_memory
+            
+        print 'Total memory after iteration %s is %s' %(str(ttau),str(max_memory))
+            
+        #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
+        if itr_cost >= 3:
+            if abs(total_cost[itr_cost-1]-total_cost[itr_cost-2])/(0.001+total_cost[itr_cost-2]) < 0.00001:
+                break
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
-        W_inferred[0:len_v,0] = WW[0:len_v].ravel()
         
-    return W_inferred,max_memory
+    print total_cost[0:ttau]
+    #--------------------------------------------------------------------
+        
+    
+    WW = np.zeros([len_v,1])
+    WW[0:ijk,0] = W_tot[0:ijk,0]
+    WW[ijk+1:,0] = W_tot[ijk:,0]
+        
+        
+    return WW[0:len_v].ravel(),max_memory
     
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -3840,8 +3785,22 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
 
 
 #------------------------------------------------------------------------------
-def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,t_end):
+def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     
+    
+    #---------------------Read Inference Parameters------------------------
+    mthd = inferece_params[0]
+    alpha0 = inferece_params[1]
+    sparse_thr_0 = inferece_params[2]
+    sparsity_flag = inferece_params[3]
+    theta = inferece_params[4]
+    max_itr_opt = inferece_params[5]
+    beta = inferece_params[7]
+    class_sample_freq = inferece_params[9]
+    rand_sample_flag = inferece_params[10]
+    #----------------------------------------------------------------------
+    
+    #------------------------Initializations------------------------
     initial_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     from auxiliary_functions import soft_threshold
     from numpy.random import RandomState
@@ -3849,42 +3808,57 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
     #if not np.linalg.norm(W_in):
     #    W_in = np.random.rand(W_in.shape[0],W_in.shape[1])
     #    W_in = W_in/np.linalg.norm(W_in)
-    #------------------------Initializations------------------------
-    #---------------------------------------------------------------
-    t_gap = 5
+    
     if rand_sample_flag:
+        t_gap = 5
         #t_init = np.random.randint(0,t_gap)
         t_init = prng.randint(0,t_gap)
         t_inds = np.array(range(t_init,t_end-t_start,t_gap))
         aa = aa[t_inds,:]
         yy = yy[t_inds]
+        TcT = len(yy)
         
-    TcT = len(yy)
-    try:
-        lamb = .1/float(TcT)
-    except:
-        pdb.set_trace()
+        if TcT == 0:
+            print 'error! empty activity file.'
+            return
+    #---------------------------------------------------------------
+    
+    #--------------Initialize Simulation Parameters-----------------
+    lamb = .1/float(TcT)
+    max_internal_itr = 30*TcT
+    
     cf = lamb*TcT
     ccf = 1/float(cf)
-    #ccf = 0.1
+    
     cst = 0
     cst_y = 0
     cst_old = 0
-    class_samle_flag = 1                # If 1, we try to balance the dataset
-    sample_freq = 0.2                   # With what probability sampling class 1 or 0 should be considered
-    if 1:        
-        ind_ones = np.nonzero(yy>0)[0]
-        ind_zeros = np.nonzero(yy<0)[0]
-        no_ones = sum(yy>0)
-        no_zeros = sum(yy<0)
-        p1 = no_ones /float(len(yy))
+    
+    
+    ind_ones = np.nonzero(yy>0)[0]
+    ind_zeros = np.nonzero(yy<0)[0]
+    no_ones = sum(yy>0)
+    no_zeros = sum(yy<0)
+    p1 = no_ones /float(len(yy))
     
     W_temp = copy.deepcopy(W_in)
     Delta_W = np.zeros(W_temp.shape)
-    no_firings_per_neurons = 2*np.ones(W_temp.shape)
+    #W_temp[-1] = 0.1
+    
+    no_firings_per_neurons = 2*np.ones(W_temp.shape)                # This variable tracks the number of times each pre-synaptic neuron has fired
+    #---------------------------------------------------------------
+    
+    #-----------------Adjust Hinge Loss Parameters------------------
+    e0 = 0.2                    # The offset: L(x) = h0*max(0,e0-x)
+    h0 = 1                      # The slope: L(x) = h0*max(0,e0-x)
+    
+    if mthd == 5:
+        e1 = 5                  # The other offset for double hinge loss: L(x) = h0*max(0,e0-x) + h1*max(0,x-e1)
+        h1 = 1                  # The other slope for double hinge loss: L(x) = h0*max(0,e0-x) + h1*max(0,x-e1)
+    #---------------------------------------------------------------
     
     #----------------------Assign Dual Vectors----------------------
-    if (mthd == 1) or (mthd == 3):
+    if (mthd == 1) or (mthd == 2):
         d_alp_vec = np.zeros([len(lambda_temp),1])
         if rand_sample_flag:
             lambda_temp = lambda_temp[t_inds]
@@ -3892,24 +3866,17 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         d_alp_vec = [0]
     #---------------------------------------------------------------
         
+    #------------------------Infer the Weights----------------------
     if no_ones and no_zeros: 
         
-        #W_temp[-1] = 0.1
-        no_pos_updates = 0
-        no_neg_updates = 0
-            
-        
-        
         #--------------------Do One Pass over Data----------------------        
-        for ss in range(0,30*TcT):
-            
+        for ss in range(0,max_internal_itr):
             
             #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
             try:
-                if class_samle_flag:
+                if class_sample_freq:
                     ee = np.random.rand(1)
-                    #if ee < p1:
-                    if ee < sample_freq:
+                    if ee < class_sample_freq:
                         #ii = np.random.randint(0,no_ones)
                         ii = prng.randint(0,no_ones)
                         jj = ind_ones[ii]
@@ -3927,80 +3894,51 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
             
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
             
-            
-            
-            
             #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
-            try:
-                aa_t = aa[jj,:]/(0.00001+ np.linalg.norm(aa[jj,:]))#/float(cf)
-                yy_t = yy[jj]#[0]
-                ff = gg[yy_t]*(aa_t)/np.linalg.norm(aa_t)
-                
-                
-                no_firings_per_neurons = no_firings_per_neurons + np.reshape(((yy_t*aa_t.ravel())>0.9).astype(int),[len_v-1,1])
-                if yy_t * sum(aa_t[:-1])<0:
-                    print 'something bad is happening!'
-                    pdb.set_trace()
-            except:
-                print 'some y where 0 %s,%s' %(str(ss),str(yy_t))
-                continue
-            c = 1
+            aa_t = aa[jj,:]/(0.00001+ np.linalg.norm(aa[jj,:]))#/float(cf)
+            yy_t = yy[jj]#[0]
+
+            no_firings_per_neurons = no_firings_per_neurons + np.reshape(((yy_t*aa_t.ravel())>0.9).astype(int),[len_v-1,1])
+            if yy_t * sum(aa_t[:-1])<0:
+                print 'something bad is happening!'
+                pdb.set_trace()
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            #~~~~~~~~~~~~~~~~~~Update Variables for SDCS~~~~~~~~~~~~~~~~
             if (mthd == 1):
-                c = 0.2
                 #c = 1 * yy_t
                 #gamma_t = 0.5* ( (1+yy_t) * no_ones + (1-yy_t) * no_zeros)
                 #ccf = gamma_t
-                ccf = 1
-                ub = ccf-lambda_temp[jj]
+                ub = h0-lambda_temp[jj]
                 lb = -lambda_temp[jj]
                 
                 if 0:
                     if yy_t>0:
-                        ub = ccf-lambda_temp[jj]
+                        ub = h0-lambda_temp[jj]
                         lb = -lambda_temp[jj]
                     else:
-                        lb = -ccf-lambda_temp[jj]
+                        lb = -h0-lambda_temp[jj]
                         ub = -lambda_temp[jj]
-            elif (mthd == 3):
-                h0 = 1
-                h1 = 1
-                a0 = 1
-                a1 = 10
+                        
                 
-                lb0 = -lambda_temp[jj]
-                ub0 = ccf*h0-lambda_temp[jj]
-                lb1 = -lambda_temp[jj]-ccf*h1
-                ub1 = -lambda_temp[jj]
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
-            #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
-            if mthd == 2:
-                b = (-c-np.dot(W_temp.T,ff))/(0.00001+pow(np.linalg.norm(ff),2))
-                b = min(ccf-lambda_temp[jj],b)
-                b = max(-lambda_temp[jj],b)
-                d_alp = b
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
-            #~~~~~~~~~~~~Stochastic Dual Coordinate Descent~~~~~~~~~~~~~
-            elif mthd == 1:
-                #b = cf * (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
-                b = (c-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
+                #b = cf * (e0-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
+                b = (e0-np.dot(W_temp.T,aa_t))#/pow(np.linalg.norm(aa_t),2)
                 #b = yy_t * b
                 d_alp = min(ub,max(lb,b))
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            #~~~~~~Update Variables for SDCS with Double Hinge Loss~~~~~
+            elif (mthd == 5):
+                lb0 = -lambda_temp[jj]
+                ub0 = h0-lambda_temp[jj]
+                lb1 = -lambda_temp[jj]-h1
+                ub1 = -lambda_temp[jj]
                 
-                #if (b<= ub ) and (b >= lb):
-                #    d_alp = b
-                #elif pow(lb-b,2) < pow(ub-b,2):
-                #    d_alp = lb
-                #else:
-                #    d_alp = ub
-            elif mthd == 3:
-                b0 = (a0-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
-                b1 = (a1-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
-                #b = (-np.dot(W_temp.T,ff) - c)/pow(np.linalg.norm(ff),2)
+                b0 = (e0-np.dot(W_temp.T,aa_t))#/pow(np.linalg.norm(aa_t),2)
+                b1 = (e1-np.dot(W_temp.T,aa_t))#/pow(np.linalg.norm(aa_t),2)
+                
                 d_alp0 = min(ub0,max(lb0,b0))
                 val0 = pow(d_alp0-b0,2)
-                
                 d_alp1 = min(ub1,max(lb1,b1))
                 val1 = pow(d_alp1-b1,2)
                 
@@ -4008,121 +3946,94 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
                     d_alp = d_alp1
                 else:
                     d_alp = d_alp0
-                
-                if 0:
-                    if (b0<= ub0 ) and (b0 >= lb0):
-                        d_alp0 = b0
-                        min_val0 = 0
-                    elif pow(lb0-b0,2) < pow(ub0-b0,2):
-                        d_alp0 = lb0
-                        min_val0 = pow(lb0-b0,2)
-                    else:
-                        d_alp0 = ub0
-                        min_val0 = pow(ub0-b0,2)
-                        
-                    if (b1<= ub1 ) and (b1 >= lb1):
-                        d_alp1 = b1
-                        min_val1 = 0
-                    elif pow(lb1-b1,2) < pow(ub1-b1,2):
-                        d_alp1 = lb1
-                        min_val1 = pow(lb1-b1,2)
-                    else:
-                        d_alp1 = ub1
-                        min_val1 = pow(ub1-b1,2)
-                        
-                    if min_val1 < min_val0:
-                        d_alp = d_alp1
-                    else:
-                        d_alp = d_alp0
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-            
-            #~~~~~~~~~~~~~~~~~~~~~Upate Weights~~~~~~~~~~~~~~~~~~~~~~~~~        
-            if (mthd == 3):
-                Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])
-                Delta_W = Delta_W + Delta_W_loc
-                W_temp = W_temp + Delta_W_loc
-            elif mthd == 1:
+            #~~~~~~~~~~~~~~~~~~Upate Weights for SDCD~~~~~~~~~~~~~~~~~~~
+            if (mthd == 1):
                 Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])# * yy_t#/float(cf)
                 #Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
-                if 0:   
-                    s = prng.randint(0,5,[len_v-1,1])
-                    s = (s>=4).astype(int)
-                    Delta_W_loc = np.multiply(Delta_W_loc,s)
-                    Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
-                
-                
                 if d_alp !=0:
-                    s_size = max(0,c-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
-                    s_size = max(0,c-np.dot(W_temp.T,aa_t)) /(d_alp)
+                    s_size = max(0,e0-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
+                    s_size = max(0,e0-np.dot(W_temp.T,aa_t)) /(d_alp)
                 else:
                     s_size = 1
                     
                 Delta_W = Delta_W + s_size * Delta_W_loc
                 W_temp = W_temp + s_size * Delta_W_loc
-                #W_temp2 = W_temp - Delta_W_loc
-                
-                #if max(0,.1-np.dot(W_temp.T,aa_t)):
-                #    pdb.set_trace()
-                
-                        
-                        
-            else:
-                #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
-                d_alp = max(0,.1-np.dot(W_temp.T,aa_t))
-                #if yy_t<0:
-                #    d_alp = max(d_alp,max(0,6+np.dot(W_temp.T,aa_t)))
-                if d_alp:
-                    if 0:
-                        if np.dot(W_temp.T,aa_t)<0.1:
-                            Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
-                        else:
-                            Delta_W_loc = -max(0,6.002+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])/(0.0001+pow(np.linalg.norm(aa_t),2))
-                    else:
-                        
-                        s = prng.randint(0,5,[len_v-1,1])
-                        s = (s>=4).astype(int)
-                        Delta_W_loc = max(0,1.002-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
-                        Delta_W_loc = np.multiply(Delta_W_loc,s)
-                        Delta_W_loc = Delta_W_loc /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
-                        
-                        #Delta_W_loc = np.divide(Delta_W_loc,no_firings_per_neurons)
-                    #if yy_t > 0:
-                    #    Delta_W_loc = Delta_W_loc/float(no_ones)
-                    #else:
-                    #    Delta_W_loc = Delta_W_loc/float(no_zeros)
-                    
-                    Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
-                    Delta_W_loc[-1] = .1
-                    Delta_W = Delta_W + Delta_W_loc
-                    #pdb.set_trace()
-                    #W_temp2 = W_temp + 1.0*Delta_W_loc
-                    #d_alp-max(0,.1-np.dot(W_temp2.T,aa_t))
-                    W_temp = W_temp + 1*Delta_W_loc
-                    #cst = cst + d_alp-max(0,.1-np.dot(W_temp.T,aa_t))
-                    W_temp = W_temp - W_temp.mean()
-                    
-            
-            if yy_t>0:
-                no_pos_updates = no_pos_updates + 1
-            else:
-                no_neg_updates = no_neg_updates + 1
-                #Delta_W_loc = 0.001*(np.reshape(aa_t,[len_v-1,1]) * max(0,1-np.dot(W_temp.T,ff)))
-                    
-            
-            #if ((ss+1)%1000) == 0:
-            #    sparse_thr = W_temp.std()/2.0
-            #    W_temp = soft_threshold(W_temp,sparse_thr)
-            #    pdb.set_trace()
-            #W_temp_last = W_temp
-            #W_temp = W_temp + Delta_W_loc
-            
-            #if np.linalg.norm(W_temp)-np.linalg.norm(W_temp_last)>1:
-            #    pdb.set_trace()
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
+            #~~~~~~~~~~~~~Upate Weights for Sketched SDCD~~~~~~~~~~~~~~~
+            elif (mthd == 2):
+                Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])# * yy_t#/float(cf)
+                #Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
+                
+                s = prng.randint(0,beta,[len_v-1,1])
+                s = (s>=beta-1).astype(int)
+                Delta_W_loc = np.multiply(Delta_W_loc,s)
+                Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
+                
+                
+                if d_alp !=0:
+                    s_size = max(0,e0-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
+                    s_size = max(0,e0-np.dot(W_temp.T,aa_t)) /(d_alp)
+                else:
+                    s_size = 1
+                    
+                Delta_W = Delta_W + s_size * Delta_W_loc
+                W_temp = W_temp + s_size * Delta_W_loc
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        
+            #~~~~~~~~~~~~~~Upate Weights for Perceptron~~~~~~~~~~~~~~~~~
+            elif (mthd == 3):
+                #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
+                d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
+                if d_alp:
+                    Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
+                    
+                    Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
+                    #Delta_W_loc[-1] = .1
+                    Delta_W = Delta_W + Delta_W_loc
+                    W_temp = W_temp + 1*Delta_W_loc
+                    #W_temp = W_temp - W_temp.mean()
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            #~~~~~~~~~~~Upate Weights for Skecthed Perceptron~~~~~~~~~~~
+            elif (mthd == 4):
+                d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
+                if d_alp:
+                    s = prng.randint(0,beta,[len_v-1,1])
+                    s = (s>=beta-1).astype(int)
+                    
+                    Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
+                    Delta_W_loc = np.multiply(Delta_W_loc,s)
+                    Delta_W_loc = Delta_W_loc /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
+                    
+                    Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
+                    #Delta_W_loc[-1] = .1
+                    Delta_W = Delta_W + Delta_W_loc
+                    W_temp = W_temp + 1*Delta_W_loc
+                    #W_temp = W_temp - W_temp.mean()
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            #~~~~Upate Weights for Perceptron with Double Hinge Loss~~~~
+            elif (mthd == 6):
+                #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
+                d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
+                if d_alp:
+                    if np.dot(W_temp.T,aa_t)<e0:
+                        Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])#/(0.0001+pow(np.linalg.norm(aa_t),2))
+                    else:
+                        Delta_W_loc = -max(0,e1+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])#/(0.0001+pow(np.linalg.norm(aa_t),2))
+                    
+                    Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
+                    #Delta_W_loc[-1] = .1
+                    Delta_W = Delta_W + Delta_W_loc
+                    W_temp = W_temp + 1*Delta_W_loc
+                    #W_temp = W_temp - W_temp.mean()
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+            
             #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
-            if (mthd == 1) or (mthd == 3):
+            if (mthd == 1) or (mthd == 2) or (mthd == 5):
                 lambda_temp[jj] = lambda_temp[jj] + d_alp
                 if rand_sample_flag:
                     d_alp_vec[t_inds[jj]] = d_alp_vec[t_inds[jj]] + d_alp
@@ -4132,28 +4043,16 @@ def infer_w_block(W_in,aa,yy,gg,lambda_temp,rand_sample_flag,mthd,len_v,t_start,
         
         #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
             cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
-            if yy_t:
-                cst_y = cst_y + max(0,.1-np.dot(W_temp.T,aa_t))#hinge_loss_func(W_temp,-aa_t,0.1,1,0)
-                
-            #if ((ss+1)%50000) == 0:
-            #    print cst
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
-        
-        #---------------------------------------------------------------
-        #if mthd == 4:
-        #    Delta_W_loc = W_temp
-        #    #Delta_W_loc = soft_threshold(W_temp.ravel(),sparse_thr)
-        #else:
-        #    Delta_W_loc = W_temp
-        #---------------------------------------------------------------
-        
         
         #--------------In Compliance with Jaggi's Work------------------
         #Delta_W = np.dot(aa.T,d_alp_vec)
         #---------------------------------------------------------------
+        
+    #-------------------------------------------------------------------
     else:
         print 'no ones!'
+    
     w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
     
     memory_used = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - initial_memory

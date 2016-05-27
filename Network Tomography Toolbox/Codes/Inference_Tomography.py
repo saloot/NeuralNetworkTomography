@@ -44,7 +44,7 @@ if not T:
 #================================INITIALIZATIONS===============================
 
 #---------------------Initialize Simulation Variables--------------------------
-theta = .005                                               # The update threshold of the neurons in the network
+theta = 0                                               # The update threshold of the neurons in the network
 d_window = 2                                          # The time window the algorithm considers to account for pre-synaptic spikes
 sparse_thr0 = 0.0005                                    # The initial sparsity soft-threshold (not relevant in this version)
 tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
@@ -58,7 +58,7 @@ block_size = min(block_size,T)
 if len(neuron_range)>1:
     neuron_range = range(neuron_range[0],neuron_range[1])
 
-inferece_params = [alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size]
+inferece_params = [inference_method,alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size,class_sample_freq,rand_sample_flag]
 #..............................................................................
 
 #------------------------------------------------------------------------------
@@ -124,8 +124,14 @@ for n_ind in neuron_range:
     print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
     t_start = time.time()                           # starting time of the algorithm
     
-    W_inferred,used_ram = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,max_itr_optimization,sparse_thr0,alpha0,theta,n_ind,num_process)
+    
+    W_inferred,used_ram = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params)
+
     W_inferred = np.array(W_inferred)
+    if not theta:
+        W_inferred = np.reshape(W_inferred,[no_neurons+1,1])
+    else:
+        W_inferred = np.reshape(W_inferred,[no_neurons,1])
     
     #.........................Save the Belief Matrices.........................
     file_name_ending = 'I_' + str(inference_method) + '_S_' + str(sparsity_flag) + '_T_' + str(T)
