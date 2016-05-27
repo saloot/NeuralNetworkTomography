@@ -3380,7 +3380,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
 #------------------------------------------------------------------------------
 
 
-def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,tau_s):
+def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,tau_s,kernel_choice):
     
     
     #----------------------------Initializations---------------------------
@@ -3411,14 +3411,12 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     range_temp = range(t_start,t_end)
     
     for t in range_temp:
-                    
+
         #........Pre-compute Some of Matrices to Speed Up the Process......
         fire_t = read_spikes_lines(spikes_file,t,n)
         yy = -1
         if (n_ind in fire_t):                
             yy = 1
-            
-        
         #.................................................................
         
         #......................Read Incoming Spikes.......................
@@ -3436,7 +3434,10 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
         #.................................................................
         
         #.....................Store the Potentials........................
-        V[:,t_tot] = yy * v.ravel()#(np.delete(v,n_ind,0)).ravel()
+        if kernel_choice == 'D':
+            V[:,t_tot] = yy * v.ravel()#(np.delete(v,n_ind,0)).ravel()
+        else:
+            V[:,t_tot] = yy * (v-x).ravel()#(np.delete(v,n_ind,0)).ravel()
         #X[:,t_tot] = yy * (np.delete(x,n_ind,0)).ravel()
         Y[t_tot] = yy
         
@@ -3515,6 +3516,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     sparsity_flag = inferece_params[3]
     theta = inferece_params[4]
     max_itr_opt = inferece_params[5]
+    kernel_choice = inferece_params[11]
     #----------------------------------------------------------------------
     
     #----------------------------Initializations---------------------------    
@@ -3582,7 +3584,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     for t_start in range(0,block_size,t_step):
         t_end = min(block_size-1,t_start + t_step)
         
-        func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
+        func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,kernel_choice]
         int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         #pool.close()
         #pool.join()
@@ -3638,7 +3640,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             if t_end - t_start < 10:
                 continue
                         
-            func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
+            func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,kernel_choice]
             int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
             t_end_last_t = t_end
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3720,7 +3722,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     WW[n_ind+1:,0] = W_tot[n_ind:,0]
         
         
-    return WW[0:len_v].ravel(),max_memory
+    return WW[0:len_v].ravel(),max_memory,total_cost[0:ttau]
     
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------

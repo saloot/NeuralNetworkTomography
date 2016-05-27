@@ -51,6 +51,7 @@ tau_d = 20.0                                    # The decay time coefficient of 
 tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
 class_sample_freq = 0.25                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
 rand_sample_flag = 1                            # If 1, the spikes are sampled randomly on intervals
+kernel_choice = 'E'
 
 num_process = min(no_processes,multiprocessing.cpu_count())
 block_size = min(block_size,T)
@@ -60,7 +61,7 @@ block_size = min(block_size,T)
 if len(neuron_range)>1:
     neuron_range = range(neuron_range[0],neuron_range[1])
 
-inferece_params = [inference_method,alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size,class_sample_freq,rand_sample_flag]
+inferece_params = [inference_method,alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size,class_sample_freq,rand_sample_flag,kernel_choice]
 #..............................................................................
 
 #------------------------------------------------------------------------------
@@ -126,7 +127,7 @@ for n_ind in neuron_range:
     print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
     t_start = time.time()                           # starting time of the algorithm
     
-    W_inferred,used_ram = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params)
+    W_inferred,used_ram,cost = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params)
 
     W_inferred = np.array(W_inferred)
     if not theta:
@@ -137,11 +138,13 @@ for n_ind in neuron_range:
     #.........................Save the Belief Matrices.........................
     file_name_ending = 'I_' + str(inference_method) + '_S_' + str(sparsity_flag) + '_T_' + str(T)
     file_name_ending = file_name_ending + '_C_' + str(num_process) + '_B_' + str(block_size)
+    file_name_ending = file_name_ending + '_K_' + kernel_choice + '_H_' + str(class_sample_freq)
 
     if bin_size:
         file_name_ending = file_name_ending + '_bS_' + str(bin_size)
     
     file_name_ending = file_name_ending + '_ii_' + str(max_itr_optimization)
+    
     file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     tmp = W_inferred
     tmp = tmp/np.linalg.norm(tmp)
@@ -155,6 +158,12 @@ for n_ind in neuron_range:
     t_end = time.time()                           # The ending time of the algorithm    
     file_name =  file_name_base_results + "/Spent_Resources/CPU_RAM_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     tmp = [T,t_end-t_start,used_ram]
+    np.savetxt(file_name,tmp,delimiter='\t')
+    #..........................................................................
+    
+    #.......................Store Optimization Cost............................
+    file_name =  file_name_base_results + "/Spent_Resources/Opt_Cost_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
+    tmp = np.reshape(cost,[1,len(cost)])
     np.savetxt(file_name,tmp,delimiter='\t')
     #..........................................................................
     
