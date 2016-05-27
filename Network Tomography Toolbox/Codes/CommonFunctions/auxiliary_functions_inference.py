@@ -3391,7 +3391,6 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     print 'initial memory is %s' %str(initial_memory)
     block_size = t_end - t_start
     
-    
     if block_size < 0:
         return
     
@@ -3410,7 +3409,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     #--------------------------Process the Spikes--------------------------
     t_tot = 0
     range_temp = range(t_start,t_end)
-    print block_size
+    
     for t in range_temp:
                     
         #........Pre-compute Some of Matrices to Speed Up the Process......
@@ -3583,7 +3582,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     for t_start in range(0,block_size,t_step):
         t_end = min(block_size-1,t_start + t_step)
         
-        
+        aa,yy,tt_start,tt_end,flag_spikes,memory_used = calculate_integration_matrix(n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s)
+        pdb.set_trace()
         func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s]
         int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         #pool.close()
