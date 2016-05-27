@@ -703,6 +703,10 @@ def parse_commands_inf_algo(input_opts):
                 infer_itr_max = int(arg)                            # The flag that determines if sparsity should be observed during inference            
             elif opt == '-U': 
                 beta = int(arg)                                     # Specify the update probability paramter (p = 1/beta) in STOCHASTIC NEUINF
+            elif opt == '-J': 
+                class_sample_freq = float(arg)                      # Specify the probability of choosing samples from the firing instances
+            elif opt == '-L': 
+                kernel_choice = str(arg)                      # Specify the integration kernel
             elif opt == '-Z': 
                 alpha0 = float(arg)                                 # Specify the update learnining rate
             elif opt == '-b': 
@@ -772,6 +776,12 @@ def parse_commands_inf_algo(input_opts):
     
     if 'no_neurons' not in locals():
         no_neurons = 0
+        
+    if class_sample_freq not in locals():
+        class_sample_freq = 0
+        
+    if kernel_choice not in locals():
+        kernel_choice = 'E'
     #------------------------------------------------------------------------------
 
     #------------------Create the Necessary Directories if Necessary---------------
@@ -792,7 +802,7 @@ def parse_commands_inf_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return no_stimul_rounds,no_neurons,file_name_data,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,infer_itr_max,bin_size,no_processes,block_size,neuron_range
+    return no_stimul_rounds,no_neurons,file_name_data,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,infer_itr_max,bin_size,no_processes,block_size,neuron_range,class_sample_freq,kernel_choice
 #==============================================================================
 #==============================================================================
 
