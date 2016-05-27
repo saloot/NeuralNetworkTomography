@@ -27,7 +27,7 @@ os.system('clear')                                              # Clear the comm
 #==========================PARSE COMMAND LINE ARGUMENTS========================
 input_opts, args = getopt.getopt(sys.argv[1:],"hN:Q:T:S:D:A:F:R:L:M:B:X:Y:C:V:J:U:Z:b:p:j:o:")
 
-T,no_neurons,file_name_spikes,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,max_itr_optimization,bin_size,no_processes,block_size,neuron_range = parse_commands_inf_algo(input_opts)
+T,no_neurons,file_name_spikes,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,max_itr_optimization,bin_size,no_processes,block_size,neuron_range,class_sample_freq,kernel_choice = parse_commands_inf_algo(input_opts)
 #==============================================================================
 
 
@@ -39,6 +39,10 @@ if not no_neurons:
 if not T:
     print 'Sorry you should specify the duration of recorded samples in miliseconds'
     sys.exit()
+    
+if (kernel_choice!= 'E') and (kernel_choice!='D'):
+    print 'Unknown kernel!'
+    sys.exit()
 #==============================================================================
 
 #================================INITIALIZATIONS===============================
@@ -49,9 +53,9 @@ d_window = 2                                          # The time window the algo
 sparse_thr0 = 1.0                                    # The initial sparsity soft-threshold (not relevant in this version)
 tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
 tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
-class_sample_freq = 0.5                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
+#class_sample_freq = 0.2                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
 rand_sample_flag = 1                            # If 1, the spikes are sampled randomly on intervals
-kernel_choice = 'E'
+#kernel_choice = 'E'
 
 no_itr_over_dataset = max_itr_optimization
 max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
@@ -67,7 +71,7 @@ if len(neuron_range)>1:
 inferece_params = [inference_method,alpha0,sparse_thr0,sparsity_flag,theta,max_itr_optimization,d_window,beta,bin_size,class_sample_freq,rand_sample_flag,kernel_choice]
 #..............................................................................
 
-#python Inference_Tomography.py -M 1 -T 1400000 -S 200000 -o "0,1" -Q 16 -Y 1 -X 10 -A '../Data/Spikes/Moritz_Spike_Times.txt' -N 1000
+#python Inference_Tomography.py -M 1 -T 1400000 -S 200000 -o "0,1" -Q 16 -Y 1 -X 10 -A '../Data/Spikes/Moritz_Spike_Times.txt' -N 1000 -J 0.2 -L 'E'
 
 #------------------------------------------------------------------------------
 
