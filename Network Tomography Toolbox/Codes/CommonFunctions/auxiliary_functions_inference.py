@@ -3514,6 +3514,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     sparse_thr_0 = inferece_params[2]
     sparsity_flag = inferece_params[3]
     theta = inferece_params[4]
+    max_itr_opt = inferece_params[5]
     #----------------------------------------------------------------------
     
     #----------------------------Initializations---------------------------    
