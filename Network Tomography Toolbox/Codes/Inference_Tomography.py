@@ -94,6 +94,7 @@ except:
     
 ll = ll[-1]
 file_name_prefix = ll.split('.txt')
+file_name_prefix = file_name_prefix[0]
 #------------------------------------------------------------------------------
         
 #---------------------Preprocess the Spikes If Necessary-----------------------
