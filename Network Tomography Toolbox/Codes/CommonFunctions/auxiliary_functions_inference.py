@@ -704,7 +704,7 @@ def parse_commands_inf_algo(input_opts):
             elif opt == '-U': 
                 beta = int(arg)                                     # Specify the update probability paramter (p = 1/beta) in STOCHASTIC NEUINF
             elif opt == '-J': 
-                class_sample_freq = float(arg)                      # Specify the probability of choosing samples from the firing instances
+                class_sample_freq = int(arg)                      # Specify the probability of choosing samples from the firing instances
             elif opt == '-L': 
                 kernel_choice = str(arg)                      # Specify the integration kernel
             elif opt == '-Z': 
