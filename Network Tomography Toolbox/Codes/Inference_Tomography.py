@@ -57,8 +57,6 @@ tau_s = 2.0                                     # The rise time coefficient of t
 rand_sample_flag = 1                            # If 1, the spikes are sampled randomly on intervals
 #kernel_choice = 'E'
 
-pdb.set_trace()
-
 no_itr_over_dataset = max_itr_optimization
 max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
 
@@ -148,9 +146,9 @@ for n_ind in neuron_range:
         W_inferred = np.reshape(W_inferred,[no_neurons,1])
     
     #.........................Save the Belief Matrices.........................
-    file_name_ending = 'I_' + str(inference_method) + '_S_' + str(10*sparsity_flag*sparse_thr0) + '_T_' + str(T)
+    file_name_ending = 'I_' + str(inference_method) + '_S_' + str(sparsity_flag*sparse_thr0) + '_T_' + str(T)
     file_name_ending = file_name_ending + '_C_' + str(num_process) + '_B_' + str(block_size)
-    file_name_ending = file_name_ending + '_K_' + kernel_choice + '_H_' + str(10*class_sample_freq)
+    file_name_ending = file_name_ending + '_K_' + kernel_choice + '_H_' + str(class_sample_freq)
     #file_name_ending = file_name_ending + '_F_' + str(class_sample_freq) 
 
     if bin_size:
