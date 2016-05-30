@@ -57,6 +57,8 @@ tau_s = 2.0                                     # The rise time coefficient of t
 rand_sample_flag = 1                            # If 1, the spikes are sampled randomly on intervals
 #kernel_choice = 'E'
 
+pdb.set_trace()
+
 no_itr_over_dataset = max_itr_optimization
 max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
 
