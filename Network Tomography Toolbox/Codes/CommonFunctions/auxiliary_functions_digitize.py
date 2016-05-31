@@ -466,18 +466,16 @@ def parse_commands_ternary_algo(input_opts):
     plot_vars = ['T']
     if (input_opts):
         for opt, arg in input_opts:
-            if opt == '-Q':
-                frac_stimulated_neurons = float(arg)                # Fraction of neurons in the input layer that will be excited by a stimulus
-            elif opt == '-T':
+            if opt == '-T':
                 T_max = int(arg)                         # Number of times we inject stimulus to the network
-            elif opt == '-S':
-                ensemble_size = int(arg)                            # The number of random networks that will be generated                
+            elif opt == '-S': 
+                block_size = int(arg)                               # The size of the smaller blocks to divide the spike file into
+            elif opt == '-Q':
+                no_processes = int(arg)                             # The number of cpu cores to use for simulaitons
             elif opt == '-A':
-                file_name_base_data = str(arg)                      # The folder to store results
+                file_name_spikes = str(arg)                   # The file that contains the ground truth
             elif opt == '-F':
-                ensemble_count_init = int(arg)                      # The ensemble to start simulations from        
-            elif opt == '-R':
-                random_delay_flag = int(arg)                        # The ensemble to start simulations from            
+                file_name_ground_truth = str(arg)                         # The prefix for the file that contains the 
             elif opt == '-B':
                 ternary_mode = int(arg)                              # Defines the method to transform the graph to binary. "1" for threshold base and "2" for sparsity based                        
             elif opt == '-M':
@@ -493,7 +491,9 @@ def parse_commands_ternary_algo(input_opts):
             elif opt == '-C': 
                 pre_synaptic_method = str(arg)                      # The flag that determines if all previous-layers neurons count as  pre-synaptic (A/O)            
             elif opt == '-J': 
-                delay_known_flag = str(arg)                         # If 'Y', we assume that the delay is known during the inference algorithm
+                class_sample_freq = float(arg)                      # Specify the probability of choosing samples from the firing instances
+            elif opt == '-L': 
+                kernel_choice = str(arg)                      # Specify the integration kernel
             elif opt == '-U': 
                 beta = int(arg)                                     # Specify the update probability paramter (p = 1/beta) in STOCHASTIC NEUINF
             elif opt == '-Z': 
@@ -514,6 +514,11 @@ def parse_commands_ternary_algo(input_opts):
                 for i in temp:                        
                     T_range.append(int(i))
             elif opt == '-o': 
+                temp = (arg).split(',')                             # The range of neurons to identify the connections
+                neuron_range = []
+                for i in temp:                        
+                    neuron_range.append(int(i))
+            elif opt == '-R': 
                 temp = (arg).split(',')                             # The range of recorded durations (T_range)other var
                 Var_range = []
                 for i in temp:                        
@@ -549,9 +554,8 @@ def parse_commands_ternary_algo(input_opts):
         ensemble_size = ENSEMBLE_SIZE_DEFAULT
         print('ATTENTION: The default value of %s for ensemble_size is considered.\n' %str(ensemble_size))
     
-    if 'file_name_base_data' not in locals():
-        file_name_base_data = FILE_NAME_BASE_DATA_DEFAULT;
-        print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_data))
+    if 'file_name_ground_truth' not in locals():
+        file_name_ground_truth = ''
 
     if 'ensemble_count_init' not in locals():
         ensemble_count_init = ENSEMBLE_COUNT_INIT_DEFAULT;
@@ -622,6 +626,6 @@ def parse_commands_ternary_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return frac_stimulated_neurons,T_max,ensemble_size,file_name_base_data,ensemble_count_init,generate_data_mode,ternary_mode,file_name_base_results,inference_method,sparsity_flag,we_know_topology,beta,alpha0,infer_itr_max,T_range,plot_flags,Var_range,plot_vars,p_miss,jitt,bin_size
+    return file_name_ground_truth,file_name_spikes,ternary_mode,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,infer_itr_max,T_range,plot_flags,Var_range,plot_vars,bin_size
 
 

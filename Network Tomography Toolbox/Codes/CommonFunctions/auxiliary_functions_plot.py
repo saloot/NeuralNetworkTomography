@@ -30,13 +30,12 @@ except:
 #    l_out: the index of output layer (an integer)
 #    whiten_flag: if 1, the inferred graph will but whitened before calculating belief qualities
 #    zero_diagonals_flag: if 1, the diagonal elements (self feedback-loops) will be set to 0 before calculating belief qualities
-#    we_know_topology: if 'Y', the inference has been topology-aware
 
 # OUTPUT:
 #    mean_beliefs:    the avaerage beliefs for inhibitory, non-existent and excitatory connections
 #    max_min_beliefs: the maximum and minimul value of beliefs for inhibitory, non-existent and excitatory connections
 #------------------------------------------------------------------------------
-def calculate_belief_quality(W_inferred,W_orig,whiten_flag,zero_diagonals_flag,we_know_topology):
+def calculate_belief_quality(W_inferred,W_orig,whiten_flag,zero_diagonals_flag):
 
 
     from scipy.cluster.vq import whiten
@@ -316,7 +315,6 @@ def save_precision_recall_results(T_range,file_name_base_result,file_name_ending
 
 # INPUT:
 #    Network: the object that contains the informatin about the connectivity pattern of each layer
-#    we_know_topology: if 'Y', the inference has been topology-aware
 #    T_range: the range of recording times we plot our variables over
 
 # OUTPUT:
