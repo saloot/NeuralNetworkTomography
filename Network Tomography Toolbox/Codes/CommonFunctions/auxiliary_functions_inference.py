@@ -3813,6 +3813,9 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     beta = inferece_params[7]
     class_sample_freq = inferece_params[9]
     rand_sample_flag = inferece_params[10]
+    
+    print class_sample_freq
+    print rand_sample_flag
     #----------------------------------------------------------------------
     
     #------------------------Initializations------------------------
