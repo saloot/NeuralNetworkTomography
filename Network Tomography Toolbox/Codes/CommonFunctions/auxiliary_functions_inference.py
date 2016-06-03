@@ -3840,14 +3840,16 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         t_inds = np.array(range(t_init,t_end-t_start,t_gap))
         aa = aa[t_inds,:]
         yy = yy[t_inds]
-        TcT = len(yy)
         
-        if TcT == 0:
-            print 'error! empty activity file.'
-            return
     #---------------------------------------------------------------
     
     #--------------Initialize Simulation Parameters-----------------
+    TcT = len(yy)
+        
+    if TcT == 0:
+        print 'error! empty activity file.'
+        return
+    
     lamb = .1/float(TcT)
     max_internal_itr = 25*TcT
     
