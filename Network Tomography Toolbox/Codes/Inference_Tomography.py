@@ -99,6 +99,7 @@ file_name_prefix = file_name_prefix[0]
         
 #---------------------Preprocess the Spikes If Necessary-----------------------
 file_name_spikes2 = file_name_spikes[:-4] + '_file.txt'
+pdb.set_trace()
 if not os.path.isfile(file_name_spikes2):            
     out_spikes = np.genfromtxt(file_name_spikes, dtype=float, delimiter='\t')            
     spike_file = open(file_name_spikes2,'w')
@@ -127,6 +128,7 @@ if not os.path.isfile(file_name_spikes2):
                 pdb.set_trace()
     spike_file.write('\n'.join(fire_matx))
     spike_file.close()
+    
 #------------------------------------------------------------------------------
 
 #==============================================================================
