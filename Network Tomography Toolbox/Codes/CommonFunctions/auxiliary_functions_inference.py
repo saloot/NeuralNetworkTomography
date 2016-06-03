@@ -3693,23 +3693,26 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
         if itr_block_w >= len(block_start_inds):
             #Delta_W_loc = np.dot(A.T,lambda_tot[b_st:t_end_last_w+2])
-            itr_block_w = 0
+            
             
             if (itr_cost):
                 pdb.set_trace()
-            W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
-            W_tot = W_tot - W_tot.mean()
+                
+            
+            W_tot = W_tot + (beta_K/float(itr_block_w)) * np.reshape(Delta_W,[len_v-1,1])
+            W_tot[:-1] = W_tot[:-1] - W_tot[:-1].mean()
             W_tot = W_tot/np.linalg.norm(W_tot)
             if sparsity_flag:
                 sparse_thr = W_tot[:-1].std()/float(sparse_thr_0)
                 sparse_thr_pos = np.multiply(W_tot[:-1],(W_tot[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
-                sparse_thr_neg = np.multiply(W_tot[:-1],(W_tot[:-1]<0).astype(int)).std()/float(sparse_thr_0)
+                sparse_thr_neg = np.multiply(aa[:-1],(aa[:-1]<0).astype(int)).std()/float(sparse_thr_0)
                 W_tot[:-1] = soft_threshold_double(W_tot[:-1],sparse_thr_pos,sparse_thr_neg)
                 #W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr)
                 
                 
             print 'Processing %s blocks was finished, with cost being %s' %(str(no_blocks),str(total_cost[itr_cost]))
     
+            itr_block_w = 0
             itr_cost = itr_cost + 1
             Delta_W = 0*Delta_W#np.zeros([n,1])
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
