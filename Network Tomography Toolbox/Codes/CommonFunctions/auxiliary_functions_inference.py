@@ -3595,6 +3595,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     for t_start in range(0,block_size,t_step):
         t_end = min(block_size-1,t_start + t_step)
         
+        pdb.set_trace()
         func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,kernel_choice]
         int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         #pool.close()
