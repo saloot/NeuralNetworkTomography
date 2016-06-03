@@ -3852,7 +3852,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         return
     
     lamb = .1/float(TcT)
-    max_internal_itr = 25*TcT
+    max_internal_itr = 50*TcT
     
     cf = lamb*TcT
     ccf = 1/float(cf)
@@ -4076,7 +4076,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
-            #W_temp = np.multiply(W_temp,(W_temp>0).astype(int))
+            W_temp = np.multiply(W_temp,(W_temp>0).astype(int))
             cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
