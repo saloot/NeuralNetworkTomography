@@ -3993,12 +3993,12 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             #~~~~~~~~~~~~~Upate Weights for Sketched SDCD~~~~~~~~~~~~~~~
             elif (mthd == 2):
                 Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])# * yy_t#/float(cf)
-                #Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
+                Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
                 
-                s = prng.randint(0,beta,[len_v-1,1])
-                s = (s>=beta-1).astype(int)
-                Delta_W_loc = np.multiply(Delta_W_loc,s)
-                Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
+                #s = prng.randint(0,beta,[len_v-1,1])
+                #s = (s>=beta-1).astype(int)
+                #Delta_W_loc = np.multiply(Delta_W_loc,s)
+                #Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
                 
                 
                 if d_alp !=0:
