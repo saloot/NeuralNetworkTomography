@@ -101,7 +101,8 @@ file_name_prefix = file_name_prefix[0]
 file_name_spikes2 = file_name_spikes[:-4] + '_file.txt'
 pdb.set_trace()
 if not os.path.isfile(file_name_spikes2):            
-    out_spikes = np.genfromtxt(file_name_spikes, dtype=float, delimiter='\t')            
+    out_spikes = np.genfromtxt(file_name_spikes, dtype=float, delimiter='\t')
+    pdb.set_trace()
     spike_file = open(file_name_spikes2,'w')
     fire_matx = [''] * (T+1)
     LL = out_spikes.shape[0]
