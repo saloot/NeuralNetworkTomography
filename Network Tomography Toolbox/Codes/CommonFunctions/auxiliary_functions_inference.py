@@ -3564,6 +3564,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         lambda_tot = np.zeros([TT,1])
         dual_gap = np.zeros([len(range_tau),no_blocks])
         beta_K = 1
+    else:
+        beta_K = 1
         
     W_tot = np.zeros([len_v-1,1])
     Z_tot = np.zeros([len_v-1,1])    
@@ -3820,9 +3822,6 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     beta = inferece_params[7]
     class_sample_freq = inferece_params[9]
     rand_sample_flag = inferece_params[10]
-    
-    print class_sample_freq
-    print rand_sample_flag
     #----------------------------------------------------------------------
     
     #------------------------Initializations------------------------
