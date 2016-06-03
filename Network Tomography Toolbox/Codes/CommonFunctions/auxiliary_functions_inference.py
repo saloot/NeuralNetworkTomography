@@ -3638,8 +3638,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
                 
                 
-            #infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params)
-            #pdb.set_trace()
+            infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params)
+            pdb.set_trace()
                 
             func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
             int_results.append(pool.apply_async(infer_w_block, func_args) )
@@ -3852,7 +3852,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         return
     
     lamb = .1/float(TcT)
-    max_internal_itr = 50*TcT
+    max_internal_itr = 20*TcT
     
     cf = lamb*TcT
     ccf = 1/float(cf)
@@ -4089,7 +4089,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         print 'no ones!'
     
     w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
-    
+    pdb.set_trace()
     memory_used = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - initial_memory
     return Delta_W,d_alp_vec,t_start,t_end,cst,memory_used
 
