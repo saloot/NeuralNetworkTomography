@@ -102,7 +102,7 @@ file_name_spikes2 = file_name_spikes[:-4] + '_file.txt'
 pdb.set_trace()
 if not os.path.isfile(file_name_spikes2):            
     out_spikes = np.genfromtxt(file_name_spikes, dtype=float, delimiter='\t')
-    pdb.set_trace()
+    
     spike_file = open(file_name_spikes2,'w')
     fire_matx = [''] * (T+1)
     LL = out_spikes.shape[0]
@@ -127,6 +127,9 @@ if not os.path.isfile(file_name_spikes2):
                     fire_matx[tt] = temp
             except:
                 pdb.set_trace()
+        else:
+            print 'Ja?!'
+    pdb.set_trace()
     spike_file.write('\n'.join(fire_matx))
     spike_file.close()
     
