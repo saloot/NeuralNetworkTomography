@@ -3638,7 +3638,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
                 
                 
-            infer_w_block(W_tot,A,YA,lambda_temp,len_v,block_start_w,block_end_w,inferece_params)
+            infer_w_block(W_tot,A,YA,lambda_tot,len_v,block_start_w,block_end_w,inferece_params)
             pdb.set_trace()
                 
             func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
