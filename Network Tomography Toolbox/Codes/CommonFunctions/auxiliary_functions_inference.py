@@ -3683,7 +3683,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     
                 Delta_W = Delta_W + Delta_W_loc
                 
-                if (mthd == 1) or (mthd == 3):
+                if (mthd == 1) or (mthd == 2):
                     lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/float(no_blocks)) 
                     
                 #total_cost[itr_cost] = total_cost[itr_cost] + cst
