@@ -54,7 +54,7 @@ sparse_thr0 = 1.0                                    # The initial sparsity soft
 tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
 tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
 #class_sample_freq = 0.2                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
-rand_sample_flag = 1                            # If 1, the spikes are sampled randomly on intervals
+rand_sample_flag = 0                            # If 1, the spikes are sampled randomly on intervals
 #kernel_choice = 'E'
 
 no_itr_over_dataset = max_itr_optimization
