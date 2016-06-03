@@ -3715,7 +3715,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
                 
             print 'Processing %s blocks was finished, with cost being %s' %(str(no_blocks),str(total_cost[itr_cost]))
-    
+            W_tot = np.mutiply(W_tot,(W_tot>0).astype(int))
             itr_block_w = 0
             itr_cost = itr_cost + 1
             Delta_W = 0*Delta_W#np.zeros([n,1])
@@ -4066,7 +4066,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
-            W_temp = np.multiply(W_temp,(W_temp>0).astype(int))
+            #W_temp = np.multiply(W_temp,(W_temp>0).astype(int))
             cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
