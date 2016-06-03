@@ -3812,7 +3812,7 @@ def read_spikes_and_infer_w(W_in,gg,lambda_temp,rand_sample_flag,mthd,n,n_ind,ou
 #------------------------------------------------------------------------------
 def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     
-    
+    warnings.filterwarnings("error")
     #---------------------Read Inference Parameters------------------------
     mthd = inferece_params[0]
     alpha0 = inferece_params[1]
