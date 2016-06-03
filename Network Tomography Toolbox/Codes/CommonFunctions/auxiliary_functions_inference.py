@@ -3925,7 +3925,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             
             aa_t = aa[jj,:]#/float(cf)
             yy_t = yy[jj]#[0]
-            no_firings_per_neurons = no_firings_per_neurons + np.reshape(((yy_t*aa_t.ravel())>0.9).astype(int),[len_v-1,1])
+            no_firings_per_neurons = no_firings_per_neurons + np.reshape(((yy_t*aa_t.ravel())>0.96).astype(int),[len_v-1,1])
             aa_t = aa_t/(0.00001+np.linalg.norm(aa_t))
             if yy_t * sum(aa_t[:-1])<0:
                 print 'something bad is happening!'
@@ -3993,7 +3993,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             #~~~~~~~~~~~~~Upate Weights for Sketched SDCD~~~~~~~~~~~~~~~
             elif (mthd == 2):
                 Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])# * yy_t#/float(cf)
-                Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
+                Delta_W_loc = np.divide(Delta_W_loc,0.1*np.log(no_firings_per_neurons))
                 
                 #s = prng.randint(0,beta,[len_v-1,1])
                 #s = (s>=beta-1).astype(int)
