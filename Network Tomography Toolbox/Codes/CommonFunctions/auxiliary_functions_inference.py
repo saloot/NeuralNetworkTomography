@@ -2,6 +2,7 @@
 import math
 #from brian import *
 from scipy import sparse,linalg
+import warnings
 import pdb,os,sys
 import random
 import copy
@@ -4027,14 +4028,17 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             elif (mthd == 4):
                 d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
                 if d_alp:
-                    s = prng.randint(0,beta,[len_v-1,1])
-                    s = (s>=beta-1).astype(int)
-                    
-                    Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
-                    Delta_W_loc = np.multiply(Delta_W_loc,s)
-                    Delta_W_loc = Delta_W_loc /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
-                    print np.linalg.norm(aa_t)
-                    print np.linalg.norm(s)
+                    try:
+                        s = prng.randint(0,beta,[len_v-1,1])
+                        s = (s>=beta-1).astype(int)
+                        
+                        Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
+                        Delta_W_loc = np.multiply(Delta_W_loc,s)
+                        Delta_W_loc = Delta_W_loc /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
+                        print np.linalg.norm(aa_t)
+                        print np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s))
+                    except Warning:
+                        pdb.set_trace()
                     
                     Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
                     #Delta_W_loc[-1] = .1
