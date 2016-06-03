@@ -3700,7 +3700,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             #Delta_W_loc = np.dot(A.T,lambda_tot[b_st:t_end_last_w+2])
             
             
-            if (itr_cost):
+            if 1:#(itr_cost):
                 pdb.set_trace()
                 
             
