@@ -3929,7 +3929,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~~~~~~~~Update Variables for SDCS~~~~~~~~~~~~~~~~
-            if (mthd == 1):
+            if (mthd == 1) or (mthd == 2):
                 #c = 1 * yy_t
                 #gamma_t = 0.5* ( (1+yy_t) * no_ones + (1-yy_t) * no_zeros)
                 #ccf = gamma_t
