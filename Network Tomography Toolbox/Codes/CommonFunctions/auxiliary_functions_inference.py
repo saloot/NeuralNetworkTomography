@@ -3704,7 +3704,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
             
             W_tot = W_tot + (beta_K/float(itr_block_w)) * np.reshape(Delta_W,[len_v-1,1])
-            W_tot[:-1] = W_tot[:-1] - W_tot[:-1].mean()
+            #W_tot[:-1] = W_tot[:-1] - W_tot[:-1].mean()
             W_tot = W_tot/np.linalg.norm(W_tot)
             if sparsity_flag:
                 sparse_thr = W_tot[:-1].std()/float(sparse_thr_0)
@@ -3727,7 +3727,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         print 'Total memory after iteration %s is %s' %(str(ttau),str(max_memory))
             
         #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
-        if itr_cost >= 3:
+        if itr_cost >= 7:
             if abs(total_cost[itr_cost-1]-total_cost[itr_cost-2])/(0.001+total_cost[itr_cost-2]) < 0.00001:
                 break
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
