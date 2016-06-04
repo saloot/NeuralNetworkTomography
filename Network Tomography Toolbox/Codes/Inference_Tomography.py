@@ -50,7 +50,7 @@ if (kernel_choice!= 'E') and (kernel_choice!='D'):
 #---------------------Initialize Simulation Variables--------------------------
 theta = 0                                               # The update threshold of the neurons in the network
 d_window = 2                                          # The time window the algorithm considers to account for pre-synaptic spikes
-sparse_thr0 = 1.0                                    # The initial sparsity soft-threshold (not relevant in this version)
+sparse_thr0 = 1.5                                    # The initial sparsity soft-threshold (not relevant in this version)
 tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
 tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
 #class_sample_freq = 0.2                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
