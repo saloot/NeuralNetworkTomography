@@ -3622,30 +3622,31 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         block_start_w = block_start_inds[itr_block_w]
         block_end_w = min(block_start_w + block_size,TT-1)
         int_results = []
-        
-        block_start_w = block_start_inds[0]+20
-        block_end_w = TT-1
-        t_step_w = TT
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
         #~~~~~~~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~~~~~~
-        for t_start in range(block_start_w,block_end_w,t_step_w):
-            t_end_w = min(t_start + t_step_w,block_end_w-1)
-                
-            if t_end_w - t_start < 10:
-                continue
-            
-            if (mthd == 1) or (mthd == 2):
-                lambda_temp = lambda_tot[t_start:t_end_w]
-            else:
-                lambda_temp = []
-    
-            #infer_w_block(W_tot,A,YA,lambda_tot,len_v,block_start_w,block_end_w,inferece_params)
-            #pdb.set_trace()
-                
-            func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
+        if 1:
+            func_args = [W_tot,A,YA,lambda_tot,len_v,block_start_w,block_end_w,inferece_params]
             int_results.append(pool.apply_async(infer_w_block, func_args) )
-            t_end_last_w = t_end_w
+            t_end_last_w = block_end_w
+        else:
+            for t_start in range(block_start_w,block_end_w,t_step_w):
+                t_end_w = min(t_start + t_step_w,block_end_w-1)
+                    
+                if t_end_w - t_start < 10:
+                    continue
+                
+                if (mthd == 1) or (mthd == 2):
+                    lambda_temp = lambda_tot[t_start:t_end_w]
+                else:
+                    lambda_temp = []
+        
+                #infer_w_block(W_tot,A,YA,lambda_tot,len_v,block_start_w,block_end_w,inferece_params)
+                #pdb.set_trace()
+                    
+                func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
+                int_results.append(pool.apply_async(infer_w_block, func_args) )
+                t_end_last_w = t_end_w
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         #~~~~~~~~~~~~~~~~~Process the Spikes for the Next Block~~~~~~~~~~~~~~~~
