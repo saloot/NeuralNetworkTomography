@@ -3925,7 +3925,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             
             aa_t = aa[jj,:]#/float(cf)
             yy_t = yy[jj]#[0]
-            no_firings_per_neurons = no_firings_per_neurons + np.reshape(((yy_t*aa_t.ravel())>0.96).astype(int),[len_v-1,1])
+            no_firings_per_neurons = no_firings_per_neurons + np.reshape(((yy_t*aa_t.ravel())>0.9).astype(int),[len_v-1,1])
             aa_t = aa_t/(0.00001+np.linalg.norm(aa_t))
             if yy_t * sum(aa_t[:-1])<0:
                 print 'something bad is happening!'
