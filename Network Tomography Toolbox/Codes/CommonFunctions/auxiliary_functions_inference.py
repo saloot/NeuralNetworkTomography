@@ -4090,7 +4090,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         print 'no ones!'
     
     w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
-    pdb.set_trace()
+    #pdb.set_trace()
     memory_used = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - initial_memory
     return Delta_W,d_alp_vec,t_start,t_end,cst,memory_used
 
