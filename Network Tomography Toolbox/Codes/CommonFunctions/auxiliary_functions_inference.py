@@ -4011,7 +4011,8 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                     s_size = max(0,e0-np.dot(W_temp.T,aa_t)) /(d_alp)
                 else:
                     s_size = 1
-                    
+                
+                s_size = 1
                 Delta_W = Delta_W + s_size * Delta_W_loc
                 W_temp = W_temp + s_size * Delta_W_loc
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
