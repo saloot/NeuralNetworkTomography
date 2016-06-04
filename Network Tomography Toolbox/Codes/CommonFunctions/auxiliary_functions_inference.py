@@ -3626,7 +3626,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
         #~~~~~~~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~~~~~~
         if 1:
-            pdb.set_trace()
             func_args = [W_tot,A,YA,lambda_tot[block_start_w:block_end_w],len_v,block_start_w,block_end_w,inferece_params]
             int_results.append(pool.apply_async(infer_w_block, func_args) )
             t_end_last_w = block_end_w
