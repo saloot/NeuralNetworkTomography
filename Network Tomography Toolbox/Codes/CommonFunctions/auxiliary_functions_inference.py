@@ -3622,6 +3622,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         block_start_w = block_start_inds[itr_block_w]
         block_end_w = min(block_start_w + block_size,TT-1)
         int_results = []
+        
+        block_start_w = block_start_inds[0]
+        block_end_w = TT-1
+        t_step_w = TT
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
         #~~~~~~~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~~~~~~
@@ -3635,9 +3639,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 lambda_temp = lambda_tot[t_start:t_end_w]
             else:
                 lambda_temp = []
-
-                
-                
+    
             #infer_w_block(W_tot,A,YA,lambda_tot,len_v,block_start_w,block_end_w,inferece_params)
             #pdb.set_trace()
                 
@@ -3696,7 +3698,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     itr_block_w = itr_block_w + 1
                     print total_cost[itr_cost]
             
-        if itr_block_w >= len(block_start_inds):
+        if 1:#itr_block_w >= len(block_start_inds):
             #Delta_W_loc = np.dot(A.T,lambda_tot[b_st:t_end_last_w+2])
             
             
