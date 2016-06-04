@@ -3625,7 +3625,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
         #~~~~~~~~~~~~~~~~~Update theWeights Based on This Block~~~~~~~~~~~~~~~~
-        if 1:
+        if 0:
             func_args = [W_tot,A,YA,lambda_tot[block_start_w:block_end_w],len_v,block_start_w,block_end_w,inferece_params]
             int_results.append(pool.apply_async(infer_w_block, func_args) )
             t_end_last_w = block_end_w
@@ -3686,27 +3686,24 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 d_alp_vec = yy              # This is because of the choice of symbols for result.get()
                 cst = spike_flag            # This is because of the choice of symbols for result.get()
                     
-                    
                 Delta_W = Delta_W + Delta_W_loc
-                
-                
-                    
-                #total_cost[itr_cost] = total_cost[itr_cost] + cst
-                total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,W_tot)<0)
                     
                 if tt_end == t_end_last_w:
                     itr_block_w = itr_block_w + 1
+                    total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,W_tot)<0)
                     print total_cost[itr_cost]
                 
                 if (mthd == 1) or (mthd == 2):
                     lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/float(itr_block_w)) 
             
-        if 1:#itr_block_w >= len(block_start_inds):
+        if itr_block_w >= len(block_start_inds):
             #Delta_W_loc = np.dot(A.T,lambda_tot[b_st:t_end_last_w+2])
             
-            
             W_tot = W_tot + (beta_K/float(itr_block_w)) * np.reshape(Delta_W,[len_v-1,1])
-            #W_tot[:-1] = W_tot[:-1] - W_tot[:-1].mean()
+            
+            if (mthd == 3) or (mthd == 4) or (mthd == 6):
+                W_tot[:-1] = W_tot[:-1] - W_tot[:-1].mean()
+                
             W_tot = W_tot/np.linalg.norm(W_tot)
             if sparsity_flag:
                 sparse_thr = W_tot[:-1].std()/float(sparse_thr_0)
