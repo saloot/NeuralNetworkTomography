@@ -699,7 +699,7 @@ def parse_commands_inf_algo(input_opts):
             elif opt == '-M':
                 inference_method = int(arg)                         # The inference method
             elif opt == '-Y':
-                sparsity_flag = int(arg)                            # The flag that determines if sparsity should be observed during inference
+                sparsity_flag = float(arg)                            # The flag that determines if sparsity should be observed during inference
             elif opt == '-X':
                 infer_itr_max = int(arg)                            # The flag that determines if sparsity should be observed during inference            
             elif opt == '-U': 
