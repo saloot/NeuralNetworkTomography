@@ -50,7 +50,7 @@ if (kernel_choice!= 'E') and (kernel_choice!='D'):
 #---------------------Initialize Simulation Variables--------------------------
 theta = 0                                               # The update threshold of the neurons in the network
 d_window = 2                                          # The time window the algorithm considers to account for pre-synaptic spikes
-sparse_thr0 = 1.5                                    # The initial sparsity soft-threshold (not relevant in this version)
+sparse_thr0 = sparsity_flag                                    # The initial sparsity soft-threshold (not relevant in this version)
 tau_d = 20.0                                    # The decay time coefficient of the neural membrane (in the LIF model)
 tau_s = 2.0                                     # The rise time coefficient of the neural membrane (in the LIF model)
 #class_sample_freq = 0.2                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
@@ -147,7 +147,7 @@ for n_ind in neuron_range:
         W_inferred = np.reshape(W_inferred,[no_neurons,1])
     
     #.........................Save the Belief Matrices.........................
-    file_name_ending = 'I_' + str(inference_method) + '_S_' + str(float(sparsity_flag*sparse_thr0)) + '_T_' + str(int(T))
+    file_name_ending = 'I_' + str(inference_method) + '_S_' + str(float(sparsity_flag)) + '_T_' + str(int(T))
     file_name_ending = file_name_ending + '_C_' + str(int(num_process)) + '_B_' + str(int(block_size))
     file_name_ending = file_name_ending + '_K_' + kernel_choice + '_H_' + str(class_sample_freq)
     #file_name_ending = file_name_ending + '_F_' + str(class_sample_freq) 
@@ -170,7 +170,7 @@ for n_ind in neuron_range:
     t_end = time.time()                           # The ending time of the algorithm    
     file_name =  file_name_base_results + "/Spent_Resources/CPU_RAM_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     tmp = [T,t_end-t_start,used_ram]
-    np.savetxt(file_name,tmp,delimiter='\t')
+    np.savetxt(file_name,tmp.T,delimiter='\t')
     #..........................................................................
     
     #.......................Store Optimization Cost............................
