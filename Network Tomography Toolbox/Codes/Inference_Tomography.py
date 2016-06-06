@@ -170,7 +170,7 @@ for n_ind in neuron_range:
     t_end = time.time()                           # The ending time of the algorithm    
     file_name =  file_name_base_results + "/Spent_Resources/CPU_RAM_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     tmp = [T,t_end-t_start,used_ram]
-    np.savetxt(file_name,tmp.T,delimiter='\t')
+    np.savetxt(file_name,tmp,delimiter='\t')
     #..........................................................................
     
     #.......................Store Optimization Cost............................
