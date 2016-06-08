@@ -5,11 +5,11 @@ from time import time
 import matplotlib.pyplot as plt
 import copy
 from scipy.cluster.vq import whiten
-import matplotlib.mlab as mlab
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
-from scipy.cluster.vq import vq
-from scipy import signal
+#import matplotlib.mlab as mlab
+#from mpl_toolkits.mplot3d import Axes3D
+#from matplotlib import cm
+#from scipy.cluster.vq import vq
+#from scipy import signal
 try: 
     import plotly.plotly as pltly
     from plotly.graph_objs import *
@@ -18,11 +18,11 @@ except:
     print 'Plotly was not found. No problem though, life goes on ;)'
     plotly_import = 0
 
-from CommonFunctions.Neurons_and_Networks import *
-from CommonFunctions.default_values import *
-from CommonFunctions.auxiliary_functions_digitize import caculate_accuracy,parse_commands_ternary_algo
+#from CommonFunctions.Neurons_and_Networks import *
+#from CommonFunctions.default_values import *
+from CommonFunctions.auxiliary_functions_digitize import caculate_accuracy
 from CommonFunctions.auxiliary_functions import generate_file_name,combine_weight_matrix
-from CommonFunctions.auxiliary_functions_plot import save_plot_results,calculate_belief_quality,save_web_demo,initialize_plotting_variables,save_precision_recall_results,export_to_plotly
+from CommonFunctions.auxiliary_functions_plot import save_plot_results,calculate_belief_quality,save_web_demo,initialize_plotting_variables,save_precision_recall_results,export_to_plotly,parse_commands_plots
 
 
 os.system('clear')                                              # Clear the commandline window
@@ -31,11 +31,7 @@ os.system('clear')                                              # Clear the comm
 #==========================PARSE COMMAND LINE ARGUMENTS========================
 input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:J:K:U:Z:Y:O:o:f:V:p:j:b:")
 
-file_name_ground_truth,file_name_spikes,ternary_mode,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,no_itr_over_dataset,Var1_range,plot_flags,Var2_range,plot_vars,bin_size,no_processes,block_size,neuron_range,class_sample_freq,kernel_choice = parse_commands_ternary_algo(input_opts)
-
-sparse_thr0 = 1.0                                    # The initial sparsity soft-threshold (not relevant in this version)
-num_process = min(no_processes,multiprocessing.cpu_count())
-block_size = min(block_size,T)
+file_name_ground_truth,file_name_ending,file_name_base_results,ternary_mode,inference_method,Var1_range,Var2_range,plot_flags,plot_vars,neuron_range = parse_commands_plots(input_opts)
 
 if len(neuron_range)>1:
     neuron_range = range(neuron_range[0],neuron_range[1])
@@ -46,6 +42,10 @@ if not len(neuron_range):
     print 'Sorry you should specify a list of neurons to plot over'
     sys.exit()
 
+if not len(plot_vars):
+    print 'Sorry you should specify a variable to plot!'
+    sys.exit()
+    
 if not (len(Var1_range) or len(Var2_range)):
     print 'Sorry you should specify some variables to plot!'
     sys.exit()
@@ -54,7 +54,9 @@ else:
         Var1_range = Var2_range
         Var2_range = [-1]
         plot_vars.append('aaa')
-    
+    else:
+        Var2_range = [-1]
+        plot_vars.append('aaa')
 if not file_name_ground_truth:
     print 'Sorry you should specify a file that contains ground truth'
     sys.exit()
@@ -62,32 +64,16 @@ if not file_name_ground_truth:
 
 #================================INITIALIZATIONS===============================
 
-#----------------------------Read and Sort Spikes------------------------------
-if not file_name_spikes:
-    file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
-    file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/Moritz_Spike_Times.txt'
-    #file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
-    #file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/HC3_ec013_198_processed.txt'
-    
-try:
-    ll = file_name_spikes.split('/')
-except:
-    ll = file_name_spikes.split('/')
-    
-ll = ll[-1]
-file_name_prefix = ll.split('.txt')
-file_name_prefix = file_name_prefix[0]
-#------------------------------------------------------------------------------
-
-
-
-
 #------Calculate the Range to Assess the Effect of Recording Duration------
 #Var1_range = np.array([325000,625000,925000,1225000])
-plot_vars = ['T']
 
 Var1_range = np.array(Var1_range)
 Var2_range = np.array(Var2_range)
+
+if plot_vars[0] == 'T':
+    Var1_range = Var1_range.astype(int)
+elif plot_vars[1] == 'T':
+    Var2_range = Var2_range.astype(int)
 #--------------------------------------------------------------------------
 
 #--------------------------Initialize Other Variables--------------------------
@@ -95,9 +81,7 @@ whiten_flag = 1                     # If 1, the algorithm whitens the inferred g
 zero_diagonals_flag = 1             # If 1, the diagonal elements (self feedback-loops) will be set to 0 before calculating belief qualities
 adj_fact_exc = 0.75                 # This is the adjustment factor for clustering algorithms (between 0 and infinity).
 adj_fact_inh = 0.5                  # This is the adjustment factor for clustering algorithms (between 0 and infinity).
-parallel_flag = 1                   # If 1, the code reads the incoming connections to each neuron from a separate file
-sparsity_flag = 5
-get_from_hots = 1
+get_from_host = 1
 
 if inference_method == 1:
     algorithm_name = 'Stochastic NeuInf'
@@ -132,39 +116,21 @@ if plotly_flag:
 #file_name = '../Data/Graphs/Moritz_Actual_Connectivity.txt'
 #file_name = '../Results/Inferred_Graphs/W_Pll_Moritz_I_7_S_5_T_75000_0.txt'
 W = np.genfromtxt(file_name_ground_truth, dtype=None, delimiter='\t')
+W = W.T
 n,m = W.shape
 #------------------------------------------------------------------------------
 
 #---------------------Initialize Simulation Variables--------------------------
-if file_name_prefix == 'HC3':
-    file_name_W_deg = '../../Code to Parse Other Datasets/HC-3/W_deg.txt'
-    W_deg = np.genfromtxt(file_name_W_deg, dtype=None, delimiter='\t')
-    eta = 0.5
-    eta_max = 0.1
+mean_exc,mean_inh,mean_void,std_void_r,std_exc,std_inh,std_void,mean_void_r,Prec_exc,Prec_inh,Prec_void,Rec_exc,Rec_inh,Rec_void,std_Prec_exc,std_Prec_inh,std_Prec_void,std_Rec_exc,std_Rec_inh,std_Rec_void = initialize_plotting_variables(Var2_range,m)
     
-    neurons_type_sum = np.zeros([len(Var1_range),n])
-    neurons_type_max = np.zeros([len(Var1_range),n])
-    acc_neurons_type_sum = np.zeros([len(Var1_range),1])
-    acc_neurons_type_max = np.zeros([len(Var1_range),1])
-    false_neurons_type_sum = np.zeros([len(Var1_range),1])
-    false_neurons_type_max = np.zeros([len(Var1_range),1])
-    neurons_type_actual = np.zeros([n,1])
-    for ik in range(0,n):
-        if W_deg[ik,0] > W_deg[ik,1]:
-            neurons_type_actual[ik,0] = 1
-        elif W_deg[ik,0] < W_deg[ik,1]:
-            neurons_type_actual[ik,0] = -1
-else:
-    mean_exc,mean_inh,mean_void,std_void_r,std_exc,std_inh,std_void,mean_void_r,Prec_exc,Prec_inh,Prec_void,Rec_exc,Rec_inh,Rec_void,std_Prec_exc,std_Prec_inh,std_Prec_void,std_Rec_exc,std_Rec_inh,std_Rec_void = initialize_plotting_variables(Var2_range,m)
+mean_exc = np.zeros([len(Var1_range),len(Var2_range)])
+std_exc = np.zeros([len(Var1_range),len(Var2_range)])
     
-    mean_exc = np.zeros([len(Var1_range),len(Var2_range)])
-    std_exc = np.zeros([len(Var1_range),len(Var2_range)])
+mean_inh = np.zeros([len(Var1_range),len(Var2_range)])
+std_inh = np.zeros([len(Var1_range),len(Var2_range)])
     
-    mean_inh = np.zeros([len(Var1_range),len(Var2_range)])
-    std_inh = np.zeros([len(Var1_range),len(Var2_range)])
-    
-    mean_void = np.zeros([len(Var1_range),len(Var2_range)])
-    std_void = np.zeros([len(Var1_range),len(Var2_range)])
+mean_void = np.zeros([len(Var1_range),len(Var2_range)])
+std_void = np.zeros([len(Var1_range),len(Var2_range)])
 #------------------------------------------------------------------------------
 
 #----------------------Read Belief Values From the File------------------------
@@ -182,36 +148,39 @@ for v1 in Var1_range:
         for n_ind in neuron_range:
             
             #~~~~~~~~~~~~~~~~~~~~~~~~~Read the Inferred Weights~~~~~~~~~~~~~~~~~~~~~~~~
-            file_name_ending = 'I_' + str(inference_method) + '_S_' + str(sparsity_flag*sparse_thr0) + '_T_' + str(T)
-            file_name_ending = file_name_ending + '_C_' + str(num_process) + '_B_' + str(block_size)
-            file_name_ending = file_name_ending + '_K_' + kernel_choice + '_H_' + str(class_sample_freq)
-            #file_name_ending = file_name_ending + '_F_' + str(class_sample_freq) 
-        
-            if bin_size:
-                file_name_ending = file_name_ending + '_bS_' + str(bin_size)
+            temp = file_name_ending.split('_')
+            if ('I') in plot_vars:                
+                ind1 = temp.index('I')
+                temp[ind1+1] = str(inference_method)
             
-            file_name_ending = file_name_ending + '_ii_' + str(no_itr_over_dataset)
+            ind1 = temp.index(plot_vars[0])
+            temp[ind1+1] = str(eval(plot_vars[0]))
+            try:
+                ind1 = temp.index(plot_vars[1])
+                temp[ind1+1] = str(eval(plot_vars[1]))
+            except:
+                ttemp = 1
             
-            file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
-
-            file_name = file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
+            file_name_ending_mod = '_'.join(temp)
+            
+            file_name = "Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_ending_mod,str(n_ind))
             
             if get_from_host:
-                cmd = 'scp salavati@castor.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/Inferred_Graphs/W_Pll_%s_%s_%s.txt" ../Results/Inferred_Graphs/' %(file_name_prefix,file_name_ending,str(ik))                
+                cmd = 'scp salavati@castor.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/%s" %s' %(file_name,file_name_base_results+'/Inferred_Graphs/')
                 os.system(cmd)
-                #
+                
+                
+            file_name = file_name_base_results + '/' + file_name
             try:
                 W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
                 #W_read = W_read/np.abs(W_read[:-1]).max()
-                W_inferred[0:len(W_read),n_ind] = W_read
+                W_inferred[0:min(m,len(W_read)),n_ind] = W_read[0:min(m,len(W_read))]
                 print "Got the file!"
             except:
                 found_file_tot = 0
-                pdb.set_trace()
                 print 'Sorry I can not find the corresponding inference file for the netwrok'
+                pdb.set_trace()
                 
-        
-        
         for i in range (0,n):
             for j in range(0,m):
                 if np.isnan(W_inferred[i,j]):
@@ -223,7 +192,7 @@ for v1 in Var1_range:
 
         
         #~~~~~~~~~~~~~~~~~~~~~~~~Claculate Belief Quality~~~~~~~~~~~~~~~~~~~~~~
-        means_vector,std_vector = calculate_belief_quality(W_inferred,W,whiten_flag,zero_diagonals_flag)
+        means_vector,std_vector = calculate_belief_quality(W_inferred,W,whiten_flag,zero_diagonals_flag,neuron_range)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
         #~~~~~~~~~~~~~~~~~~~~~~~~Update the Variables~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -243,7 +212,7 @@ for v1 in Var1_range:
 #------------------------------------------------------------------------------
 
 #--------------------------Read Precision and Recall---------------------------
-if 0:
+if 'P' in plot_flags:
 #?? fix this part: /W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     file_name_ending2 = file_name_ending + "_%s" %str(adj_fact_exc)
     file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
@@ -273,6 +242,55 @@ if 0:
         Rec_void = (recall_tot[:,3]).T
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
+#------------------------------------ROC Curve--------------------------------
+if 'R' in plot_vars:
+    m,n = W.shape
+    W_inferred = np.zeros([n,m])
+    
+    
+
+    for n_ind in neuron_range:
+                
+        #~~~~~~~~~~~~~~~~~~~~Read the Inferred Weights~~~~~~~~~~~~~~~~~~~~
+        file_name = file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_ending,str(n_ind))
+        W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+        
+        W_inferred[0:min(m,len(W_read)),n_ind] = W_read[0:min(m,len(W_read))]
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    #W_inferred = W_inferred/np.abs(W_inferred).max()
+    val_range = range(0,500)
+    val_range = np.array(val_range)
+    val_range = val_range/500.0
+    
+    true_pos = np.zeros([len(val_range)])
+    false_pos = np.zeros([len(val_range)])
+    
+    for n_ind in neuron_range:
+        itr_V1 = 0
+        no_edges = 0
+        no_edges_0 = 0
+        
+        W_temp = (W_inferred[:,n_ind])/np.abs(W_inferred[:,n_ind]).max()
+        W_temp = W_temp[:-1]    
+        for thresh in val_range:
+            
+            
+            #~~~~~~~~Calcualte True Positive and False Positive Rates~~~~~~~~~
+            W_ter = (W_temp>=thresh).astype(int)
+            
+            true_pos[itr_V1] = true_pos[itr_V1] + (sum(np.multiply((W_ter>0).astype(int),(W[:,n_ind]>0).astype(int))))/float(sum(W[:,n_ind]>0))
+            false_pos[itr_V1] = false_pos[itr_V1] + sum(np.multiply((W_ter>0).astype(int),(W[:,n_ind]==0).astype(int)))/float(sum(W[:,n_ind]==0))
+            no_edges = no_edges + sum(W[:,n_ind]>0)
+            no_edges_0 = no_edges_0 + sum(W[:,n_ind]==0)
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            itr_V1 = itr_V1 + 1
+        
+    true_pos = true_pos/float(len(neuron_range))
+    false_pos = false_pos/float(len(neuron_range))
+            
+    plt.plot(false_pos,true_pos);plt.plot(val_range,val_range,'r');plt.show()
 #------------------------------------------------------------------------------
 
 #==============================================================================
@@ -389,7 +407,7 @@ if 'P' in plot_flags:
 #------------------------------------------------------------------------------
             
 #-----------------------Plot the Scatter of Beliefs----------------------------
-if found_file_tot:    
+if 0:    
     if whiten_flag:
         n,m = W_inferred.shape
         W_inferred = W_inferred + np.random.rand(n,m)/100000
@@ -408,7 +426,7 @@ if found_file_tot:
 #-------------------------------Save the Results-------------------------------
 if 'B' in plot_flags:
     save_plot_results(Var1_range,mean_exc,std_exc,mean_inh,std_inh,mean_void,
-                          std_void,mean_void_r,std_void_r,file_name_base_results,
+                          std_void,file_name_base_results,
                           file_name_ending,0,W_inferred,W)
         
 if 'P' in plot_flags:
@@ -429,20 +447,21 @@ if 0:
 #==============================================================================
 
 
-file_name_ending =  file_name_prefix + '_I_' + str(inference_method) + '_S_' + str(sparsity_flag) + '_T_' + str(T)
-if p_miss:
-    file_name_ending = file_name_ending + '_pM_' + str(p_miss)
-if jitt:
-    file_name_ending = file_name_ending + '_jt_' + str(jitt)
-if bin_size:
-    file_name_ending = file_name_ending + '_bS_' + str(bin_size)
-            
-file_name =  file_name_base_results + "/Plot_Results/Neuron_Type_%s.txt" %(file_name_ending)
-temp = np.hstack([acc_neurons_type_sum,false_neurons_type_sum,acc_neurons_type_max,false_neurons_type_max])
-T_range = np.reshape(T_range,[len(T_range),1])
-T_range = np.divide(T_range,1000).astype(int)
-temp = np.hstack([T_range,temp])
-np.savetxt(file_name,temp,'%2.5f',delimiter='\t')
+if 0:
+    file_name_ending =  file_name_prefix + '_I_' + str(inference_method) + '_S_' + str(sparsity_flag) + '_T_' + str(T)
+    if p_miss:
+        file_name_ending = file_name_ending + '_pM_' + str(p_miss)
+    if jitt:
+        file_name_ending = file_name_ending + '_jt_' + str(jitt)
+    if bin_size:
+        file_name_ending = file_name_ending + '_bS_' + str(bin_size)
+                
+    file_name =  file_name_base_results + "/Plot_Results/Neuron_Type_%s.txt" %(file_name_ending)
+    temp = np.hstack([acc_neurons_type_sum,false_neurons_type_sum,acc_neurons_type_max,false_neurons_type_max])
+    T_range = np.reshape(T_range,[len(T_range),1])
+    T_range = np.divide(T_range,1000).astype(int)
+    temp = np.hstack([T_range,temp])
+    np.savetxt(file_name,temp,'%2.5f',delimiter='\t')
 
 
 # np.savetxt('./Y_predict_t_inds.txt',Y_predict,'%2.5f',delimiter='\t')
