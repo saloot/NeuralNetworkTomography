@@ -131,6 +131,10 @@ std_inh = np.zeros([len(Var1_range),len(Var2_range)])
     
 mean_void = np.zeros([len(Var1_range),len(Var2_range)])
 std_void = np.zeros([len(Var1_range),len(Var2_range)])
+
+if 'S' in plot_flags:
+    spent_cpu = np.zeros([len(Var1_range),len(Var2_range)])
+    spent_ram = np.zeros([len(Var1_range),len(Var2_range)])
 #------------------------------------------------------------------------------
 
 #----------------------Read Belief Values From the File------------------------
@@ -165,16 +169,29 @@ for v1 in Var1_range:
             
             file_name = "Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_ending_mod,str(n_ind))
             
+            if 'S' in plot_flags:
+                file_name_resources = "Spent_Resources/CPU_RAM_%s_%s.txt" %(file_name_ending_mod,str(n_ind))
+            
             if get_from_host:
                 cmd = 'scp salavati@castor.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/%s" %s' %(file_name,file_name_base_results+'/Inferred_Graphs/')
                 os.system(cmd)
                 
+                if 'S' in plot_flags:
+                    cmd = 'scp salavati@castor.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/%s" %s' %(file_name_resources,file_name_base_results+'/Spent_Resources/')
+                    os.system(cmd)
                 
             file_name = file_name_base_results + '/' + file_name
+            file_name_resources = file_name_base_results + '/' + file_name_resources
             try:
                 W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
                 #W_read = W_read/np.abs(W_read[:-1]).max()
                 W_inferred[0:min(m,len(W_read)),n_ind] = W_read[0:min(m,len(W_read))]
+                
+                if 'S' in plot_flags:
+                    temp = np.genfromtxt(file_name_resources, dtype=None, delimiter='\t')
+                    spent_cpu[itr_V1,itr_V2] = spent_cpu[itr_V1,itr_V2] + temp[1]
+                    spent_ram[itr_V1,itr_V2] = spent_cpu[itr_V1,itr_V2] + temp[2]
+                    
                 print "Got the file!"
             except:
                 found_file_tot = 0
@@ -211,13 +228,76 @@ for v1 in Var1_range:
     itr_V1 = itr_V1 + 1
 #------------------------------------------------------------------------------
 
+#---------------------------Plot Spent Resources-------------------------------
+if 'S' in plot_flags:
+    spent_cpu = spent_cpu/len(neuron_range)
+    spent_ram = spent_ram/len(neuron_range)
+    
+    if (len(Var2_range) == 1) or (len(Var1_range) == 1):
+        fig, axs = plt.subplots(nrows=1, ncols=1)
+        ax = axs
+        
+        if (len(Var2_range) == 1):
+            ax.plot(Var1_range,spent_cpu[:,0],color='r',label='Excitatory')        
+            ax.errorbar(Var1_range,mean_inh[:,0],std_inh[:,0],color='b',label='Inhibitory');
+            ax.errorbar(Var1_range,mean_void[:,0],std_void[:,0],color='g',label='Void');
+            
+            plt.xlabel(plot_vars[0], fontsize=16)
+        else:
+            ax.errorbar(Var2_range,mean_exc[0,:],std_exc[0,:],color='r',label='Excitatory')        
+            ax.errorbar(Var2_range,mean_inh[0,:],std_inh[0,:],color='b',label='Inhibitory');
+            ax.errorbar(Var2_range,mean_void[0,:],std_void[0,:],color='g',label='Void');
+            
+            plt.xlabel(plot_vars[1], fontsize=16)    
+        
+        
+        plt.ylabel('Average of beliefs', fontsize=16)
+        plt.legend(loc='lower left')
+        ax.set_title('Average belief qualities for algorithm %s' %(algorithm_name))
+        plt.show();
+    else:
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1, projection='3d')
+        X, Y = np.meshgrid(Var2_range, Var1_range)
+        
+        surf = ax.plot_surface(X,Y, mean_exc,cmap=cm.coolwarm, rstride=1, cstride=1, linewidth=0, antialiased=False)
+        ax.set_xlabel(r'$\epsilon$', fontsize=16)
+        ax.set_ylabel(r'$\sigma$', fontsize=16)    
+        ax.set_zlabel('Mean value of excitatory links', fontsize=16)
+    
+        plt.show()
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1, projection='3d')
+        surf = ax.plot_surface(X, Y, mean_void,cmap=cm.coolwarm, rstride=1, cstride=1, linewidth=0, antialiased=False)
+        ax.set_xlabel(r'$\epsilon$', fontsize=16)
+        ax.set_ylabel(r'$\sigma$', fontsize=16)    
+        ax.set_zlabel('Mean value of void links', fontsize=16)
+        
+        plt.show()
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1, projection='3d')
+        surf = ax.plot_surface(X, Y, mean_inh,cmap=cm.coolwarm, rstride=1, cstride=1, linewidth=0, antialiased=False)
+        ax.set_xlabel(r'$\epsilon$', fontsize=16)
+        ax.set_ylabel(r'$\sigma$', fontsize=16)    
+        ax.set_zlabel('Mean value of inhibitory links', fontsize=16)
+        
+        #ax.set_title('Average belief qualities for algorithm %s' %(algorithm_name))
+        
+        plt.show()
+#------------------------------------------------------------------------------
+
 #--------------------------Read Precision and Recall---------------------------
 if 'P' in plot_flags:
-#?? fix this part: /W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
-    file_name_ending2 = file_name_ending + "_%s" %str(adj_fact_exc)
+
+    file_name_ending2 = file_name_ending_ter + "_%s" %str(adj_fact_exc)
     file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
     file_name_ending2 = file_name_ending2 + "_B_%s" %str(ternary_mode)
-    file_name_ending2 = file_name_ending2.replace('_T_%s'%str(T),'')
+    file_name_ending2 = file_name_ending2 + "_n_%s_%s" %(str(neuron_range[0]),str(neuron_range[-1]))
+    
+    file_name_ending2 = file_name_ending2.replace("_%s_%s" %(plot_vars[0],str(v1)),'')
+    file_name_ending2 = file_name_ending2.replace("_%s_%s" %(plot_vars[1],str(v2)),'')
     
     try:
         file_name = file_name_base_results + "/Accuracies/Prec_%s.txt" %file_name_ending2            
@@ -426,12 +506,22 @@ if 0:
 #-------------------------------Save the Results-------------------------------
 if 'B' in plot_flags:
     save_plot_results(Var1_range,mean_exc,std_exc,mean_inh,std_inh,mean_void,
-                          std_void,file_name_base_results,
+                          std_void,0,0,file_name_base_results,
                           file_name_ending,0,W_inferred,W)
         
+        
 if 'P' in plot_flags:
-    file_name_ending = file_name_ending.replace('_T_%s'%str(T),'')        
-    save_precision_recall_results(Var1_range,file_name_base_results,file_name_ending,adj_fact_exc,adj_fact_inh,ternary_mode,
+    
+    #???? Fix these
+
+    std_Prec_exc = 0*Prec_exc
+    std_Prec_inh = 0*Prec_inh
+    std_Prec_void = 0*Prec_void
+    std_Rec_exc = 0*Rec_exc
+    std_Rec_inh = 0*Rec_inh
+    std_Rec_void = 0*Rec_void
+    
+    save_precision_recall_results(Var1_range,file_name_base_results,file_name_ending2,adj_fact_exc,adj_fact_inh,ternary_mode,
                                       Prec_exc,std_Prec_exc,Prec_inh,std_Prec_inh,Prec_void,
                                       std_Prec_void,Rec_exc,std_Rec_exc,Rec_inh,std_Rec_inh,Rec_void,std_Rec_void)
 

@@ -7,7 +7,8 @@ import pdb
 import random
 import copy
 import numpy.ma as ma
-
+import os,sys
+from default_values import *
 try: 
     import plotly.plotly as pltly
     from plotly.graph_objs import *    
@@ -35,10 +36,16 @@ except:
 #    mean_beliefs:    the avaerage beliefs for inhibitory, non-existent and excitatory connections
 #    max_min_beliefs: the maximum and minimul value of beliefs for inhibitory, non-existent and excitatory connections
 #------------------------------------------------------------------------------
-def calculate_belief_quality(W_inferred,W_orig,whiten_flag,zero_diagonals_flag):
+def calculate_belief_quality(W_inferred,W_orig,whiten_flag,zero_diagonals_flag,neuron_range):
 
 
     from scipy.cluster.vq import whiten
+    mean_exc = np.zeros(len([neuron_range]))
+    mean_inh = np.zeros(len([neuron_range]))
+    mean_void = np.zeros(len([neuron_range]))
+    std_exc = np.zeros(len([neuron_range]))
+    std_inh = np.zeros(len([neuron_range]))
+    std_void = np.zeros(len([neuron_range]))
     
     #----------------------------Polish the Weights----------------------------
     W_inferred_our_tot = copy.deepcopy(W_inferred)
@@ -53,18 +60,23 @@ def calculate_belief_quality(W_inferred,W_orig,whiten_flag,zero_diagonals_flag):
         W_inferred_our_tot = whiten(W_inferred_our_tot)
     #--------------------------------------------------------------------------
     
-    #--------Calculate Beleif Qualities for Topology Unaware Algorithm---------        
-    W_e = np.ma.masked_array(W_inferred_our_tot,mask= (W_orig<=0).astype(int))        
-    mean_exc = W_e.mean(axis = 0).data
-    std_exc = W_e.std(axis = 0).data
-                
-    W_i = np.ma.masked_array(W_inferred_our_tot,mask= (W_orig>=0).astype(int))
-    mean_inh = W_i.mean(axis = 0).data
-    std_inh = W_i.std(axis = 0).data
-                
-    W_v = np.ma.masked_array(W_inferred_our_tot,mask= (W_orig!=0).astype(int))
-    mean_void = W_v.mean(axis = 0).data
-    std_void = W_v.std(axis = 0).data
+    #--------Calculate Beleif Qualities for Topology Unaware Algorithm---------
+    itr_n = 0
+    for n_ind in neuron_range:
+        W_e = np.ma.masked_array(W_inferred_our_tot[:,n_ind],mask= (W_orig[:,n_ind]<=0).astype(int))
+        #pdb.set_trace()
+        mean_exc[itr_n] = W_e.mean(axis=0)#.data
+        std_exc[itr_n] = W_e.std()#.data
+        
+        W_i = np.ma.masked_array(W_inferred_our_tot[:,n_ind],mask= (W_orig[:,n_ind]>=0).astype(int))
+        mean_inh[itr_n] = W_i.mean()#.data
+        std_inh[itr_n] = W_i.std()#.data
+                    
+        W_v = np.ma.masked_array(W_inferred_our_tot[:,n_ind],mask= (W_orig[:,n_ind]!=0).astype(int))
+        mean_void[itr_n] = W_v.mean()#.data
+        std_void[itr_n] = W_v.std()#.data
+        
+        itr_n = itr_n + 1
     #--------------------------------------------------------------------------
     
     means_vector = [mean_exc,mean_inh,mean_void]
@@ -104,17 +116,23 @@ def calculate_belief_quality(W_inferred,W_orig,whiten_flag,zero_diagonals_flag):
 def save_plot_results(T_range,mean_exc,std_exc,mean_inh,std_inh,mean_void,std_void,mean_void_r,std_void_r,file_name_base_results,file_name_ending,in_recurrent_flag,W_inferred_our_tot,W):
     
     #------------------------------Store Belief Qualities------------------------------------
-    temp = np.vstack([np.array(T_range).T,(mean_exc).T,std_exc.T])
-    file_name = file_name_base_results + "/Plot_Results/Mean_var_exc_%s.txt" %file_name_ending
-    np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
+    if 1:
+        temp = np.vstack([np.array(T_range).T,(mean_exc).T,std_exc.T,(mean_inh).T,(std_inh).T,(mean_void).T,(std_void).T])
+        file_name = file_name_base_results + "/Plot_Results/Mean_var_All_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
     
-    temp = np.vstack([np.array(T_range).T,(mean_inh).T,std_inh.T])
-    file_name = file_name_base_results + "/Plot_Results/Mean_var_inh_%s.txt" %file_name_ending
-    np.savetxt(file_name,temp.T,'%f',delimiter='\t',newline='\n')
-    
-    temp = np.vstack([np.array(T_range).T,(mean_void).T,std_void.T])
-    file_name = file_name_base_results + "/Plot_Results/Mean_var_void_%s.txt" %file_name_ending
-    np.savetxt(file_name,temp.T,'%f',delimiter='\t',newline='\n')
+    else:
+        temp = np.vstack([np.array(T_range).T,(mean_exc).T,std_exc.T])
+        file_name = file_name_base_results + "/Plot_Results/Mean_var_exc_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
+        
+        temp = np.vstack([np.array(T_range).T,(mean_inh).T,std_inh.T])
+        file_name = file_name_base_results + "/Plot_Results/Mean_var_inh_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%f',delimiter='\t',newline='\n')
+        
+        temp = np.vstack([np.array(T_range).T,(mean_void).T,std_void.T])
+        file_name = file_name_base_results + "/Plot_Results/Mean_var_void_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%f',delimiter='\t',newline='\n')
     
     temp = np.vstack([np.array(T_range).T,(mean_exc-mean_void).T,(std_exc+std_void).T])
     file_name = file_name_base_results + "/Plot_Results/Gap_mean_exc_void_%s.txt" %file_name_ending
@@ -261,43 +279,48 @@ def save_precision_recall_results(T_range,file_name_base_result,file_name_ending
     file_name_base_plot = file_name_base_result + '/Plot_Results'
     #---------------------------------------------------------------------------
         
-    #--------------------------Store Precision and Recall-----------------------    
-    pdb.set_trace()
-    temp = np.vstack([T_range,Prec_exc,std_Prec_exc])
-    file_name = file_name_base_plot + "/Prec_exc_%s.txt" %file_name_ending
-    np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
-
-    temp = np.vstack([T_range,Prec_inh,std_Prec_inh])
-    file_name = file_name_base_plot + "/Prec_inh_%s.txt" %file_name_ending
-    np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+    #--------------------------Store Precision and Recall-----------------------
+    if 1:
+        temp = np.vstack([T_range,Prec_exc,Prec_inh,Prec_void,Rec_exc,Rec_inh,Rec_void])
+        #pdb.set_trace()
+        file_name = file_name_base_plot + "/Prec_Reca_All_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+    else:
+        temp = np.vstack([T_range,Prec_exc,std_Prec_exc])
+        file_name = file_name_base_plot + "/Prec_exc_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
     
-    temp = np.vstack([T_range,Prec_void,std_Prec_void])
-    file_name = file_name_base_plot + "/Prec_void_%s.txt" %file_name_ending
-    np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
-
-    temp = np.vstack([T_range,Rec_exc,std_Rec_exc])
-    file_name = file_name_base_plot + "/Reca_exc_%s.txt" %file_name_ending
-    np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
-
-    temp = np.vstack([T_range,Rec_inh,std_Rec_inh])
-    file_name = file_name_base_plot + "/Reca_inh_%s.txt" %file_name_ending
-    np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
-
-    temp = np.vstack([T_range,Rec_void,std_Rec_void])
-    file_name = file_name_base_plot + "/Reca_void_%s.txt" %file_name_ending
-    np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
-
-    temp = np.vstack([Rec_exc,Prec_exc,std_Rec_exc,std_Prec_exc])
-    file_name = file_name_base_plot + "/Reca_vs_Prec_exc_%s.txt" %file_name_ending
-    np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
-
-    temp = np.vstack([Rec_inh,Prec_inh,std_Rec_inh,std_Prec_inh])
-    file_name = file_name_base_plot + "/Reca_vs_Prec_inh_%s.txt" %file_name_ending
-    np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
+        temp = np.vstack([T_range,Prec_inh,std_Prec_inh])
+        file_name = file_name_base_plot + "/Prec_inh_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+        
+        temp = np.vstack([T_range,Prec_void,std_Prec_void])
+        file_name = file_name_base_plot + "/Prec_void_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
     
-    temp = np.vstack([Rec_void,Prec_void,std_Rec_void,std_Prec_void])
-    file_name = file_name_base_plot + "/Reca_vs_Prec_void_%s.txt" %file_name_ending
-    np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
+        temp = np.vstack([T_range,Rec_exc,std_Rec_exc])
+        file_name = file_name_base_plot + "/Reca_exc_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+    
+        temp = np.vstack([T_range,Rec_inh,std_Rec_inh])
+        file_name = file_name_base_plot + "/Reca_inh_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+    
+        temp = np.vstack([T_range,Rec_void,std_Rec_void])
+        file_name = file_name_base_plot + "/Reca_void_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%4.3f',delimiter='\t',newline='\n')
+    
+        temp = np.vstack([Rec_exc,Prec_exc,std_Rec_exc,std_Prec_exc])
+        file_name = file_name_base_plot + "/Reca_vs_Prec_exc_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
+    
+        temp = np.vstack([Rec_inh,Prec_inh,std_Rec_inh,std_Prec_inh])
+        file_name = file_name_base_plot + "/Reca_vs_Prec_inh_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
+        
+        temp = np.vstack([Rec_void,Prec_void,std_Rec_void,std_Prec_void])
+        file_name = file_name_base_plot + "/Reca_vs_Prec_void_%s.txt" %file_name_ending
+        np.savetxt(file_name,temp.T,'%1.3f',delimiter='\t',newline='\n')
     #---------------------------------------------------------------------------
     
         
@@ -501,3 +524,105 @@ def export_to_plotly(x_array,y_array,no_plots,plot_legends,plot_type,plot_colors
     
     
     return plot_url
+
+#==============================================================================
+#============================parse_commands_plots==============================
+#==============================================================================
+#-------------------------------Descriptions-----------------------------------
+# This function runs the neural networks and generatethe required neural
+# activity. The Brian simulator is used for this part.
+
+# INPUTS:
+#    input_opts: the options provided by the user
+#------------------------------------------------------------------------------
+
+def parse_commands_plots(input_opts):
+    Var1_range = []
+    Var2_range = []
+    plot_vars = []
+    neuron_range = []
+    if (input_opts):
+        for opt, arg in input_opts:
+            if opt == '-A':
+                file_name_ending = str(arg)                   # The file endings
+            elif opt == '-F':
+                file_name_ground_truth = str(arg)             # The address of the ground truth
+            elif opt == '-S':
+                file_name_base_results = str(arg)             # The folder to store the results
+            elif opt == '-B':
+                ternary_mode = int(arg)                              # Defines the method to transform the graph to binary. "1" for threshold base and "2" for sparsity based                        
+            elif opt == '-M':
+                inference_method = int(arg)                         # The inference method
+            elif opt == '-f':                                       # Specify what to plot                
+                temp = (arg).split(',')                             
+                plot_flags = []
+                for i in temp:                        
+                    plot_flags.append(i)
+            elif opt == '-V':                                       # Specify what varaible to plot                
+                temp = (arg).split(',')                             
+                plot_vars = []
+                for i in temp:                        
+                    plot_vars.append(i)                
+            elif opt == '-O': 
+                temp = (arg).split(',')                             # The range of first plotting var
+                Var1_range = []
+                for i in temp:                        
+                    Var1_range.append(int(i))
+            elif opt == '-o': 
+                temp = (arg).split(',')                             # The range of neurons to identify the connections
+                for i in temp:                        
+                    neuron_range.append(int(i))
+            elif opt == '-R': 
+                temp = (arg).split(',')                             # The range of recorded durations (T_range)other var
+                Var2_range = []
+                for i in temp:                        
+                    Var2_range.append(int(i))
+            
+            elif opt == '-h':
+                print(help_message)
+                sys.exit()
+    else:
+        print('Code will be executed using default values')
+        
+        
+    #------------Set the Default Values if Variables are not Defines---------------
+    if 'file_name_ground_truth' not in locals():
+        file_name_ground_truth = ''
+
+    if 'ternary_mode' not in locals():
+        ternary_mode = TERNARY_MODE_DEFAULT;
+        print('ATTENTION: The default value of %s for ternary_mode is considered.\n' %str(ternary_mode))
+
+    if 'file_name_base_results' not in locals():
+        file_name_base_results = FILE_NAME_BASE_RESULT_DEFAULT;
+        print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_results))
+
+    if 'inference_method' not in locals():
+        inference_method = INFERENCE_METHOD_DEFAULT;
+        print('ATTENTION: The default value of %s for inference_method is considered.\n' %str(inference_method))
+
+    if 'plot_flags' not in locals():
+        plot_flags = ['B','P','W','S']
+        print('ATTENTION: The default value of %s for plot_flags is considered.\n' %str(plot_flags))
+    
+    if 'plot_vars' not in locals():
+        plot_vars = ['T']
+        print('ATTENTION: The default value of %s for plot_vars is considered.\n' %str(plot_vars))
+    
+    if 'file_name_ending' not in locals():
+        file_name_ending = ''
+    #------------------------------------------------------------------------------
+    
+    #------------------Create the Necessary Directories if Necessary---------------
+    if not os.path.isdir(file_name_base_results):
+        os.makedirs(file_name_base_results)    
+    if not os.path.isdir(file_name_base_results+'/Inferred_Graphs'):
+        temp = file_name_base_results + '/Inferred_Graphs'
+        os.makedirs(temp)
+    if not os.path.isdir(file_name_base_results+'/Plot_Results'):    
+        temp = file_name_base_results + '/Plot_Results'
+        os.makedirs(temp)    
+    #------------------------------------------------------------------------------
+
+    return file_name_ground_truth,file_name_ending,file_name_base_results,ternary_mode,inference_method,Var1_range,Var2_range,plot_flags,plot_vars,neuron_range
+    

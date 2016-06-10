@@ -96,8 +96,10 @@ def determine_binary_threshold(method,params,obs):
         centroids = np.zeros([no_clusters])
         res = 0
         temp= np.zeros([no_clusters])
+        
         while success_itr<10:
             temp,res = kmeans(obs,no_clusters,iter=30)
+            temp.sort()
             success_itr = success_itr + 1
             if len(temp) == len(centroids):
                 centroids = centroids + temp
@@ -111,8 +113,8 @@ def determine_binary_threshold(method,params,obs):
         
         ss = np.sort(centroids)
         val_inh = ss[0]
-        val_exc = ss[2]
         thr_zero = ss[1]
+        val_exc = ss[2]
         #......................................................................
         
         #.......................Adjust the Thresholds..........................
@@ -120,28 +122,33 @@ def determine_binary_threshold(method,params,obs):
         max_val = np.max(obs)# - (thr_zero-np.max(obs))+0.01
         
         #thr_inh = val_inh + (adj_factor_inh -1)*(val_inh - min_val)
-        thr_inh = val_inh + (adj_factor_inh -1)*(val_inh - thr_zero)
+        #thr_inh = val_inh + (adj_factor_inh -1)*(val_inh - thr_zero)
+        if val_inh < 0:
+            thr_inh = val_inh * abs(adj_factor_inh)
+        elif abs(adj_factor_inh)>0:
+            thr_inh = val_inh / float(abs(adj_factor_inh))
+            
         thr_inh = np.min([thr_inh,thr_zero-.01])
         thr_inh = np.max([thr_inh,min_val+.01])
         
         #thr_exc = val_exc + (adj_factor_exc -1)*(val_exc - max_val)
-        thr_exc = val_exc + (adj_factor_exc -1)*(val_exc - thr_zero)
+        #thr_exc = val_exc + (adj_factor_exc -1)*(val_exc - thr_zero)
+        if val_exc > 0:
+            thr_exc = val_exc * abs(adj_factor_exc)
+        elif abs(adj_factor_exc)>0:
+            thr_exc = val_exc / float(abs(adj_factor_exc))
+            
         thr_exc = np.max([thr_exc,thr_zero+.01])
         thr_exc = np.min([thr_exc,max_val-.01])
-            
-        if no_clusters > 3:
-            thr_exc2 = thr_zero_r - (0.51)*(thr_zero_r-thr_exc)
-            thr_exc2 = np.max([thr_exc2,thr_exc+.01])
-            thr_exc = thr_exc2
-        else:
-            thr_exc2 = None
-            
         #......................................................................
         
         
     #--------------------------------------------------------------------------
     
-    
+    #thr_inh = val_inh
+    #thr_zero = ss[1]
+    #thr_exc = val_exc
+        
     return [thr_inh,thr_zero,thr_exc]
 #==============================================================================
 #==============================================================================        
@@ -200,10 +207,11 @@ def beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag):
     
     #---------Determine the Type of Network: FeedForward or Recurrent----------
     W_binary = np.zeros([n,m])
-    if ( (ternary_mode == 4) or (ternary_mode == 5)):
+    if ( (ternary_mode == 4) or (ternary_mode == 5) or (ternary_mode == 2)):
         centroids = np.zeros([m,3])
     W_binary.fill(0)
     #--------------------------------------------------------------------------
+    
     
     
     #----------------Binary Mode 2: Sorting-Based Thresholding-----------------
@@ -216,29 +224,33 @@ def beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag):
         
         #............Identify Incoming Connections for Each Neuron.............
         for i in range(0,m):
+                ww = W_inferred[:,i]
+                ww = ww - ww.mean()
+                ww = whiten(ww)
                 
-                thr_inh,thr_zero,thr_exc = determine_binary_threshold('p',params,W_inferred[:,i])
-                W_binary[:,i] = (W_inferred[:,i] > thr_exc).astype(int) - (W_inferred[:,i] < thr_inh).astype(int)
+                thr_inh,thr_zero,thr_exc = determine_binary_threshold('p',params,ww)
+                W_binary[:,i] = (ww > thr_exc).astype(int) - (ww < thr_inh).astype(int)
+                centroids[i,:] = [thr_inh,thr_zero,thr_exc]
         #......................................................................
         
     #--------------------------------------------------------------------------
     
-    
-    #--------------Binary Mode 4: Clustering-Based Thresholding----------------
-    elif (ternary_mode == 4):
+    #--------------Binary Mode Backup 4: Clustering-Based Thresholding----------------
+    elif (ternary_mode == 44):
 
         #......................Determine the Thresholds........................
         fixed_inds = params[2]
         for i in range(0,m):            
             W_inferred_temp = copy.deepcopy(W_inferred[:,i])
             
-            #~~~~~~~~~~Take Out All Fixed Entries from Classification~~~~~~~~~~
-            mask_inds = fixed_inds
-            mask_inds[i,i] = 1
-            temp = np.ma.masked_array(W_inferred_temp,mask= mask_inds[:,i])
-            masked_inds = np.nonzero((temp.mask).astype(int))
-            masked_vals = temp.compressed()
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if 0:
+                #~~~~~~~~~~Take Out All Fixed Entries from Classification~~~~~~~~~~
+                mask_inds = fixed_inds
+                mask_inds[i,i] = 1
+                temp = np.ma.masked_array(W_inferred_temp,mask= mask_inds[:,i])
+                masked_inds = np.nonzero((temp.mask).astype(int))
+                masked_vals = temp.compressed()
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~---~~~~~~~~~~~~~Classify Incoming Edges~~~~~~~~~~~~~~~~~~~~~~~~~~
             params = params[0:2]
@@ -246,6 +258,7 @@ def beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag):
             if (sum(abs(masked_vals))):
                 thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,masked_vals)
                 centroids[i,:] = [thr_inh,thr_zero,thr_exc]
+                
                 if sum(abs(centroids[i,:])):
                     W_temp,res = vq(masked_vals,np.array([thr_inh,thr_zero,thr_exc]))
                     W_temp = W_temp - 1
@@ -264,6 +277,36 @@ def beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag):
                     mask_counter = mask_counter + 1
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
+        #......................................................................
+        
+    #--------------------------------------------------------------------------
+    
+    #--------------Binary Mode 4: Clustering-Based Thresholding----------------
+    elif (ternary_mode == 4):
+
+        #......................Determine the Thresholds........................
+        
+        for i in range(0,m):            
+            W_inferred_temp = copy.deepcopy(W_inferred[:,i])
+            
+            #~---~~~~~~~~~~~~~Classify Incoming Edges~~~~~~~~~~~~~~~~~~~~~~~~~~
+            params = params[0:2]
+            params.append(3)                        # "3" refers to the number of classes, namely, excitatory, inhibitory and non-existent
+            
+            W_inferred_temp = W_inferred_temp - W_inferred_temp.mean()
+            W_inferred_temp = whiten(W_inferred_temp)
+            thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,W_inferred_temp.ravel())
+            centroids[i,:] = [thr_inh,thr_zero,thr_exc]
+            
+            if sum(abs(centroids[i,:])):
+                W_temp,res = vq(W_inferred_temp.ravel(),np.array([thr_inh,thr_zero,thr_exc]))
+                W_temp = W_temp - 1
+            else:
+                W_temp = np.zeros(masked_vals.shape)
+                
+            W_binary[:,i] = W_temp
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        
         #......................................................................
         
     #--------------------------------------------------------------------------
@@ -461,58 +504,19 @@ def caculate_accuracy(W_binary,W):
 #------------------------------------------------------------------------------
 
 def parse_commands_ternary_algo(input_opts):
-    T_range = []
     Var_range = []
-    plot_vars = ['T']
     if (input_opts):
         for opt, arg in input_opts:
-            if opt == '-T':
-                T_max = int(arg)                         # Number of times we inject stimulus to the network
-            elif opt == '-S': 
-                block_size = int(arg)                               # The size of the smaller blocks to divide the spike file into
-            elif opt == '-Q':
-                no_processes = int(arg)                             # The number of cpu cores to use for simulaitons
-            elif opt == '-A':
-                file_name_spikes = str(arg)                   # The file that contains the ground truth
+            if opt == '-A':
+                file_name_ending = str(arg)                   # The file endings
             elif opt == '-F':
-                file_name_ground_truth = str(arg)                         # The prefix for the file that contains the 
+                file_name_ground_truth = str(arg)                         # The address of the ground truth
+            elif opt == '-S':
+                file_name_base_results = str(arg)                         # The folder to store the results
             elif opt == '-B':
                 ternary_mode = int(arg)                              # Defines the method to transform the graph to binary. "1" for threshold base and "2" for sparsity based                        
-            elif opt == '-M':
-                inference_method = int(arg)                         # The inference method
-            elif opt == '-G':
-                generate_data_mode = str(arg)                       # The data generating method            
-            elif opt == '-Y':
-                sparsity_flag = int(arg)                            # The flag that determines if sparsity should be observed during inference
-            elif opt == '-X':
-                infer_itr_max = int(arg)                            # The flag that determines if sparsity should be observed during inference            
-            elif opt == '-K':
-                we_know_topology = str(arg)                         # The flag that determines if we know the location of neurons (with respect to each other) (Y/N)
-            elif opt == '-C': 
-                pre_synaptic_method = str(arg)                      # The flag that determines if all previous-layers neurons count as  pre-synaptic (A/O)            
-            elif opt == '-J': 
-                class_sample_freq = float(arg)                      # Specify the probability of choosing samples from the firing instances
-            elif opt == '-L': 
-                kernel_choice = str(arg)                      # Specify the integration kernel
-            elif opt == '-U': 
-                beta = int(arg)                                     # Specify the update probability paramter (p = 1/beta) in STOCHASTIC NEUINF
-            elif opt == '-Z': 
-                alpha0 = float(arg)                                 # Specify the update learnining rate
-            elif opt == '-f':                                       # Specify what to plot                
-                temp = (arg).split(',')                             # The number of excitatory neurons in each layer
-                plot_flags = []
-                for i in temp:                        
-                    plot_flags.append(i)
             elif opt == '-V':                                       # Specify what to plot                
-                temp = (arg).split(',')                             # The number of excitatory neurons in each layer
-                plot_vars = []
-                for i in temp:                        
-                    plot_vars.append(i)                
-            elif opt == '-O': 
-                temp = (arg).split(',')                             # The range of first plotting var
-                T_range = []
-                for i in temp:                        
-                    T_range.append(int(i))
+                var_name = str(arg)                                 # The name of the variables which we are iterating to evaluate the performance of the algorithm
             elif opt == '-o': 
                 temp = (arg).split(',')                             # The range of neurons to identify the connections
                 neuron_range = []
@@ -523,13 +527,6 @@ def parse_commands_ternary_algo(input_opts):
                 Var_range = []
                 for i in temp:                        
                     Var_range.append(int(i))
-            elif opt == '-p': 
-                p_miss = float(arg)                                 # The probability of missing a spike
-            elif opt == '-j': 
-                jitt = int(arg)                                     # Maximum  amount of randomjitter added to spike times (in miliseconds)
-            elif opt == '-b': 
-                bin_size = int(arg)                                 # If it is nonzero, the spikes will be placed within bins of size "bin_size"
-                
             elif opt == '-h':
                 print(help_message)
                 sys.exit()
@@ -538,28 +535,8 @@ def parse_commands_ternary_algo(input_opts):
         
         
     #------------Set the Default Values if Variables are not Defines---------------
-    if 'frac_stimulated_neurons' not in locals():
-        frac_stimulated_neurons = FRAC_STIMULATED_NEURONS_DEFAULT
-        print('ATTENTION: The default value of %s for frac_stimulated_neurons is considered.\n' %str(frac_stimulated_neurons))
-
-    if 'infer_itr_max' not in locals():
-        infer_itr_max = INFERENCE_ITR_MAX_DEFAULT
-        print('ATTENTION: The default value of %s for infer_itr_max is considered.\n' %str(infer_itr_max))
-        
-    if 'T_max' not in locals():        
-        T_max = T_MAX_DEFAULT
-        print('ATTENTION: The default value of %s for T_max is considered.\n' %str(T_max))
-
-    if 'ensemble_size' not in locals():            
-        ensemble_size = ENSEMBLE_SIZE_DEFAULT
-        print('ATTENTION: The default value of %s for ensemble_size is considered.\n' %str(ensemble_size))
-    
     if 'file_name_ground_truth' not in locals():
         file_name_ground_truth = ''
-
-    if 'ensemble_count_init' not in locals():
-        ensemble_count_init = ENSEMBLE_COUNT_INIT_DEFAULT;
-        print('ATTENTION: The default value of %s for ensemble_count_init is considered.\n' %str(ensemble_count_init))
     
     if 'ternary_mode' not in locals():
         ternary_mode = TERNARY_MODE_DEFAULT;
@@ -569,49 +546,10 @@ def parse_commands_ternary_algo(input_opts):
         file_name_base_results = FILE_NAME_BASE_RESULT_DEFAULT;
         print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_results))
 
-    if 'inference_method' not in locals():
-        inference_method = INFERENCE_METHOD_DEFAULT;
-        print('ATTENTION: The default value of %s for inference_method is considered.\n' %str(inference_method))
-
-    if 'sparsity_flag' not in locals():
-        sparsity_flag = SPARSITY_FLAG_DEFAULT;
-        print('ATTENTION: The default value of %s for sparsity_flag is considered.\n' %str(sparsity_flag))
+    if 'var_name' not in locals():
+        var_name = 'T'
+        print('ATTENTION: The default value of %s for plot_vars is considered.\n' %str(var_name))
     
-    if 'generate_data_mode' not in locals():
-        generate_data_mode = GENERATE_DATA_MODE_DEFAULT
-        print('ATTENTION: The default value of %s for generate_data_mode is considered.\n' %str(generate_data_mode))
-
-    if 'we_know_topology' not in locals():
-        we_know_topology = WE_KNOW_TOPOLOGY_DEFAULT
-        print('ATTENTION: The default value of %s for we_know_topology is considered.\n' %str(we_know_topology))
-    
-    if 'beta' not in locals():
-        beta = BETA_DEFAULT
-        print('ATTENTION: The default value of %s for beta is considered.\n' %str(beta))
-    
-    if 'alpha0' not in locals():
-        alpha0 = ALPHA0_DEFAULT
-        print('ATTENTION: The default value of %s for alpha0 is considered.\n' %str(alpha0))
-        
-    if 'plot_flags' not in locals():
-        plot_flags = ['B','P','W','S']
-        print('ATTENTION: The default value of %s for plot_flags is considered.\n' %str(plot_flags))
-    
-    if 'plot_vars' not in locals():
-        plot_vars = ['T']
-        print('ATTENTION: The default value of %s for plot_vars is considered.\n' %str(plot_vars))
-    
-    if 'p_miss' not in locals():
-        p_miss = P_MISS_DEFAULT
-        print('ATTENTION: The default value of %s for p_miss is considered.\n' %str(p_miss))
-    
-    if 'jitt' not in locals():
-        jitt = JITTER_DEFAULT
-        print('ATTENTION: The default value of %s for jitt is considered.\n' %str(jitt))
-        
-    if 'bin_size' not in locals():
-        bin_size = BIN_SIZE_DEFAULT
-        print('ATTENTION: The default value of %s for bin_size is considered.\n' %str(bin_size))
     #------------------------------------------------------------------------------
     
     #------------------Create the Necessary Directories if Necessary---------------
@@ -626,6 +564,6 @@ def parse_commands_ternary_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return file_name_ground_truth,file_name_spikes,ternary_mode,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,infer_itr_max,T_range,plot_flags,Var_range,plot_vars,bin_size
+    return file_name_ending,file_name_base_results,ternary_mode,Var_range,var_name,neuron_range,file_name_ground_truth
 
 
