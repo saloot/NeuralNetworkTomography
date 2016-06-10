@@ -3644,7 +3644,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 #infer_w_block(W_tot,A,YA,lambda_tot[block_start_w:block_end_w],len_v,block_start_w,block_end_w,inferece_params)
                 #pdb.set_trace()
                     
-                func_args = [Delta_W,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
+                if not (itr_cost%2):
+                    func_args = [Delta_W,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
+                else:
+                    func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
                 t_end_last_w = t_end_w
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
