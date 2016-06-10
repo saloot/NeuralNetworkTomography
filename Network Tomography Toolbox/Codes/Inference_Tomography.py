@@ -133,6 +133,12 @@ if not os.path.isfile(file_name_spikes2):
 #==============================================================================
 
 #============================INFER THE CONNECTIONS=============================
+if not theta:
+    W_infer = np.zeros([no_neurons+1,len(neuron_range)])
+else:
+    W_infer = np.zeros([no_neurons,len(neuron_range)])
+
+itr_n = 0
 for n_ind in neuron_range:
     
     print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
@@ -161,6 +167,9 @@ for n_ind in neuron_range:
     tmp = W_inferred
     tmp = tmp/np.linalg.norm(tmp)
     tmp = tmp/(np.abs(tmp).max())
+    
+    W_infer[:,itr_n] = tmp.ravel()
+    
     np.savetxt(file_name,tmp.T,'%2.6f',delimiter='\t')
     #..........................................................................
     
@@ -180,3 +189,8 @@ for n_ind in neuron_range:
     #..........................................................................
     
 #==============================================================================
+
+file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_n_%s_%s.txt" %(file_name_prefix,file_name_ending,str(neuron_range[0]),str(neuron_range[-1]))
+np.savetxt(file_name,W_infer,'%2.6f',delimiter='\t')  
+
+    
