@@ -3644,7 +3644,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 #infer_w_block(W_tot,A,YA,lambda_tot[block_start_w:block_end_w],len_v,block_start_w,block_end_w,inferece_params)
                 #pdb.set_trace()
                     
-                if not (itr_cost%2):
+                if 1:#not (itr_cost%2):
                     func_args = [Delta_W,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
                 else:
                     func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
@@ -3717,7 +3717,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
                 
             print 'Processing %s blocks was finished, with cost being %s' %(str(no_blocks),str(total_cost[itr_cost]))
-            #W_tot = np.multiply(W_tot,(W_tot>0).astype(int))
+            W_tot = np.multiply(W_tot,(W_tot>0).astype(int))
             itr_block_w = 0
             itr_cost = itr_cost + 1
             Delta_W = 0*Delta_W#np.zeros([n,1])
