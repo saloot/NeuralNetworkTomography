@@ -188,6 +188,7 @@ for n_ind in neuron_range:
     np.savetxt(file_name,tmp,delimiter='\t')
     #..........................................................................
     
+    itr_n = itr_n + 1
 #==============================================================================
 
 file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_n_%s_%s.txt" %(file_name_prefix,file_name_ending,str(neuron_range[0]),str(neuron_range[-1]))
