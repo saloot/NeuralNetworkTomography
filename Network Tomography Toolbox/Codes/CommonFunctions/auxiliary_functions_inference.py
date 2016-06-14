@@ -3717,7 +3717,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
                 
             print 'Processing %s blocks was finished, with cost being %s' %(str(no_blocks),str(total_cost[itr_cost]))
-            #W_tot = np.multiply(W_tot,(W_tot>0).astype(int))
+            W_tot = np.multiply(W_tot,(W_tot>0).astype(int))
             itr_block_w = 0
             itr_cost = itr_cost + 1
             Delta_W = 0*Delta_W#np.zeros([n,1])
