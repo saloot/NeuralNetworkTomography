@@ -3829,6 +3829,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     #------------------------Initializations------------------------
     initial_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     from auxiliary_functions import soft_threshold
+    from auxiliary_functions import soft_threshold_double
     from numpy.random import RandomState
     prng = RandomState(int(time.time()))
     #if not np.linalg.norm(W_in):
@@ -3853,7 +3854,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         return
     
     lamb = .1/float(TcT)
-    max_internal_itr = 2*TcT
+    max_internal_itr = 5*TcT
     
     cf = lamb*TcT
     ccf = 1/float(cf)
@@ -4096,6 +4097,11 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         
         #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
             #W_temp = np.multiply(W_temp,(W_temp>0).astype(int))
+            if sparsity_flag:                
+                sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
+                sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
+                W_temp[:-1] = soft_threshold_double(W_temp[:-1],sparse_thr_pos,sparse_thr_neg)
+                
             cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
