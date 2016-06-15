@@ -4067,7 +4067,23 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                     Delta_W = Delta_W + Delta_W_loc
                     W_temp = W_temp + 1*Delta_W_loc
                     #W_temp = W_temp - W_temp.mean()
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            
+            #~~~Upate Weights for Perceptron with Cross Entropy Loss~~~~
+            elif (mthd == 7):
+                x_t = np.reshape(aa_t,[len_v-1,1]) * yy_t
+                yyy_t = (yy_t + 1)*0.5
+                z_t = 1/(1.0 + math.exp(-(np.dot(W_temp.T,x_t))))
+                Delta_W_loc = x_t * (z_t - yyy_t)
+                
+                Delta_W_loc = -1*Delta_W_loc - 0.001*W_temp
+                Delta_W_loc = 0.005*Delta_W_loc
+                #Delta_W_loc[-1] = .1
+                Delta_W = Delta_W + Delta_W_loc
+                W_temp = W_temp + 1*Delta_W_loc
+                #W_temp = W_temp - W_temp.mean()
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
             if (mthd == 1) or (mthd == 2) or (mthd == 5):
