@@ -3854,7 +3854,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         return
     
     lamb = .1/float(TcT)
-    max_internal_itr = 5*TcT
+    max_internal_itr = 2*TcT
     
     cf = lamb*TcT
     ccf = 1/float(cf)
