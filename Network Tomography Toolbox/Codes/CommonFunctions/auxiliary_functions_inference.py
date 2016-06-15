@@ -3987,9 +3987,17 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                     s_size = max(0,e0-np.dot(W_temp.T,aa_t)) /(d_alp)
                 else:
                     s_size = 1
+                
+                if sparsity_flag:                
+                    sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
+                    sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
                     
+                    W_temp[-1] = W_temp[-1] + s_size * Delta_W_loc[-1]
+                    W_temp[:-1] = soft_threshold_double(W_temp[:-1],sparse_thr_pos,sparse_thr_neg) + s_size * Delta_W_loc[-1]
+                else:
+                    W_temp = W_temp + s_size * Delta_W_loc
                 Delta_W = Delta_W + s_size * Delta_W_loc
-                W_temp = W_temp + s_size * Delta_W_loc
+                
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~~~Upate Weights for Sketched SDCD~~~~~~~~~~~~~~~
@@ -4097,7 +4105,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         
         #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
             #W_temp = np.multiply(W_temp,(W_temp>0).astype(int))
-            if sparsity_flag:                
+            if 0:#sparsity_flag:                
                 sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
                 sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
                 W_temp[:-1] = soft_threshold_double(W_temp[:-1],sparse_thr_pos,sparse_thr_neg)
