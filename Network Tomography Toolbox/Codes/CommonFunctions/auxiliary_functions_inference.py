@@ -3854,7 +3854,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         return
     
     lamb = .1/float(TcT)
-    max_internal_itr = 2*TcT
+    max_internal_itr = 5*TcT
     
     cf = lamb*TcT
     ccf = 1/float(cf)
@@ -3988,7 +3988,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                 else:
                     s_size = 1
                 
-                if 0:                
+                if 1:                
                     sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
                     sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
                     
