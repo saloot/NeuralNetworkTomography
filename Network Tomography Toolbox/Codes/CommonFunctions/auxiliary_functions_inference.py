@@ -3392,7 +3392,7 @@ def spike_pred_accuracy(out_spikes_tot_mat_file,T_array,W,n_ind,theta):
 #------------------------------------------------------------------------------
 
 
-def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,tau_s,kernel_choice):
+def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,tau_s,kernel_choice,hidden_neurons):
     
     
     #----------------------------Initializations---------------------------
@@ -3491,6 +3491,10 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     
     V = V.T
     V = np.delete(V.T,n_ind,0).T
+    
+    if len(hidden_neurons):
+        V = np.delete(V.T,hidden_neurons,0).T
+    
     #---------------------------------------------------------------------
     
     flag_for_parallel_spikes = -1
@@ -3504,7 +3508,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
 #---------------------inference_constraints_hinge_parallel---------------------
 #------------------------------------------------------------------------------
 
-def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n,n_ind,num_process,inferece_params):
+def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n,n_ind,num_process,inferece_params,hidden_neurons):
 
     max_memory = 0
     
@@ -3551,9 +3555,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     d_max = 10
 
     if theta:
-        len_v = n        
+        len_v = n-len(hidden_neurons)     
     else:
-        len_v = n+1
+        len_v = n+1-len(hidden_neurons)
     #--------------------------------------------------------------------------
     
     #---------------------Necessary Initializations------------------------    
@@ -3578,7 +3582,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     
     
-    Delta_W = np.zeros([n,1])
+    Delta_W = np.zeros([len_v-1,1])
     
     itr_block_t = 1
     itr_block_w = 0
@@ -3600,7 +3604,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
         
         #calculate_integration_matrix(n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,kernel_choice)
-        func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,kernel_choice]
+        func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,kernel_choice,hidden_neurons]
         int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         #pool.close()
         #pool.join()
@@ -3645,7 +3649,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 #pdb.set_trace()
                     
                 if 0:#not (itr_cost%2):
-                    func_args = [np.zeros([n,1]),A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
+                    func_args = [np.zeros([len_v-1,1]),A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
                 else:
                     func_args = [W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
                 int_results.append(pool.apply_async(infer_w_block, func_args) )
@@ -3662,7 +3666,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             if t_end - t_start < 10:
                 continue
                         
-            func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,kernel_choice]
+            func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,kernel_choice,hidden_neurons]
             int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
             t_end_last_t = t_end
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

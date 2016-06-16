@@ -62,6 +62,8 @@ max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
 
 num_process = min(no_processes,multiprocessing.cpu_count())
 block_size = min(block_size,T)
+
+no_hidden_neurons = 50
 #------------------------------------------------------------------------------
 
 #-------------------------Initialize Inference Parameters----------------------
@@ -144,7 +146,17 @@ for n_ind in neuron_range:
     print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
     t_start = time.time()                           # starting time of the algorithm
     
-    W_inferred,used_ram,cost = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params)
+    #............................Generate Hidden Neurons..........................
+    if no_hidden_neurons:
+        hidden_neurons = np.random.permutation(no_neurons)
+        hidden_neurons = hidden_neurons[0:no_hidden_neurons]
+        hidden_neurons = list(hidden_neurons)
+        if n_ind in hidden_neurons:
+            hidden_neurons.remove(n_ind)
+    else:
+        hidden_neurons = []
+    
+    W_inferred,used_ram,cost = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params,hidden_neurons)
 
     W_inferred = np.array(W_inferred)
     if not theta:
@@ -186,6 +198,12 @@ for n_ind in neuron_range:
     file_name =  file_name_base_results + "/Spent_Resources/Opt_Cost_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     tmp = np.reshape(cost,[1,len(cost)])
     np.savetxt(file_name,tmp,delimiter='\t')
+    #..........................................................................
+    
+    #..........................Store Hidden Neurons.............................
+    if no_hidden_neurons:
+        file_name =  file_name_base_results + "/Inferred_Graphs/Hidden_Neurons_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))        
+        np.savetxt(file_name,hidden_neurons,delimiter='\t')
     #..........................................................................
     
     itr_n = itr_n + 1
