@@ -63,7 +63,7 @@ max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
 num_process = min(no_processes,multiprocessing.cpu_count())
 block_size = min(block_size,T)
 
-no_hidden_neurons = 50
+no_hidden_neurons = 0
 #------------------------------------------------------------------------------
 
 #-------------------------Initialize Inference Parameters----------------------
