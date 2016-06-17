@@ -138,29 +138,32 @@ if not theta:
 else:
     W_infer = np.zeros([no_neurons,len(neuron_range)])
 
+if no_hidden_neurons:
+    hidden_neurons_temp = np.random.permutation(no_neurons)
+    hidden_neurons_temp = hidden_neurons_temp[0:no_hidden_neurons]
+    hidden_neurons_temp = list(hidden_neurons_temp)
+    
+else:
+    hidden_neurons_temp = []
+        
 itr_n = 0
 for n_ind in neuron_range:
     
     print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
     t_start = time.time()                           # starting time of the algorithm
     
+    hidden_neurons  = copy.deepcopy(hidden_neurons_temp)
     #............................Generate Hidden Neurons..........................
-    if no_hidden_neurons:
-        hidden_neurons = np.random.permutation(no_neurons)
-        hidden_neurons = hidden_neurons[0:no_hidden_neurons]
-        hidden_neurons = list(hidden_neurons)
-        if n_ind in hidden_neurons:
-            hidden_neurons.remove(n_ind)
-    else:
-        hidden_neurons = []
+    if n_ind in hidden_neurons_temp:        
+        hidden_neurons.remove(n_ind)
     
     W_inferred,used_ram,cost = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params,hidden_neurons)
 
     W_inferred = np.array(W_inferred)
     if not theta:
-        W_inferred = np.reshape(W_inferred,[no_neurons+1,1])
+        W_inferred = np.reshape(W_inferred,[no_neurons-len(no_hidden_neurons)+1,1])
     else:
-        W_inferred = np.reshape(W_inferred,[no_neurons,1])
+        W_inferred = np.reshape(W_inferred,[no_neurons-len(no_hidden_neurons),1])
     
     #.........................Save the Belief Matrices.........................
     file_name_ending = 'I_' + str(inference_method) + '_S_' + str(float(sparsity_flag)) + '_T_' + str(int(T))
