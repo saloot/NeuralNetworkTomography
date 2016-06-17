@@ -13,6 +13,7 @@ import math
 from default_values import *
 import time
 import resource
+from scipy.cluster.vq import kmeans,whiten,kmeans2,vq
 from numpy.random import randint
 from numpy.random import RandomState
 import linecache
