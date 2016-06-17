@@ -152,7 +152,7 @@ for n_ind in neuron_range:
     print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
     t_start = time.time()                           # starting time of the algorithm
     
-    hidden_neurons  = copy.deepcopy(hidden_neurons_temp)
+    hidden_neurons  = deepcopy(hidden_neurons_temp)
     #............................Generate Hidden Neurons..........................
     if n_ind in hidden_neurons_temp:        
         hidden_neurons.remove(n_ind)
