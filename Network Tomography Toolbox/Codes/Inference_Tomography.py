@@ -161,9 +161,9 @@ for n_ind in neuron_range:
 
     W_inferred = np.array(W_inferred)
     if not theta:
-        W_inferred = np.reshape(W_inferred,[no_neurons-len(no_hidden_neurons)+1,1])
+        W_inferred = np.reshape(W_inferred,[no_neurons-len(hidden_neurons)+1,1])
     else:
-        W_inferred = np.reshape(W_inferred,[no_neurons-len(no_hidden_neurons),1])
+        W_inferred = np.reshape(W_inferred,[no_neurons-len(hidden_neurons),1])
     
     #.........................Save the Belief Matrices.........................
     file_name_ending = 'I_' + str(inference_method) + '_S_' + str(float(sparsity_flag)) + '_T_' + str(int(T))
