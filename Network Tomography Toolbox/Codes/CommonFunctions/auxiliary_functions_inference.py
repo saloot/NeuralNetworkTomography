@@ -3571,8 +3571,13 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         beta_K = 1
     else:
         beta_K = 1
-        
-    W_tot = np.zeros([len_v-1,1])
+    
+    if (mthd == 3) or (mthd == 4):
+        W_tot = np.random.randn(len_v-1,1)
+        W_tot = W_tot - W_tot.mean()
+        W_tot = whiten(W_tot)
+    else:
+        W_tot = np.zeros([len_v-1,1])
     Z_tot = np.zeros([len_v-1,1])    
         
     total_cost = np.zeros([len(range_tau)])
@@ -3858,7 +3863,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         return
     
     lamb = .1/float(TcT)
-    max_internal_itr = 5*TcT
+    max_internal_itr = 2*TcT
     
     cf = lamb*TcT
     ccf = 1/float(cf)
@@ -3992,7 +3997,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                 else:
                     s_size = 1
                 
-                if 1:                
+                if 0:                
                     sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
                     sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
                     sparse_thr = W_temp[:-1].std()/float(sparse_thr_0)
@@ -4059,9 +4064,14 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                         Delta_W_loc = np.divide(Delta_W_loc,0.4*np.log(no_firings_per_neurons))
                         if 0:#sum(s):
                             Delta_W_loc = Delta_W_loc/(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
-                        #print np.linalg.norm(aa_t)
-                        #print np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s))
-                        #pdb.set_trace()
+                        
+                        if 1:
+                            sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
+                            sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
+                            #sparse_thr = W_temp[:-1].std()/float(sparse_thr_0)
+                            
+                            #W_temp[-1] = W_temp[-1] + s_size * Delta_W_loc[-1]
+                            W_temp[:-1] = soft_threshold_double(W_temp[:-1],sparse_thr_pos,sparse_thr_neg) + s_size * Delta_W_loc[:-1]
                     except RuntimeWarning:
                         pdb.set_trace()
                     
