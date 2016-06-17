@@ -699,6 +699,8 @@ def parse_commands_inf_algo(input_opts):
                 no_neurons = int(arg)                               # Number of observed eurons
             elif opt == '-M':
                 inference_method = int(arg)                         # The inference method
+            elif opt == '-B':
+                no_hidden_neurons = int(arg)                         # The number of neurons to artificially hide
             elif opt == '-Y':
                 sparsity_flag = float(arg)                            # The flag that determines if sparsity should be observed during inference
             elif opt == '-X':
@@ -785,6 +787,9 @@ def parse_commands_inf_algo(input_opts):
     if 'kernel_choice' not in locals():
         print 'No kernel!'
         kernel_choice = 'E'
+    if 'no_hidden_neurons' not in locals():
+        no_hidden_neurons = 0
+        
     #------------------------------------------------------------------------------
 
     #------------------Create the Necessary Directories if Necessary---------------
@@ -805,7 +810,7 @@ def parse_commands_inf_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return no_stimul_rounds,no_neurons,file_name_data,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,infer_itr_max,bin_size,no_processes,block_size,neuron_range,class_sample_freq,kernel_choice
+    return no_stimul_rounds,no_neurons,file_name_data,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,infer_itr_max,bin_size,no_processes,block_size,neuron_range,class_sample_freq,kernel_choice,no_hidden_neurons
 #==============================================================================
 #==============================================================================
 

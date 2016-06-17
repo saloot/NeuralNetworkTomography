@@ -27,7 +27,7 @@ os.system('clear')                                              # Clear the comm
 #==========================PARSE COMMAND LINE ARGUMENTS========================
 input_opts, args = getopt.getopt(sys.argv[1:],"hN:Q:T:S:D:A:F:R:L:M:B:X:Y:C:V:J:U:Z:b:p:j:o:")
 
-T,no_neurons,file_name_spikes,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,max_itr_optimization,bin_size,no_processes,block_size,neuron_range,class_sample_freq,kernel_choice = parse_commands_inf_algo(input_opts)
+T,no_neurons,file_name_spikes,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,max_itr_optimization,bin_size,no_processes,block_size,neuron_range,class_sample_freq,kernel_choice,no_hidden_neurons = parse_commands_inf_algo(input_opts)
 #==============================================================================
 
 
@@ -62,8 +62,6 @@ max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
 
 num_process = min(no_processes,multiprocessing.cpu_count())
 block_size = min(block_size,T)
-
-no_hidden_neurons = 0
 #------------------------------------------------------------------------------
 
 #-------------------------Initialize Inference Parameters----------------------
