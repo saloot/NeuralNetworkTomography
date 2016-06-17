@@ -3995,7 +3995,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                 if 1:                
                     sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
                     sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
-                    sparse_thr = W_tot[:-1].std()/float(sparse_thr_0)
+                    sparse_thr = W_temp[:-1].std()/float(sparse_thr_0)
                     
                     W_temp[-1] = W_temp[-1] + s_size * Delta_W_loc[-1]
                     #W_temp[:-1] = soft_threshold_double(W_temp[:-1],sparse_thr_pos,sparse_thr_neg) + s_size * Delta_W_loc[:-1]
