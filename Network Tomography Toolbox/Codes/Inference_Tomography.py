@@ -133,10 +133,6 @@ if not os.path.isfile(file_name_spikes2):
 #==============================================================================
 
 #============================INFER THE CONNECTIONS=============================
-if not theta:
-    W_infer = np.zeros([no_neurons+1,len(neuron_range)])
-else:
-    W_infer = np.zeros([no_neurons,len(neuron_range)])
 
 if no_hidden_neurons:
     hidden_neurons_temp = np.random.permutation(no_neurons)
@@ -145,7 +141,12 @@ if no_hidden_neurons:
     
 else:
     hidden_neurons_temp = []
-        
+    
+if not theta:
+    W_infer = np.zeros([no_neurons+1-len(hidden_neurons_temp),len(neuron_range)])
+else:
+    W_infer = np.zeros([no_neurons-len(hidden_neurons_temp),len(neuron_range)])
+    
 itr_n = 0
 for n_ind in neuron_range:
     
@@ -156,6 +157,7 @@ for n_ind in neuron_range:
     #............................Generate Hidden Neurons..........................
     if n_ind in hidden_neurons_temp:        
         hidden_neurons.remove(n_ind)
+        hidden_neurons.append(hidden_neurons_temp[no_hidden_neurons])
     
     W_inferred,used_ram,cost = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params,hidden_neurons)
 
