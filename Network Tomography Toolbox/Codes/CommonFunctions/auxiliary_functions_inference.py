@@ -3514,7 +3514,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
 #---------------------inference_constraints_hinge_parallel---------------------
 #------------------------------------------------------------------------------
 
-def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n,n_ind,num_process,inferece_params,hidden_neurons):
+def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n,n_ind,num_process,inferece_params,hidden_neurons,pool):
 
     max_memory = 0
     
@@ -3524,7 +3524,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     import os.path
     
     import multiprocessing
-    pool = multiprocessing.Pool(num_process)
+    
 
     num_process_per_spike = int(max(multiprocessing.cpu_count(),num_process)/float(num_process))
     print multiprocessing.cpu_count()

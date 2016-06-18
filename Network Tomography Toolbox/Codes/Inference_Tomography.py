@@ -62,6 +62,8 @@ max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
 
 num_process = min(no_processes,multiprocessing.cpu_count())
 block_size = min(block_size,T)
+
+pool = multiprocessing.Pool(num_process)
 #------------------------------------------------------------------------------
 
 #-------------------------Initialize Inference Parameters----------------------
@@ -160,7 +162,7 @@ for n_ind in neuron_range:
         hidden_neurons.append(hidden_neurons_temp2[no_hidden_neurons])
     
     for it in range(0,no_avg_itr):
-        W_temp,used_ram_temp,cost = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params,hidden_neurons)
+        W_temp,used_ram_temp,cost = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params,hidden_neurons,pool)
         if not it:
             W_inferred = W_temp
             used_ram = used_ram_temp
