@@ -135,8 +135,8 @@ if not os.path.isfile(file_name_spikes2):
 #============================INFER THE CONNECTIONS=============================
 
 if no_hidden_neurons:
-    hidden_neurons_temp = np.random.permutation(no_neurons)
-    hidden_neurons_temp = hidden_neurons_temp[0:no_hidden_neurons]
+    hidden_neurons_temp2 = np.random.permutation(no_neurons)
+    hidden_neurons_temp = hidden_neurons_temp2[0:no_hidden_neurons]
     hidden_neurons_temp = list(hidden_neurons_temp)
     
 else:
@@ -157,7 +157,7 @@ for n_ind in neuron_range:
     #............................Generate Hidden Neurons..........................
     if n_ind in hidden_neurons_temp:        
         hidden_neurons.remove(n_ind)
-        hidden_neurons.append(hidden_neurons_temp[no_hidden_neurons])
+        hidden_neurons.append(hidden_neurons_temp2[no_hidden_neurons])
     
     W_inferred,used_ram,cost = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params,hidden_neurons)
 
