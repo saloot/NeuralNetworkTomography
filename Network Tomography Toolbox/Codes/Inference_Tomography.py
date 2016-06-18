@@ -56,7 +56,7 @@ tau_s = 2.0                                     # The rise time coefficient of t
 #class_sample_freq = 0.2                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
 rand_sample_flag = 1                            # If 1, the spikes are sampled randomly on intervals
 #kernel_choice = 'E'
-
+no_avg_itr = 5
 no_itr_over_dataset = max_itr_optimization
 max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
 
@@ -159,7 +159,14 @@ for n_ind in neuron_range:
         hidden_neurons.remove(n_ind)
         hidden_neurons.append(hidden_neurons_temp2[no_hidden_neurons])
     
-    W_inferred,used_ram,cost = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params,hidden_neurons)
+    for it in range(0,no_avg_itr):
+        W_temp,used_ram_temp,cost = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params,hidden_neurons)
+        if not it:
+            W_inferred = W_temp
+            used_ram = used_ram_temp
+        else:
+            W_inferred = W_inferred + W_temp
+            used_ram = used_ram + used_ram_temp
 
     W_inferred = np.array(W_inferred)
     if not theta:
@@ -180,7 +187,7 @@ for n_ind in neuron_range:
     file_name_ending = file_name_ending + '_ii_' + str(no_itr_over_dataset)
     
     file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
-    tmp = W_inferred
+    tmp = W_inferred/float(no_avg_itr)
     tmp = tmp/np.linalg.norm(tmp)
     tmp = tmp/(np.abs(tmp).max())
     
@@ -194,7 +201,7 @@ for n_ind in neuron_range:
     #....................Store Spent Time and Memory............................
     t_end = time.time()                           # The ending time of the algorithm    
     file_name =  file_name_base_results + "/Spent_Resources/CPU_RAM_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
-    tmp = [T,t_end-t_start,used_ram]
+    tmp = [T,(t_end-t_start)/float(no_avg_itr),used_ram/float(no_avg_itr)]
     np.savetxt(file_name,tmp,delimiter='\t')
     #..........................................................................
     
