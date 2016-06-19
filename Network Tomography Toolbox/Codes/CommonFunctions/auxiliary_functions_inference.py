@@ -3524,7 +3524,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     import os.path
     
     import multiprocessing
-    pool = multiprocessing.Pool(num_process)
+    pool = multiprocessing.Pool(num_process,maxtasksperchild=10)
+    
 
     num_process_per_spike = int(max(multiprocessing.cpu_count(),num_process)/float(num_process))
     print multiprocessing.cpu_count()
