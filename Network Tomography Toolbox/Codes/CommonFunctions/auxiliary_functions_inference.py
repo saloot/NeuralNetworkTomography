@@ -3524,7 +3524,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     import os.path
     
     import multiprocessing
-    pool = multiprocessing.Pool(num_process,maxtasksperchild=10)
+    pool = multiprocessing.Pool(num_process)
     
 
     num_process_per_spike = int(max(multiprocessing.cpu_count(),num_process)/float(num_process))
@@ -3759,9 +3759,13 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     WW = np.zeros([len_v,1])
     WW[0:n_ind,0] = W_tot[0:n_ind,0]
     WW[n_ind+1:,0] = W_tot[n_ind:,0]
-        
+    
+    A = None
+    YA = None
+    
     pool.close()
     pool.join()
+    
     
     return WW[0:len_v].ravel(),max_memory,total_cost[1:itr_cost]
     
