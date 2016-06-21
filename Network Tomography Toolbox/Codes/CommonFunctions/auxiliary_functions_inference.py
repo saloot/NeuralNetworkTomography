@@ -4052,16 +4052,17 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             elif (mthd == 3):
                 #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
                 d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
+                Delta_W_loc = 0
                 if d_alp:
                     Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
+                
+                Delta_W_loc = Delta_W_loc + (W_temp<0).astype(int)
                     
-                    Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
-                    
-                    
-                    #Delta_W_loc[-1] = .1
-                    Delta_W = Delta_W + Delta_W_loc
-                    W_temp = W_temp + 1*Delta_W_loc
-                    #W_temp = W_temp - W_temp.mean()
+                Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
+                #Delta_W_loc[-1] = .1
+                Delta_W = Delta_W + Delta_W_loc
+                W_temp = W_temp + 1*Delta_W_loc
+                #W_temp = W_temp - W_temp.mean()
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #~~~~~~~~~~~Upate Weights for Skecthed Perceptron~~~~~~~~~~~
