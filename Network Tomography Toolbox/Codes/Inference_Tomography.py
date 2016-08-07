@@ -56,7 +56,7 @@ tau_s = 2.0                                     # The rise time coefficient of t
 #class_sample_freq = 0.2                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
 rand_sample_flag = 1                            # If 1, the spikes are sampled randomly on intervals
 #kernel_choice = 'E'
-no_avg_itr = 5
+no_avg_itr = 10
 no_itr_over_dataset = max_itr_optimization
 max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
 
