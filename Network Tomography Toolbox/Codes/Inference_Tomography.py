@@ -56,7 +56,7 @@ tau_s = 2.0                                     # The rise time coefficient of t
 #class_sample_freq = 0.2                        # If non-zero, the spiking activities (instances of firing) are picked with this probabaility to update the weights
 rand_sample_flag = 1                            # If 1, the spikes are sampled randomly on intervals
 #kernel_choice = 'E'
-no_avg_itr = 5
+no_avg_itr = 10
 no_itr_over_dataset = max_itr_optimization
 max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
 
@@ -188,8 +188,8 @@ for n_ind in neuron_range:
     
     file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
     tmp = W_inferred/float(no_avg_itr)
-    tmp = tmp/np.linalg.norm(tmp)
-    tmp = tmp/(np.abs(tmp).max())
+    tmp = tmp/(0.0001+np.linalg.norm(tmp))
+    tmp = tmp/(0.0001+np.abs(tmp).max())
     
     W_infer[:,itr_n] = tmp.ravel()
     
