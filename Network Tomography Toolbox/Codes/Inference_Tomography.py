@@ -1,6 +1,7 @@
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 import time
-
+import string
+import random
 import numpy as np
 import sys,getopt,os
 import resource
@@ -30,6 +31,8 @@ input_opts, args = getopt.getopt(sys.argv[1:],"hN:Q:T:S:D:A:F:R:L:M:B:X:Y:C:V:J:
 T,no_neurons,file_name_spikes,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,max_itr_optimization,bin_size,no_processes,block_size,neuron_range,class_sample_freq,kernel_choice,no_hidden_neurons = parse_commands_inf_algo(input_opts)
 #==============================================================================
 
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 #==================DO SANITY CHECK ON THE ENTERED PARAMETERS===================
 if not no_neurons:
@@ -179,7 +182,7 @@ for n_ind in neuron_range:
     file_name_ending = file_name_ending + '_C_' + str(int(num_process)) + '_B_' + str(int(block_size))
     file_name_ending = file_name_ending + '_K_' + kernel_choice + '_H_' + str(class_sample_freq)
     if no_hidden_neurons:
-        file_name_ending = file_name_ending + '_F_' + str(int(no_hidden_neurons)) 
+        file_name_ending = file_name_ending + '_F_' + str(int(no_hidden_neurons)) + id_generator()
 
     if bin_size:
         file_name_ending = file_name_ending + '_bS_' + str(bin_size)
