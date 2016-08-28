@@ -32,6 +32,7 @@ T,no_neurons,file_name_spikes,file_name_base_results,inference_method,sparsity_f
 #==============================================================================
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    import random
     return ''.join(random.choice(chars) for _ in range(size))
 
 #==================DO SANITY CHECK ON THE ENTERED PARAMETERS===================
@@ -65,6 +66,7 @@ max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
 
 num_process = min(no_processes,multiprocessing.cpu_count())
 block_size = min(block_size,T)
+print id_generator()
 #------------------------------------------------------------------------------
 
 #-------------------------Initialize Inference Parameters----------------------
