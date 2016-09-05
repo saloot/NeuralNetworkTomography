@@ -35,7 +35,7 @@ for shank_no in range(1,no_shanks+1):
         f.seek(-2, 2)             # Jump to the second last byte.
         while f.read(1) != b"\n": # Until EOL is found...
             f.seek(-2, 1)         # ...jump back the read byte plus one more.
-        t_last = f.readline()       # Read last line.    
+        t_last = int(f.readline())       # Read last line.    
     
     T = int(1000*t_last/sampling_freq) + 1
     if T > T_max:
@@ -43,7 +43,7 @@ for shank_no in range(1,no_shanks+1):
     
     
     with open(clusters_file, "rb") as f:
-        l_first = f.readline() 
+        l_first = int(f.readline()) 
         n = l_first-2                      # Clustes 0 and 1 do not correspond to any neuron
     
     n_tot = n_tot + n
