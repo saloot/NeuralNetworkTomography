@@ -66,8 +66,7 @@ for shank_no in range(1,no_shanks+1):
 
     n = clusters_inds[0]-2                      # Clustes 0 and 1 do not correspond to any neuron
     #sps = np.zeros([T_max,2])
-    pdb.set_trace()
-    # Verify that length of clusters_inds and sp_times are the same
+    
     for i in range(0,len(sp_times)):        
         ii = clusters_inds[i+1]
         if ii > 1:
