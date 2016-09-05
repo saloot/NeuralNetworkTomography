@@ -16,23 +16,46 @@ session_name = 'ec013.198'
 
 neural_activity_file_write = './Data/HC3_ec013_198_processed.txt'
 
-sp_times_tot_mat = []
+
+
 spikes_tot = []
 n_clusters = []
 #----------------------------------------------------------------------------
 
 
-#---------------------------Read the Spikes Matrix--------------------------
+#-------------------Calculate the Size of the Spikes Matrix------------------
 T_max = 0
+n_tot = 0
 for shank_no in range(1,no_shanks+1):
     spikes_file = spikes_file_base + str(shank_no)
+    clusters_file = clusters_file_base + str(shank_no)
     
-    sp_times = np.genfromtxt(spikes_file, dtype=None)
     
-    T = int(1000*max(sp_times)/sampling_freq) + 1
+    with open(spikes_file, "rb") as f:        
+        f.seek(-2, 2)             # Jump to the second last byte.
+        while f.read(1) != b"\n": # Until EOL is found...
+            f.seek(-2, 1)         # ...jump back the read byte plus one more.
+        t_last = f.readline()       # Read last line.    
     
+    T = int(1000*t_last/sampling_freq) + 1
     if T > T_max:
         T_max = T
+    
+    
+    with open(clusters_file, "rb") as f:
+        l_first = f.readline() 
+        n = l_first-2                      # Clustes 0 and 1 do not correspond to any neuron
+    
+    n_tot = n_tot + n
+    n_clusters.append(n)
+    
+    print n,T_max
+#----------------------------------------------------------------------------    
+    
+
+#---------------------------Read the Spikes Matrix--------------------------
+sp_times_tot_mat = np.zeros([n_tot,T_max])
+n_curr = 0
 
 for shank_no in range(1,no_shanks+1):
     clusters_file = clusters_file_base + str(shank_no)
@@ -42,27 +65,26 @@ for shank_no in range(1,no_shanks+1):
     sp_times = np.genfromtxt(spikes_file, dtype=None)
 
     n = clusters_inds[0]-2                      # Clustes 0 and 1 do not correspond to any neuron
-    
-    sp_times_mat = np.zeros([n,T_max])
-    sps = np.zeros([T_max,2])
-    
-    #pdb.set_trace()
+    #sps = np.zeros([T_max,2])
+    pdb.set_trace()
+    # Verify that length of clusters_inds and sp_times are the same
     for i in range(0,len(sp_times)):        
         ii = clusters_inds[i+1]
         if ii > 1:
             tt = int(1000*sp_times[i]/sampling_freq)
-            sp_times_mat[ii-2,tt] = 1
+            sp_times_tot_mat[ii-2+n_curr,tt] = 1
+            #sp_times_mat[ii-2,tt] = 1
             #sps[tt,1] = tt/1000.0
             #sps[tt,0] = sum(n_clusters) + ii-2
 
-    n_clusters.append(n)
+    n_curr = n_curr + n
     
-    if shank_no>1:
-        sp_times_tot_mat = np.vstack([sp_times_tot_mat,sp_times_mat])
-        #spikes_tot = np.vstack([spikes_tot,sps])
-    else:
-        sp_times_tot_mat = sp_times_mat
-        #spikes_tot = sps
+    #if shank_no>1:
+    #    sp_times_tot_mat = np.vstack([sp_times_tot_mat,sp_times_mat])
+    #    #spikes_tot = np.vstack([spikes_tot,sps])
+    #else:
+    #    sp_times_tot_mat = sp_times_mat
+    #    #spikes_tot = sps
 #----------------------------------------------------------------------------
 
 #--------------------------Verify the Imported Files-------------------------
@@ -118,14 +140,14 @@ else:
 
 #------------------------Write the Spikes to the File------------------------
 if verify_flag:
-    spikes_tot = []
+    pdb.set_trace()
     inds = np.nonzero(sp_times_tot_mat)
-    for i in range(297300,len(inds[0])):
-        if i == 0:
-            spikes_tot = [inds[0][i],inds[1][i]/1000.0]
-        else:
-            spikes_tot = np.vstack([spikes_tot,[inds[0][i],inds[1][i]/1000.0]])
-            
+    spikes_tot = np.zeros([len(inds[0]),len(inds[1])])
+    for i in range(0,len(inds[0])):
+        spikes_tot[i,0] = inds[0][i]
+        spikes_tot[i,1] = inds[1][i]/1000.0
+        
+        
     
     np.savetxt(neural_activity_file_write,spikes_tot,'%3.5f',delimiter='\t')    
 #----------------------------------------------------------------------------
@@ -139,14 +161,17 @@ if verify_flag:
 #                                     5) ed: based on cross-correlogram analysis, the cell is monosynaptically excited by other cells
 #                                     6) id: based on cross-correlogram analysis, the cell is monosynaptically inhibited by other cells
 #                                     7) re: Brain region (1 for EC3, 2 for EC4, 3 for EC5 and so on)
+#                                     8) ID: Cell ID
 region_ind_map = {'EC3':1,'EC4':2,'EC5':3,'CA1':4,'CA3':5,'DG':6,'Unknown':7}
 
 n = sum(n_clusters)
-W_deg = np.zeros([n,7])
+W_deg = np.zeros([n,8])
 itr = 0
 for item in cell_id_inf:
+    cell_id = item[0]
     W_deg[itr,0:6] = (item[6:12]).astype(int)
     W_deg[itr,6] = region_ind_map[item[5]]
+    W_deg[itr,7] = neuron_id_map[str(cell_id)]
     itr = itr + 1 
 
 W_deg[:,5] = -W_deg[:,5]             # For the inhibitory neurons
