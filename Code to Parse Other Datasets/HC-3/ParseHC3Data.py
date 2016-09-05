@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import csv
-
+import pdb
 
 #-----------------------------Initializations-------------------------------
 clusters_file_base = './Data/ec013.198.clu.'
