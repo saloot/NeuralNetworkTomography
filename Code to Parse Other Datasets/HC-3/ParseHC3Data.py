@@ -27,21 +27,6 @@ n_clusters = []
 
 #--------------------------Verify the Imported Files-------------------------
 
-#.....................Map Ours and Theirs Neuron IDs.........................
-cell_id_inf = np.genfromtxt('./Data/hc3-cell.csv', dtype=str, delimiter=',')
-cell_id_inf = cell_id_inf[cell_id_inf[:,1]==task_name]
-
-neuron_id_map = {}
-
-for item in cell_id_inf:
-    cell_id = item[0]
-    electrode = int(item[3])
-    cluster = int(item[4]) - 2
-    
-    neuron_id = sum(n_clusters[0:electrode-1]) + cluster
-    
-    neuron_id_map[cell_id] = neuron_id
-#............................................................................
 
 #.......................Read the Actual Spike Counts.........................
 sp_counts_tot = np.genfromtxt('./Data/hc3-spike_count.csv', dtype=int, delimiter=',')
@@ -109,7 +94,7 @@ for itr_session in range(0,len(session_name_list)):
     n_curr = 0
     
     sp_times_tot_mat = np.zeros([n_tot_tot,T_max_array[itr_session]])
-    
+    n_clusters = []
     for shank_no in range(1,no_shanks+1):
         clusters_file = clusters_file_base + str(shank_no)
         spikes_file = spikes_file_base + str(shank_no)
@@ -119,6 +104,7 @@ for itr_session in range(0,len(session_name_list)):
     
         n = clusters_inds[0]-2                      # Clustes 0 and 1 do not correspond to any neuron
         #sps = np.zeros([T_max,2])
+        n_clusters.append(n)
         
         for i in range(0,len(sp_times)):        
             ii = clusters_inds[i+1]
@@ -135,6 +121,22 @@ for itr_session in range(0,len(session_name_list)):
     #............................Retrieve Session ID.............................
     sessions_inf = sessions_inf_tot[sessions_inf_tot[:,2]==session_name]
     session_id = int(sessions_inf[0,0])
+    #............................................................................
+
+    #.....................Map Ours and Theirs Neuron IDs.........................
+    cell_id_inf = np.genfromtxt('./Data/hc3-cell.csv', dtype=str, delimiter=',')
+    cell_id_inf = cell_id_inf[cell_id_inf[:,1]==task_name]
+    
+    neuron_id_map = {}
+    
+    for item in cell_id_inf:
+        cell_id = item[0]
+        electrode = int(item[3])
+        cluster = int(item[4]) - 2
+        
+        neuron_id = sum(n_clusters[0:electrode-1]) + cluster
+        
+        neuron_id_map[cell_id] = neuron_id
     #............................................................................
 
 
