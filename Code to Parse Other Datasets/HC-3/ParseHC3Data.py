@@ -60,7 +60,8 @@ sp_counts_tot = np.genfromtxt('./Data/hc3-spike_count.csv', dtype=int, delimiter
 T_max_tot = 0
 n_tot_tot = 0
 T_max_array = []
-for session_name in session_name_list:
+for itr_session in range(0,len(session_name_list)):
+    session_name = session_name_list[itr_session]
     clusters_file_base = './Data/' + session_name + '.clu.'
     spikes_file_base = './Data/' + session_name + '.res.'
     T_max = 0
@@ -106,8 +107,9 @@ T_max_tot = T_max_tot - t_inter_session
   
 pdb.set_trace()  
 #---------------------------Read the Spikes Matrix--------------------------
-itr_session = 0
-for session_name in session_name_list:
+
+for itr_session in range(0,len(session_name_list)):
+    session_name = session_name_list[itr_session]
     clusters_file_base = './Data/' + session_name + '.clu.'
     spikes_file_base = './Data/' + session_name + '.res.'
     n_curr = 0
