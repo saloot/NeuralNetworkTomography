@@ -172,6 +172,9 @@ for itr_session in range(0,len(session_name_list)):
         
         neural_activity_file_write_temp = neural_activity_file_write + session_name
         np.savetxt(neural_activity_file_write_temp,spikes_tot,'%3.5f',delimiter='\t')
+    else:
+        print 'What is going on?!'
+        pdb.set_trace()
     #........................................................................
     
     itr_session = itr_session + 1
