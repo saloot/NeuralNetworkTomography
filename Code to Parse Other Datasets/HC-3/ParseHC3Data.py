@@ -15,8 +15,10 @@ session_name = 'ec013.198'
 
 
 neural_activity_file_write = './Data/HC3_ec013_198_processed.txt'
+neural_activity_file_write = './Data/HC3_ec013_processed.txt'
 
 
+session_name_list = ['ec013.198','ec013.205','ec013.206','ec013.208']
 
 spikes_tot = []
 n_clusters = []
@@ -24,32 +26,49 @@ n_clusters = []
 
 
 #-------------------Calculate the Size of the Spikes Matrix------------------
-T_max = 0
-n_tot = 0
-for shank_no in range(1,no_shanks+1):
-    spikes_file = spikes_file_base + str(shank_no)
-    clusters_file = clusters_file_base + str(shank_no)
+T_max_tot = 0
+n_tot_tot = 0
+for session_name in session_name_list:
+    clusters_file_base = './Data/' + session_name + '.clu.'
+    spikes_file_base = './Data/' + task_name + '.res.'
+    T_max = 0
+    n_tot = 0
+    for shank_no in range(1,no_shanks+1):
+        spikes_file = spikes_file_base + str(shank_no)
+        clusters_file = clusters_file_base + str(shank_no)
+        
+        
+        with open(spikes_file, "rb") as f:        
+            f.seek(-2, 2)             # Jump to the second last byte.
+            while f.read(1) != b"\n": # Until EOL is found...
+                f.seek(-2, 1)         # ...jump back the read byte plus one more.
+            t_last = int(f.readline())       # Read last line.    
+        
+        T = int(1000*t_last/sampling_freq) + 1
+        if T > T_max:
+            T_max = T
+        
+        
+        with open(clusters_file, "rb") as f:
+            l_first = int(f.readline()) 
+            n = l_first-2                      # Clustes 0 and 1 do not correspond to any neuron
+        
+        n_tot = n_tot + n
+        n_clusters.append(n)
+        
+        print n,T_max
     
+    if (n_tot_tot):
+        
+        if n_tot != n_tot_tot:
+            print 'Oh no!'
+            pdb.set_trace()
+    else:
+        n_tot_tot = n_tot
+        
+    T_max_tot = T_max_tot + T_max + 10000
     
-    with open(spikes_file, "rb") as f:        
-        f.seek(-2, 2)             # Jump to the second last byte.
-        while f.read(1) != b"\n": # Until EOL is found...
-            f.seek(-2, 1)         # ...jump back the read byte plus one more.
-        t_last = int(f.readline())       # Read last line.    
-    
-    T = int(1000*t_last/sampling_freq) + 1
-    if T > T_max:
-        T_max = T
-    
-    
-    with open(clusters_file, "rb") as f:
-        l_first = int(f.readline()) 
-        n = l_first-2                      # Clustes 0 and 1 do not correspond to any neuron
-    
-    n_tot = n_tot + n
-    n_clusters.append(n)
-    
-    print n,T_max
+T_max_tot = T_max_tot - 10000
 #----------------------------------------------------------------------------    
     
 
@@ -141,10 +160,12 @@ else:
 if verify_flag:
     pdb.set_trace()
     inds = np.nonzero(sp_times_tot_mat)
-    spikes_tot = np.zeros([len(inds[0]),len(inds[1])])
-    for i in range(0,len(inds[0])):
-        spikes_tot[i,0] = inds[0][i]
-        spikes_tot[i,1] = inds[1][i]/1000.0
+    spikes_tot = np.zeros([len(inds[0]),2])
+    spikes_tot[:,0] = inds[0]
+    spikes_tot[:,1] = inds[1]/1000.0
+    #for i in range(0,len(inds[0])):
+    #    spikes_tot[i,0] = inds[0][i]
+    #    spikes_tot[i,1] = inds[1][i]/1000.0
         
         
     
