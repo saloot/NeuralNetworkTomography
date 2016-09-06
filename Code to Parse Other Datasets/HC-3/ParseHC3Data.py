@@ -9,6 +9,7 @@ spikes_file_base = './Data/ec013.198.res.'
 
 sampling_freq = 20000.0
 no_shanks = 8
+t_inter_session = 10000             # The gap (in ms) to add between sessions to mask data
 
 task_name = 'ec013.18'
 session_name = 'ec013.198'
@@ -66,37 +67,43 @@ for session_name in session_name_list:
     else:
         n_tot_tot = n_tot
         
-    T_max_tot = T_max_tot + T_max + 10000
+    T_max_tot = T_max_tot + T_max + t_inter_session
     
-T_max_tot = T_max_tot - 10000
+T_max_tot = T_max_tot - t_inter_session
 #----------------------------------------------------------------------------    
     
+pdb.set_trace()
 
 #---------------------------Read the Spikes Matrix--------------------------
-sp_times_tot_mat = np.zeros([n_tot,T_max])
-n_curr = 0
+sp_times_tot_mat = np.zeros([n_tot_tot,T_max_tot])
 
-for shank_no in range(1,no_shanks+1):
-    clusters_file = clusters_file_base + str(shank_no)
-    spikes_file = spikes_file_base + str(shank_no)
-
-    clusters_inds = np.genfromtxt(clusters_file, dtype=None)
-    sp_times = np.genfromtxt(spikes_file, dtype=None)
-
-    n = clusters_inds[0]-2                      # Clustes 0 and 1 do not correspond to any neuron
-    #sps = np.zeros([T_max,2])
+itr_session = 0
+for session_name in session_name_list:
+    clusters_file_base = './Data/' + session_name + '.clu.'
+    spikes_file_base = './Data/' + task_name + '.res.'
+    n_curr = 0
+    for shank_no in range(1,no_shanks+1):
+        clusters_file = clusters_file_base + str(shank_no)
+        spikes_file = spikes_file_base + str(shank_no)
     
-    for i in range(0,len(sp_times)):        
-        ii = clusters_inds[i+1]
-        if ii > 1:
-            tt = int(1000*sp_times[i]/sampling_freq)
-            sp_times_tot_mat[ii-2+n_curr,tt] = 1
-            #sp_times_mat[ii-2,tt] = 1
-            #sps[tt,1] = tt/1000.0
-            #sps[tt,0] = sum(n_clusters) + ii-2
-
-    n_curr = n_curr + n
+        clusters_inds = np.genfromtxt(clusters_file, dtype=None)
+        sp_times = np.genfromtxt(spikes_file, dtype=None)
     
+        n = clusters_inds[0]-2                      # Clustes 0 and 1 do not correspond to any neuron
+        #sps = np.zeros([T_max,2])
+        
+        for i in range(0,len(sp_times)):        
+            ii = clusters_inds[i+1]
+            if ii > 1:
+                tt = int(1000*sp_times[i]/sampling_freq)
+                sp_times_tot_mat[ii-2+n_curr,tt+itr_session*t_inter_session] = 1
+                #sp_times_mat[ii-2,tt] = 1
+                #sps[tt,1] = tt/1000.0
+                #sps[tt,0] = sum(n_clusters) + ii-2
+    
+        n_curr = n_curr + n
+    
+    itr_session = itr_session + 1
     #if shank_no>1:
     #    sp_times_tot_mat = np.vstack([sp_times_tot_mat,sp_times_mat])
     #    #spikes_tot = np.vstack([spikes_tot,sps])
