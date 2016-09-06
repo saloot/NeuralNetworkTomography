@@ -162,7 +162,7 @@ for itr_session in range(0,len(session_name_list)):
         
     #..........................Save the Results..............................
     if verify_flag:
-        pdb.set_trace()
+        #pdb.set_trace()
         inds = np.nonzero(sp_times_tot_mat)
         spikes_tot = np.zeros([len(inds[0]),2])
         spikes_tot[:,0] = inds[0]
