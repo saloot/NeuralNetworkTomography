@@ -153,11 +153,14 @@ for itr_session in range(0,len(session_name_list)):
         if (abs(aa[ind] - ff)>1):
             troublesome_entries.append(ind)
             troublesome_values.append(abs(aa[ind] - ff))
-            
-    if sum(troublesome_values)/float(sum(aa[troublesome_entries]))< 0.001:
-        verify_flag = 1
+    
+    if sum(troublesome_values):        
+        if sum(troublesome_values)/float(sum(aa[troublesome_entries]))< 0.001:
+            verify_flag = 1
+        else:
+            verify_flag = 0  
     else:
-        verify_flag = 0    
+        verify_flag = 1
     #........................................................................
         
     #..........................Save the Results..............................
