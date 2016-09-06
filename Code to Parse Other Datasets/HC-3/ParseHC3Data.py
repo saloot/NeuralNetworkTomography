@@ -43,14 +43,9 @@ for item in cell_id_inf:
     neuron_id_map[cell_id] = neuron_id
 #............................................................................
 
-#............................Retrieve Session ID.............................
-sessions_inf = np.genfromtxt('./Data/hc3-session.csv', dtype=str, delimiter=',')
-sessions_inf = sessions_inf[sessions_inf[:,2]==session_name]
-session_id = int(sessions_inf[0,0])
-#............................................................................
-
 #.......................Read the Actual Spike Counts.........................
 sp_counts_tot = np.genfromtxt('./Data/hc3-spike_count.csv', dtype=int, delimiter=',')
+sessions_inf_tot = np.genfromtxt('./Data/hc3-session.csv', dtype=str, delimiter=',')
 #............................................................................
 
 #----------------------------------------------------------------------------
@@ -105,7 +100,6 @@ for itr_session in range(0,len(session_name_list)):
 T_max_tot = T_max_tot - t_inter_session
 #----------------------------------------------------------------------------    
   
-pdb.set_trace()  
 #---------------------------Read the Spikes Matrix--------------------------
 
 for itr_session in range(0,len(session_name_list)):
@@ -137,6 +131,11 @@ for itr_session in range(0,len(session_name_list)):
     
         n_curr = n_curr + n
 
+
+    #............................Retrieve Session ID.............................
+    sessions_inf = sessions_inf_tot[sessions_inf_tot[:,2]==session_name]
+    session_id = int(sessions_inf[0,0])
+    #............................................................................
 
 
     #....................Verify the processed spikes.........................
@@ -177,7 +176,7 @@ for itr_session in range(0,len(session_name_list)):
         pdb.set_trace()
     #........................................................................
     
-    itr_session = itr_session + 1
+    #itr_session = itr_session + 1
 #----------------------------------------------------------------------------
 
 
