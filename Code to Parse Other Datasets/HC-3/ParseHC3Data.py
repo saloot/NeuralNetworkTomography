@@ -104,8 +104,6 @@ for session_name in session_name_list:
 T_max_tot = T_max_tot - t_inter_session
 #----------------------------------------------------------------------------    
     
-pdb.set_trace()
-
 #---------------------------Read the Spikes Matrix--------------------------
 itr_session = 0
 for session_name in session_name_list:
