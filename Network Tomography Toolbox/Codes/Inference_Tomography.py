@@ -124,7 +124,7 @@ if not os.path.isfile(file_name_spikes2):
                         temp = str(nn)
                 else:
                     print 'What the ...?'
-                    pdb.set_trace()
+                    #pdb.set_trace()
                         
                 if tt<=T:
                     fire_matx[tt] = temp
