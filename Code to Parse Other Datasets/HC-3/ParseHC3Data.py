@@ -169,7 +169,7 @@ for itr_session in range(0,len(session_name_list)):
         inds = np.nonzero(sp_times_tot_mat)
         spikes_tot = np.zeros([len(inds[0]),2])
         spikes_tot[:,0] = inds[0]
-        spikes_tot[:,1] = (inds[1]+itr_session*t_inter_session)/1000.0
+        spikes_tot[:,1] = (inds[1]+itr_session*t_inter_session+sum(T_max_array[0:itr_session]))/1000.0
         #for i in range(0,len(inds[0])):
         #    spikes_tot[i,0] = inds[0][i]
         #    spikes_tot[i,1] = inds[1][i]/1000.0
