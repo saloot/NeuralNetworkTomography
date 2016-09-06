@@ -31,7 +31,7 @@ T_max_tot = 0
 n_tot_tot = 0
 for session_name in session_name_list:
     clusters_file_base = './Data/' + session_name + '.clu.'
-    spikes_file_base = './Data/' + task_name + '.res.'
+    spikes_file_base = './Data/' + session_name + '.res.'
     T_max = 0
     n_tot = 0
     for shank_no in range(1,no_shanks+1):
@@ -80,7 +80,7 @@ sp_times_tot_mat = np.zeros([n_tot_tot,T_max_tot])
 itr_session = 0
 for session_name in session_name_list:
     clusters_file_base = './Data/' + session_name + '.clu.'
-    spikes_file_base = './Data/' + task_name + '.res.'
+    spikes_file_base = './Data/' + session_name + '.res.'
     n_curr = 0
     for shank_no in range(1,no_shanks+1):
         clusters_file = clusters_file_base + str(shank_no)
