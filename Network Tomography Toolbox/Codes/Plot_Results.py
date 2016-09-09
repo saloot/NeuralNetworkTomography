@@ -82,6 +82,7 @@ zero_diagonals_flag = 1             # If 1, the diagonal elements (self feedback
 adj_fact_exc = 0.75                 # This is the adjustment factor for clustering algorithms (between 0 and infinity).
 adj_fact_inh = 0.5                  # This is the adjustment factor for clustering algorithms (between 0 and infinity).
 get_from_host = 1
+no_hidden_neurons = 50
 
 if inference_method == 1:
     algorithm_name = 'Stochastic NeuInf'
@@ -148,7 +149,10 @@ for v1 in Var1_range:
             
         exec('%s = v2' %plot_vars[1])    
         
-        W_inferred = np.zeros([n,m]) 
+        W_inferred = np.zeros([n-no_hidden_neurons,m])
+        means_vector = np.zeros([3,len(neuron_range)])
+        std_vector = np.zeros([3,len(neuron_range)])
+        itr_n = 0
         for n_ind in neuron_range:
             
             #~~~~~~~~~~~~~~~~~~~~~~~~~Read the Inferred Weights~~~~~~~~~~~~~~~~~~~~~~~~
@@ -167,61 +171,126 @@ for v1 in Var1_range:
             
             file_name_ending_mod = '_'.join(temp)
             
-            file_name = "Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_ending_mod,str(n_ind))
+            file_name_ending_mod = file_name_ending_mod + '_' + str(n_ind)
             
-            if 'S' in plot_flags:
-                file_name_resources = "Spent_Resources/CPU_RAM_%s_%s.txt" %(file_name_ending_mod,str(n_ind))
+            if no_hidden_neurons:
+                #file_name_ending = file_name_ending + '_F_' + str(int(no_hidden_neurons)) + id_generator()
+                file_name = "Inferred_Graphs/W_Pll_%s_F_*" %(file_name_ending_mod)
+                file_name_hidden = "Inferred_Graphs/Hidden_Neurons_%s_F_*" %(file_name_ending_mod)
+                if 'S' in plot_flags:
+                    file_name_resources = "Spent_Resources/CPU_RAM_%s_F_*" %(file_name_ending_mod)
+            else:
+                file_name = "Inferred_Graphs/W_Pll_%s.txt" %(file_name_ending_mod)
+            
+                if 'S' in plot_flags:
+                    file_name_resources = "Spent_Resources/CPU_RAM_%s.txt" %(file_name_ending_mod)
+            
+            
             
             if get_from_host:
-                cmd = 'scp salavati@castor.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/%s" %s' %(file_name,file_name_base_results+'/Inferred_Graphs/')
+                cmd = 'scp -r salavati@castor.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/%s" %s' %(file_name,file_name_base_results+'/Inferred_Graphs/')
                 os.system(cmd)
                 
                 if 'S' in plot_flags:
-                    cmd = 'scp salavati@castor.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/%s" %s' %(file_name_resources,file_name_base_results+'/Spent_Resources/')
+                    cmd = 'scp -r salavati@castor.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/%s" %s' %(file_name_resources,file_name_base_results+'/Spent_Resources/')
                     os.system(cmd)
                 
-            file_name = file_name_base_results + '/' + file_name
-            file_name_resources = file_name_base_results + '/' + file_name_resources
-            try:
-                W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-                #W_read = W_read/np.abs(W_read[:-1]).max()
-                W_inferred[0:min(m,len(W_read)),n_ind] = W_read[0:min(m,len(W_read))]
+                if no_hidden_neurons:
+                    cmd = 'scp -r salavati@castor.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/%s" %s' %(file_name_hidden,file_name_base_results+'/Inferred_Graphs/')
+                    os.system(cmd)
+            
+            
+            #----------------Read All Instances Generated for the Same Ensemble---------------
+            file_name_list = []
+            file_name_resources_list = []
+            file_name_hidden_list = []
+            
+            if no_hidden_neurons:
+                file_name_s = "W_Pll_%s_F_" %(file_name_ending_mod)
                 
+                for f_name in os.listdir(file_name_base_results+'/Inferred_Graphs/'):
+                    if f_name.startswith(file_name_s):
+                        print file
+                        file_name_e = f_name[-12:-4]
+                        
+                        file_name_list.append(file_name_base_results + '/Inferred_Graphs/' + file_name_s +  file_name_e + '.txt')
+                        file_name_hidden_list.append(file_name_base_results + '/Inferred_Graphs/Hidden_Neurons_' + file_name_ending_mod + '_F_' + file_name_e + '.txt')
+                        
+                        if 'S' in plot_flags:
+                            file_name_resources_list.append(file_name_base_results + '/Spent_Resources/CPU_RAM_' + file_name_ending_mod + '_F_' + file_name_e + '.txt')
+            #---------------------------------------------------------------------------------
+            
+            else:
+                file_name_list=[file_name_base_results + '/' + file_name]
                 if 'S' in plot_flags:
-                    temp = np.genfromtxt(file_name_resources, dtype=None, delimiter='\t')
-                    spent_cpu[itr_V1,itr_V2] = spent_cpu[itr_V1,itr_V2] + temp[1]
-                    spent_ram[itr_V1,itr_V2] = spent_cpu[itr_V1,itr_V2] + temp[2]
-                    
-                print "Got the file!"
-            except:
-                found_file_tot = 0
-                print 'Sorry I can not find the corresponding inference file for the netwrok'
-                pdb.set_trace()
+                    file_name_resources_list = [file_name_base_results + '/' + file_name_resources]
+            
+            for il in range(0,len(file_name_list)):
+                file_name = file_name_list[il]
+                if 'S' in plot_flags:
+                    file_name_resources = file_name_resources_list[il]
                 
-        for i in range (0,n):
-            for j in range(0,m):
-                if np.isnan(W_inferred[i,j]):
-                    W_inferred[i,j] =0
+                if no_hidden_neurons:
+                    file_name_hidden = file_name_hidden_list[il]
                     
-            #W_inferred = W_inferred + np.random.rand(n,m)/1000
+                try:
+                    W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+                    #W_read = W_read/np.abs(W_read[:-1]).max()
+                    W_inferred[0:min(m-no_hidden_neurons,len(W_read)),n_ind] = W_read[0:min(m-no_hidden_neurons,len(W_read))]
+                    
+                    if 'S' in plot_flags:
+                        temp = np.genfromtxt(file_name_resources, dtype=None, delimiter='\t')
+                        spent_cpu[itr_V1,itr_V2] = spent_cpu[itr_V1,itr_V2] + temp[1]
+                        spent_ram[itr_V1,itr_V2] = spent_cpu[itr_V1,itr_V2] + temp[2]
+                        
+                    if no_hidden_neurons:
+                        hidden_neurons = np.genfromtxt(file_name_hidden, dtype=None, delimiter='\t')
+                        
+                    print "Got the file!"
+                
+                except:
+                    found_file_tot = 0
+                    print 'Sorry I can not find the corresponding inference file for the netwrok'
+                    pdb.set_trace()
+                    
+                if  file_name_ground_truth:                                        
+                    W_r = np.reshape(W[:,n_ind],[len(W[:,n_ind]),1])
+                    W_s = W_read[0:min(m-no_hidden_neurons,len(W_read))]
+                    
+                    
+                    if no_hidden_neurons:
+                        W_r = np.delete(W_r,hidden_neurons,0)
+                    
+                    W_s = np.reshape(W_s,[len(W_s),1])
+                    W_r = np.reshape(W_r,[len(W_r),1])
+                    
+                    W_e = np.ma.masked_array(W_s,mask= (W_r<=0).astype(int))
+                    means_vector[0,itr_n] = means_vector[0,itr_n] + W_e.mean()#.data
+                    std_vector[0,itr_n] = std_vector[0,itr_n] + W_e.std()#.data
+        
+                    W_i = np.ma.masked_array(W_s,mask= (W_r>=0).astype(int))
+                    means_vector[1,itr_n] = means_vector[1,itr_n] + W_i.mean()#.data
+                    std_vector[1,itr_n] = std_vector[1,itr_n] + W_i.std()#.data
+                        
+                    W_v = np.ma.masked_array(W_s,mask= (W_r!=0).astype(int))
+                    means_vector[2,itr_n] = means_vector[2,itr_n] + W_v.mean()#.data
+                    std_vector[2,itr_n] = std_vector[2,itr_n] + W_v.std()#.data
+                        
+            #~~~~~~~~~~~~~~~~~~~~~~~~Update the Variables~~~~~~~~~~~~~~~~~~~~~~~~~~
+            mean_exc[itr_V1,itr_V2] = means_vector[0,itr_n]/float(len(file_name_list))
+            std_exc[itr_V1,itr_V2]  = std_vector[0,itr_n]/float(len(file_name_list))
+                                            
+            mean_inh[itr_V1,itr_V2] = means_vector[1,itr_n]/float(len(file_name_list))
+            std_inh[itr_V1,itr_V2] = std_vector[1,itr_n]/float(len(file_name_list))
+                                            
+            mean_void[itr_V1,itr_V2] = means_vector[2,itr_n]/float(len(file_name_list))
+            std_void[itr_V1,itr_V2] = std_vector[2,itr_n]/float(len(file_name_list))
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+            itr_n = itr_n + 1        
+        
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
-
-        
-        #~~~~~~~~~~~~~~~~~~~~~~~~Claculate Belief Quality~~~~~~~~~~~~~~~~~~~~~~
-        means_vector,std_vector = calculate_belief_quality(W_inferred,W,whiten_flag,zero_diagonals_flag,neuron_range)
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-        #~~~~~~~~~~~~~~~~~~~~~~~~Update the Variables~~~~~~~~~~~~~~~~~~~~~~~~~~
-        mean_exc[itr_V1,itr_V2] = means_vector[0].mean()
-        std_exc[itr_V1,itr_V2]  = std_vector[0].mean()
-                                
-        mean_inh[itr_V1,itr_V2] = means_vector[1].mean()
-        std_inh[itr_V1,itr_V2] = std_vector[1].mean()
-                                
-        mean_void[itr_V1,itr_V2] = means_vector[2].mean()
-        std_void[itr_V1,itr_V2] = std_vector[2].mean()
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
         itr_V2 = itr_V2 + 1
             
@@ -324,20 +393,48 @@ if 'P' in plot_flags:
         
 #------------------------------------ROC Curve--------------------------------
 if 'R' in plot_vars:
-    m,n = W.shape
+    n,m = W.shape
+    m = n
     W_inferred = np.zeros([n,m])
     
+    W_infer = np.zeros([len(file_name_ending_list22),n])
     
-
-    for n_ind in neuron_range:
-                
-        #~~~~~~~~~~~~~~~~~~~~Read the Inferred Weights~~~~~~~~~~~~~~~~~~~~
-        file_name = file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_ending,str(n_ind))
-        W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+    if 1:
+        W_inferred2 = np.zeros([n,len(neuron_range)])
+        for file_name_ending in file_name_ending_list22:
+            file_name = file_name_base_results + "/Inferred_Graphs/W_Pll_%s_n_%s_%s.txt" %(file_name_ending,str(neuron_range[0]),str(neuron_range[-1]))
+            W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+            #W_inferred = W_inferred + np.multiply(W_read[0:n,:],(W_read[0:n,:]>0).astype(int))
+            W_inferred2 = W_inferred2 + W_read[0:n,:]
+            itr_i = itr_i + 1    
         
-        W_inferred[0:min(m,len(W_read)),n_ind] = W_read[0:min(m,len(W_read))]
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
+        W_inferred[:,neuron_range] = W_inferred2
+    else:
+        itr_n = 0
+        for n_ind in neuron_range:
+            
+            #~~~~~~~~~~~~~~~~~~~~Read the Inferred Weights~~~~~~~~~~~~~~~~~~~~
+            itr_i = 0
+            for file_name_ending in file_name_ending_list2:
+                
+                file_name = file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_ending,str(n_ind))
+                W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+                W_infer[itr_i,:] = W_read[0:n]
+                
+                itr_i = itr_i + 1
+                
+            if itr_i > 1:
+                W_inferred[0:min(m,len(W_read)),itr_n] = W_infer[0:itr_i,:].mean(axis = 0)
+            else:
+                W_inferred[0:min(m,len(W_read)),itr_n] = W_infer
+                
+            #W_inferred[0:min(m,len(W_read)),n_ind] = W_read[0:min(m,len(W_read))]
+            W_inferred[0:min(m,len(W_read)),itr_n] = W_inferred[0:min(m,len(W_read)),itr_n] - W_inferred[0:min(m,len(W_read)),itr_n].min()
+            itr_n = itr_n + 1
+            
+            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+        
     #W_inferred = W_inferred/np.abs(W_inferred).max()
     val_range = range(0,500)
     val_range = np.array(val_range)
@@ -346,31 +443,58 @@ if 'R' in plot_vars:
     true_pos = np.zeros([len(val_range)])
     false_pos = np.zeros([len(val_range)])
     
+    itr_n = 0
     for n_ind in neuron_range:
         itr_V1 = 0
         no_edges = 0
         no_edges_0 = 0
         
-        W_temp = (W_inferred[:,n_ind])/np.abs(W_inferred[:,n_ind]).max()
-        W_temp = W_temp[:-1]    
-        for thresh in val_range:
-            
-            
-            #~~~~~~~~Calcualte True Positive and False Positive Rates~~~~~~~~~
-            W_ter = (W_temp>=thresh).astype(int)
-            
-            true_pos[itr_V1] = true_pos[itr_V1] + (sum(np.multiply((W_ter>0).astype(int),(W[:,n_ind]>0).astype(int))))/float(sum(W[:,n_ind]>0))
-            false_pos[itr_V1] = false_pos[itr_V1] + sum(np.multiply((W_ter>0).astype(int),(W[:,n_ind]==0).astype(int)))/float(sum(W[:,n_ind]==0))
-            no_edges = no_edges + sum(W[:,n_ind]>0)
-            no_edges_0 = no_edges_0 + sum(W[:,n_ind]==0)
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            itr_V1 = itr_V1 + 1
         
-    true_pos = true_pos/float(len(neuron_range))
-    false_pos = false_pos/float(len(neuron_range))
+        W_temp = (W_inferred[:,itr_n])
+        W_temp = W_temp - W_temp.min()
+        W_temp = np.multiply(W_temp,(W_temp>0).astype(int))
+        W_temp = W_temp/(0.00001+ np.abs(W_temp).max())
+        W_inferred[:,itr_n] = W_temp
+        #W_temp = W_temp[:-1]    
+        
+        itr_n = itr_n + 1    
+    
+    W_s = W[0:n,neuron_range]
+    for thresh in val_range:        
+        #~~~~~~~~Calcualte True Positive and False Positive Rates~~~~~~~~~
+        W_ter = (W_inferred[0:n,neuron_range]>=thresh).astype(int)
             
-    plt.plot(false_pos,true_pos);plt.plot(val_range,val_range,'r');plt.show()
+        true_pos[itr_V1] = true_pos[itr_V1] + sum(sum(np.multiply((W_ter>0).astype(int),(W_s>0).astype(int))))/float(sum(sum(W_s>0)))
+        false_pos[itr_V1] = false_pos[itr_V1] + sum(sum(np.multiply((W_ter>0).astype(int),(W_s==0).astype(int))))/float(sum(sum(W_s==0)))
+        #no_edges = no_edges + sum(W[:,n_ind]>0)
+        #no_edges_0 = no_edges_0 + sum(W[:,n_ind]==0)
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+        itr_V1 = itr_V1 + 1
+        
+    #true_pos = true_pos/float(len(neuron_range))
+    #false_pos = false_pos/float(len(neuron_range))
+            
+    plt.plot(false_pos,true_pos,linewidth=3,label='Only positive weights');plt.plot(val_range,val_range,'r',linewidth=2);
+    plt.plot(false_pos2,true_pos2,linewidth=3,label='All weights')
+    
+    plt.xlabel('False Positive Rate', fontsize=16)
+    plt.ylabel('True Positive Rate', fontsize=16)    
+    plt.title('ROC curve for the dataset with 60s of data')
+    plt.legend(loc='lower right')
+    plt.show()
+    
+    
+    TFR = np.divide(true_pos-false_pos,false_pos+true_pos)
+    TFS = false_pos+true_pos
+    plt.plot(TFS,TFR,linewidth=3);
+    
+    plt.xlabel('True False Sum (TFS)', fontsize=16)
+    plt.ylabel('True False Ration (TFR)', fontsize=16)    
+    plt.title('PPC curve for the dataset with 60s of data')
+    
+    plt.show()
+
 #------------------------------------------------------------------------------
 
 #==============================================================================
@@ -525,6 +649,13 @@ if 'P' in plot_flags:
                                       Prec_exc,std_Prec_exc,Prec_inh,std_Prec_inh,Prec_void,
                                       std_Prec_void,Rec_exc,std_Rec_exc,Rec_inh,std_Rec_inh,Rec_void,std_Rec_void)
 
+
+if 'S' in plot_flags:
+    spent_ram = spent_ram/float(1e6)            # Transform to GB
+    spent_cpu = spent_cpu/3600.                 # Transform to hours
+    temp = np.vstack([np.array(Var1_range).T,(spent_cpu).T,spent_ram.T])
+    file_name = file_name_base_results + "/Plot_Results/CPU_RAM_%s.txt" %file_name_ending
+    np.savetxt(file_name,temp.T,'%3.5f',delimiter='\t',newline='\n')
 #------------------------------------------------------------------------------
 
 #==============================================================================

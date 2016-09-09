@@ -183,15 +183,17 @@ for n_ind in neuron_range:
     file_name_ending = 'I_' + str(inference_method) + '_S_' + str(float(sparsity_flag)) + '_T_' + str(int(T))
     file_name_ending = file_name_ending + '_C_' + str(int(num_process)) + '_B_' + str(int(block_size))
     file_name_ending = file_name_ending + '_K_' + kernel_choice + '_H_' + str(class_sample_freq)
-    if no_hidden_neurons:
-        file_name_ending = file_name_ending + '_F_' + str(int(no_hidden_neurons)) + id_generator()
-
+    
     if bin_size:
         file_name_ending = file_name_ending + '_bS_' + str(bin_size)
     
     file_name_ending = file_name_ending + '_ii_' + str(no_itr_over_dataset)
     
-    file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
+    file_name_ending = file_name_ending + '_' + str(n_ind)
+    if no_hidden_neurons:
+        file_name_ending = file_name_ending + '_F_' + str(int(no_hidden_neurons)) + id_generator()
+        
+    file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_prefix,file_name_ending)
     tmp = W_inferred/float(no_avg_itr)
     tmp = tmp/(0.0001+np.linalg.norm(tmp))
     tmp = tmp/(0.0001+np.abs(tmp).max())
@@ -205,20 +207,20 @@ for n_ind in neuron_range:
     
     #....................Store Spent Time and Memory............................
     t_end = time.time()                           # The ending time of the algorithm    
-    file_name =  file_name_base_results + "/Spent_Resources/CPU_RAM_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
+    file_name =  file_name_base_results + "/Spent_Resources/CPU_RAM_%s_%s.txt" %(file_name_prefix,file_name_ending)
     tmp = [T,(t_end-t_start)/float(no_avg_itr),used_ram/float(no_avg_itr)]
     np.savetxt(file_name,tmp,delimiter='\t')
     #..........................................................................
     
     #.......................Store Optimization Cost............................
-    file_name =  file_name_base_results + "/Spent_Resources/Opt_Cost_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))
+    file_name =  file_name_base_results + "/Spent_Resources/Opt_Cost_%s_%s.txt" %(file_name_prefix,file_name_ending)
     tmp = np.reshape(cost,[1,len(cost)])
     np.savetxt(file_name,tmp,delimiter='\t')
     #..........................................................................
     
     #..........................Store Hidden Neurons.............................
     if no_hidden_neurons:
-        file_name =  file_name_base_results + "/Inferred_Graphs/Hidden_Neurons_%s_%s_%s.txt" %(file_name_prefix,file_name_ending,str(n_ind))        
+        file_name =  file_name_base_results + "/Inferred_Graphs/Hidden_Neurons_%s_%s.txt" %(file_name_prefix,file_name_ending)
         np.savetxt(file_name,hidden_neurons,delimiter='\t')
     #..........................................................................
     
