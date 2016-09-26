@@ -3716,7 +3716,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
                 if (mthd == 1) or (mthd == 2):
                     lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/float(no_blocks)) 
-            
+        
+        pdb.set_trace()       
         if itr_block_w >= len(block_start_inds):
             #Delta_W_loc = np.dot(A.T,lambda_tot[b_st:t_end_last_w+2])
             
@@ -4079,11 +4080,13 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             
             #~~~~~~~~~~~Upate Weights for Skecthed Perceptron~~~~~~~~~~~
             elif (mthd == 4):
-                d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
+                #d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
+                d_alp = max(0,0-np.dot(W_temp.T,aa_t))
                 if d_alp:
                     try:
                         s = prng.randint(0,beta,[len_v-1,1])
                         s = (s>=beta-1).astype(int)
+                        pdb.set_trace()
                         
                         Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
                         #Delta_W_loc = np.multiply(Delta_W_loc,s)
