@@ -139,7 +139,9 @@ if not os.path.isfile(file_name_spikes2):
         no_firings[ik] = len(np.nonzero(out_spikes[:,0]==ik)[0])
         
     #-------------------------------------------------------
-    pdb.set_trace()
+    #pdb.set_trace()
+    file_name =  "../Data/Spikes/No_Firings_" + file_name_prefix + '.txt'
+    np.savetxt(file_name,no_firings,'%f',delimiter='\t')  
 #------------------------------------------------------------------------------
 
 #==============================================================================
