@@ -3716,8 +3716,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 
                 if (mthd == 1) or (mthd == 2):
                     lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/float(no_blocks)) 
-        
-        pdb.set_trace()       
+            
         if itr_block_w >= len(block_start_inds):
             #Delta_W_loc = np.dot(A.T,lambda_tot[b_st:t_end_last_w+2])
             
