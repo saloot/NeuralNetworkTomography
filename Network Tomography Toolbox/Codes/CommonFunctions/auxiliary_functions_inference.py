@@ -3659,7 +3659,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 else:
                     lambda_temp = []
         
-                infer_w_block(W_tot,A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params)
+                infer_w_block(W_tot,A,YA,lambda_temp,len_v,t_start,t_end_w,inferece_params)
                 pdb.set_trace()
                     
                 if 0:#not (itr_cost%2):
@@ -4080,8 +4080,8 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             
             #~~~~~~~~~~~Upate Weights for Skecthed Perceptron~~~~~~~~~~~
             elif (mthd == 4):
-                #d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
-                d_alp = max(0,0-np.dot(W_temp.T,aa_t))
+                d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
+                #d_alp = max(0,0-np.dot(W_temp.T,aa_t))
                 if d_alp:
                     try:
                         s = prng.randint(0,beta,[len_v-1,1])
