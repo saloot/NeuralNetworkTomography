@@ -132,7 +132,7 @@ if not os.path.isfile(file_name_spikes2):
                 pdb.set_trace()
     spike_file.write('\n'.join(fire_matx))
     spike_file.close()
-    
+    pdb.set_trace()
 #------------------------------------------------------------------------------
 
 #==============================================================================
