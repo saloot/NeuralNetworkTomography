@@ -3907,7 +3907,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     #W_temp[-1] = 0.1
     
     no_firings_per_neurons = 2*np.ones(W_temp.shape)                # This variable tracks the number of times each pre-synaptic neuron has fired
-    no_firings_per_neurons = [ 0.50524875,  0.51390311,  0.55878293,  0.56535145,  0.5646233 ,
+    no_firings_per_neurons = [ 0.51390311,  0.55878293,  0.56535145,  0.5646233 ,
          0.56620095,  0.56255262,  0.62126728,  0.53129527,  0.58542108,
          0.58517077,  0.50000758,  0.5909808 ,  1.12309145,  0.5       ,
          0.50772901,  0.5       ,  0.51575382,  0.50471022,  0.54981758,
@@ -3925,7 +3925,11 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
          0.60803164,  0.54299118,  0.52094948,  0.51003481,  0.65719693,
          0.60683323,  0.51222685,  0.5372039 ,  0.51454024,  0.51114221,
          0.73898484,  0.50840406,  0.50345871,  0.50039441,  0.50129702,
-         0.50211619,  0.50580244,  0.502814  ,  0.50370901]
+         0.50211619,  0.50580244,  0.502814  ,  0.50370901, 1]
+    
+    no_firings_per_neurons = np.array(no_firings_per_neurons)
+    no_firings_per_neurons = np.reshape(no_firings_per_neurons,[len(no_firings_per_neurons),1])
+    #no_firings_per_neurons = np.delete(W_r,hidden_neurons,0)
     #---------------------------------------------------------------
     
     #-----------------Adjust Hinge Loss Parameters------------------
