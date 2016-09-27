@@ -3907,6 +3907,25 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     #W_temp[-1] = 0.1
     
     no_firings_per_neurons = 2*np.ones(W_temp.shape)                # This variable tracks the number of times each pre-synaptic neuron has fired
+    no_firings_per_neurons = [ 0.50524875,  0.51390311,  0.55878293,  0.56535145,  0.5646233 ,
+         0.56620095,  0.56255262,  0.62126728,  0.53129527,  0.58542108,
+         0.58517077,  0.50000758,  0.5909808 ,  1.12309145,  0.5       ,
+         0.50772901,  0.5       ,  0.51575382,  0.50471022,  0.54981758,
+         0.51781692,  0.55744799,  0.51950076,  0.50467988,  0.51113462,
+         0.50034132,  0.51501809,  0.50334494,  0.52704773,  0.52007721,
+         0.50667471,  0.51799137,  0.50101638,  0.50304154,  0.50472539,
+         0.50543837,  0.66023088,  0.84892029,  0.52372555,  0.60291943,
+         0.53981311,  0.50069023,  0.50150181,  0.51010308,  0.50361799,
+         0.50138804,  0.5000986 ,  0.51975865,  0.5071298 ,  0.52157144,
+         0.50666712,  0.50118324,  0.51463885,  0.51724805,  0.50744837,
+         0.51783967,  0.57304253,  0.87852413,  0.51447956,  0.52308842,
+         0.55449746,  0.57268604,  0.50339045,  0.50276849,  0.50352698,
+         0.50037166,  0.50409584,  0.52183691,  0.6436048 ,  1.5       ,
+         1.40827588,  0.51577658,  0.50796414,  0.51709635,  0.94915466,
+         0.60803164,  0.54299118,  0.52094948,  0.51003481,  0.65719693,
+         0.60683323,  0.51222685,  0.5372039 ,  0.51454024,  0.51114221,
+         0.73898484,  0.50840406,  0.50345871,  0.50039441,  0.50129702,
+         0.50211619,  0.50580244,  0.502814  ,  0.50370901]
     #---------------------------------------------------------------
     
     #-----------------Adjust Hinge Loss Parameters------------------
@@ -3959,7 +3978,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             
             aa_t = aa[jj,:]#/float(cf)
             yy_t = yy[jj]#[0]
-            no_firings_per_neurons = no_firings_per_neurons + np.reshape(((yy_t*aa_t.ravel())>0.9).astype(int),[len_v-1,1])
+            #no_firings_per_neurons = no_firings_per_neurons + np.reshape(((yy_t*aa_t.ravel())>0.9).astype(int),[len_v-1,1])
             aa_t = aa_t/(0.00001+np.linalg.norm(aa_t))
             if yy_t * sum(aa_t[:-1])<0:
                 print 'something bad is happening!'
@@ -4084,17 +4103,18 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             #~~~~~~~~~~~Upate Weights for Skecthed Perceptron~~~~~~~~~~~
             elif (mthd == 4):
                 d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
-                #d_alp = max(0,0-np.dot(W_temp.T,aa_t))
+                d_alp = max(0,0-np.dot(W_temp.T,aa_t))
                 if d_alp:
                     try:
                         s = prng.randint(0,beta,[len_v-1,1])
                         s = (s>=beta-1).astype(int)
-                        pdb.set_trace()
+                        
                         
                         Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
                         #Delta_W_loc = np.multiply(Delta_W_loc,s)
                         
-                        Delta_W_loc = np.divide(Delta_W_loc,0.4*np.log(no_firings_per_neurons))
+                        #Delta_W_loc = np.divide(Delta_W_loc,0.4*np.log(no_firings_per_neurons))
+                        Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
                         if 0:#sum(s):
                             Delta_W_loc = Delta_W_loc/(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
                         
