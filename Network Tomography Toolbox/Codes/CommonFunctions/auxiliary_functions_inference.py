@@ -3659,7 +3659,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 else:
                     lambda_temp = []
         
-                infer_w_block(W_tot,A,YA,lambda_temp,len_v,t_start,t_end_w,inferece_params)
+                inferece_params[10] = 0
+                infer_w_block(W_tot,A,YA,lambda_temp,len_v,0,block_size,inferece_params)
                 pdb.set_trace()
                     
                 if 0:#not (itr_cost%2):
@@ -3896,7 +3897,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     no_zeros = sum(yy<0)
     p1 = no_ones /float(len(yy))
     
-    pdb.set_trace()
+    #pdb.set_trace()
     
     W_temp = copy.deepcopy(W_in)
     Delta_W = np.zeros(W_temp.shape)
