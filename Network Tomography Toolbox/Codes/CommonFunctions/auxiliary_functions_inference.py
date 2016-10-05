@@ -4038,6 +4038,8 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             if (mthd == 1):
                 Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])# * yy_t#/float(cf)
                 #Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
+                Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
+                
                 if d_alp !=0:
                     s_size = max(0,e0-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
                     s_size = max(0,e0-np.dot(W_temp.T,aa_t)) /(d_alp)
