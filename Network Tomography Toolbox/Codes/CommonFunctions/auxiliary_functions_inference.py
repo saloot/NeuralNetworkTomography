@@ -4136,6 +4136,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                     #Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
                     #Delta_W_loc[-1] = .1
                     Delta_W = Delta_W + Delta_W_loc
+                    Delta_W = Delta_W/(0.00001+ np.linalg.norm(Delta_W))
                     #W_temp = W_temp + 1*Delta_W_loc
                     #W_temp = W_temp - W_temp.mean()
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
