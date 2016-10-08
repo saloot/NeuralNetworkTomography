@@ -204,6 +204,8 @@ for n_ind in neuron_range:
         
     file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_prefix,file_name_ending)
     tmp = W_inferred/float(no_avg_itr)
+    
+    pdb.set_trace()
     tmp = tmp/(0.0001+np.linalg.norm(tmp))
     tmp = tmp/(0.0001+np.abs(tmp).max())
     

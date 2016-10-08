@@ -3770,7 +3770,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     pool.close()
     pool.join()
     
-    pdb.set_trace()
+    
     
     return WW[0:len_v].ravel(),max_memory,total_cost[1:itr_cost]
     
