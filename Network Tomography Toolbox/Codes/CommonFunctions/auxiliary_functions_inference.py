@@ -3586,6 +3586,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         W_tot = W_tot/len_v
     else:
         W_tot = np.zeros([len_v-1,1])
+        W_tot = np.random.randn(len_v-1,1)
+        W_tot = W_tot - W_tot.mean()
+        W_tot = whiten(W_tot)
+        W_tot = W_tot/len_v
     Z_tot = np.zeros([len_v-1,1])    
         
     total_cost = np.zeros([len(range_tau)])
