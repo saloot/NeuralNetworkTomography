@@ -3912,7 +3912,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     #W_temp[-1] = 0.1
     
     no_firings_per_neurons = 2*np.ones(W_temp.shape)                # This variable tracks the number of times each pre-synaptic neuron has fired
-    if max(W_temp.shape) == 94:
+    if 0:#max(W_temp.shape) == 94:
         no_firings_per_neurons = [ 0.51390311,  0.55878293,  0.56535145,  0.5646233 ,
              0.56620095,  0.56255262,  0.62126728,  0.53129527,  0.58542108,
              0.58517077,  0.50000758,  0.5909808 ,  1.12309145,  0.5       ,
