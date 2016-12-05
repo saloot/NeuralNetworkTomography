@@ -397,7 +397,8 @@ def combine_spikes_matrix_FF(Network,l_out,generate_data_mode,T,Neural_Spikes):
 #------------------------------------------------------------------------------
 def spike_binning(spikes_mat,bin_size):
     
-    #~~~~~~~~~~~~~~~Initilizations~~~~~~~~~~~~~~~
+    
+    #~~~~~~~~~~~~~~~~Initilizations~~~~~~~~~~~~~~~
     n,T = spikes_mat.shape
     L = int(T/float(bin_size))
     out_spikes = np.zeros([n,L])
