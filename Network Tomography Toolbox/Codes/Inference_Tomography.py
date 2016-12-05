@@ -52,7 +52,7 @@ if (kernel_choice!= 'E') and (kernel_choice!='D'):
 if no_neurons == 1000:
     no_avg_itr = 10
 else:
-    no_avg_itr = 20
+    no_avg_itr = 2
     
 #==============================================================================
 
@@ -218,6 +218,7 @@ for n_ind in neuron_range:
     
     W_infer[:,itr_n] = tmp.ravel()
     
+    
     np.savetxt(file_name,tmp.T,'%2.6f',delimiter='\t')
     #..........................................................................
     
@@ -243,7 +244,9 @@ for n_ind in neuron_range:
     #..........................................................................
     
     itr_n = itr_n + 1
+    pdb.set_trace()
 #==============================================================================
+
 
 file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_n_%s_%s.txt" %(file_name_prefix,file_name_ending,str(neuron_range[0]),str(neuron_range[-1]))
 np.savetxt(file_name,W_infer,'%2.6f',delimiter='\t')  

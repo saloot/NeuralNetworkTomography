@@ -3540,6 +3540,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     theta = inferece_params[4]
     max_itr_opt = inferece_params[5]
     kernel_choice = inferece_params[11]
+    
+    weight_of_weights = np.abs(np.array(range(0,n)) - n_ind)
+    weight_of_weights = np.exp(-weight_of_weights/(0.5*n))
+    inferece_params[12] = weight_of_weights
     #----------------------------------------------------------------------
     
     #----------------------------Initializations---------------------------    
@@ -3856,6 +3860,9 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     beta = inferece_params[7]
     class_sample_freq = inferece_params[9]
     rand_sample_flag = inferece_params[10]
+    weights_weight = inferece_params[12]
+    
+    weights_weight = np.reshape(weights_weight,[len_v-1,1])
     #----------------------------------------------------------------------
     
     #------------------------Initializations------------------------
@@ -4043,7 +4050,9 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             if (mthd == 1):
                 Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])# * yy_t#/float(cf)
                 #Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
-                Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
+                #Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
+                
+                Delta_W_loc = np.multiply(Delta_W_loc,(weights_weight))
                 
                 if d_alp !=0:
                     s_size = max(0,e0-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
