@@ -3543,7 +3543,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     weight_of_weights = np.abs(np.array(range(0,n)) - n_ind)
     weight_of_weights = np.exp(-weight_of_weights/(0.5*n))
-    inferece_params[12] = weight_of_weights
+    inferece_params.append(weight_of_weights)
     #----------------------------------------------------------------------
     
     #----------------------------Initializations---------------------------    
