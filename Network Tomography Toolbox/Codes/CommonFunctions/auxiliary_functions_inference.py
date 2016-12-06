@@ -4137,6 +4137,8 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                         #Delta_W_loc = np.divide(Delta_W_loc,0.4*np.log(no_firings_per_neurons))
                         #pdb.set_trace()
                         Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
+                        Delta_W_loc = np.multiply(Delta_W_loc,(weights_weight))
+                
                         if 0:#sum(s):
                             Delta_W_loc = Delta_W_loc/(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
                         
