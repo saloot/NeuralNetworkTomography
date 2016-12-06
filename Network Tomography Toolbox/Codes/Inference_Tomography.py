@@ -52,7 +52,7 @@ if (kernel_choice!= 'E') and (kernel_choice!='D'):
 if no_neurons == 1000:
     no_avg_itr = 10
 else:
-    no_avg_itr = 2
+    no_avg_itr = 5
     
 #==============================================================================
 
