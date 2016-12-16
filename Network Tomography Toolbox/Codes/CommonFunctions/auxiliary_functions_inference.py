@@ -3964,264 +3964,269 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     #---------------------------------------------------------------
         
     #------------------------Infer the Weights----------------------
-    if no_ones and no_zeros: 
-        
-        #--------------------Do One Pass over Data----------------------        
-        for ss in range(0,max_internal_itr):
+    if mthd == 10:
+        yy = np.dot(yy,[1,TcT])
+        Delta_W = np.dot(yy,aa)
+        Delta_W = Delta_W.T/(0.00001 + np.linalg.norm(Delta_W))
+    else:    
+        if no_ones and no_zeros: 
             
-            #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
-            try:
-                if class_sample_freq:
-                    ee = np.random.rand(1)
-                    if ee < class_sample_freq:
-                        #ii = np.random.randint(0,no_ones)
-                        ii = prng.randint(0,no_ones)
-                        jj = ind_ones[ii]
+            #--------------------Do One Pass over Data----------------------        
+            for ss in range(0,max_internal_itr):
+                
+                #~~~~~~Sample Probabalistically From Unbalanced Classes~~~~~
+                try:
+                    if class_sample_freq:
+                        ee = np.random.rand(1)
+                        if ee < class_sample_freq:
+                            #ii = np.random.randint(0,no_ones)
+                            ii = prng.randint(0,no_ones)
+                            jj = ind_ones[ii]
+                        else:
+                            #ii = np.random.randint(0,no_zeros)
+                            ii = prng.randint(0,no_zeros)
+                            jj = ind_zeros[ii]
                     else:
-                        #ii = np.random.randint(0,no_zeros)
-                        ii = prng.randint(0,no_zeros)
-                        jj = ind_zeros[ii]
-                else:
-                    #ii = np.random.randint(0,TcT)
-                    ii = prng.randint(0,TcT)
-                    jj = ii
-            except:
-                print 'something is fishy: ee = %s,no_ones = %s,no_zeros=%s, ii = %s,jj=%s' %(str(ee),str(no_ones),str(no_zeros),str(ii),str(jj))
-                continue
-            
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
-            
-            #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
-            
-            aa_t = aa[jj,:]#/float(cf)
-            yy_t = yy[jj]#[0]
-            #no_firings_per_neurons = no_firings_per_neurons + np.reshape(((yy_t*aa_t.ravel())>0.9).astype(int),[len_v-1,1])
-            aa_t = aa_t/(0.00001+np.linalg.norm(aa_t))
-            if yy_t * sum(aa_t[:-1])<0:
-                print 'something bad is happening!'
-                pdb.set_trace()
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            #~~~~~~~~~~~~~~~~~~Update Variables for SDCS~~~~~~~~~~~~~~~~
-            if (mthd == 1) or (mthd == 2):
-                #c = 1 * yy_t
-                #gamma_t = 0.5* ( (1+yy_t) * no_ones + (1-yy_t) * no_zeros)
-                #ccf = gamma_t
-                ub = h0-lambda_temp[jj]
-                lb = -lambda_temp[jj]
+                        #ii = np.random.randint(0,TcT)
+                        ii = prng.randint(0,TcT)
+                        jj = ii
+                except:
+                    print 'something is fishy: ee = %s,no_ones = %s,no_zeros=%s, ii = %s,jj=%s' %(str(ee),str(no_ones),str(no_zeros),str(ii),str(jj))
+                    continue
                 
-                if 0:
-                    if yy_t>0:
-                        ub = h0-lambda_temp[jj]
-                        lb = -lambda_temp[jj]
-                    else:
-                        lb = -h0-lambda_temp[jj]
-                        ub = -lambda_temp[jj]
-                        
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
                 
-                #b = cf * (e0-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
-                b = (e0-np.dot(W_temp.T,aa_t))#/pow(np.linalg.norm(aa_t),2)
-                #b = yy_t * b
-                d_alp = min(ub,max(lb,b))
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            #~~~~~~Update Variables for SDCS with Double Hinge Loss~~~~~
-            elif (mthd == 5):
-                lb0 = -lambda_temp[jj]
-                ub0 = h0-lambda_temp[jj]
-                lb1 = -lambda_temp[jj]-h1
-                ub1 = -lambda_temp[jj]
+                #~~~~~~~~~~~~~~~~~~~~~~Retrieve a Vector~~~~~~~~~~~~~~~~~~~~
                 
-                b0 = (e0-np.dot(W_temp.T,aa_t))#/pow(np.linalg.norm(aa_t),2)
-                b1 = (e1-np.dot(W_temp.T,aa_t))#/pow(np.linalg.norm(aa_t),2)
+                aa_t = aa[jj,:]#/float(cf)
+                yy_t = yy[jj]#[0]
+                #no_firings_per_neurons = no_firings_per_neurons + np.reshape(((yy_t*aa_t.ravel())>0.9).astype(int),[len_v-1,1])
+                aa_t = aa_t/(0.00001+np.linalg.norm(aa_t))
+                if yy_t * sum(aa_t[:-1])<0:
+                    print 'something bad is happening!'
+                    pdb.set_trace()
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
-                d_alp0 = min(ub0,max(lb0,b0))
-                val0 = pow(d_alp0-b0,2)
-                d_alp1 = min(ub1,max(lb1,b1))
-                val1 = pow(d_alp1-b1,2)
-                
-                if val1 < val0:
-                    d_alp = d_alp1
-                else:
-                    d_alp = d_alp0
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            #~~~~~~~~~~~~~~~~~~Upate Weights for SDCD~~~~~~~~~~~~~~~~~~~
-            if (mthd == 1):
-                Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])# * yy_t#/float(cf)
-                #Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
-                #Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
-                
-                Delta_W_loc = np.multiply(Delta_W_loc,(weights_weight))
-                Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
-                if d_alp !=0:
-                    s_size = max(0,e0-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
-                    s_size = max(0,e0-np.dot(W_temp.T,aa_t)) /(d_alp)
-                else:
-                    s_size = 1
-                
-                if 0:                
-                    sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
-                    sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
-                    sparse_thr = W_temp[:-1].std()/float(sparse_thr_0)
+                #~~~~~~~~~~~~~~~~~~Update Variables for SDCS~~~~~~~~~~~~~~~~
+                if (mthd == 1) or (mthd == 2):
+                    #c = 1 * yy_t
+                    #gamma_t = 0.5* ( (1+yy_t) * no_ones + (1-yy_t) * no_zeros)
+                    #ccf = gamma_t
+                    ub = h0-lambda_temp[jj]
+                    lb = -lambda_temp[jj]
                     
-                    W_temp[-1] = W_temp[-1] + s_size * Delta_W_loc[-1]
-                    #W_temp[:-1] = soft_threshold_double(W_temp[:-1],sparse_thr_pos,sparse_thr_neg) + s_size * Delta_W_loc[:-1]
-                    W_temp[:-1] = soft_threshold(W_temp[:-1],sparse_thr) + s_size * Delta_W_loc[:-1]
-
-                else:
-                    W_temp = W_temp + s_size * Delta_W_loc
-                Delta_W = Delta_W + s_size * Delta_W_loc
-                
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            #~~~~~~~~~~~~~Upate Weights for Sketched SDCD~~~~~~~~~~~~~~~
-            elif (mthd == 2):
-                Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])# * yy_t#/float(cf)
-                Delta_W_loc = np.divide(Delta_W_loc,0.1*np.log(no_firings_per_neurons))
-                
-                #s = prng.randint(0,beta,[len_v-1,1])
-                #s = (s>=beta-1).astype(int)
-                #Delta_W_loc = np.multiply(Delta_W_loc,s)
-                #Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
-                
-                
-                if d_alp !=0:
-                    s_size = max(0,e0-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
-                    s_size = max(0,e0-np.dot(W_temp.T,aa_t)) /(d_alp)
-                else:
-                    s_size = 1
-                
-                s_size = 1
-                Delta_W = Delta_W + s_size * Delta_W_loc
-                W_temp = W_temp + s_size * Delta_W_loc
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                        
-            #~~~~~~~~~~~~~~Upate Weights for Perceptron~~~~~~~~~~~~~~~~~
-            elif (mthd == 3):
-                #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
-                
-                
-                d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
-                Delta_W_loc = 0
-                if d_alp:
-                    Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
-                
-                Delta_W_loc = Delta_W_loc + 0.7*(W_temp<0).astype(int)
-                Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
-                
-                Delta_W_loc = -Delta_W_loc 
-                Momentum_W = mu_moment * Momentum_W - eta_w * Delta_W_loc
-                    
-                
-                #Delta_W_loc[-1] = .1
-                Delta_W = Delta_W + Delta_W_loc
-                W_temp = W_temp + 1*Momentum_W
-                #W_temp = W_temp + 1*Delta_W_loc
-                #W_temp = W_temp - W_temp.mean()
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            #~~~~~~~~~~~Upate Weights for Skecthed Perceptron~~~~~~~~~~~
-            elif (mthd == 4):
-                d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
-                d_alp = max(0,0-np.dot(W_temp.T,aa_t))
-                if d_alp:
-                    try:
-                        s = prng.randint(0,beta,[len_v-1,1])
-                        s = (s>=beta-1).astype(int)
-                        
-                        
-                        Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
-                        #Delta_W_loc = np.multiply(Delta_W_loc,s)
-                        
-                        #Delta_W_loc = np.divide(Delta_W_loc,0.4*np.log(no_firings_per_neurons))
-                        #pdb.set_trace()
-                        Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
-                        Delta_W_loc = np.multiply(Delta_W_loc,(weights_weight))
-                
-                        if 0:#sum(s):
-                            Delta_W_loc = Delta_W_loc/(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
-                        
-                        if 1:
-                            sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
-                            sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
-                            #sparse_thr = W_temp[:-1].std()/float(sparse_thr_0)
+                    if 0:
+                        if yy_t>0:
+                            ub = h0-lambda_temp[jj]
+                            lb = -lambda_temp[jj]
+                        else:
+                            lb = -h0-lambda_temp[jj]
+                            ub = -lambda_temp[jj]
                             
-                            W_temp[-1] = W_temp[-1] + 0.1 * Delta_W_loc[-1]
-                            #W_temp[:-1] = soft_threshold_double(W_temp[:-1],sparse_thr_pos,sparse_thr_neg) + 0.1 * Delta_W_loc[:-1]
-                    except RuntimeWarning:
-                        pdb.set_trace()
                     
-                    #Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
+                    #b = cf * (e0-np.dot(W_temp.T,aa_t))/pow(np.linalg.norm(aa_t),2)
+                    b = (e0-np.dot(W_temp.T,aa_t))#/pow(np.linalg.norm(aa_t),2)
+                    #b = yy_t * b
+                    d_alp = min(ub,max(lb,b))
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+                #~~~~~~Update Variables for SDCS with Double Hinge Loss~~~~~
+                elif (mthd == 5):
+                    lb0 = -lambda_temp[jj]
+                    ub0 = h0-lambda_temp[jj]
+                    lb1 = -lambda_temp[jj]-h1
+                    ub1 = -lambda_temp[jj]
+                    
+                    b0 = (e0-np.dot(W_temp.T,aa_t))#/pow(np.linalg.norm(aa_t),2)
+                    b1 = (e1-np.dot(W_temp.T,aa_t))#/pow(np.linalg.norm(aa_t),2)
+                    
+                    d_alp0 = min(ub0,max(lb0,b0))
+                    val0 = pow(d_alp0-b0,2)
+                    d_alp1 = min(ub1,max(lb1,b1))
+                    val1 = pow(d_alp1-b1,2)
+                    
+                    if val1 < val0:
+                        d_alp = d_alp1
+                    else:
+                        d_alp = d_alp0
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+                #~~~~~~~~~~~~~~~~~~Upate Weights for SDCD~~~~~~~~~~~~~~~~~~~
+                if (mthd == 1):
+                    Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])# * yy_t#/float(cf)
+                    #Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
+                    #Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
+                    
+                    Delta_W_loc = np.multiply(Delta_W_loc,(weights_weight))
+                    Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
+                    if d_alp !=0:
+                        s_size = max(0,e0-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
+                        s_size = max(0,e0-np.dot(W_temp.T,aa_t)) /(d_alp)
+                    else:
+                        s_size = 1
+                    
+                    if 0:                
+                        sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
+                        sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
+                        sparse_thr = W_temp[:-1].std()/float(sparse_thr_0)
+                        
+                        W_temp[-1] = W_temp[-1] + s_size * Delta_W_loc[-1]
+                        #W_temp[:-1] = soft_threshold_double(W_temp[:-1],sparse_thr_pos,sparse_thr_neg) + s_size * Delta_W_loc[:-1]
+                        W_temp[:-1] = soft_threshold(W_temp[:-1],sparse_thr) + s_size * Delta_W_loc[:-1]
+    
+                    else:
+                        W_temp = W_temp + s_size * Delta_W_loc
+                    Delta_W = Delta_W + s_size * Delta_W_loc
+                    
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+                #~~~~~~~~~~~~~Upate Weights for Sketched SDCD~~~~~~~~~~~~~~~
+                elif (mthd == 2):
+                    Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])# * yy_t#/float(cf)
+                    Delta_W_loc = np.divide(Delta_W_loc,0.1*np.log(no_firings_per_neurons))
+                    
+                    #s = prng.randint(0,beta,[len_v-1,1])
+                    #s = (s>=beta-1).astype(int)
+                    #Delta_W_loc = np.multiply(Delta_W_loc,s)
+                    #Delta_W_loc = Delta_W_loc *pow(np.linalg.norm(aa_t),2) /(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
+                    
+                    
+                    if d_alp !=0:
+                        s_size = max(0,e0-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
+                        s_size = max(0,e0-np.dot(W_temp.T,aa_t)) /(d_alp)
+                    else:
+                        s_size = 1
+                    
+                    s_size = 1
+                    Delta_W = Delta_W + s_size * Delta_W_loc
+                    W_temp = W_temp + s_size * Delta_W_loc
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            
+                #~~~~~~~~~~~~~~Upate Weights for Perceptron~~~~~~~~~~~~~~~~~
+                elif (mthd == 3):
+                    #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
+                    
+                    
+                    d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
+                    Delta_W_loc = 0
+                    if d_alp:
+                        Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
+                    
+                    Delta_W_loc = Delta_W_loc + 0.7*(W_temp<0).astype(int)
+                    Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
+                    
+                    Delta_W_loc = -Delta_W_loc 
+                    Momentum_W = mu_moment * Momentum_W - eta_w * Delta_W_loc
+                        
+                    
                     #Delta_W_loc[-1] = .1
                     Delta_W = Delta_W + Delta_W_loc
-                    Delta_W = Delta_W/(0.00001+ np.linalg.norm(Delta_W))
+                    W_temp = W_temp + 1*Momentum_W
                     #W_temp = W_temp + 1*Delta_W_loc
                     #W_temp = W_temp - W_temp.mean()
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            #~~~~Upate Weights for Perceptron with Double Hinge Loss~~~~
-            elif (mthd == 6):
-                #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
-                d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
-                if d_alp:
-                    if np.dot(W_temp.T,aa_t)<e0:
-                        Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])#/(0.0001+pow(np.linalg.norm(aa_t),2))
-                    else:
-                        Delta_W_loc = -max(0,e1+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])#/(0.0001+pow(np.linalg.norm(aa_t),2))
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+                #~~~~~~~~~~~Upate Weights for Skecthed Perceptron~~~~~~~~~~~
+                elif (mthd == 4):
+                    d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
+                    d_alp = max(0,0-np.dot(W_temp.T,aa_t))
+                    if d_alp:
+                        try:
+                            s = prng.randint(0,beta,[len_v-1,1])
+                            s = (s>=beta-1).astype(int)
+                            
+                            
+                            Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
+                            #Delta_W_loc = np.multiply(Delta_W_loc,s)
+                            
+                            #Delta_W_loc = np.divide(Delta_W_loc,0.4*np.log(no_firings_per_neurons))
+                            #pdb.set_trace()
+                            Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
+                            Delta_W_loc = np.multiply(Delta_W_loc,(weights_weight))
                     
-                    Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
+                            if 0:#sum(s):
+                                Delta_W_loc = Delta_W_loc/(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
+                            
+                            if 1:
+                                sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
+                                sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
+                                #sparse_thr = W_temp[:-1].std()/float(sparse_thr_0)
+                                
+                                W_temp[-1] = W_temp[-1] + 0.1 * Delta_W_loc[-1]
+                                #W_temp[:-1] = soft_threshold_double(W_temp[:-1],sparse_thr_pos,sparse_thr_neg) + 0.1 * Delta_W_loc[:-1]
+                        except RuntimeWarning:
+                            pdb.set_trace()
+                        
+                        #Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
+                        #Delta_W_loc[-1] = .1
+                        Delta_W = Delta_W + Delta_W_loc
+                        Delta_W = Delta_W/(0.00001+ np.linalg.norm(Delta_W))
+                        #W_temp = W_temp + 1*Delta_W_loc
+                        #W_temp = W_temp - W_temp.mean()
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+                #~~~~Upate Weights for Perceptron with Double Hinge Loss~~~~
+                elif (mthd == 6):
+                    #Delta_W_loc = np.reshape(aa_t,[len_v-1,1]) * 0.5 * (np.sign(xx-1) + np.sign(xx-10)))
+                    d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
+                    if d_alp:
+                        if np.dot(W_temp.T,aa_t)<e0:
+                            Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])#/(0.0001+pow(np.linalg.norm(aa_t),2))
+                        else:
+                            Delta_W_loc = -max(0,e1+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])#/(0.0001+pow(np.linalg.norm(aa_t),2))
+                        
+                        Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
+                        #Delta_W_loc[-1] = .1
+                        Delta_W = Delta_W + Delta_W_loc
+                        W_temp = W_temp + 1*Delta_W_loc
+                        #W_temp = W_temp - W_temp.mean()
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+                
+                #~~~Upate Weights for Perceptron with Cross Entropy Loss~~~~
+                elif (mthd == 7):
+                    x_t = np.reshape(aa_t,[len_v-1,1]) * yy_t
+                    yyy_t = (yy_t + 1)*0.5
+                    z_t = 1/(1.0 + math.exp(-(np.dot(W_temp.T,x_t))))
+                    Delta_W_loc = x_t * (z_t - yyy_t)
+                    
+                    Delta_W_loc = -1*Delta_W_loc - 0.001*W_temp
+                    Delta_W_loc = 0.005*Delta_W_loc
                     #Delta_W_loc[-1] = .1
                     Delta_W = Delta_W + Delta_W_loc
                     W_temp = W_temp + 1*Delta_W_loc
                     #W_temp = W_temp - W_temp.mean()
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            
-            #~~~Upate Weights for Perceptron with Cross Entropy Loss~~~~
-            elif (mthd == 7):
-                x_t = np.reshape(aa_t,[len_v-1,1]) * yy_t
-                yyy_t = (yy_t + 1)*0.5
-                z_t = 1/(1.0 + math.exp(-(np.dot(W_temp.T,x_t))))
-                Delta_W_loc = x_t * (z_t - yyy_t)
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
-                Delta_W_loc = -1*Delta_W_loc - 0.001*W_temp
-                Delta_W_loc = 0.005*Delta_W_loc
-                #Delta_W_loc[-1] = .1
-                Delta_W = Delta_W + Delta_W_loc
-                W_temp = W_temp + 1*Delta_W_loc
-                #W_temp = W_temp - W_temp.mean()
+                #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
+                if (mthd == 1) or (mthd == 2) or (mthd == 5):
+                    lambda_temp[jj] = lambda_temp[jj] + d_alp
+                    if rand_sample_flag:
+                        d_alp_vec[t_inds[jj]] = d_alp_vec[t_inds[jj]] + d_alp
+                    else:
+                        d_alp_vec[jj] = d_alp_vec[jj] + d_alp
+                #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            
+            #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
+                #W_temp = np.multiply(W_temp,(W_temp>0).astype(int))
+                if 0:#sparsity_flag:                
+                    sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
+                    sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
+                    W_temp[:-1] = soft_threshold_double(W_temp[:-1],sparse_thr_pos,sparse_thr_neg)
+                    
+                cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
-            #~~~~~~~~~~~~~Update Dual Vectors If Necessarry~~~~~~~~~~~~~
-            if (mthd == 1) or (mthd == 2) or (mthd == 5):
-                lambda_temp[jj] = lambda_temp[jj] + d_alp
-                if rand_sample_flag:
-                    d_alp_vec[t_inds[jj]] = d_alp_vec[t_inds[jj]] + d_alp
-                else:
-                    d_alp_vec[jj] = d_alp_vec[jj] + d_alp
-            #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            #--------------In Compliance with Jaggi's Work------------------
+            #Delta_W = np.dot(aa.T,d_alp_vec)
+            #---------------------------------------------------------------
+            
+        #-------------------------------------------------------------------
+        else:
+            print 'no ones!'
         
-        #~~~~~~~~~~~~~~~~~~~~~~~Update Costs~~~~~~~~~~~~~~~~~~~~~~~~
-            #W_temp = np.multiply(W_temp,(W_temp>0).astype(int))
-            if 0:#sparsity_flag:                
-                sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
-                sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
-                W_temp[:-1] = soft_threshold_double(W_temp[:-1],sparse_thr_pos,sparse_thr_neg)
-                
-            cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
-        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
-        #--------------In Compliance with Jaggi's Work------------------
-        #Delta_W = np.dot(aa.T,d_alp_vec)
-        #---------------------------------------------------------------
-        
-    #-------------------------------------------------------------------
-    else:
-        print 'no ones!'
-    
-    w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
-    #pdb.set_trace()
+        w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
+        #pdb.set_trace()
     memory_used = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - initial_memory
     if no_firings_per_neurons.max() > 2:
         print no_firings_per_neurons
