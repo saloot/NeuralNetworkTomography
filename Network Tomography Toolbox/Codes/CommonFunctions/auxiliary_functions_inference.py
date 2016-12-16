@@ -3965,7 +3965,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         
     #------------------------Infer the Weights----------------------
     if mthd == 10:
-        yy = np.dot(yy,[1,TcT])
+        yy = np.reshape(yy,[1,TcT])
         Delta_W = np.dot(yy,aa)
         Delta_W = Delta_W.T/(0.00001 + np.linalg.norm(Delta_W))
     else:    
