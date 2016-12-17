@@ -3590,10 +3590,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         W_tot = W_tot/len_v
     else:
         W_tot = np.zeros([len_v-1,1])
-        W_tot = np.random.randn(len_v-1,1)
-        W_tot = W_tot - W_tot.mean()
-        W_tot = whiten(W_tot)
-        W_tot = W_tot/len_v
+        #W_tot = np.random.randn(len_v-1,1)
+        #W_tot = W_tot - W_tot.mean()
+        #W_tot = whiten(W_tot)
+        #W_tot = W_tot/len_v
+        
     Z_tot = np.zeros([len_v-1,1])    
         
     total_cost = np.zeros([len(range_tau)])
@@ -4081,6 +4082,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                     
                     Delta_W = Delta_W + s_size * Delta_W_loc
                     #cst = np.dot(aa,W_temp);cst[jj-20:jj+20].T
+                    #cst = np.dot(aa,Delta_W_loc);cst[jj-20:jj+20].T
                 
                     #0.05*yy[jj-20:jj+20].T
                     pdb.set_trace()
