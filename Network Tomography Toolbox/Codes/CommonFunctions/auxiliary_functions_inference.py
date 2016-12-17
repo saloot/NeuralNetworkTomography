@@ -3481,7 +3481,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     #---------------------------------------------------------------------
     
     #---------------Shift Post-Synaptic Spike One to the Left-------------
-    #Y = np.roll(Y,1)
+    Y = np.roll(Y,-1)
     #Y[-1] = -1
     #Y[0] = -1
     #Y[1] = -1
@@ -3669,6 +3669,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
                 inferece_params[10] = 0
                 Delta_W,d_alp_vec,t_start,t_end,cst,memory_used  = infer_w_block(W_tot,A,YA,lambda_temp,len_v,0,block_size,inferece_params)
+                cst = np.dot(aa,Delta_W)
+                cst[38900:39000].T
+                yy[38900:39000].T
                 pdb.set_trace()
                     
                 if 0:#not (itr_cost%2):
