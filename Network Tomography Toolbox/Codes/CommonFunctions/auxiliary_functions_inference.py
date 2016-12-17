@@ -3669,9 +3669,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
                 inferece_params[10] = 0
                 Delta_W,d_alp_vec,t_start,t_end,cst,memory_used  = infer_w_block(W_tot,A,YA,lambda_temp,len_v,0,block_size,inferece_params)
-                cst = np.dot(aa,W_temp);cst[38900:39000].T
                 
-                0.05*yy[38900:39000].T
                 pdb.set_trace()
                     
                 if 0:#not (itr_cost%2):
@@ -4064,7 +4062,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                     #Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
                     if d_alp !=0:
                         s_size = max(0,e0-np.dot(W_temp.T,aa_t)) * yy_t /(d_alp)
-                        s_size = max(0,e0-np.dot(W_temp.T,aa_t)) /(d_alp)
+                        #s_size = max(0,1.0001*e0-np.dot(W_temp.T,aa_t)) /(d_alp)
                     else:
                         s_size = 1
                     
@@ -4082,6 +4080,9 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                         
                     
                     Delta_W = Delta_W + s_size * Delta_W_loc
+                    #cst = np.dot(aa,W_temp);cst[jj-20:jj+20].T
+                
+                    #0.05*yy[jj-20:jj+20].T
                     pdb.set_trace()
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
