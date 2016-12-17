@@ -3668,11 +3668,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     lambda_temp = []
         
                 inferece_params[10] = 0
-                Delta_W,d_alp_vec,t_start,t_end,cst,memory_used  = infer_w_block(W_tot,A,YA,lambda_temp,len_v,0,block_size,inferece_params)
-                cst = np.dot(aa,W_temp);cst[38900:39000].T
+                #Delta_W,d_alp_vec,t_start,t_end,cst,memory_used  = infer_w_block(W_tot,A,YA,lambda_temp,len_v,0,block_size,inferece_params)
+                #cst = np.dot(aa,W_temp);cst[38900:39000].T
                 
-                0.05*yy[38900:39000].T
-                pdb.set_trace()
+                #0.05*yy[38900:39000].T
+                #pdb.set_trace()
                     
                 if 0:#not (itr_cost%2):
                     func_args = [np.zeros([len_v-1,1]),A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
@@ -4007,7 +4007,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                 aa_t = aa_t/(0.00001+np.linalg.norm(aa_t))
                 if yy_t * sum(aa_t[:-1])<0:
                     print 'something bad is happening!'
-                    pdb.set_trace()
+                    #pdb.set_trace()
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
                 #~~~~~~~~~~~~~~~~~~Update Variables for SDCS~~~~~~~~~~~~~~~~
@@ -4128,8 +4128,8 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                     Delta_W = Delta_W + Delta_W_loc
                     #W_temp = W_temp + 1*Momentum_W
                     W_temp = W_temp + 1*Delta_W_loc
-                    #W_temp = W_temp - W_temp.mean()
-                    pdb.set_trace()
+                    W_temp = W_temp - W_temp.mean()
+                    #pdb.set_trace()
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
                 #~~~~~~~~~~~Upate Weights for Skecthed Perceptron~~~~~~~~~~~
