@@ -3481,7 +3481,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,theta,t_start,t_end,tau_d,t
     #---------------------------------------------------------------------
     
     #---------------Shift Post-Synaptic Spike One to the Left-------------
-    Y = np.roll(Y,-1)
+    #Y = np.roll(Y,-1)
     #Y[-1] = -1
     #Y[0] = -1
     #Y[1] = -1
