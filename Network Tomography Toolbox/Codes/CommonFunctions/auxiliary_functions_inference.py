@@ -3669,9 +3669,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     lambda_temp = []
         
                 inferece_params[10] = 0
-                Delta_W,d_alp_vec,t_start,t_end,cst,memory_used  = infer_w_block(W_tot,A,YA,lambda_temp,len_v,0,block_size,inferece_params)
+                #Delta_W,d_alp_vec,t_start,t_end,cst,memory_used  = infer_w_block(W_tot,A,YA,lambda_temp,len_v,0,block_size,inferece_params)
                 
-                pdb.set_trace()
+                #pdb.set_trace()
                     
                 if 0:#not (itr_cost%2):
                     func_args = [np.zeros([len_v-1,1]),A[t_start-block_start_w:t_end_w-block_start_w,:],YA[t_start-block_start_w:t_end_w-block_start_w],lambda_temp,len_v,t_start,t_end_w,inferece_params]
@@ -4085,7 +4085,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                     #cst = np.dot(aa,Delta_W_loc);cst[jj-20:jj+20].T
                 
                     #0.05*yy[jj-20:jj+20].T
-                    pdb.set_trace()
+                    #pdb.set_trace()
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
                 #~~~~~~~~~~~~~Upate Weights for Sketched SDCD~~~~~~~~~~~~~~~
