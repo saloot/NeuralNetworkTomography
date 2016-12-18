@@ -3737,7 +3737,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             if (mthd == 3) or (mthd == 4) or (mthd == 6):
                 W_tot[:-1] = W_tot[:-1] - W_tot[:-1].mean()
                 
-            W_tot = W_tot/(0.0001+np.linalg.norm(W_tot))
+            #W_tot = W_tot/(0.0001+np.linalg.norm(W_tot))
             if sparsity_flag:
                 sparse_thr = W_tot[:-1].std()/float(sparse_thr_0)
                 if sparse_thr!=0:
