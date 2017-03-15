@@ -3692,7 +3692,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 continue
                         
             func_args = [n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,kernel_choice,hidden_neurons]
-            aa,yy,tt_start,tt_end,spike_flag,memory_used = calculate_integration_matrix(n_ind,out_spikes_tot_mat_file,n,theta,t_start,t_end,tau_d,tau_s,kernel_choice,hidden_neurons)
             int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
             t_end_last_t = t_end
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3703,7 +3702,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #~~~~~~~~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~~~~~
         mem_temp = 0
         for result in int_results:
+            ese = result.get()
+            print len(ese)
+            print (ese)
             (aa,yy,tt_start,tt_end,spike_flag,memory_used) = result.get()
+            
             
             mem_temp = mem_temp + memory_used
             if spike_flag < 0:
