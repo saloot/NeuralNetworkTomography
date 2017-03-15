@@ -3541,9 +3541,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     max_itr_opt = inferece_params[5]
     kernel_choice = inferece_params[11]
     
-    weight_of_weights = np.abs(np.array(range(0,n)) - n_ind)
-    weight_of_weights = np.exp(-weight_of_weights/(0.5*n))
-    inferece_params.append(weight_of_weights)
+    #weight_of_weights = np.abs(np.array(range(0,n)) - n_ind)
+    #weight_of_weights = np.exp(-weight_of_weights/(0.5*n))
+    #inferece_params.append(weight_of_weights)
     #----------------------------------------------------------------------
     
     #----------------------------Initializations---------------------------    
@@ -3702,7 +3702,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #~~~~~~~~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~~~~~
         mem_temp = 0
         for result in int_results:
-            print result.get()
             (aa,yy,tt_start,tt_end,spike_flag,memory_used) = result.get()
             mem_temp = mem_temp + memory_used
             if spike_flag < 0:
@@ -3863,9 +3862,9 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     beta = inferece_params[7]
     class_sample_freq = inferece_params[9]
     rand_sample_flag = inferece_params[10]
-    weights_weight = inferece_params[12]
+    #weights_weight = inferece_params[12]
     
-    weights_weight = np.reshape(weights_weight,[len_v-1,1])
+    #weights_weight = np.reshape(weights_weight,[len_v-1,1])
     #----------------------------------------------------------------------
     
     #------------------------Initializations------------------------
@@ -4152,7 +4151,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                             #Delta_W_loc = np.divide(Delta_W_loc,0.4*np.log(no_firings_per_neurons))
                             #pdb.set_trace()
                             Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
-                            Delta_W_loc = np.multiply(Delta_W_loc,(weights_weight))
+                            #Delta_W_loc = np.multiply(Delta_W_loc,(weights_weight))
                     
                             if 0:#sum(s):
                                 Delta_W_loc = Delta_W_loc/(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
