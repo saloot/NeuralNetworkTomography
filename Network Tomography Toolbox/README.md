@@ -4,7 +4,8 @@ This repository contains the code for the neural network tomography toolbox. In 
 
 Related Publications
 ###
-* [Inverse Neural](http://rr.epfl.ch/paper/KSV2015)
+* [Learning Neural Connectivity from Firing Activity: Scalable Algorithms with Provable Guarantees](http://rr.epfl.ch/paper/KSV2017)
+* [Learning Network Structures from Firing Patterns](http://rr.epfl.ch/paper/KSV2015)
 
 
 Executing the Code
