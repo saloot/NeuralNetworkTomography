@@ -2,8 +2,7 @@ Introduction
 ===================
 This repository contains the code for the neural network tomography toolbox. In what follows, we describe how to execute the code, how different options work and, more importantly, how to reproduce the results in some of the related papers.
 
-Related Publications
-######
+### Related Publications
 * [Learning Neural Connectivity from Firing Activity: Scalable Algorithms with Provable Guarantees](http://rr.epfl.ch/paper/KSV2017)
 * [Learning Network Structures from Firing Patterns](http://rr.epfl.ch/paper/KSV2015)
 
