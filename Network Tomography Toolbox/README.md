@@ -16,7 +16,7 @@ We assume that we have a dataset of spike times and would like to identify the u
 3. Evaluating the performance
 
 
-##### Data Format
+### Data Format
 Before we continue, let us discuss the format of the file that contains the spiking data. The spiking times should be stored in a `.txt` file, where the information about each spike is stored in two columns, separated by a "tab":
 
 1. The first column indicates the index of the neuron that has fired (an *integer*)
