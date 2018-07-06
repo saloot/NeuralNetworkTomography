@@ -365,7 +365,7 @@ def calculate_difference_spike_matrix(A,Y):
     A_New = np.zeros([len_v,block_size])
 
     #-------Calculate the Difference of the Firing Activity Matrix--------
-    A_New[0:len_v-1,:-1] = np.diff(A) 
+    A_New[0:len_v,:-1] = np.diff(A) 
     A_New[len_v-1,:] = A[len_v-1,:]
     #---------------------------------------------------------------------
 
