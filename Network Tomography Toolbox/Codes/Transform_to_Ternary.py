@@ -7,22 +7,24 @@ from scipy.cluster.vq import kmeans,whiten,kmeans2,vq
 
 #from CommonFunctions.auxiliary_functions import combine_weight_matrix,generate_file_name
 from CommonFunctions.auxiliary_functions_digitize import caculate_accuracy,beliefs_to_ternary,parse_commands_ternary_algo
-from CommonFunctions.Neurons_and_Networks import *
+#from CommonFunctions.Neurons_and_Networks import *
 
 os.system('clear')                                              # Clear the commandline window
 #==============================================================================
 
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:K:C:Y:U:Z:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:K:C:Y:U:Z:o:")
 
 file_name_ending,file_name_base_results,ternary_mode,Var1_range,var_name,neuron_range,file_name_ground_truth = parse_commands_ternary_algo(input_opts)
 #==============================================================================
 
 #================================INITIALIZATIONS===============================
 
+no_hidden_neurons = 50
+
 #-----------------------Set Simulation Variables------------------------
-adj_fact_exc = 1.2 # This is the adjustment factor for clustering algorithms (between 0 and infinity).
+adj_fact_exc = 1. # This is the adjustment factor for clustering algorithms (between 0 and infinity).
                     # The larger this value is (bigger than 1), the harder it would be to classify a neuron as excitatory
 adj_fact_inh = 1  # This is the adjustment factor for clustering algorithms (between 0 and infinity).
                     # The larger this value is (bigger than 1), the harder it would be to classify a neuron as inhibitory
@@ -50,7 +52,8 @@ if file_name_ground_truth:
     W = np.genfromtxt(file_name_ground_truth, dtype=None, delimiter='\t')
     W = W.T
     n,m = W.shape
-    W_s = W[:,neuron_range]
+    W_ss = W[:,neuron_range]
+    W_s = np.zeros([n-no_hidden_neurons,len(neuron_range)])
 #------------------------------------------------------------------------------
 
 #---------------------Initialize Simulation Variables--------------------------
@@ -76,8 +79,8 @@ std_prec_inh = np.zeros([len(Var1_range)])
 
 #================PERFORM THE INFERENCE TASK FOR EACH ENSEMBLE==================
 itr_V1 = 0
-W_inferred = np.zeros([n,len(neuron_range)])
-W_infer = np.zeros([len(file_name_ending_list),n])
+W_inferred = np.zeros([n-no_hidden_neurons,len(neuron_range)])
+W_infer = np.zeros([len(file_name_ending_list),n-no_hidden_neurons])
 
 
 for v1 in Var1_range:
@@ -103,7 +106,7 @@ for v1 in Var1_range:
             file_name = file_name_base_results + '/' + file_name
             
             W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-            W_infer[itr_i,:] = W_read[0:n]
+            W_infer[itr_i,:] = W_read[0:n-no_hidden_neurons]
         
             #if itr_i:
             #    ww = sum(W_infer[0:itr_i+1,:,itr_n])/float(itr_i+1)
@@ -113,13 +116,23 @@ for v1 in Var1_range:
             itr_i = itr_i + 1
     
         if itr_i > 1:
-            W_inferred[0:min(m,len(W_read)),itr_n] = W_infer[0:itr_i,:].mean(axis = 0)
+            W_inferred[0:min(m-no_hidden_neurons,len(W_read)),itr_n] = W_infer[0:itr_i,:].mean(axis = 0)
         else:
-            W_inferred[0:min(m,len(W_read)),itr_n] = W_infer[itr_i-1,:]
+            W_inferred[0:min(m-no_hidden_neurons,len(W_read)),itr_n] = W_infer[itr_i-1,:]
 
+        
+        if no_hidden_neurons:
+            file_name_hidden = "Inferred_Graphs/Hidden_Neurons_%s_%s.txt" %(file_name_ending_mod,str(n_ind))
+            file_name = file_name_base_results + '/' + file_name_hidden
+            hidden_neurons = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+            W_h = np.delete(W_ss[:,n_ind],hidden_neurons,0)
+            W_s[:,itr_n] = W_h
+        else:
+            W_s[:,itr_n] = W_ss[:,n_ind]
+            
         itr_n = itr_n + 1
     
-    W_inferred_s = W_inferred[:,neuron_range]
+    W_inferred_s = W_inferred#[:,neuron_range]
     #W_inferred_s = W_inferred_s[:-1]
     #--------------------------------------------------------------------------
 
@@ -279,6 +292,163 @@ if file_name_ground_truth:
     file_name = file_name_base_results + "/Plot_Results/ROC_void_%s.txt" %file_name_ending
     np.savetxt(file_name,np.vstack([false_pos_void,true_pos_void]).T,'%f',delimiter='\t',newline='\n')
 #======================================================================================
+
+
+#=============PERFORM THE TERNARIFICATION ON THE EFFECT OF HIDDEN NEURONS==============
+itr_V1 = 0
+W_inferred = np.zeros([n-no_hidden_neurons,len(neuron_range)])
+W_infer = np.zeros([len(file_name_ending_list),n-no_hidden_neurons])
+
+no_hidden_neurons_list = [0,50,100,150,200,250,300,350,400,450,500]
+
+    
+prec_exc_h = np.zeros([len(no_hidden_neurons_list)])
+prec_inh_h = np.zeros([len(no_hidden_neurons_list)])    
+prec_void_h = np.zeros([len(no_hidden_neurons_list)])
+
+rec_exc_h = np.zeros([len(no_hidden_neurons_list)])
+rec_inh_h = np.zeros([len(no_hidden_neurons_list)])    
+rec_void_h = np.zeros([len(no_hidden_neurons_list)])
+
+
+itr_V1 = 0
+for no_hidden_neurons in no_hidden_neurons_list:
+        
+    W_inferred = np.zeros([n-no_hidden_neurons,m])
+    prec_vector = np.zeros([3,len(neuron_range)])
+    rec_vector = np.zeros([3,len(neuron_range)])
+    itr_n = 0
+    for n_ind in neuron_range:
+            
+        #~~~~~~~~~~~~~~~~~~~~~~~~~Read the Inferred Weights~~~~~~~~~~~~~~~~~~~~~~~~
+        if no_hidden_neurons:
+            temp = file_name_ending_hid.split('_')
+        else:
+            temp = file_name_ending.split('_')
+                
+        if ('I') in plot_vars:                
+            ind1 = temp.index('I')
+            temp[ind1+1] = str(inference_method)
+            
+        ind1 = temp.index(plot_vars[0])
+        temp[ind1+1] = str(eval(plot_vars[0]))
+        try:
+            ind1 = temp.index(plot_vars[1])
+            temp[ind1+1] = str(eval(plot_vars[1]))
+        except:
+            ttemp = 1
+            
+        file_name_ending_mod = '_'.join(temp)
+            
+        file_name_ending_mod = file_name_ending_mod + '_' + str(n_ind)
+            
+        if no_hidden_neurons:
+            #file_name_ending = file_name_ending + '_F_' + str(int(no_hidden_neurons)) + id_generator()
+            file_name = "Inferred_Graphs/W_Pll_%s_F_%s*" %(file_name_ending_mod,str(no_hidden_neurons))
+            file_name_hidden = "Inferred_Graphs/Hidden_Neurons_%s_F_%s*" %(file_name_ending_mod,str(no_hidden_neurons))
+        else:
+            file_name = "Inferred_Graphs/W_Pll_%s.txt" %(file_name_ending_mod)
+            
+        #----------------Read All Instances Generated for the Same Ensemble---------------
+        file_name_list = []
+        file_name_resources_list = []
+        file_name_hidden_list = []
+            
+        if no_hidden_neurons:
+            file_name_s = "W_Pll_%s_F_%s" %(file_name_ending_mod,str(no_hidden_neurons))
+                
+            for f_name in os.listdir(file_name_base_results+'/Inferred_Graphs/'):
+                if (f_name.startswith(file_name_s)) and ('_n_' not in f_name):
+
+                    file_name_e = f_name[-10:-4]
+                    file_name_list.append(file_name_base_results + '/Inferred_Graphs/' + file_name_s + file_name_e + '.txt')
+                    file_name_hidden_list.append(file_name_base_results + '/Inferred_Graphs/Hidden_Neurons_' + file_name_ending_mod + '_F_' + str(no_hidden_neurons) + file_name_e + '.txt')
+                
+        #---------------------------------------------------------------------------------
+            
+        else:
+            file_name_list=[file_name_base_results + '/' + file_name]
+            
+        for il in range(0,len(file_name_list)):
+            file_name = file_name_list[il]
+                
+            if no_hidden_neurons:
+                file_name_hidden = file_name_hidden_list[il]
+                    
+            try:
+                W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+                #W_read = W_read/np.abs(W_read[:-1]).max()
+                W_inferred[0:min(m-no_hidden_neurons,len(W_read)),n_ind] = W_read[0:min(m-no_hidden_neurons,len(W_read))]
+                    
+                        
+                if no_hidden_neurons:
+                    hidden_neurons = np.genfromtxt(file_name_hidden, dtype=None, delimiter='\t')
+                        
+                print "Got the file!"
+                
+            except:
+                found_file_tot = 0
+                print 'Sorry I can not find the corresponding inference file for the netwrok'
+                pdb.set_trace()
+            
+            #-----------------Calculate the Binary Matrix From Beliefs-----------------
+            W_inferred_s = W_inferred[:,neuron_range]
+            W_s = W_read[0:min(m-no_hidden_neurons,len(W_read))]
+            W_binary,centroids = beliefs_to_ternary(ternary_mode,W_s,params,dale_law_flag)
+            
+            #--------------------------------------------------------------------------
+    
+            if  file_name_ground_truth:                                        
+                W_r = np.reshape(W[:,n_ind],[len(W[:,n_ind]),1])
+                
+                    
+                    
+                if no_hidden_neurons:
+                    W_r = np.delete(W_r,hidden_neurons,0)
+                    
+                W_s = np.reshape(W_s,[len(W_s),1])
+                W_r = np.reshape(W_r,[len(W_r),1])
+                
+                recal,precision = caculate_accuracy(W_binary,W_r)
+        
+                prec_vector[0,itr_n] = prec_vector[0,itr_n] + precision[0]
+                prec_vector[1,itr_n] = prec_vector[1,itr_n] + precision[1]
+                prec_vector[2,itr_n] = prec_vector[2,itr_n] + precision[2]
+                
+                rec_vector[0,itr_n] = rec_vector[0,itr_n] + recal[0]
+                rec_vector[1,itr_n] = rec_vector[1,itr_n] + recal[1]
+                rec_vector[2,itr_n] = rec_vector[2,itr_n] + recal[2]
+                        
+        #~~~~~~~~~~~~~~~~~~~~~~~~Update the Variables~~~~~~~~~~~~~~~~~~~~~~~~~~
+        prec_exc_h[itr_V1] = prec_vector[0,itr_n]/float(len(file_name_list))
+        prec_inh_h[itr_V1] = prec_vector[1,itr_n]/float(len(file_name_list))
+        prec_void_h[itr_V1] = prec_vector[2,itr_n]/float(len(file_name_list))
+            
+        rec_exc_h[itr_V1] = rec_vector[0,itr_n]/float(len(file_name_list))
+        rec_inh_h[itr_V1] = rec_vector[1,itr_n]/float(len(file_name_list))
+        rec_void_h[itr_V1] = rec_vector[2,itr_n]/float(len(file_name_list))
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+        itr_n = itr_n + 1        
+        
+    #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+    itr_V1 = itr_V1 + 1
+    
+no_hidden_neurons_list = np.array(no_hidden_neurons_list)
+no_hidden_neurons_list_str = no_hidden_neurons_list.astype('str')
+temp_ending = file_name_ending + '_' + '_'.join(no_hidden_neurons_list_str)
+file_name = file_name_base_results + "/Plot_Results/Prec_Reca_All_Effect_hidden_%s.txt" %(temp_ending)
+
+hidden_visible_ration = np.divide(no_hidden_neurons_list,(n-no_hidden_neurons_list).astype(float))
+temp = np.vstack([prec_exc_h,prec_inh_h,prec_void_h,rec_exc_h,rec_inh_h,rec_void_h])
+temp = temp.T
+temp = np.hstack([np.reshape(hidden_visible_ration,[len(hidden_visible_ration),1]),temp])
+
+np.savetxt(file_name,temp,'%f',delimiter='\t',newline='\n')
+
+
+
 
 #==================================SAVE THE RESULTS====================================
 if var_name == 'T':
