@@ -70,6 +70,7 @@ def parse_commands_inf_algo(input_opts):
         for opt, arg in input_opts:
             if opt == '-T':
                 no_stimul_rounds = int(arg)                         # Number of rcorded samples 
+            elif opt == '-A':
                 file_name_data = str(arg)                           # The file that contains the data
             elif opt == '-Q':
                 no_processes = int(arg)                             # The number of cpu cores to use for simulaitons
