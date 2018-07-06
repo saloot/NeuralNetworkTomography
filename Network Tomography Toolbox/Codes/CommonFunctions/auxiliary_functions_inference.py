@@ -370,7 +370,7 @@ def calculate_difference_spike_matrix(A,Y):
     #---------------------------------------------------------------------
 
     #---------------Shift Post-Synaptic Spike One to the Left-------------
-    if 0:
+    if 1:
         Y = np.roll(Y,-1)
         Y[-1] = -1
         Y[0] = -1
