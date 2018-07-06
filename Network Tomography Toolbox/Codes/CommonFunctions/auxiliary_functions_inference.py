@@ -7,7 +7,10 @@ import pdb,os,sys
 import random
 import copy
 import numpy.ma as ma
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except:
+    pass
 import numpy as np
 import math
 from default_values import *
