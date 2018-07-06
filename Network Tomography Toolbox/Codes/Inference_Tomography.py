@@ -11,11 +11,7 @@ except:
     print 'Matplotlib can not be initiated! Pas de probleme!'
 import pdb
 from copy import deepcopy
-from scipy.cluster.vq import whiten
-#from scipy.signal import find_peaks_cwt
-import os.path
 
-from CommonFunctions.auxiliary_functions import read_spikes,combine_weight_matrix,combine_spikes_matrix,generate_file_name,spike_binning
 from CommonFunctions.auxiliary_functions_inference import *
 from CommonFunctions.Neurons_and_Networks import *
 # reload(CommonFunctions.auxiliary_functions_inference)
