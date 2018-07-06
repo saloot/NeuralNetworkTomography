@@ -351,7 +351,35 @@ def calculate_integration_matrix(n_ind,spikes_file,n,t_start,t_end,tau_d,tau_s,k
     return V,Y,t_start,t_end,flag_for_parallel_spikes,memory_used
 
 
+#------------------------------------------------------------------------------
+#---------------------inference_constraints_hinge_parallel---------------------
+# This function calculates the difference between rows of the firing activity
+# matrix (A) and shifts the target firing activity one point to the left
+# so that both are aligned.
+#------------------------------------------------------------------------------
+def calculate_difference_spike_matrix(A,Y):
 
+    len_v,block_size = A.shape
+    Y_New = Y
+
+    A_New = np.zeros([len_v,block_size])
+
+    #-------Calculate the Difference of the Firing Activity Matrix--------
+    A_New[0:len_v-1,:-1] = np.diff(A) 
+    A_New[len_v-1,:] = A[len_v-1,:]
+    #---------------------------------------------------------------------
+
+    #---------------Shift Post-Synaptic Spike One to the Left-------------
+    if 0:
+        Y = np.roll(Y,-1)
+        Y[-1] = -1
+        Y[0] = -1
+        Y[1] = -1
+    #---------------------------------------------------------------------
+
+    return A_New,Y_New
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 #---------------------inference_constraints_hinge_parallel---------------------
@@ -480,7 +508,9 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         A[tt_start:tt_end,:] = aa
         YA[tt_start:tt_end] = yy.ravel()
     #--------------------------------------------------------------------------
-     
+
+    # Use the differntial algorithm
+    A[tt_start:tt_end,:],YA[tt_start:tt_end] = calculate_difference_spike_matrix(AA[tt_start:tt_end,:],YA[tt_start:tt_end])
     
     #---------------------------Infer the Connections--------------------------
     for ttau in range_tau:
@@ -547,7 +577,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             if spike_flag < 0:
                 A[tt_start-block_start:tt_end-block_start,:] = aa
                 YA[tt_start-block_start:tt_end-block_start] = yy
-                    
+                
+                # Use the differntial algorithm
+                A[tt_start-block_start:tt_end-block_start,:],YA[tt_start-block_start:tt_end-block_start] = calculate_difference_spike_matrix(aa,yy) 
+
                 if tt_end == t_end_last_t:
                     itr_block_t = itr_block_t + 1
                     if itr_block_t >= len(block_start_inds):
