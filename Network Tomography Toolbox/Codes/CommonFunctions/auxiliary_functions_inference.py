@@ -510,7 +510,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     #--------------------------------------------------------------------------
 
     # Use the differntial algorithm
-    A[tt_start:tt_end,:],YA[tt_start:tt_end] = calculate_difference_spike_matrix(AA[tt_start:tt_end,:],YA[tt_start:tt_end])
+    A[tt_start:tt_end,:],YA[tt_start:tt_end] = calculate_difference_spike_matrix(A[tt_start:tt_end,:],YA[tt_start:tt_end])
     
     #---------------------------Infer the Connections--------------------------
     for ttau in range_tau:
