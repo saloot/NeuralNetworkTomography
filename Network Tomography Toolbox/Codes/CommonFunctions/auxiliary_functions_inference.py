@@ -371,10 +371,13 @@ def calculate_difference_spike_matrix(A,Y):
 
     #---------------Shift Post-Synaptic Spike One to the Left-------------
     if 1:
-        Y = np.roll(Y,-1)
-        Y[-1] = -1
-        Y[0] = -1
-        Y[1] = -1
+        try:
+            Y = np.roll(Y,-1)
+            Y[-1] = -1
+            Y[0] = -1
+            Y[1] = -1
+        except:
+            pass
     #---------------------------------------------------------------------
 
     return A_New,Y_New
@@ -507,11 +510,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             
         A[tt_start:tt_end,:] = aa
         YA[tt_start:tt_end] = yy.ravel()
+        
+        # Use the differntial algorithm
+        A[tt_start:tt_end,:],YA[tt_start:tt_end] = calculate_difference_spike_matrix(A[tt_start:tt_end,:],YA[tt_start:tt_end])
     #--------------------------------------------------------------------------
-
-    # Use the differntial algorithm
-    pdb.set_trace()
-    A[tt_start:tt_end,:],YA[tt_start:tt_end] = calculate_difference_spike_matrix(A[tt_start:tt_end,:],YA[tt_start:tt_end])
     
     #---------------------------Infer the Connections--------------------------
     for ttau in range_tau:
