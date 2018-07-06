@@ -292,10 +292,19 @@ def beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag):
             #~---~~~~~~~~~~~~~Classify Incoming Edges~~~~~~~~~~~~~~~~~~~~~~~~~~
             params = params[0:2]
             params.append(3)                        # "3" refers to the number of classes, namely, excitatory, inhibitory and non-existent
-            
-            W_inferred_temp = W_inferred_temp - W_inferred_temp.mean()
-            W_inferred_temp = whiten(W_inferred_temp)
+            if 0:
+                W_inferred_temp = W_inferred_temp - W_inferred_temp.mean()
+                W_inferred_temp = whiten(W_inferred_temp)
+            else:
+                W_inferred_pos = np.multiply(W_inferred_temp,(W_inferred_temp>0).astype(int))
+                W_inferred_neg = np.multiply(W_inferred_temp,(W_inferred_temp<0).astype(int))
+                W_inferred_pos = W_inferred_pos/(0.00001+W_inferred_pos.max())
+                W_inferred_neg = W_inferred_neg/(0.00001+np.abs(W_inferred_neg).max())
+                W_inferred_temp = W_inferred_pos + W_inferred_neg
+                
+                
             thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,W_inferred_temp.ravel())
+            thr_exc = W_inferred_pos.mean() + W_inferred_pos.std()
             centroids[i,:] = [thr_inh,thr_zero,thr_exc]
             
             if sum(abs(centroids[i,:])):
@@ -527,6 +536,8 @@ def parse_commands_ternary_algo(input_opts):
                 Var_range = []
                 for i in temp:                        
                     Var_range.append(int(i))
+            elif opt == '-N':
+                no_neurons = int(arg)                               # Number of observed eurons
             elif opt == '-h':
                 print(help_message)
                 sys.exit()
@@ -549,6 +560,9 @@ def parse_commands_ternary_algo(input_opts):
     if 'var_name' not in locals():
         var_name = 'T'
         print('ATTENTION: The default value of %s for plot_vars is considered.\n' %str(var_name))
+
+    if 'no_neurons' not in locals():
+        no_neurons = 0
     
     #------------------------------------------------------------------------------
     
@@ -564,6 +578,6 @@ def parse_commands_ternary_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return file_name_ending,file_name_base_results,ternary_mode,Var_range,var_name,neuron_range,file_name_ground_truth
+    return file_name_ending,file_name_base_results,ternary_mode,Var_range,var_name,neuron_range,file_name_ground_truth,no_neurons
 
 

@@ -14,9 +14,9 @@ os.system('clear')                                              # Clear the comm
 
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:K:C:Y:U:Z:o:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:K:C:Y:U:Z:o:N:")
 
-file_name_ending,file_name_base_results,ternary_mode,Var1_range,var_name,neuron_range,file_name_ground_truth = parse_commands_ternary_algo(input_opts)
+file_name_ending,file_name_base_results,ternary_mode,Var1_range,var_name,neuron_range,file_name_ground_truth,n = parse_commands_ternary_algo(input_opts)
 #==============================================================================
 
 #================================INITIALIZATIONS===============================
