@@ -371,6 +371,8 @@ def calculate_difference_spike_matrix(A,Y):
 
     #---------------Shift Post-Synaptic Spike One to the Left-------------
     if 1:
+        print(Y.shape)
+        pdb.set_trace()
         Y = np.roll(Y,-1)
         Y[-1] = -1
         Y[0] = -1
