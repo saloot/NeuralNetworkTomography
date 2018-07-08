@@ -365,20 +365,19 @@ def calculate_difference_spike_matrix(A,Y):
     A_New = np.zeros([len_v,block_size])
 
     #-------Calculate the Difference of the Firing Activity Matrix--------
-    A_New[0:len_v,:-1] = np.diff(A) 
-    A_New[len_v-1,:] = A[len_v-1,:]
+    if len_v > 1:
+        A_New[0:len_v,:-1] = np.diff(A) 
+        A_New[len_v-1,:] = A[len_v-1,:]
     #---------------------------------------------------------------------
 
     #---------------Shift Post-Synaptic Spike One to the Left-------------
-    if 1:
-        try:
-            Y = np.roll(Y,-1)
-            Y[-1] = -1
-            Y[0] = -1
-            Y[1] = -1
-        except:
-            pass
+        Y = np.roll(Y,-1)
+        Y[-1] = -1
+        Y[0] = -1
+        Y[1] = -1
     #---------------------------------------------------------------------
+    else:
+        A_New = A
 
     return A_New,Y_New
 #------------------------------------------------------------------------------
