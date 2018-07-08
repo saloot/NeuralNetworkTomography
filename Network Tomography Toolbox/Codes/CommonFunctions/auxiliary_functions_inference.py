@@ -511,7 +511,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         YA[tt_start:tt_end] = yy.ravel()
         
         # Use the differntial algorithm
-        A[tt_start:tt_end,:],YA[tt_start:tt_end] = calculate_difference_spike_matrix(A[tt_start:tt_end,:],YA[tt_start:tt_end])
+        #A[tt_start:tt_end,:],YA[tt_start:tt_end] = calculate_difference_spike_matrix(A[tt_start:tt_end,:],YA[tt_start:tt_end])
     #--------------------------------------------------------------------------
     
     #---------------------------Infer the Connections--------------------------
@@ -581,7 +581,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 YA[tt_start-block_start:tt_end-block_start] = yy
                 
                 # Use the differntial algorithm
-                A[tt_start-block_start:tt_end-block_start,:],YA[tt_start-block_start:tt_end-block_start] = calculate_difference_spike_matrix(aa,yy) 
+                #A[tt_start-block_start:tt_end-block_start,:],YA[tt_start-block_start:tt_end-block_start] = calculate_difference_spike_matrix(aa,yy) 
 
                 if tt_end == t_end_last_t:
                     itr_block_t = itr_block_t + 1
