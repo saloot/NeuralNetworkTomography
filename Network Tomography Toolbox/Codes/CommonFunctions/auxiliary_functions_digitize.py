@@ -538,6 +538,8 @@ def parse_commands_ternary_algo(input_opts):
                     Var_range.append(int(i))
             elif opt == '-N':
                 no_neurons = int(arg)                               # Number of observed eurons
+            elif opt == '-H':
+                no_hidden_neurons = int(arg)                         # The number of neurons to artificially hide
             elif opt == '-h':
                 print(help_message)
                 sys.exit()
@@ -563,7 +565,12 @@ def parse_commands_ternary_algo(input_opts):
 
     if 'no_neurons' not in locals():
         no_neurons = 0
-    
+
+    if 'no_hidden_neurons' not in locals():
+        no_hidden_neurons = 0
+
+    if 'file_name_ending' not in locals():
+        file_name_ending = ''
     #------------------------------------------------------------------------------
     
     #------------------Create the Necessary Directories if Necessary---------------
@@ -577,7 +584,15 @@ def parse_commands_ternary_algo(input_opts):
         os.makedirs(temp)    
     #------------------------------------------------------------------------------
 
+    #---------------Get All the Files with Similar File Name Endings---------------
+    file_name_ending_list = []
+    results_dir = file_name_base_results+'/Inferred_Graphs'
+    if file_name_ending:
+        for file in os.listdir(results_dir):
+            if file.beginswith(file_name_ending):
+                file_name = os.path.join(results_dir, file)
+                file_name_ending_list.append(file_name.replace(results_dir+'/',''))
+    #------------------------------------------------------------------------------
 
-    return file_name_ending,file_name_base_results,ternary_mode,Var_range,var_name,neuron_range,file_name_ground_truth,no_neurons
 
-
+    return file_name_ending_list,file_name_base_results,ternary_mode,no_neurons,no_hidden_neurons
