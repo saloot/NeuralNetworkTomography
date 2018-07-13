@@ -6,7 +6,7 @@ import sys,getopt,os
 from scipy.cluster.vq import kmeans,whiten,kmeans2,vq
 
 #from CommonFunctions.auxiliary_functions import combine_weight_matrix,generate_file_name
-from CommonFunctions.auxiliary_functions_digitize import caculate_accuracy,beliefs_to_ternary,parse_commands_ternary_algo
+from CommonFunctions.auxiliary_functions_digitize import beliefs_to_ternary,parse_commands_ternary_algo
 #from CommonFunctions.Neurons_and_Networks import *
 
 os.system('clear')                                              # Clear the commandline window
@@ -14,9 +14,9 @@ os.system('clear')                                              # Clear the comm
 
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:K:C:Y:U:Z:o:N:H:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:K:C:Y:U:Z:o:N:H:j:c:")
 
-file_name_ending_list,file_name_base_results,ternary_mode,n,no_hidden_neurons = parse_commands_ternary_algo(input_opts)
+file_name_ending_list,file_name_base_results,ternary_mode,n,no_hidden_neurons,adj_fact_exc,adj_fact_inh = parse_commands_ternary_algo(input_opts)
 
 m = n
 #==============================================================================
@@ -24,10 +24,6 @@ m = n
 #================================INITIALIZATIONS===============================
 
 #-----------------------Set Simulation Variables------------------------
-adj_fact_exc = 1. # This is the adjustment factor for clustering algorithms (between 0 and infinity).
-                    # The larger this value is (bigger than 1), the harder it would be to classify a neuron as excitatory
-adj_fact_inh = 1  # This is the adjustment factor for clustering algorithms (between 0 and infinity).
-                    # The larger this value is (bigger than 1), the harder it would be to classify a neuron as inhibitory
 dale_law_flag = 0   # If 1, the ternarification algorithm returns a matrix in which the non-zero entries in a row (i.e. outgoing neural connections) have the same sign
 #------------------------------------------------------------------------------
 

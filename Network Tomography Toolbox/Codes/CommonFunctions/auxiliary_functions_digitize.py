@@ -399,109 +399,6 @@ def beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag):
 
 
 #==============================================================================
-#=============================caculate_accuracy================================
-#==============================================================================
-#-------------------------------Descriptions-----------------------------------
-# This function compares the inferred binary matrix and compare it with the
-# original graph to calculate the accruacy (recall and precision) of the
-# algorithm
-
-# INPUT:
-#    W_binary: the inferred ternary graph
-#    W: the actual graph (ground truth)
-
-# OUTPUT:
-#    recall:    the recall for inhibitory, non-existent and excitatory connections
-#    precision: the precision for inhibitory, non-existent and excitatory connections
-#------------------------------------------------------------------------------
-
-def caculate_accuracy(W_binary,W):
-    
-    #--------------------------Initializing Variables--------------------------
-    a = W.shape    
-    n = a[0]
-    lll = len(a)
-    #--------------------------------------------------------------------------
-    
-    #----------------Compute Accuracy for Recurrent Networks-------------------
-    if ( (lll>1) and (min(a)>1)):
-        
-        A = np.zeros(W.shape)
-        if (sum(sum(W>A))):
-            acc_plus = float(sum(sum(np.multiply(W_binary>A,W>A))))/float(sum(sum(W>A)))
-        else:
-            acc_plus = float('NaN')
-        
-        if (sum(sum(W<A))):
-            acc_minus = float(sum(sum(np.multiply(W_binary<A,W<A))))/float(sum(sum(W<A)))
-        else:
-            acc_minus = float('NaN')
-        
-        if (sum(sum(W==A))):
-            acc_zero = float(sum(sum(np.multiply(W_binary==A,W==A))))/float(sum(sum(W==A)))
-        else:
-            acc_zero = float('NaN')
-        
-        if (sum(sum(W_binary>A))):
-            prec_plus = float(sum(sum(np.multiply(W_binary>A,W>A))))/float(sum(sum(W_binary>A)))
-        else:
-            prec_plus = float('NaN')
-        
-        if (sum(sum(W_binary<A))):
-            prec_minus = float(sum(sum(np.multiply(W_binary<A,W<A))))/float(sum(sum(W_binary<A)))
-        else:
-            prec_minus = float('NaN')
-            
-        if (sum(sum(W_binary==A))):
-            prec_zero = float(sum(sum(np.multiply(W_binary==A,W==A))))/float(sum(sum(W_binary==A)))
-        else:
-            prec_zero = float('NaN')
-    #--------------------------------------------------------------------------
-    
-    #---------------Compute Accuracy for FeedForward Networks------------------
-    else:
-        A = np.zeros([n,1])
-        W_binary = W_binary.reshape([n,1])
-        if (sum(W>A)):
-            acc_plus = float(sum(np.multiply(W_binary>A,W>A)))/float(sum(W>A))
-        else:
-            acc_plus = float('NaN')
-        if (sum(W<A)):
-            acc_minus = float(sum(np.multiply(W_binary<A,W<A)))/float(sum(W<A))
-        else:
-            acc_minus = float('NaN')
-        if (sum(W==A)):
-            acc_zero = float(sum(np.multiply(W_binary==A,W==A)))/float(sum(W==A))
-        else:
-            acc_zero = float('NaN')
-
-        if (sum(W_binary>A)):
-            prec_plus = float(sum(np.multiply(W_binary>A,W>A)))/float(sum(W_binary>A))
-        else:
-            prec_plus = float('NaN')
-    
-        if (sum(W_binary<A)):
-            prec_minus = float(sum(np.multiply(W_binary<A,W<A)))/float(sum(W_binary<A))
-        else:
-            prec_minus = float('NaN')
-
-        if (sum(W_binary==A)):
-            prec_zero = float(sum(np.multiply(W_binary==A,W==A)))/float(sum(W_binary==A))
-        else:
-            prec_zero = float('NaN')
-        
-        
-    #--------------------------------------------------------------------------
-    
-    #---------------------Reshape and Return the Results-----------------------
-    recall = [acc_plus,acc_minus,acc_zero]
-    precision = [prec_plus,prec_minus,prec_zero]
-    return recall,precision
-    #--------------------------------------------------------------------------
-#==============================================================================    
-
-
-#==============================================================================
 #========================parse_commands_ternary_algo===========================
 #==============================================================================
 #-------------------------------Descriptions-----------------------------------
@@ -539,7 +436,13 @@ def parse_commands_ternary_algo(input_opts):
             elif opt == '-N':
                 no_neurons = int(arg)                               # Number of observed eurons
             elif opt == '-H':
-                no_hidden_neurons = int(arg)                         # The number of neurons to artificially hide
+                no_hidden_neurons = int(arg)                        # The number of neurons to artificially hide
+            elif opt == '-j':
+                adj_fact_exc = float(arg)                           # This is the adjustment factor for clustering algorithms (between 0 and infinity).
+                                                                    # The larger this value is (bigger than 1), the harder it would be to classify a neuron as excitatory
+            elif opt == '-c':
+                adj_fact_inh = float(arg)                           # This is the adjustment factor for clustering algorithms (between 0 and infinity).
+                                                                    # The larger this value is (bigger than 1), the harder it would be to classify a neuron as inhibitory
             elif opt == '-h':
                 print(help_message)
                 sys.exit()
@@ -571,6 +474,12 @@ def parse_commands_ternary_algo(input_opts):
 
     if 'file_name_ending' not in locals():
         file_name_ending = ''
+
+    if 'adj_fact_exc' not in locals():
+        adj_fact_exc = 1
+
+    if 'adj_fact_inh' not in locals():
+        adj_fact_inh = 1
     #------------------------------------------------------------------------------
     
     #------------------Create the Necessary Directories if Necessary---------------
@@ -595,4 +504,4 @@ def parse_commands_ternary_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return file_name_ending_list,file_name_base_results,ternary_mode,no_neurons,no_hidden_neurons
+    return file_name_ending_list,file_name_base_results,ternary_mode,no_neurons,no_hidden_neurons,adj_fact_exc,adj_fact_inh
