@@ -204,8 +204,8 @@ def parse_commands_inf_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return no_stimul_rounds,no_neurons,file_name_data,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,infer_itr_max,bin_size,
-            no_processes,block_size,neuron_range,class_sample_freq,kernel_choice,no_hidden_neurons,no_structural_connections,file_name_ground_truth
+    return no_stimul_rounds,no_neurons,file_name_data,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,infer_itr_max,bin_size,\
+           no_processes,block_size,neuron_range,class_sample_freq,kernel_choice,no_hidden_neurons,no_structural_connections,file_name_ground_truth
 #==============================================================================
 #==============================================================================
 
