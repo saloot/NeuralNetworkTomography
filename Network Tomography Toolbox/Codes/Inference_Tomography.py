@@ -26,9 +26,11 @@ os.system('clear')                                              # Clear the comm
 #==============================================================================
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hN:Q:T:S:D:A:F:R:L:M:B:X:Y:C:V:J:U:Z:b:p:j:o:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hN:Q:T:S:D:A:F:R:L:M:B:X:Y:C:V:J:U:Z:b:p:j:o:f:")
 
-T,no_neurons,file_name_spikes,file_name_base_results,inference_method,sparse_thr0,beta,alpha0,max_itr_optimization,bin_size,no_processes,block_size,neuron_range,class_sample_freq,kernel_choice,no_hidden_neurons = parse_commands_inf_algo(input_opts)
+T,no_neurons,file_name_spikes,file_name_base_results,inference_method,sparse_thr0,beta,
+alpha0,max_itr_optimization,bin_size,no_processes,block_size,neuron_range,class_sample_freq,
+kernel_choice,no_hidden_neurons,no_structural_connections,file_name_ground_truth = parse_commands_inf_algo(input_opts)
 #==============================================================================
 
 #==================DO SANITY CHECK ON THE ENTERED PARAMETERS===================
@@ -66,6 +68,17 @@ if len(neuron_range)>1:
     neuron_range = range(neuron_range[0],neuron_range[1])
 
 inferece_params = [inference_method,alpha0,sparse_thr0,sparse_thr0,max_itr_optimization,d_window,beta,bin_size,class_sample_freq,rand_sample_flag,kernel_choice]
+#------------------------------------------------------------------------------
+
+#---------------------Read The Actual Grapgh If Possible-----------------------
+#file_name = '../Data/Graphs/Moritz_Actual_Connectivity.txt'
+#file_name = '../Results/Inferred_Graphs/W_Pll_Moritz_I_7_S_5_T_75000_0.txt'
+if file_name_ground_truth:
+    W_gt = np.genfromtxt(file_name_ground_truth, dtype=None, delimiter='\t')
+    W_gt = W_gt.T
+elif no_structural_connections:
+    print 'Sorry! for the structural information to work, you must specify the file name of gorund truth.'
+    sys.exit()
 #------------------------------------------------------------------------------
 
 #==============================================================================
@@ -130,16 +143,18 @@ if not os.path.isfile(file_name_spikes2):
 
 #==============================================================================
 
-#============================INFER THE CONNECTIONS=============================
 
+#======================GENERATE LIST OF HIDDEN NEURONS=========================
 if no_hidden_neurons:
-    hidden_neurons_temp2 = np.random.permutation(no_neurons)
-    hidden_neurons_temp = hidden_neurons_temp2[0:no_hidden_neurons]
-    hidden_neurons_temp = list(hidden_neurons_temp)
-    
+        hidden_neurons_temp2 = np.random.permutation(no_neurons)
+        hidden_neurons_temp = hidden_neurons_temp2[0:no_hidden_neurons]
+        hidden_neurons_temp = list(hidden_neurons_temp)
 else:
     hidden_neurons_temp = []
-    
+#==============================================================================
+
+
+#============================INFER THE CONNECTIONS=============================
 W_infer = np.zeros([no_neurons+1-len(hidden_neurons_temp),len(neuron_range)])
     
 itr_n = 0
@@ -148,11 +163,21 @@ for n_ind in neuron_range:
     #print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
     t_start = time.time()                           # starting time of the algorithm
     
+
+    #---------------------------Adjust Hidden Neurons-------------------------
     hidden_neurons  = deepcopy(hidden_neurons_temp)
-    #............................Generate Hidden Neurons..........................
     if n_ind in hidden_neurons_temp:        
         hidden_neurons.remove(n_ind)
         hidden_neurons.append(hidden_neurons_temp2[no_hidden_neurons])
+    #-------------------------------------------------------------------------
+
+    #--------------TAKE CARE OF STRUCTURAL INFORMATION-----------------------
+    if no_structural_connections:
+        w_act = W_gt[:,n_ind]
+        zero_connections = numpy.where(w_act == 0)[0]
+        zero_connections = zero_connections[0:no_structural_connections]
+        hidden_neurons = hidden_neurons + zero_connections
+    #-------------------------------------------------------------------------
     
     for it in range(0,no_avg_itr):
         W_temp,used_ram_temp,cost = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params,hidden_neurons)
@@ -169,17 +194,25 @@ for n_ind in neuron_range:
     
     #.........................Save the Belief Matrices.........................
     file_name_ending = 'I_' + str(inference_method) + '_S_' + str(float(sparse_thr0)) + '_T_' + str(int(T))
-    file_name_ending = file_name_ending + '_C_' + str(int(num_process)) + '_B_' + str(int(block_size))
-    file_name_ending = file_name_ending + '_K_' + kernel_choice + '_H_' + str(class_sample_freq)
+    file_name_ending += '_C_' + str(int(num_process)) + '_B_' + str(int(block_size))
+    file_name_ending += '_K_' + kernel_choice + '_H_' + str(class_sample_freq)
     
     if bin_size:
-        file_name_ending = file_name_ending + '_bS_' + str(bin_size)
+        file_name_ending += '_bS_' + str(bin_size)
     
-    file_name_ending = file_name_ending + '_ii_' + str(no_itr_over_dataset)
+    file_name_ending += '_ii_' + str(no_itr_over_dataset)
     
-    file_name_ending = file_name_ending + '_' + str(n_ind)
+    file_name_ending += '_' + str(n_ind)
+
     if no_hidden_neurons:
-        file_name_ending = file_name_ending + '_F_' + str(int(no_hidden_neurons)) + id_generator()
+        file_name_ending += '_F_' + str(int(no_hidden_neurons))
+
+    if no_structural_connections:
+        file_name_ending += '_f_' + str(int(no_structural_connections))
+
+    if no_structural_connections or no_hidden_neurons:
+        file_name_ending += id_generator()
+
         
     file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_prefix,file_name_ending)
     tmp = W_inferred/float(no_avg_itr)
@@ -210,8 +243,8 @@ for n_ind in neuron_range:
     #..........................................................................
     
     #..........................Store Hidden Neurons.............................
-    if no_hidden_neurons:
-        file_name =  file_name_base_results + "/Inferred_Graphs/Hidden_Neurons_%s_%s.txt" %(file_name_prefix,file_name_ending)
+    if no_hidden_neurons or no_structural_connections:
+        file_name =  file_name_base_results + "/Inferred_Graphs/Hidden_or_Structured_Neurons_%s_%s.txt" %(file_name_prefix,file_name_ending)
         np.savetxt(file_name,hidden_neurons,delimiter='\t')
     #..........................................................................
     

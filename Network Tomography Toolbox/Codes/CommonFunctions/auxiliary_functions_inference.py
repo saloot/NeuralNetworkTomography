@@ -96,6 +96,15 @@ def parse_commands_inf_algo(input_opts):
                 bin_size = int(arg)                                 # If it is nonzero, the spikes will be placed within bins of size "bin_size"
             elif opt == '-S': 
                 block_size = int(arg)                               # The size of the smaller blocks to divide the spike file into
+            elif opt == '-f': 
+                no_structural_connections = int(arg)                # Number of neurons we have structural info about.
+                                                                    # If greater than 0, the function assumes we have the strict information about 
+                                                                    # "no_structural_connections" pre-synaptic neurons NOT being connected to the target 
+                                                                    # neuron and runs the algorithm for the remaining neurons.
+                                                                    # NOTE: for this to work, "file_name_ground_truth" must be specified as well.
+                                                                    # TODO: we should modify this later to get a list of connections.
+            elif opt == '-F':
+                file_name_ground_truth = str(arg)                         # The address of the ground truth
             elif opt == '-o': 
                 temp = (arg).split(',')                             # The range of neurons to identify the connections
                 neuron_range = []
@@ -166,9 +175,15 @@ def parse_commands_inf_algo(input_opts):
     if 'kernel_choice' not in locals():
         print 'No kernel!'
         kernel_choice = 'E'
+    
     if 'no_hidden_neurons' not in locals():
         no_hidden_neurons = 0
-        
+
+    if 'no_structural_connections' not in locals():
+        no_structural_connections = 0
+
+    if 'file_name_ground_truth' not in locals():
+        file_name_ground_truth = ''
     #------------------------------------------------------------------------------
 
     #------------------Create the Necessary Directories if Necessary---------------
@@ -189,7 +204,8 @@ def parse_commands_inf_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return no_stimul_rounds,no_neurons,file_name_data,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,infer_itr_max,bin_size,no_processes,block_size,neuron_range,class_sample_freq,kernel_choice,no_hidden_neurons
+    return no_stimul_rounds,no_neurons,file_name_data,file_name_base_results,inference_method,sparsity_flag,beta,alpha0,infer_itr_max,bin_size,
+            no_processes,block_size,neuron_range,class_sample_freq,kernel_choice,no_hidden_neurons,no_structural_connections,file_name_ground_truth
 #==============================================================================
 #==============================================================================
 
