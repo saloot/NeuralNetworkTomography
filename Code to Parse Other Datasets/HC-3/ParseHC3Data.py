@@ -195,18 +195,27 @@ for itr_session in range(0,len(session_name_list)):
 #                                     6) id: based on cross-correlogram analysis, the cell is monosynaptically inhibited by other cells
 #                                     7) re: Brain region (1 for EC3, 2 for EC4, 3 for EC5 and so on)
 #                                     8) ID: Cell ID
+#                                     9) Neuron type: -1: inhibitory, +1: excitatory
 region_ind_map = {'EC3':1,'EC4':2,'EC5':3,'CA1':4,'CA3':5,'DG':6,'Unknown':7}
 
 n = sum(n_clusters)
-W_deg = np.zeros([n,8])
+W_deg = np.zeros([n,9])
 itr = 0
 for item in cell_id_inf:
     cell_id = item[0]
     W_deg[itr,0:6] = (item[6:12]).astype(int)
     W_deg[itr,6] = region_ind_map[item[5]]
     W_deg[itr,7] = neuron_id_map[str(cell_id)]
-    itr = itr + 1 
+    if (item[14] == 'p'):
+        W_deg[itr,8] = 1
+    elif (item[14] == 'i'):
+        W_deg[itr,8] = -1
+    else:
+        W_deg[itr,8] = 0
+        
+    itr = itr + 1
 
 W_deg[:,5] = -W_deg[:,5]             # For the inhibitory neurons
 
+np.savetxt('./W_deg.txt',W_deg,'%3.2f',delimiter='\t')
 #----------------------------------------------------------------------------
