@@ -28,8 +28,8 @@ os.system('clear')                                              # Clear the comm
 #==========================PARSE COMMAND LINE ARGUMENTS========================
 input_opts, args = getopt.getopt(sys.argv[1:],"hN:Q:T:S:D:A:F:R:L:M:B:X:Y:C:V:J:U:Z:b:p:j:o:f:")
 
-T,no_neurons,file_name_spikes,file_name_base_results,inference_method,sparse_thr0,beta,
-alpha0,max_itr_optimization,bin_size,no_processes,block_size,neuron_range,class_sample_freq,
+T,no_neurons,file_name_spikes,file_name_base_results,inference_method,sparse_thr0,beta,\
+alpha0,max_itr_optimization,bin_size,no_processes,block_size,neuron_range,class_sample_freq,\
 kernel_choice,no_hidden_neurons,no_structural_connections,file_name_ground_truth = parse_commands_inf_algo(input_opts)
 #==============================================================================
 
