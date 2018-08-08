@@ -174,7 +174,7 @@ for n_ind in neuron_range:
     #--------------TAKE CARE OF STRUCTURAL INFORMATION-----------------------
     if no_structural_connections:
         w_act = W_gt[:,n_ind]
-        zero_connections = numpy.where(w_act == 0)[0]
+        zero_connections = np.where(w_act == 0)[0]
         zero_connections = zero_connections[0:no_structural_connections]
         hidden_neurons = hidden_neurons + zero_connections
     #-------------------------------------------------------------------------
