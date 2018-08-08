@@ -14,9 +14,9 @@ os.system('clear')                                              # Clear the comm
 
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:K:C:Y:U:Z:o:N:H:j:c:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:K:C:Y:U:Z:o:N:H:j:c:f:")
 
-file_name_ending_list,file_name_base_results,ternary_mode,n,no_hidden_neurons,adj_fact_exc,adj_fact_inh = parse_commands_ternary_algo(input_opts)
+file_name_ending_list,file_name_base_results,ternary_mode,n,no_hidden_neurons,no_structural_connections,adj_fact_exc,adj_fact_inh = parse_commands_ternary_algo(input_opts)
 
 m = n
 #==============================================================================
@@ -45,8 +45,8 @@ if ternary_mode == 4:
 
 
 #================PERFORM THE INFERENCE TASK FOR EACH ENSEMBLE==================
-W_inferred = np.zeros([n-no_hidden_neurons,1])
-W_infer = np.zeros([len(file_name_ending_list),n-no_hidden_neurons])
+W_inferred = np.zeros([n-no_hidden_neurons-no_structural_connections,1])
+W_infer = np.zeros([len(file_name_ending_list),n-no_hidden_neurons-no_structural_connections])
 
 #------------------------Read the Inferred Weights-------------------------
 itr_i = 0

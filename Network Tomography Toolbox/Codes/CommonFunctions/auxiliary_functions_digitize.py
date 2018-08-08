@@ -437,6 +437,14 @@ def parse_commands_ternary_algo(input_opts):
                 no_neurons = int(arg)                               # Number of observed eurons
             elif opt == '-H':
                 no_hidden_neurons = int(arg)                        # The number of neurons to artificially hide
+            elif opt == '-f': 
+                no_structural_connections = int(arg)                # Number of neurons we have structural info about.
+                                                                    # If greater than 0, the function assumes we have the strict information about 
+                                                                    # "no_structural_connections" pre-synaptic neurons NOT being connected to the target 
+                                                                    # neuron and runs the algorithm for the remaining neurons.
+                                                                    # NOTE: for this to work, "file_name_ground_truth" must be specified as well.
+                                                                    # TODO: we should modify this later to get a list of connections.
+            
             elif opt == '-j':
                 adj_fact_exc = float(arg)                           # This is the adjustment factor for clustering algorithms (between 0 and infinity).
                                                                     # The larger this value is (bigger than 1), the harder it would be to classify a neuron as excitatory
@@ -472,6 +480,9 @@ def parse_commands_ternary_algo(input_opts):
     if 'no_hidden_neurons' not in locals():
         no_hidden_neurons = 0
 
+    if 'no_structural_connections' not in locals():
+        no_structural_connections = 0
+
     if 'file_name_ending' not in locals():
         file_name_ending = ''
 
@@ -504,4 +515,4 @@ def parse_commands_ternary_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return file_name_ending_list,file_name_base_results,ternary_mode,no_neurons,no_hidden_neurons,adj_fact_exc,adj_fact_inh
+    return file_name_ending_list,file_name_base_results,ternary_mode,no_neurons,no_hidden_neurons,no_structural_connections,adj_fact_exc,adj_fact_inh
