@@ -155,7 +155,7 @@ else:
 
 
 #============================INFER THE CONNECTIONS=============================
-W_infer = np.zeros([no_neurons+1-len(hidden_neurons_temp),len(neuron_range)])
+W_infer = np.zeros([no_neurons+1-len(hidden_neurons_temp)-no_structural_connections,len(neuron_range)])
     
 itr_n = 0
 for n_ind in neuron_range:
