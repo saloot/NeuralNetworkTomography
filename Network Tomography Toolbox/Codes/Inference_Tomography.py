@@ -176,7 +176,10 @@ for n_ind in neuron_range:
         w_act = W_gt[:,n_ind]
         zero_connections = np.where(w_act == 0)[0]
         zero_connections = zero_connections[0:no_structural_connections]
-        hidden_neurons = hidden_neurons + zero_connections
+        if len(hidden_neurons):
+            hidden_neurons += zero_connections
+        else:
+            hidden_neurons = zero_connections
     #-------------------------------------------------------------------------
     
     for it in range(0,no_avg_itr):
