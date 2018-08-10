@@ -25,7 +25,7 @@ try:
     from cvxopt import solvers, matrix, spdiag, log
     cvx_flag = 1
 except:
-    print 'CVXOpt is not installed. No biggie!'
+    print('CVXOpt is not installed. No biggie!')
     cvx_flag = 0
 
 from scipy import optimize
@@ -173,7 +173,7 @@ def parse_commands_inf_algo(input_opts):
         class_sample_freq = 0
         
     if 'kernel_choice' not in locals():
-        print 'No kernel!'
+        print('No kernel!')
         kernel_choice = 'E'
     
     if 'no_hidden_neurons' not in locals():
@@ -268,7 +268,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,t_start,t_end,tau_d,tau_s,k
     U0 = 2/(np.exp(-t0/tau_d) - np.exp(-t0/tau_s))  # The spike 'amplitude'
     
     initial_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    print 'initial memory is %s' %str(initial_memory)
+    print('initial memory is %s' %str(initial_memory))
     block_size = t_end - t_start
     
     if block_size < 0:
@@ -387,7 +387,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
 
     num_process_per_spike = int(max(multiprocessing.cpu_count(),num_process)/float(num_process))
-    print multiprocessing.cpu_count()
+    print(multiprocessing.cpu_count())
 
     import gc
     #----------------------------------------------------------------------
@@ -409,7 +409,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     T0 = 50                                    # It is the offset, i.e. the time from which on we will consider the firing activity
     
-    print '-------------Neuron %s----------' %str(n_ind)
+    print('-------------Neuron %s----------' %str(n_ind))
     #----------------------------------------------------------------------
     
     #-----------------------------Behavior Flags-------------------------------
@@ -553,7 +553,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
         total_memory_init = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        print 'memory so far up to iterations %s is %s' %(str(ttau),str(total_memory_init))
+        print('memory so far up to iterations %s is %s' %(str(ttau),str(total_memory_init)))
             
         #~~~~~~~~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~~~~~
         mem_temp = 0
@@ -579,7 +579,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 if tt_end == t_end_last_w:
                     itr_block_w = itr_block_w + 1
                     total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,W_tot)<0)
-                    print total_cost[itr_cost]
+                    print(total_cost[itr_cost])
                 
                 if (mthd == 1) or (mthd == 2):
                     lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/float(no_blocks)) 
@@ -603,7 +603,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 #W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr)
                 
                 
-            print 'Processing %s blocks was finished, with cost being %s' %(str(no_blocks),str(total_cost[itr_cost]))
+            print('Processing %s blocks was finished, with cost being %s' %(str(no_blocks),str(total_cost[itr_cost])))
             #W_tot = np.multiply(W_tot,(W_tot>0).astype(int))
             itr_block_w = 0
             itr_cost = itr_cost + 1
@@ -613,7 +613,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         if total_memory>max_memory:
             max_memory = total_memory
             
-        print 'Total memory after iteration %s is %s' %(str(ttau),str(max_memory))
+        print('Total memory after iteration %s is %s' %(str(ttau),str(max_memory)))
             
         #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
         if itr_cost >= 7:
@@ -622,7 +622,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         
-    print total_cost[1:itr_cost]
+    print(total_cost[1:itr_cost])
     #--------------------------------------------------------------------
         
     
@@ -687,7 +687,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     TcT = len(yy)
         
     if TcT == 0:
-        print 'error! empty activity file.'
+        print('error! empty activity file.')
         return
     
     lamb = .1/float(TcT)
@@ -789,7 +789,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                         ii = prng.randint(0,TcT)
                         jj = ii
                 except:
-                    print 'something is fishy: ee = %s,no_ones = %s,no_zeros=%s, ii = %s,jj=%s' %(str(ee),str(no_ones),str(no_zeros),str(ii),str(jj))
+                    print('something is fishy: ee = %s,no_ones = %s,no_zeros=%s, ii = %s,jj=%s' %(str(ee),str(no_ones),str(no_zeros),str(ii),str(jj)))
                     continue
                 
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
@@ -801,7 +801,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                 #no_firings_per_neurons = no_firings_per_neurons + np.reshape(((yy_t*aa_t.ravel())>0.9).astype(int),[len_v-1,1])
                 aa_t = aa_t/(0.00001+np.linalg.norm(aa_t))
                 if yy_t * sum(aa_t[:-1])<0:
-                    print 'something bad is happening!'
+                    print('something bad is happening!')
                     #pdb.set_trace()
                 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 
@@ -1028,13 +1028,13 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
             
         #-------------------------------------------------------------------
         else:
-            print 'no ones!'
+            print('no ones!')
         
         w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
         #pdb.set_trace()
     memory_used = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - initial_memory
     if no_firings_per_neurons.max() > 2:
-        print no_firings_per_neurons
+        print(no_firings_per_neurons)
     return Delta_W,d_alp_vec,t_start,t_end,cst,memory_used
 
 #------------------------------------------------------------------------------

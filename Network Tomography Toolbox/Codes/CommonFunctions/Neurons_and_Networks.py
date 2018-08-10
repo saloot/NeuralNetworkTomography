@@ -10,11 +10,11 @@
 try:
     from brian import*
 except:
-    print '============================='
-    print 'Brian simulator is not installed. I will try to do without it!'
+    print('=============================')
+    print('Brian simulator is not installed. I will try to do without it!')
     import numpy as np
     import math
-    print '============================='
+    print('=============================')
 
 import os
 import pdb
@@ -550,7 +550,7 @@ class NeuralNet():
                             if (d2):
                                 if ( (d1+d2) < d_long):
                                     D_lay_1_2[row,col] = d1 + d2 + 0.000005
-                                    print d1,d2,d_long
+                                    print(d1,d2,d_long)
                 
                     
                         #......................Save the Results........................

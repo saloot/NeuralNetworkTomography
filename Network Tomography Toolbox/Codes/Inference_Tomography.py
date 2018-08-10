@@ -8,7 +8,7 @@ import resource
 try:
     import matplotlib.pyplot as plt
 except:
-    print 'Matplotlib can not be initiated! Pas de probleme!'
+    print('Matplotlib can not be initiated! Pas de probleme!')
 import pdb
 from copy import deepcopy
 
