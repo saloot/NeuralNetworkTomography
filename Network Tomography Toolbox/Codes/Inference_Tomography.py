@@ -196,7 +196,7 @@ for n_ind in neuron_range:
     W_inferred = np.reshape(W_inferred,[no_neurons-len(hidden_neurons)+1,1])
     
     #.........................Save the Belief Matrices.........................
-    file_name_ending = 'I_' + str(inference_method) + '_S_' + str(float(sparse_thr0)) + '_T_' + str(int(T))
+    file_name_ending = 'I_' + str(inference_method) + '_S_' + str(float(sparse_thr0))
     file_name_ending += '_C_' + str(int(num_process)) + '_B_' + str(int(block_size))
     file_name_ending += '_K_' + kernel_choice + '_H_' + str(class_sample_freq)
     
@@ -212,6 +212,8 @@ for n_ind in neuron_range:
 
     if no_structural_connections:
         file_name_ending += '_f_' + str(int(no_structural_connections))
+
+    file_name_ending += '_T_' + str(int(T))
 
     if no_structural_connections or no_hidden_neurons:
         file_name_ending += id_generator()
