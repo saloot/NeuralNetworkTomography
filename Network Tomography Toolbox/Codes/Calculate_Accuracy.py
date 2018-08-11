@@ -14,9 +14,9 @@ os.system('clear')                                              # Clear the comm
 
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:K:C:Y:U:Z:o:N:H:j:c:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:K:C:Y:U:Z:o:N:H:j:c:n")
 
-file_name_ending_list,file_name_base_results,ternary_mode,file_name_ground_truth,n,no_hidden_neurons,no_structural_connections,adj_fact_exc,adj_fact_inh = parse_commands_accuracy_algo(input_opts)
+file_name_ending_list,file_name_base_results,ternary_mode,file_name_ground_truth,n,no_hidden_neurons,no_structural_connections,adj_fact_exc,adj_fact_inh,n_ind = parse_commands_accuracy_algo(input_opts)
 
 if not file_name_ground_truth:
     print 'Sorry you should specify the file that contains the ground truth.'
@@ -36,8 +36,8 @@ if file_name_ground_truth:
     W = np.genfromtxt(file_name_ground_truth, dtype=None, delimiter='\t')
     W = W.T
     n,m = W.shape
-    W_ss = W[:,1]
-    W_s = np.zeros([n-no_hidden_neurons,1])
+    W_ss = W[:,n_ind]
+    W_s = np.zeros([n-no_hidden_neurons-no_structural_connections,1])
 #------------------------------------------------------------------------------
 
 #---------------------Initialize Simulation Variables--------------------------
@@ -56,15 +56,15 @@ std_recal_inh = np.zeros([len(file_name_ending_list)])
 prec_inh = np.zeros([len(file_name_ending_list)])
 std_prec_inh = np.zeros([len(file_name_ending_list)])
 
+no_roi_steps = 100
+true_pos_exc_tot = np.zeros([no_roi_steps])
+false_pos_exc_tot = np.zeros([no_roi_steps])
 
-true_pos_exc_tot = np.zeros([len(val_range_exc)])
-false_pos_exc_tot = np.zeros([len(val_range_exc)])
+true_pos_inh_tot = np.zeros([no_roi_steps])
+false_pos_inh_tot = np.zeros([no_roi_steps])
 
-true_pos_inh_tot = np.zeros([len(val_range_inh)])
-false_pos_inh_tot = np.zeros([len(val_range_inh)])
-
-true_pos_void = np.zeros([min(len(val_range_inh),len(val_range_exc))])
-false_pos_void_tot = np.zeros([min(len(val_range_inh),len(val_range_exc))])
+true_pos_void_tot = np.zeros([no_roi_steps])
+false_pos_void_tot = np.zeros([no_roi_steps])
 #------------------------------------------------------------------------------
     
 #==============================================================================
@@ -107,9 +107,9 @@ for file_name_ending in file_name_ending_list:
         file_name = file_name_base_results + '/' + file_name_hidden
         hidden_neurons = np.genfromtxt(file_name, dtype=None, delimiter='\t')
         W_h = np.delete(W_ss[:,n_ind],hidden_neurons,0)
-        W_s[:,itr_n] = W_h
+        W_s = W_h
     else:
-        W_s[:,itr_n] = W_ss[:,n_ind]
+        W_s = W_ss
             
                     
     #---------Calculate and Display Recall & Precision for Our Method----------    
@@ -131,14 +131,16 @@ for file_name_ending in file_name_ending_list:
     ww = ww - ww.mean()
     ww = whiten(ww)
         
-    min_val = int(100*W_inferred_s.min())
-    max_val = int(100*W_inferred_s.max())
+    min_val = W_inferred_s.min()
+    max_val = W_inferred_s.max()
     mid_val = int(0.5*(max_val+min_val))
+
     
-    val_range_exc = range(0,max_val)
-    val_range_exc = np.array(val_range_exc)/100.0
-    val_range_inh = range(0,min_val,-1)
-    val_range_inh = np.array(val_range_inh)/100.0
+    val_range_exc = range(0,no_roi_steps)
+    val_range_exc = np.array(val_range_exc)*max_val/float(no_roi_steps)
+    
+    val_range_inh = range(no_roi_steps-1,-1,-1)
+    val_range_inh = np.array(val_range_inh)*min_val/float(no_roi_steps)
 
     true_pos_exc = np.zeros([len(val_range_exc)])
     false_pos_exc = np.zeros([len(val_range_exc)])
@@ -146,6 +148,10 @@ for file_name_ending in file_name_ending_list:
     false_pos_inh = np.zeros([len(val_range_inh)])
     true_pos_void = np.zeros([min(len(val_range_inh),len(val_range_exc))])
     false_pos_void = np.zeros([min(len(val_range_inh),len(val_range_exc))])
+
+    true_pos_void = np.zeros([min(len(val_range_inh),len(val_range_exc))])
+    false_pos_void_tot = np.zeros([min(len(val_range_inh),len(val_range_exc))])
+
     
     
     W_temp = ww#[:-1]  
@@ -155,8 +161,8 @@ for file_name_ending in file_name_ending_list:
         #~~~~~~~~Calcualte True Positive and False Positive Rates~~~~~~~~~
         W_ter = (W_temp>=thresh).astype(int)
             
-        true_pos_exc[itr_V1] = true_pos_exc[itr_V1] + (sum(np.multiply((W_ter>0).astype(int),(W_s[:,n_ind]>0).astype(int))))/float(sum(W_s[:,itr_n]>0))
-        false_pos_exc[itr_V1] = false_pos_exc[itr_V1] + sum(np.multiply((W_ter>0).astype(int),(W_s[:,n_ind]<=0).astype(int)))/float(sum(W_s[:,itr_n]<=0))
+        true_pos_exc[itr_V1] = true_pos_exc[itr_V1] + (sum(np.multiply((W_ter>0).astype(int),(W_s>0).astype(int))))/float(sum(W_s>0))
+        false_pos_exc[itr_V1] = false_pos_exc[itr_V1] + sum(np.multiply((W_ter>0).astype(int),(W_s<=0).astype(int)))/float(sum(W_s<=0))
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         itr_V1 += 1
     
@@ -166,8 +172,8 @@ for file_name_ending in file_name_ending_list:
         #~~~~~~~~Calcualte True Positive and False Positive Rates~~~~~~~~~
         W_ter = (W_temp<=thresh).astype(int)
             
-        true_pos_inh[itr_V1] = true_pos_inh[itr_V1] + (sum(np.multiply((W_ter>0).astype(int),(W_s[:,n_ind]<0).astype(int))))/float(sum(W_s[:,itr_n]<0))
-        false_pos_inh[itr_V1] = false_pos_inh[itr_V1] + sum(np.multiply((W_ter>0).astype(int),(W_s[:,n_ind]>=0).astype(int)))/float(sum(W_s[:,itr_n]>=0))
+        true_pos_inh[itr_V1] = true_pos_inh[itr_V1] + (sum(np.multiply((W_ter>0).astype(int),(W_s<0).astype(int))))/float(sum(W_s<0))
+        false_pos_inh[itr_V1] = false_pos_inh[itr_V1] + sum(np.multiply((W_ter>0).astype(int),(W_s>=0).astype(int)))/float(sum(W_s>=0))
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
         itr_V1 = itr_V1 + 1
@@ -182,8 +188,8 @@ for file_name_ending in file_name_ending_list:
         W_ter = (W_temp>=thr2).astype(int) + (W_temp<=thr1).astype(int)
         W_ter = (W_ter == 0).astype(int)
             
-        true_pos_void[itr_V1] = true_pos_void[itr_V1] + (sum(np.multiply((W_ter>0).astype(int),(W_s[:,n_ind]==0).astype(int))))/float(sum(W_s[:,itr_n]==0))
-        false_pos_void[itr_V1] = false_pos_void[itr_V1] + sum(np.multiply((W_ter>0).astype(int),(W_s[:,n_ind]!=0).astype(int)))/float(sum(W_s[:,itr_n]!=0))
+        true_pos_void[itr_V1] = true_pos_void[itr_V1] + (sum(np.multiply((W_ter>0).astype(int),(W_s==0).astype(int))))/float(sum(W_s==0))
+        false_pos_void[itr_V1] = false_pos_void[itr_V1] + sum(np.multiply((W_ter>0).astype(int),(W_s!=0).astype(int)))/float(sum(W_s!=0))
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         itr_V1 = itr_V1 + 1 

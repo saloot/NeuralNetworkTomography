@@ -538,6 +538,10 @@ def parse_commands_accuracy_algo(input_opts):
                     Var_range.append(int(i))
             elif opt == '-N':
                 no_neurons = int(arg)                               # Number of observed eurons
+            elif opt == '-n':
+                n_ind = int(arg)                                    # The target neuron. 
+                                                                    # This is to load the correct set of incoming weights from
+                                                                    # the ground truth matrix.
             elif opt == '-H':
                 no_hidden_neurons = int(arg)                        # The number of neurons to artificially hide
             elif opt == '-f': 
@@ -593,6 +597,10 @@ def parse_commands_accuracy_algo(input_opts):
 
     if 'adj_fact_inh' not in locals():
         adj_fact_inh = 1
+
+    if 'n_ind' not in locals():
+        print 'Sorry you should specify the target neuron for which the evaluation should proceed.'
+        sys.exit()
     #------------------------------------------------------------------------------
     
     #------------------Create the Necessary Directories if Necessary---------------
@@ -618,4 +626,4 @@ def parse_commands_accuracy_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return file_name_ending_list,file_name_base_results,ternary_mode,file_name_ground_truth,no_neurons,no_hidden_neurons,no_structural_connections,adj_fact_exc,adj_fact_inh
+    return file_name_ending_list,file_name_base_results,ternary_mode,file_name_ground_truth,no_neurons,no_hidden_neurons,no_structural_connections,adj_fact_exc,adj_fact_inh,n_ind
