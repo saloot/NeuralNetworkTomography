@@ -57,12 +57,11 @@ To perform the evaluations and plot the results, simply execute
 
 
 ### Options List
-The codes accept a few command line options to identify the specifications of the network and the properties of the neural data. These options are listed below. Note that if an option is not specificed, the *default values* will be used (as specified in the file `Codes/CommonFunctionsdefault_values.py`.
+The codes accept a few command line options to identify the specifications of the network and the properties of the neural data. These options are listed below. Note that if an option is not specificed, the *default values* will be used (as specified in the file `Codes/CommonFunctions/default_values.py`.
 
-##### General options to specify the network
+#### Options for the inference algorithm
 * `-T xxx`: To specify the number of rcorded samples or, equivalently, the duration of the recorded data (in milisecons), with `xxx` being an *integer*.
 * `-A xxx`: To compelte path to the file that contains the recordings, with `xxx` being a *string*.
-* `-N xxx`: To specify the number of observed neurons in the recorded data, with `xxx` being an *integer*.
 * `-M xxx`: To specify the inference algorithm, with `xxx` being an *integer*. The acceptable values are listed below, with the default value being *3*:
 * * 1: for Stochastic Dual Coordinate Descent (SDCS)
 * * 2: for Sketched SDCS
@@ -78,30 +77,51 @@ The codes accept a few command line options to identify the specifications of th
 * `-Q xxx`: To specify the number of cpu cores to use for simulaitons, with `xxx` being an *integer*. The default value 8, if the number of available cores i more than 8. Otherwise it i qual to the number of availble cores.
 * `-L xxx`: To specify the type of neural kernel, i.e. the decay function in LIF neurons, with `xxx` being either 'E', for single exponential decay or 'D' for a double exponential decay function. The default value is 'E'.
 * `-H xxx`: To specify the number of hidden neurons in the data, with `xxx` being an *integer*. If not 0, the algorithm randomly omits `xxx` neurons from data to count them as hidden and then perform the algorithm to identify the performance in presence of unobserved neurons.
+* `-f xxx`: To specify the number of neurons where we have some prior structural information, with `xxx` being an *integer*. If not 0, the algorithm randomly selects `xxx` neurons from data and assumes that we know if these neurons are NOT connected to the target neuron.
+  * For this to work, the ground truth file should be specified as well.
+* `-F xxx`: To (optionally) specify the file name that contains the ground truth, with `xxx` being a *string* (file path). 
 * `-Z xxx`: To specify the (initial) learning rate in Stochastic NeuInf algorithm, *α*, with `xxx` being a *float* 
 * `-Y xxx`: To specify the penalty coefficient to reguralize for sparsity, with `xxx` being a *float*.
 * `-X xxx`: To specify the maximum number of iterations inference algorithm is performed, with `xxx` being an *integer* [not used in the current version]
 * `-U xxx`: To specify the inverse of the parameter *β* in Stochastic NeuInf algorithm , with `xxx` being an *integer* (the *β* will then be `β = 1/xxx`)
 * `-J xxx`: To specify the probability of choosing samples from the firing instances, with `xxx` being an *integer*
 * `-S xxx`: To specify the block size, i.e. the number of firing samples to loa into RAM for running each batch of algorithm, with `xxx` being an *integer*.
-* `-S xxx`: To specify the block size, i.e. the number of firing samples to loa into RAM for running each batch of algorithm, with `xxx` being an *integer*.
+  #### Example usage: 
+    `python -T 5000000 -o "0,1" -S 200000 -Q 8 -X 3 -L 'E' -J 0.0 -N 1000 -Y 0.1 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt"`
 
  
-##### Options for the digitization algorithms
+#### Options for the digitization algorithms
+* `-A xxx`: To specify the ending of the file that contains the results of the inference algorithm, with `xxx` being a *string*.
+* `-N xxx`: To specify the number of observed neurons in the recorded data, with `xxx` being an *integer*.
 * `-B xxx`: To specify the ternarification algorithm, with `xxx` being an *integer*.
   * `-B 4` for clustering-based approach (using K-Means)
   * `-B 2` for thresholding-based approach
   * `-B 7` for the conservative approach of only assigning those edges that we are sure about (far from mean values)
 
-##### Options for evaluating performance and plotting the results
+* `-H xxx`: To specify the number of hidden neurons in the data, with `xxx` being an *integer*. If not 0, the algorithm randomly omits `xxx` neurons from data to count them as hidden and then perform the algorithm to identify the performance in presence of unobserved neurons.
+* `-f xxx`: To specify the number of neurons where we have some prior structural information, with `xxx` being an *integer*. If not 0, the algorithm randomly selects `xxx` neurons from data and assumes that we know if these neurons are NOT connected to the target neuron.
+  * For this to work, the ground truth file should be specified as well.
+* `-F xxx`: To specify the file name that contains the ground truth, with `xxx` being a *string* (file path).
+
+  #### Example usage: 
+    `python Transform_to_Ternary.py -B 4 -o "0,1" -N 1000 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_T_500000_C_8_B_200000_K_E_H_0.0_ii_3_0"`
+
+
+#### Options for evaluating performance and plotting the results
+* `-A xxx`: To specify the ending of the file that contains the results of the inference/digitization algorithm, with `xxx` being a *string*.
+* `-N xxx`: To specify the number of observed neurons in the recorded data, with `xxx` being an *integer*.
 * `-O xxx`: To specify the range of recorded durations to evaluate the performance upon, as a list given by `xxx`. More specifically, `xxx` has the following format:
   * `-O "T_1,T_2,T_3"`, where `T_i` (an *integer* in miliseconds) is the duration of recording in session `i`.
+* `-H xxx`: To specify the number of hidden neurons in the data, with `xxx` being an *integer*. If not 0, the algorithm randomly omits `xxx` neurons from data to count them as hidden and then perform the algorithm to identify the performance in presence of unobserved neurons.
+* `-F xxx`: To specify the file name that contains the ground truth, with `xxx` being a *string* (file path).
 * `-f xxx`: To specify the type of plots that should be displayed, as a list given by `xxx`. More specifically, `xxx` has the following format:
   * `-f "F_1,F_2,F_3"`, where `F_i` (a *character*) is the plot type. The flags can be
     * B: for displaying the avaerage value of beliefs
     * P: for displaying precision and recall
     * S: for displaying scatter plots
     * W: to show a sample of inferred graphs
+  #### Example usage: 
+    `python Calculate_Accuracy.py -o "0,1" -N 1000 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_T_500000_C_8_B_200000_K_E_H_0.0_ii_3_0"`
   
 
 ### Dependencies
