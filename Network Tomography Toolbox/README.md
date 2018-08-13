@@ -86,7 +86,8 @@ The codes accept a few command line options to identify the specifications of th
 * `-U xxx`: To specify the inverse of the parameter *β* in Stochastic NeuInf algorithm , with `xxx` being an *integer* (the *β* will then be `β = 1/xxx`)
 * `-J xxx`: To specify the probability of choosing samples from the firing instances, with `xxx` being an *integer*
 * `-S xxx`: To specify the block size, i.e. the number of firing samples to loa into RAM for running each batch of algorithm, with `xxx` being an *integer*.
-  #### Example usage: 
+
+#### Example usage: 
     `python -T 5000000 -o "0,1" -S 200000 -Q 8 -X 3 -L 'E' -J 0.0 -N 1000 -Y 0.1 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt"`
 
  
@@ -103,7 +104,7 @@ The codes accept a few command line options to identify the specifications of th
   * For this to work, the ground truth file should be specified as well.
 * `-F xxx`: To specify the file name that contains the ground truth, with `xxx` being a *string* (file path).
 
-  #### Example usage: 
+#### Example usage: 
     `python Transform_to_Ternary.py -B 4 -o "0,1" -N 1000 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_T_500000_C_8_B_200000_K_E_H_0.0_ii_3_0"`
 
 
@@ -120,7 +121,8 @@ The codes accept a few command line options to identify the specifications of th
     * P: for displaying precision and recall
     * S: for displaying scatter plots
     * W: to show a sample of inferred graphs
-  #### Example usage: 
+
+#### Example usage: 
     `python Calculate_Accuracy.py -o "0,1" -N 1000 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_T_500000_C_8_B_200000_K_E_H_0.0_ii_3_0"`
   
 
