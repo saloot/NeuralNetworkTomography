@@ -71,8 +71,6 @@ inferece_params = [inference_method,alpha0,sparse_thr0,sparse_thr0,max_itr_optim
 #------------------------------------------------------------------------------
 
 #---------------------Read The Actual Grapgh If Possible-----------------------
-#file_name = '../Data/Graphs/Moritz_Actual_Connectivity.txt'
-#file_name = '../Results/Inferred_Graphs/W_Pll_Moritz_I_7_S_5_T_75000_0.txt'
 if file_name_ground_truth:
     W_gt = np.genfromtxt(file_name_ground_truth, dtype=None, delimiter='\t')
     W_gt = W_gt.T
@@ -88,9 +86,7 @@ elif no_structural_connections:
     
 #----------------------------Read and Sort Spikes------------------------------
 if not file_name_spikes:
-    file_name_spikes = '../Data/Spikes/Moritz_Spike_Times.txt'
-    file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/Moritz_Spike_Times.txt'
-    #file_name_spikes = '../Data/Spikes/HC3_ec013_198_processed.txt'
+    file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/LIF_Spike_Times.txt'
     #file_name_spikes = '/scratch/salavati/NeuralNetworkTomography/Network Tomography Toolbox/Data/Spikes/HC3_ec013_198_processed.txt'
     
 ll = file_name_spikes.split('/')
