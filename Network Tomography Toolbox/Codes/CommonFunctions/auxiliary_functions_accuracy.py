@@ -460,8 +460,8 @@ def caculate_accuracy(W_binary,W):
     
     #---------------Compute Accuracy for FeedForward Networks------------------
     else:
-        A = np.zeros([n,1])
-        W_binary = W_binary.reshape([n,1])
+        A = np.zeros([n])
+        W_binary = W_binary.reshape([n])
         if (sum(W>A)):
             acc_plus = float(sum(np.multiply(W_binary>A,W>A)))/float(sum(W>A))
         else:
