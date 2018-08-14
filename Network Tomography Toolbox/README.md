@@ -105,7 +105,7 @@ The codes accept a few command line options to identify the specifications of th
 * `-F xxx`: To specify the file name that contains the ground truth, with `xxx` being a *string* (file path).
 
 ##### Example usage: 
-    python Transform_to_Ternary.py -B 4 -o "0,1" -N 1000 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000
+    python Transform_to_Ternary.py -B 4 -o "0,1" -N 1000 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000
 
 
 #### Options for evaluating performance and plotting the results
@@ -123,7 +123,7 @@ The codes accept a few command line options to identify the specifications of th
     * W: to show a sample of inferred graphs
 
 ##### Example usage: 
-    `python Calculate_Accuracy.py -o "0,1" -N 1000 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_T_500000_C_8_B_200000_K_E_H_0.0_ii_3_0"`
+    python Calculate_Accuracy.py -o "0,1" -N 1000 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000"
   
 
 ### Dependencies
