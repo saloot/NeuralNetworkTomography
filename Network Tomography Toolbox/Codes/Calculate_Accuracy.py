@@ -101,7 +101,10 @@ for file_name_ending in file_name_ending_list:
     #-----------------Calculate the Binary Matrix From Beliefs-----------------
     if no_hidden_neurons or no_structural_connections:
         file_name_ending_mod = file_name_ending.replace('W_Binary_W_Pll_','')
-        file_name_hidden = "Inferred_Graphs/Hidden_or_Structured_Neurons_%s_%s.txt" %(file_name_ending_mod,str(n_ind))
+        temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
+        file_name_ending_mod = file_name_ending_mod.replace('temp_str','')
+
+        file_name_hidden = "Inferred_Graphs/Hidden_or_Structured_Neurons_" + file_name_ending_mod
         file_name = file_name_base_results + '/' + file_name_hidden
         hidden_neurons = np.genfromtxt(file_name, dtype=None, delimiter='\t')
         W_h = np.delete(W_ss[:,n_ind],hidden_neurons,0)
