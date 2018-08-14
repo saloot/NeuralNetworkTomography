@@ -108,22 +108,20 @@ The codes accept a few command line options to identify the specifications of th
     python Transform_to_Ternary.py -B 4 -o "0,1" -N 1000 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000
 
 
-#### Options for evaluating performance and plotting the results
+#### Options for evaluating performance 
+* `-n xxx`: To specify the target neuron for which we want to evlauate the performance, with `xxx` being an *integer*.
 * `-A xxx`: To specify the ending of the file that contains the results of the inference/digitization algorithm, with `xxx` being a *string*.
 * `-N xxx`: To specify the number of observed neurons in the recorded data, with `xxx` being an *integer*.
 * `-O xxx`: To specify the range of recorded durations to evaluate the performance upon, as a list given by `xxx`. More specifically, `xxx` has the following format:
   * `-O "T_1,T_2,T_3"`, where `T_i` (an *integer* in miliseconds) is the duration of recording in session `i`.
 * `-H xxx`: To specify the number of hidden neurons in the data, with `xxx` being an *integer*. If not 0, the algorithm randomly omits `xxx` neurons from data to count them as hidden and then perform the algorithm to identify the performance in presence of unobserved neurons.
 * `-F xxx`: To specify the file name that contains the ground truth, with `xxx` being a *string* (file path).
-* `-f xxx`: To specify the type of plots that should be displayed, as a list given by `xxx`. More specifically, `xxx` has the following format:
-  * `-f "F_1,F_2,F_3"`, where `F_i` (a *character*) is the plot type. The flags can be
-    * B: for displaying the avaerage value of beliefs
-    * P: for displaying precision and recall
-    * S: for displaying scatter plots
-    * W: to show a sample of inferred graphs
+data to count them as hidden and then perform the algorithm to identify the performance in presence of unobserved neurons.
+* `-f xxx`: To specify the number of neurons where we have some prior structural information, with `xxx` being an *integer*. If not 0, the algorithm randomly selects `xxx` neurons from data and assumes that we know if these neurons are NOT connected to the target neuron.
+  * For this to work, the ground truth file should be specified as well.
 
 ##### Example usage: 
-    python Calculate_Accuracy.py -o "0,1" -N 1000 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000"
+    python Calculate_Accuracy.py -o "0,1" -N 1000 -n 0 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000"
   
 
 ### Dependencies
@@ -131,6 +129,14 @@ The codes accept a few command line options to identify the specifications of th
 * The code relies heavily on [Numpy](http://www.numpy.org/),
   [Scipy](http://www.scipy.org/), and [matplotlib](http://matplotlib.org).
 * To generate neural data (using the `Generate_Neural_Data.py`), the code uses [Brian simulator](http://briansimulator.org/).
+
+
+* `-f xxx`: To specify the type of plots that should be displayed, as a list given by `xxx`. More specifically, `xxx` has the following format:
+  * `-f "F_1,F_2,F_3"`, where `F_i` (a *character*) is the plot type. The flags can be
+    * B: for displaying the avaerage value of beliefs
+    * P: for displaying precision and recall
+    * S: for displaying scatter plots
+    * W: to show a sample of inferred graphs
 
 
 ### The codes have been successfully tested on
