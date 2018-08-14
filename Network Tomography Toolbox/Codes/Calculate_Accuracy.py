@@ -107,7 +107,7 @@ for file_name_ending in file_name_ending_list:
         file_name_hidden = "Inferred_Graphs/Hidden_or_Structured_Neurons_" + file_name_ending_mod
         file_name = file_name_base_results + '/' + file_name_hidden
         hidden_neurons = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-        W_h = np.delete(W_ss[:,n_ind],hidden_neurons,0)
+        W_h = np.delete(W_ss,hidden_neurons,0)
         W_s = W_h
     else:
         W_s = W_ss
