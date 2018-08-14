@@ -93,10 +93,7 @@ for file_name_ending in file_name_ending_list:
     #W_inferred_s = W_inferred_s[:-1]
     #--------------------------------------------------------------------------
 
-    file_name_ending2 = file_name_ending.replace('.txt','') + "_%s" %str(adj_fact_exc)
-    file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
-    file_name_ending2 = file_name_ending2 + "_B_%s" %str(ternary_mode)
-    file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2
+    file_name = file_name_base_results + "/Inferred_Graphs/" + file_name_ending2
 
     W_binary = np.genfromtxt(file_name, dtype=None, delimiter='\t')
     #--------------------------------------------------------------------------
