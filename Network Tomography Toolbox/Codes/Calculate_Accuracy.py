@@ -93,7 +93,7 @@ for file_name_ending in file_name_ending_list:
     #W_inferred_s = W_inferred_s[:-1]
     #--------------------------------------------------------------------------
 
-    file_name = file_name_base_results + "/Inferred_Graphs/" + file_name_ending2
+    file_name = file_name_base_results + "/Inferred_Graphs/" + file_name_ending
 
     W_binary = np.genfromtxt(file_name, dtype=None, delimiter='\t')
     #--------------------------------------------------------------------------
@@ -212,7 +212,7 @@ false_pos_void_tot = false_pos_void_tot/itr_i
 #======================================================================================
 
 #==================================SAVE THE RESULTS====================================
-temp_ending = file_name_ending2
+temp_ending = file_name_ending
 
 recal_exc = recal_exc.mean()
 recal_inh = recal_inh.mean()
