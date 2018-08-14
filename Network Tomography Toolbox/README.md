@@ -88,7 +88,7 @@ The codes accept a few command line options to identify the specifications of th
 * `-S xxx`: To specify the block size, i.e. the number of firing samples to loa into RAM for running each batch of algorithm, with `xxx` being an *integer*.
 
 ##### Example usage: 
-    `python -T 5000000 -o "0,1" -S 200000 -Q 8 -X 3 -L 'E' -J 0.0 -N 1000 -Y 0.1 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt"`
+    `python -T 500000 -o "0,1" -S 200000 -Q 8 -X 3 -L 'E' -J 0.0 -N 1000 -Y 0.1 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt"`
 
  
 #### Options for the digitization algorithms
@@ -105,7 +105,7 @@ The codes accept a few command line options to identify the specifications of th
 * `-F xxx`: To specify the file name that contains the ground truth, with `xxx` being a *string* (file path).
 
 ##### Example usage: 
-    `python Transform_to_Ternary.py -B 4 -o "0,1" -N 1000 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_T_500000_C_8_B_200000_K_E_H_0.0_ii_3_0"`
+    python Transform_to_Ternary.py -B 4 -o "0,1" -N 1000 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000
 
 
 #### Options for evaluating performance and plotting the results
