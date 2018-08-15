@@ -1,10 +1,14 @@
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 #from brian import *
 import time
+import pdb
 import numpy as np
 import sys,getopt,os
 from scipy.cluster.vq import kmeans,whiten,kmeans2,vq
-
+try:
+    import matplotlib.pyplot as plt
+except:
+    pass
 #from CommonFunctions.auxiliary_functions import combine_weight_matrix,generate_file_name
 from CommonFunctions.auxiliary_functions_accuracy import caculate_accuracy,beliefs_to_ternary,parse_commands_accuracy_algo
 #from CommonFunctions.Neurons_and_Networks import *
@@ -161,9 +165,9 @@ for file_name_ending in file_name_ending_list:
             
         #~~~~~~~~Calcualte True Positive and False Positive Rates~~~~~~~~~
         W_ter = (W_temp>=thresh).astype(int)
-            
-        true_pos_exc[itr_V1] = true_pos_exc[itr_V1] + (sum(np.multiply((W_ter>0).astype(int),(W_s>0).astype(int))))/float(sum(W_s>0))
-        false_pos_exc[itr_V1] = false_pos_exc[itr_V1] + sum(np.multiply((W_ter>0).astype(int),(W_s<=0).astype(int)))/float(sum(W_s<=0))
+
+        true_pos_exc[itr_V1] = true_pos_exc[itr_V1] + sum(sum(np.multiply((W_ter>0).astype(int),(W_s>0).astype(int))))/float(sum(W_s>0))
+        false_pos_exc[itr_V1] = false_pos_exc[itr_V1] + sum(sum(np.multiply((W_ter>0).astype(int),(W_s<=0).astype(int))))/float(sum(W_s<=0))
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         itr_V1 += 1
     
@@ -173,8 +177,8 @@ for file_name_ending in file_name_ending_list:
         #~~~~~~~~Calcualte True Positive and False Positive Rates~~~~~~~~~
         W_ter = (W_temp<=thresh).astype(int)
             
-        true_pos_inh[itr_V1] = true_pos_inh[itr_V1] + (sum(np.multiply((W_ter>0).astype(int),(W_s<0).astype(int))))/float(sum(W_s<0))
-        false_pos_inh[itr_V1] = false_pos_inh[itr_V1] + sum(np.multiply((W_ter>0).astype(int),(W_s>=0).astype(int)))/float(sum(W_s>=0))
+        true_pos_inh[itr_V1] = true_pos_inh[itr_V1] + sum(sum(np.multiply((W_ter>0).astype(int),(W_s<0).astype(int))))/float(sum(W_s<0))
+        false_pos_inh[itr_V1] = false_pos_inh[itr_V1] + sum(sum(np.multiply((W_ter>0).astype(int),(W_s>=0).astype(int))))/float(sum(W_s>=0))
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
         itr_V1 = itr_V1 + 1
@@ -189,8 +193,8 @@ for file_name_ending in file_name_ending_list:
         W_ter = (W_temp>=thr2).astype(int) + (W_temp<=thr1).astype(int)
         W_ter = (W_ter == 0).astype(int)
             
-        true_pos_void[itr_V1] = true_pos_void[itr_V1] + (sum(np.multiply((W_ter>0).astype(int),(W_s==0).astype(int))))/float(sum(W_s==0))
-        false_pos_void[itr_V1] = false_pos_void[itr_V1] + sum(np.multiply((W_ter>0).astype(int),(W_s!=0).astype(int)))/float(sum(W_s!=0))
+        true_pos_void[itr_V1] = true_pos_void[itr_V1] + sum(sum(np.multiply((W_ter>0).astype(int),(W_s==0).astype(int))))/float(sum(W_s==0))
+        false_pos_void[itr_V1] = false_pos_void[itr_V1] + sum(sum(np.multiply((W_ter>0).astype(int),(W_s!=0).astype(int)))/float(sum(W_s!=0)))
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         
         itr_V1 = itr_V1 + 1 
@@ -253,7 +257,7 @@ np.savetxt(file_name,np.vstack([false_pos_void_tot,true_pos_void_tot]).T,'%f',de
 #=================================PLOT THE ROC CURVES==================================
 val_range = range(0,100)
 val_range = np.array(val_range)/100.0
-plt.plot(false_pos_exc,true_pos_exc);plt.plot(val_range,val_range,'r');plt.show()
-plt.plot(false_pos_inh,true_pos_inh);plt.show()#plt.plot(val_range,val_range,'r');plt.show()
-plt.plot(false_pos_void,true_pos_void);plt.show()
+#plt.plot(false_pos_exc,true_pos_exc);plt.plot(val_range,val_range,'r');plt.show()
+#plt.plot(false_pos_inh,true_pos_inh);plt.show()#plt.plot(val_range,val_range,'r');plt.show()
+#plt.plot(false_pos_void,true_pos_void);plt.show()
 #======================================================================================

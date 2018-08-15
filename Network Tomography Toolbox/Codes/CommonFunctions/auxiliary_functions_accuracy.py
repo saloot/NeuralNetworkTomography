@@ -524,8 +524,6 @@ def parse_commands_accuracy_algo(input_opts):
                 file_name_base_results = str(arg)                         # The folder to store the results
             elif opt == '-B':
                 ternary_mode = int(arg)                              # Defines the method to transform the graph to binary. "1" for threshold base and "2" for sparsity based                        
-            elif opt == '-V':                                       # Specify what to plot                
-                var_name = str(arg)                                 # The name of the variables which we are iterating to evaluate the performance of the algorithm
             elif opt == '-o': 
                 temp = (arg).split(',')                             # The range of neurons to identify the connections
                 neuron_range = []
@@ -575,10 +573,6 @@ def parse_commands_accuracy_algo(input_opts):
     if 'file_name_base_results' not in locals():
         file_name_base_results = FILE_NAME_BASE_RESULT_DEFAULT;
         print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_results))
-
-    if 'var_name' not in locals():
-        var_name = 'T'
-        print('ATTENTION: The default value of %s for plot_vars is considered.\n' %str(var_name))
 
     if 'no_neurons' not in locals():
         no_neurons = 0
