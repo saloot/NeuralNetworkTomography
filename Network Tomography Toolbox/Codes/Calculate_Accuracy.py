@@ -105,6 +105,7 @@ for file_name_ending in file_name_ending_list:
     #-----------------Calculate the Binary Matrix From Beliefs-----------------
     if no_hidden_neurons or no_structural_connections:
         file_name_ending_mod = file_name_ending.replace('W_Binary_W_Pll_','')
+        file_name_ending_mod = file_name_ending.replace('W_Pll_','')
         temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
         file_name_ending_mod = file_name_ending_mod.replace(temp_str,'')
 
@@ -118,7 +119,7 @@ for file_name_ending in file_name_ending_list:
             
                     
     #---------Calculate and Display Recall & Precision for Our Method----------    
-    recal,precision = caculate_accuracy(W_binary,W_s)
+    recal,precision = caculate_accuracy(W_binary[0:len(W_s)],W_s)
         
     recal_exc[itr_i] = recal[0]
     recal_inh[itr_i] = recal[1]
