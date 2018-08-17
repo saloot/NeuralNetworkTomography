@@ -133,10 +133,6 @@ def parse_commands_inf_algo(input_opts):
         no_processes = NO_CPUS_DEFAULT
         print('ATTENTION: The default value of %s for no_processes is considered.\n' %str(NO_CPUS_DEFAULT))
 
-    if 'ternary_mode' not in locals():
-        ternary_mode = TERNARY_MODE_DEFAULT;
-        print('ATTENTION: The default value of %s for ternary_mode is considered.\n' %str(ternary_mode))
-
     if 'file_name_base_results' not in locals():
         file_name_base_results = FILE_NAME_BASE_RESULT_DEFAULT;
         print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_results))
@@ -525,6 +521,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     lambda_temp = []
         
                 inferece_params[10] = 0
+
                 #Delta_W,d_alp_vec,t_start,t_end,cst,memory_used  = infer_w_block(W_tot,A,YA,lambda_temp,len_v,0,t_step_w,inferece_params)
                 
                 #pdb.set_trace()
@@ -596,11 +593,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             W_tot = W_tot/(0.0001+np.linalg.norm(W_tot))
             if sparsity_flag:
                 sparse_thr = W_tot[:-1].std()/float(sparse_thr_0)
-                if sparse_thr!=0:
-                    sparse_thr_pos = np.multiply(W_tot[:-1],(W_tot[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
-                    sparse_thr_neg = np.multiply(W_tot[:-1],(W_tot[:-1]<0).astype(int)).std()/float(sparse_thr_0)
-                    W_tot[:-1] = soft_threshold_double(W_tot[:-1],sparse_thr_pos,sparse_thr_neg)
-                #W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr)
+                #if sparse_thr!=0:
+                #    sparse_thr_pos = np.multiply(W_tot[:-1],(W_tot[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
+                #    sparse_thr_neg = np.multiply(W_tot[:-1],(W_tot[:-1]<0).astype(int)).std()/float(sparse_thr_0)
+                #    W_tot[:-1] = soft_threshold_double(W_tot[:-1],sparse_thr_pos,sparse_thr_neg)
+                W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr_0)
                 
                 
             print('Processing %s blocks was finished, with cost being %s' %(str(no_blocks),str(total_cost[itr_cost])))
