@@ -545,14 +545,8 @@ def parse_commands_plots(input_opts):
         for opt, arg in input_opts:
             if opt == '-A':
                 file_name_ending = str(arg)                   # The file endings
-            elif opt == '-F':
-                file_name_ground_truth = str(arg)             # The address of the ground truth
             elif opt == '-S':
                 file_name_base_results = str(arg)             # The folder to store the results
-            elif opt == '-B':
-                ternary_mode = int(arg)                              # Defines the method to transform the graph to binary. "1" for threshold base and "2" for sparsity based                        
-            elif opt == '-M':
-                inference_method = int(arg)                         # The inference method
             elif opt == '-f':                                       # Specify what to plot                
                 temp = (arg).split(',')                             
                 plot_flags = []
@@ -586,20 +580,9 @@ def parse_commands_plots(input_opts):
         
         
     #------------Set the Default Values if Variables are not Defines---------------
-    if 'file_name_ground_truth' not in locals():
-        file_name_ground_truth = ''
-
-    if 'ternary_mode' not in locals():
-        ternary_mode = TERNARY_MODE_DEFAULT;
-        print('ATTENTION: The default value of %s for ternary_mode is considered.\n' %str(ternary_mode))
-
     if 'file_name_base_results' not in locals():
         file_name_base_results = FILE_NAME_BASE_RESULT_DEFAULT;
         print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_results))
-
-    if 'inference_method' not in locals():
-        inference_method = INFERENCE_METHOD_DEFAULT;
-        print('ATTENTION: The default value of %s for inference_method is considered.\n' %str(inference_method))
 
     if 'plot_flags' not in locals():
         plot_flags = ['B','P','W','S']
@@ -624,5 +607,16 @@ def parse_commands_plots(input_opts):
         os.makedirs(temp)    
     #------------------------------------------------------------------------------
 
-    return file_name_ground_truth,file_name_ending,file_name_base_results,ternary_mode,inference_method,Var1_range,Var2_range,plot_flags,plot_vars,neuron_range
+    #---------------Get All the Files with Similar File Name Endings---------------
+    file_name_ending_list = []
+    results_dir = file_name_base_results+'/Inferred_Graphs'
+    if file_name_ending:
+        for file in os.listdir(results_dir):
+            if file.startswith(file_name_ending):
+                file_name = os.path.join(results_dir, file)
+                if '_n_' not in file_name:
+                    file_name_ending_list.append(file_name.replace(results_dir+'/',''))
+    #------------------------------------------------------------------------------
+
+    return file_name_ending_list,file_name_base_results
     

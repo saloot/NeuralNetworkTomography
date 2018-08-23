@@ -97,6 +97,7 @@ for file_name_ending in file_name_ending_list:
     #W_inferred_s = W_inferred_s[:-1]
     #--------------------------------------------------------------------------
 
+    #-------------------Transfrom the Results to Ternary-----------------------
     file_name = file_name_base_results + "/Inferred_Graphs/" + file_name_ending
 
     W_binary = np.genfromtxt(file_name, dtype=None, delimiter='\t')
@@ -129,6 +130,7 @@ for file_name_ending in file_name_ending_list:
     prec_inh[itr_i] = precision[1]
     prec_void[itr_i] = precision[2]
 #======================================================================================
+
 
 #==============================CALCULATE THE ROC CURVE=================================
     

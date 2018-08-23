@@ -233,7 +233,7 @@ for n_ind in neuron_range:
     #....................Store Spent Time and Memory............................
     t_end = time.time()                           # The ending time of the algorithm    
     file_name =  file_name_base_results + "/Spent_Resources/CPU_RAM_%s_%s.txt" %(file_name_prefix,file_name_ending)
-    tmp = [T,(t_end-t_start)/float(no_avg_itr),used_ram/float(no_avg_itr)]
+    tmp = [T,(t_end-t_start)/float(no_avg_itr)/len(neuron_range),used_ram/float(no_avg_itr)/len(neuron_range)]
     np.savetxt(file_name,tmp,delimiter='\t')
     #..........................................................................
     
