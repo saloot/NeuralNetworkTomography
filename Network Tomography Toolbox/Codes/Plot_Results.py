@@ -18,10 +18,6 @@ except:
     print 'Plotly was not found. No problem though, life goes on ;)'
     plotly_import = 0
 
-#from CommonFunctions.Neurons_and_Networks import *
-#from CommonFunctions.default_values import *
-from CommonFunctions.auxiliary_functions_digitize import caculate_accuracy
-from CommonFunctions.auxiliary_functions import generate_file_name,combine_weight_matrix
 from CommonFunctions.auxiliary_functions_plot import save_plot_results,calculate_belief_quality,save_web_demo,initialize_plotting_variables,save_precision_recall_results,export_to_plotly,parse_commands_plots
 
 
@@ -33,7 +29,6 @@ input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:A:F:R:L:M:B:R:G:J:N:
 
 file_name_ending_list,file_name_base_results,file_name_ground_truth,x_label,y_label,plot_type,plot_var,x_axis_values,network_size,n_ind,no_hidden_neurons,no_structural_connections = parse_commands_plots(input_opts)
 
-
 # Scirpt to plot spent CPU etc.
 # Script to plot average of W_Pll etc.
 # Script to plot average of percision adn recall
@@ -41,12 +36,10 @@ file_name_ending_list,file_name_base_results,file_name_ground_truth,x_label,y_la
 #==============================================================================
 
 #==================DO SANITY CHECK ON THE ENTERED PARAMETERS===================
-#if len(x_axis_values) != len(file_name_ending_list):
-#    print 'Sorry! Something does not add up. The length of x axis values and results file are different.'
-#    sys.exit()
-#else:
-#    x_axis_values = np.array(x_axis_values)
-if plot_flags == 'W' and not file_name_ground_truth:
+if len(x_axis_values):
+    x_axis_values = np.array(x_axis_values)
+
+if plot_type == 'W' and not file_name_ground_truth:
     print 'Sorry! To plot the quality of beliefs, you must specify the file that contains the ground truth'
     sys.exit()
 elif file_name_ground_truth:
@@ -85,42 +78,44 @@ if plotly_flag:
 #=============================READ THE RESULTS=================================
 
 #---------------------Initialize Simulation Variables--------------------------
-W_final= np.zeros(W_inferred.shape)
-neu_type = np.zeros([n,len(file_name_ending_list)])
 itr = 0
 
-vals_exc = np.zeros([len(file_name_ending_list)])
-std_exc = np.zeros([len(file_name_ending_list)])
+vals_exc = np.zeros([len(x_axis_values)])
+std_exc = np.zeros([len(x_axis_values)])
 
-vals_inh = np.zeros([len(file_name_ending_list)])
-std_inh = np.zeros([len(file_name_ending_list)])
+vals_inh = np.zeros([len(x_axis_values)])
+std_inh = np.zeros([len(x_axis_values)])
 
-vals_void = np.zeros([len(file_name_ending_list)])
-std_void = np.zeros([len(file_name_ending_list)])
+vals_void = np.zeros([len(x_axis_values)])
+std_void = np.zeros([len(x_axis_values)])
 
 
 #================Plot the Precision/Recall Results================
-if plot_flags in ['P','R']:
+if plot_type in ['P','R']:
 
     #------------------------Read the Files-----------------------
     itr = 0
     for file_name_ending in file_name_ending_list:
-        if plot_flags == 'P':
-            file_name = file_name_base_results + "/Accuracies/" + file_name_ending
-            vals = np.genfromtxt(file_name, dtype='float', delimiter='\t')
-        elif plot_flags == 'R':
-            file_name = file_name_base_results + "/Accuracies/Rec_%s.txt" %file_name_ending2
-            vals = np.genfromtxt(file_name, dtype='float', delimiter='\t')
+        if plot_type == 'P':
+            file_name = file_name_base_results + "/Accuracies/Prec_%s.txt" %file_name_ending
+        elif plot_type == 'R':
+            file_name = file_name_base_results + "/Accuracies/Rec_%s.txt" %file_name_ending
+            
 
         #~~~~~~~~~Update Precision and Recall Variables~~~~~~~~~~~
-        if x_axis_values[itr] != vals[:,0]:
+        temp_str = plot_var + '_' + str(x_axis_values[itr])
+        if temp_str not in file_name:
             print('Something seems to be wrong!')
-        vals_exc[itr] = vals[:,1]
-        vals_inh[itr] = vals[:,2]
-        vals_void[itr] = vals[:,3]
+        else:
+            vals = np.genfromtxt(file_name, dtype='float', delimiter='\t')
+            vals_exc[itr] = vals[0]
+            vals_inh[itr] = vals[1]
+            vals_void[itr] = vals[2]
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        itr += 1
+            itr += 1
+            if itr >= len(x_axis_values):
+                break
     #-------------------------------------------------------------
 
     #-----------------------Plot the Results-----------------------
@@ -130,9 +125,9 @@ if plot_flags in ['P','R']:
     plt.bar(x_axis_values + bar_width,vals_inh,bar_width,color='b',label='Inhibitory');
     plt.bar(x_axis_values + 2*bar_width,vals_void,bar_width,color='g',label='Void');
             
-    if plot_flags == 'P':
+    if plot_type == 'P':
         plt.title('Precision')
-    elif plot_flags == 'R':
+    elif plot_type == 'R':
         plt.title('Recall')
 
     plt.xlabel(x_label, fontsize=16)
@@ -164,32 +159,36 @@ if plot_flags in ['P','R']:
 
 #================Plot Results on Spend Resources==================
 if plot_type == 'C':
-    spent_cpu = np.zeros([len(file_name_ending_list)])
-    spent_ram = np.zeros([len(file_name_ending_list)])
+    spent_cpu = np.zeros([len(x_axis_values)])
+    spent_ram = np.zeros([len(x_axis_values)])
 
     #------------------------Read the Files-----------------------
     itr = 0
     for file_name_ending in file_name_ending_list:
     
-        file_name = file_name_base_results + '/Spent_Resources/' + file_name_ending
+        file_name = file_name_base_results + '/Spent_Resources/CPU_RAM_' + file_name_ending
+        file_name = file_name.replace('W_Pll_','')
         temp = np.genfromtxt(file_name, dtype=None, delimiter='\t')
         
-        if x_axis_values[itr] != temp[0]:
+        temp_str = plot_var + '_' + str(x_axis_values[itr])
+        if temp_str not in file_name:
             print('Something seems to be wrong!')
         spent_cpu[itr] = temp[1]
         spent_ram[itr] = temp[2]
 
         itr += 1
+        if itr >= len(x_axis_values):
+            break
     #-------------------------------------------------------------
 
     #-----------------------Plot the Results-----------------------
-    plt.plot(x_axis_values,spent_cpu[:,0],color='r')
+    plt.plot(x_axis_values,spent_cpu,color='r')
     plt.title('CPU Time')
     plt.xlabel(x_label, fontsize=16)
     plt.ylabel('T(s)', fontsize=16)
     plt.show()
 
-    plt.plot(x_axis_values,spent_ram[:,0],color='r')
+    plt.plot(x_axis_values,spent_ram,color='r')
     plt.title('RAM Usage')
     plt.xlabel(x_label, fontsize=16)
     plt.ylabel('MB', fontsize=16)
@@ -203,8 +202,6 @@ if plot_type == 'C':
 if plot_type == 'W':
     means_vector = np.zeros([3,len(x_axis_values)])
     std_vector = np.zeros([3,len(x_axis_values)])
-
-    ensemble_size = len(file_name_ending_list,x_axis_values)
 
     itr_x = 0
     for x in x_axis_values:
@@ -222,7 +219,7 @@ if plot_type == 'W':
 
     #--------Reconstruct the Ground Truth in This Ensemble--------
             W_r = np.reshape(W[:,n_ind],[len(W[:,n_ind]),1])
-            W_s = W_read#[0:network_size,len(W_read))]
+            W_s = W_read[0:min(network_size,len(W_read))]
 
             if no_hidden_neurons or no_structural_connections:
                 file_name_ending_mod = file_name_ending.replace('W_Pll_','')
@@ -301,12 +298,13 @@ if plot_type == 'W':
         plot_title = 'Average belief qualities'
         plot_url = export_to_plotly(x_array,y_array,no_plots,plot_legends,'line',plot_colors,'t(s)','Average of beliefs',plot_title,error_array,error_bar_colors)
     #-------------------------------------------------------------
-    
+
 #=================================================================
 
 
+#===========================Plot the ROC Curves===================
 
-
+#=================================================================
      
 #------------------------------------ROC Curve--------------------------------
 if 'R' in plot_vars:
@@ -426,7 +424,7 @@ if 0:
         W_inferred = W_inferred + np.random.rand(n,m)/100000
         W_inferred  = whiten(W_inferred)
          
-    if 'S' in plot_flags:
+    if 'S' in plot_type:
         plt.title('Scatter plot of belief')
         plt.scatter(np.sign(W.ravel()),W_inferred.ravel())
         plt.xlabel('G (actual)', fontsize=16)
@@ -437,13 +435,13 @@ if 0:
 #------------------------------------------------------------------------------
 
 #-------------------------------Save the Results-------------------------------
-if 'B' in plot_flags:
+if 'B' in plot_type:
     save_plot_results(Var1_range,mean_exc,std_exc,mean_inh,std_inh,mean_void,
                           std_void,0,0,file_name_base_results,
                           file_name_ending,0,W_inferred,W)
         
         
-if 'P' in plot_flags:
+if 'P' in plot_type:
     
     #???? Fix these
 
@@ -459,7 +457,7 @@ if 'P' in plot_flags:
                                       std_Prec_void,Rec_exc,std_Rec_exc,Rec_inh,std_Rec_inh,Rec_void,std_Rec_void)
 
 
-if 'S' in plot_flags:
+if 'S' in plot_type:
     spent_ram = spent_ram/float(1e6)            # Transform to GB
     spent_cpu = spent_cpu/3600.                 # Transform to hours
     temp = np.vstack([np.array(Var1_range).T,(spent_cpu).T,spent_ram.T])

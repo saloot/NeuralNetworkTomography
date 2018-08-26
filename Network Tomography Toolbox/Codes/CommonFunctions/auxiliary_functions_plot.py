@@ -537,40 +537,51 @@ def export_to_plotly(x_array,y_array,no_plots,plot_legends,plot_type,plot_colors
 #------------------------------------------------------------------------------
 
 def parse_commands_plots(input_opts):
-    Var1_range = []
-    Var2_range = []
-    plot_vars = []
-    neuron_range = []
+    x_axis_values = []
     if (input_opts):
         for opt, arg in input_opts:
             if opt == '-A':
                 file_name_ending = str(arg)                   # The file endings
+            elif opt == '-N':
+                network_size = int(arg)                         # The number of neighboring neurons
+            elif opt == '-F':
+                file_name_ground_truth = str(arg)               # The address of the ground truth, required for plotting average beliefs
             elif opt == '-S':
-                file_name_base_results = str(arg)             # The folder to store the results
-            elif opt == '-f':                                       # Specify what to plot                
-                temp = (arg).split(',')                             
-                plot_flags = []
-                for i in temp:                        
-                    plot_flags.append(i)
-            elif opt == '-V':                                       # Specify what varaible to plot                
-                temp = (arg).split(',')                             
-                plot_vars = []
-                for i in temp:                        
-                    plot_vars.append(i)                
+                file_name_base_results = str(arg)               # The folder to store the results
+            elif opt == '-V':                                   # Specify what varaible to plot. Choices are:
+                plot_var = str(arg)                             #       'T': for number of recorded samples
+                                                                #       'F': number of "artifcially" hidden neurons
+                                                                #       'f': number of neurons for which we have some structural information
+                                                                # These choices are in line with the file naming convention used in the file Inference_Tomography.py
             elif opt == '-O': 
-                temp = (arg).split(',')                             # The range of first plotting var
-                Var1_range = []
+                temp = (arg).split(',')                             # The range of x axis values
+                x_axis_values = []
                 for i in temp:                        
-                    Var1_range.append(int(i))
-            elif opt == '-o': 
-                temp = (arg).split(',')                             # The range of neurons to identify the connections
-                for i in temp:                        
-                    neuron_range.append(int(i))
-            elif opt == '-R': 
-                temp = (arg).split(',')                             # The range of recorded durations (T_range)other var
-                Var2_range = []
-                for i in temp:                        
-                    Var2_range.append(int(i))
+                    x_axis_values.append(int(i))
+            elif opt == '-n':
+                n_ind = int(arg)                                    # The target neuron. 
+                                                                    # This is to load the correct set of incoming weights from
+                                                                    # the ground truth matrix.
+            elif opt == '-H':
+                no_hidden_neurons = int(arg)                        # The number of neurons to artificially hide
+            elif opt == '-f': 
+                no_structural_connections = int(arg)                # Number of neurons we have structural info about.
+                                                                    # If greater than 0, the function assumes we have the strict information about 
+                                                                    # "no_structural_connections" pre-synaptic neurons NOT being connected to the target 
+                                                                    # neuron and runs the algorithm for the remaining neurons.
+                                                                    # NOTE: for this to work, "file_name_ground_truth" must be specified as well.
+                                                                    # TODO: we should modify this later to get a list of connections.
+            elif opt == '-x':
+                x_label = str(arg)                                  # Label of x axis
+            elif opt == '-y':
+                y_label = str(arg)                                  # Label of y axis
+            elif opt == '-U':
+                plot_type = str(arg)                                  # The type of plot, from:
+                                                                    #   'P': for precision
+                                                                    #   'R': for recall
+                                                                    #   'C': spend respurces
+                                                                    #   'W': average of weights
+                                                                    #   'S': scatter plots
             
             elif opt == '-h':
                 print(help_message)
@@ -578,22 +589,36 @@ def parse_commands_plots(input_opts):
     else:
         print('Code will be executed using default values')
         
-        
     #------------Set the Default Values if Variables are not Defines---------------
     if 'file_name_base_results' not in locals():
         file_name_base_results = FILE_NAME_BASE_RESULT_DEFAULT;
         print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_results))
 
-    if 'plot_flags' not in locals():
-        plot_flags = ['B','P','W','S']
-        print('ATTENTION: The default value of %s for plot_flags is considered.\n' %str(plot_flags))
-    
-    if 'plot_vars' not in locals():
-        plot_vars = ['T']
-        print('ATTENTION: The default value of %s for plot_vars is considered.\n' %str(plot_vars))
-    
     if 'file_name_ending' not in locals():
-        file_name_ending = ''
+        print 'Sorry you should specify a set of results file for plotting'
+        sys.exit()
+
+    if 'x_label' not in locals():
+        print 'Warning: X axis label is not specified'
+        x_label = ''
+
+    if 'y_label' not in locals():
+        print 'Warning: Y axis label is not specified'
+        y_label = ''
+
+    if 'plot_type' not in locals():
+        print 'Sorry you should specify the plot type'
+        sys.exit()
+
+    if 'network_size' not in locals():
+        print 'Sorry you must specify the size of the network'
+        sys.exit()
+
+    if 'file_name_ground_truth' not in locals():
+        file_name_ground_truth = ''
+
+    if 'plot_var' not in locals():
+        plot_var = ''
     #------------------------------------------------------------------------------
     
     #------------------Create the Necessary Directories if Necessary---------------
@@ -618,5 +643,5 @@ def parse_commands_plots(input_opts):
                     file_name_ending_list.append(file_name.replace(results_dir+'/',''))
     #------------------------------------------------------------------------------
 
-    return file_name_ending_list,file_name_base_results
+    return file_name_ending_list,file_name_base_results,file_name_ground_truth,x_label,y_label,plot_type,plot_var,x_axis_values,network_size,n_ind,no_hidden_neurons,no_structural_connections
     

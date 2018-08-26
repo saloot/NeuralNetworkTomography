@@ -593,11 +593,11 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             W_tot = W_tot/(0.0001+np.linalg.norm(W_tot))
             if sparsity_flag:
                 sparse_thr = W_tot[:-1].std()/float(sparse_thr_0)
-                #if sparse_thr!=0:
-                #    sparse_thr_pos = np.multiply(W_tot[:-1],(W_tot[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
-                #    sparse_thr_neg = np.multiply(W_tot[:-1],(W_tot[:-1]<0).astype(int)).std()/float(sparse_thr_0)
-                #    W_tot[:-1] = soft_threshold_double(W_tot[:-1],sparse_thr_pos,sparse_thr_neg)
-                W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr_0)
+                if sparse_thr!=0:
+                    sparse_thr_pos = np.multiply(W_tot[:-1],(W_tot[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
+                    sparse_thr_neg = np.multiply(W_tot[:-1],(W_tot[:-1]<0).astype(int)).std()/float(sparse_thr_0)
+                    W_tot[:-1] = soft_threshold_double(W_tot[:-1],sparse_thr_pos,sparse_thr_neg)
+                #W_tot[:-1] = soft_threshold(W_tot[:-1],sparse_thr_0)
                 
                 
             print('Processing %s blocks was finished, with cost being %s' %(str(no_blocks),str(total_cost[itr_cost])))
