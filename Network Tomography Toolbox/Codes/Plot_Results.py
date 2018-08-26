@@ -20,7 +20,6 @@ except:
 
 from CommonFunctions.auxiliary_functions_plot import save_plot_results,calculate_belief_quality,save_web_demo,initialize_plotting_variables,save_precision_recall_results,export_to_plotly,parse_commands_plots
 
-
 os.system('clear')                                              # Clear the commandline window
 #==============================================================================
 
@@ -28,11 +27,6 @@ os.system('clear')                                              # Clear the comm
 input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:A:F:R:L:M:B:R:G:J:N:U:Z:Y:O:o:f:V:p:x:y:n:")
 
 file_name_ending_list,file_name_base_results,file_name_ground_truth,x_label,y_label,plot_type,plot_var,x_axis_values,network_size,n_ind,no_hidden_neurons,no_structural_connections = parse_commands_plots(input_opts)
-
-# Scirpt to plot spent CPU etc.
-# Script to plot average of W_Pll etc.
-# Script to plot average of percision adn recall
-# Script to plot ROC?
 #==============================================================================
 
 #==================DO SANITY CHECK ON THE ENTERED PARAMETERS===================
@@ -55,7 +49,6 @@ elif file_name_ground_truth:
 #--------------------------Initialize Other Variables--------------------------
 whiten_flag = 1                     # If 1, the algorithm whitens the inferred graph before calculating the results
 zero_diagonals_flag = 1             # If 1, the diagonal elements (self feedback-loops) will be set to 0 before calculating belief qualities
-get_from_host = 1
 #------------------------------------------------------------------------------
 
 #-----------------------------Signin to Plotly---------------------------------
