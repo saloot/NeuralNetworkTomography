@@ -351,11 +351,9 @@ def calculate_integration_matrix(n_ind,spikes_file,n,t_start,t_end,tau_d,tau_s,k
     #AA = np.delete(AA.T,n_ind,0).T
     
     V = V.T
-    V = np.delete(V.T,n_ind,0).T
-    
-    if len(hidden_neurons):
-        V = np.delete(V.T,hidden_neurons,0).T
-    
+    hidden_neurons = hidden_neurons.append(n_ind)
+    V = np.delete(V.T,hidden_neurons,0).T
+    #V = np.delete(V.T,n_ind,0).T
     #---------------------------------------------------------------------
     
     flag_for_parallel_spikes = -1
