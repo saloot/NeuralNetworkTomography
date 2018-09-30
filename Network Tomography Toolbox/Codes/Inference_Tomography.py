@@ -173,8 +173,8 @@ for n_ind in neuron_range:
         zero_connections = np.where(w_act == 0)[0]
         zero_connections = zero_connections[0:no_structural_connections]
         if n_ind in zero_connections:
-            zero_connections.remove(n_ind)
-            zero_connections.append(zero_connections[no_structural_connections])
+            i = np.where(zero_connections == n_ind)[0]
+            zero_connections[i] = zero_connections[no_structural_connections]
 
         if len(hidden_neurons):
             hidden_neurons += zero_connections
