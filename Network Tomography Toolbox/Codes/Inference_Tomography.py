@@ -172,6 +172,10 @@ for n_ind in neuron_range:
         w_act = W_gt[:,n_ind]
         zero_connections = np.where(w_act == 0)[0]
         zero_connections = zero_connections[0:no_structural_connections]
+        if n_ind in zero_connections:
+            zero_connections.remove(n_ind)
+            zero_connections.append(zero_connections[no_structural_connections])
+
         if len(hidden_neurons):
             hidden_neurons += zero_connections
         else:
@@ -212,7 +216,7 @@ for n_ind in neuron_range:
     file_name_ending += '_T_' + str(int(T))
 
     if no_structural_connections or no_hidden_neurons:
-        file_name_ending += id_generator()
+        file_name_ending += '_ID_' + id_generator()
 
         
     file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_prefix,file_name_ending)
