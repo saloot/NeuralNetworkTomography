@@ -619,6 +619,12 @@ def parse_commands_plots(input_opts):
 
     if 'plot_var' not in locals():
         plot_var = ''
+
+    if 'no_hidden_neurons' not in locals():
+        no_hidden_neurons = 0
+
+    if 'no_structural_connections' not in locals():
+        no_structural_connections = 0
     #------------------------------------------------------------------------------
     
     #------------------Create the Necessary Directories if Necessary---------------
