@@ -124,6 +124,19 @@ data to count them as hidden and then perform the algorithm to identify the perf
     python Calculate_Accuracy.py -o "0,1" -N 1000 -n 0 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000"
   
 
+
+
+#### Options for plotting the results
+* `-V xxx`: The plot variable ...
+* `-U xxx`: The plot parameter (perceision,...) ...
+* `-O xxx`: To specify the range of recorded durations to evaluate the performance upon, as a list given by `xxx`. More specifically, `xxx` has the following format:
+  * `-O "T_1,T_2,T_3"`, where `T_i` (an *integer* in miliseconds) is the duration of recording in session `i`.
+* `-x xxx`: The x label
+* `-y xxx`: The y label
+
+##### Example usage: 
+    `python -o "0,1" -S 200000 -Q 8 -X 3 -L 'E' -J 0.0 -N 1000 -Y 0.1 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_1.0_C_8_B_400000_K_E_H_0.0_ii_2_0_f_50_T_" -U P -V T `
+
 ### Dependencies
 * A working distribution of [Python 2.7](https://www.python.org/downloads/).
 * The code relies heavily on [Numpy](http://www.numpy.org/),

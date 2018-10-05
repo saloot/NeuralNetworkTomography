@@ -13,7 +13,7 @@ try:
     import plotly.plotly as pltly
     from plotly.graph_objs import *    
 except:
-    print 'Plotly was not found. No problem though, life goes on ;)'    
+    print('Plotly was not found. No problem though, life goes on ;)')
 #==============================================================================
 
 
@@ -595,23 +595,23 @@ def parse_commands_plots(input_opts):
         print('ATTENTION: The default value of %s for file_name_base_data is considered.\n' %str(file_name_base_results))
 
     if 'file_name_ending' not in locals():
-        print 'Sorry you should specify a set of results file for plotting'
+        print('Sorry you should specify a set of results file for plotting')
         sys.exit()
 
     if 'x_label' not in locals():
-        print 'Warning: X axis label is not specified'
+        print('Warning: X axis label is not specified')
         x_label = ''
 
     if 'y_label' not in locals():
-        print 'Warning: Y axis label is not specified'
+        print('Warning: Y axis label is not specified')
         y_label = ''
 
     if 'plot_type' not in locals():
-        print 'Sorry you should specify the plot type'
+        print('Sorry you should specify the plot type')
         sys.exit()
 
     if 'network_size' not in locals():
-        print 'Sorry you must specify the size of the network'
+        print('Sorry you must specify the size of the network')
         sys.exit()
 
     if 'file_name_ground_truth' not in locals():

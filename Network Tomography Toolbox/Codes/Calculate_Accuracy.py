@@ -224,6 +224,11 @@ false_pos_void_tot = false_pos_void_tot/itr_i
 
 #==================================SAVE THE RESULTS====================================
 temp_ending = file_name_ending
+ind = temp_ending.index('_ID_')
+aa = temp_ending[ind:ind+10]
+temp_ending = temp_ending.replace(aa,'')
+temp_ending = temp_ending.replace('W_Binary_','')
+temp_ending = temp_ending.replace('W_Pll_','')
 
 recal_exc = recal_exc.mean()
 recal_inh = recal_inh.mean()
@@ -236,24 +241,23 @@ prec_void = prec_void.mean()
 temp = np.vstack([recal_exc,recal_inh,recal_void])
 temp = temp.T
 #temp = np.hstack([np.reshape(var_range,[len(var_range),1]),temp])
-file_name = file_name_base_results + "/Accuracies/Rec_%s.txt" %temp_ending
+file_name = file_name_base_results + "/Accuracies/Rec_" + temp_ending
 np.savetxt(file_name,temp,'%f',delimiter='\t',newline='\n')
         
-file_name = file_name_base_results + "/Accuracies/Prec_%s.txt" %temp_ending
+file_name = file_name_base_results + "/Accuracies/Prec_" + temp_ending
 temp = np.vstack([prec_exc,prec_inh,prec_void])
 temp = temp.T
 #temp = np.hstack([np.reshape(var_range,[len(var_range),1]),temp])
 
 np.savetxt(file_name,temp,'%f',delimiter='\t',newline='\n')
 
-
-file_name = file_name_base_results + "/Plot_Results/ROC_exc_%s.txt" %temp_ending
+file_name = file_name_base_results + "/Plot_Results/ROC_exc_" + temp_ending
 np.savetxt(file_name,np.vstack([false_pos_exc_tot,true_pos_exc_tot]).T,'%f',delimiter='\t',newline='\n')
     
-file_name = file_name_base_results + "/Plot_Results/ROC_inh_%s.txt" %temp_ending
+file_name = file_name_base_results + "/Plot_Results/ROC_inh_" + temp_ending
 np.savetxt(file_name,np.vstack([false_pos_inh_tot,true_pos_inh_tot]).T,'%f',delimiter='\t',newline='\n')
     
-file_name = file_name_base_results + "/Plot_Results/ROC_void_%s.txt" %temp_ending
+file_name = file_name_base_results + "/Plot_Results/ROC_void_" + temp_ending
 np.savetxt(file_name,np.vstack([false_pos_void_tot,true_pos_void_tot]).T,'%f',delimiter='\t',newline='\n')
 #======================================================================================
 

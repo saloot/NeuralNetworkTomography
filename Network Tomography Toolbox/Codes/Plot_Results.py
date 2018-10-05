@@ -5,6 +5,7 @@ from time import time
 import matplotlib.pyplot as plt
 import copy
 from scipy.cluster.vq import whiten
+import pdb
 #import matplotlib.mlab as mlab
 #from mpl_toolkits.mplot3d import Axes3D
 #from matplotlib import cm
@@ -15,7 +16,7 @@ try:
     from plotly.graph_objs import *
     plotly_import = 1
 except:
-    print 'Plotly was not found. No problem though, life goes on ;)'
+    print('Plotly was not found. No problem though, life goes on ;)')
     plotly_import = 0
 
 from CommonFunctions.auxiliary_functions_plot import save_plot_results,calculate_belief_quality,save_web_demo,initialize_plotting_variables,save_precision_recall_results,export_to_plotly,parse_commands_plots
@@ -34,7 +35,7 @@ if len(x_axis_values):
     x_axis_values = np.array(x_axis_values)
 
 if plot_type == 'W' and not file_name_ground_truth:
-    print 'Sorry! To plot the quality of beliefs, you must specify the file that contains the ground truth'
+    print('Sorry! To plot the quality of beliefs, you must specify the file that contains the ground truth')
     sys.exit()
 elif file_name_ground_truth:
     W = np.genfromtxt(file_name_ground_truth, dtype=None, delimiter='\t')
@@ -89,10 +90,16 @@ if plot_type in ['P','R']:
     #------------------------Read the Files-----------------------
     itr = 0
     for file_name_ending in file_name_ending_list:
+        ind = file_name_ending.index('_ID_')
+        aa = file_name_ending[ind:ind+10]
+        file_name_ending = file_name_ending.replace(aa,'')
+        file_name_ending = file_name_ending.replace('W_Binary_','')
+        file_name_ending = file_name_ending.replace('W_Pll_','')
+
         if plot_type == 'P':
-            file_name = file_name_base_results + "/Accuracies/Prec_%s.txt" %file_name_ending
+            file_name = file_name_base_results + "/Accuracies/Prec_" + file_name_ending
         elif plot_type == 'R':
-            file_name = file_name_base_results + "/Accuracies/Rec_%s.txt" %file_name_ending
+            file_name = file_name_base_results + "/Accuracies/Rec_" + file_name_ending
             
 
         #~~~~~~~~~Update Precision and Recall Variables~~~~~~~~~~~
@@ -112,7 +119,8 @@ if plot_type in ['P','R']:
     #-------------------------------------------------------------
 
     #-----------------------Plot the Results-----------------------
-    bar_width = 0.15
+    bar_width = 0.01*x_axis_values.mean()
+    
     #x_axis_values = x_axis_values/1000.0
     plt.bar(x_axis_values,vals_exc,bar_width,color='r',label='Excitatory');    
     plt.bar(x_axis_values + bar_width,vals_inh,bar_width,color='b',label='Inhibitory');
@@ -158,6 +166,11 @@ if plot_type == 'C':
     #------------------------Read the Files-----------------------
     itr = 0
     for file_name_ending in file_name_ending_list:
+        ind = file_name_ending.index('_ID_')
+        aa = file_name_ending[ind:ind+10]
+        file_name_ending = file_name_ending.replace(aa,'')
+        file_name_ending = file_name_ending.replace('W_Binary_','')
+        file_name_ending = file_name_ending.replace('W_Pll_','')
     
         file_name = file_name_base_results + '/Spent_Resources/CPU_RAM_' + file_name_ending
         file_name = file_name.replace('W_Pll_','')
@@ -300,7 +313,7 @@ if plot_type == 'W':
 #=================================================================
      
 #------------------------------------ROC Curve--------------------------------
-if 'R' in plot_vars:
+if 'R' in plot_var:
     n,m = W.shape
     m = n
     W_inferred = np.zeros([n,m])
@@ -462,7 +475,6 @@ if 'S' in plot_type:
 
 
 #=================SAVE RESULTS FOR WEB DEMO IF NECESSARY=======================
-pdb.set_trace()
 if 0:
     save_web_demo(W,W_inferred,file_name_base_results,file_name_ending)
 #==============================================================================
@@ -487,15 +499,16 @@ if 0:
 
 # np.savetxt('./Y_predict_t_inds.txt',Y_predict,'%2.5f',delimiter='\t')
 
-    
-no_hidden_neurons_list = np.array(no_hidden_neurons_list)
-no_hidden_neurons_list_str = no_hidden_neurons_list.astype('str')
-temp_ending = file_name_ending + '_' + '_'.join(no_hidden_neurons_list_str)
-file_name = file_name_base_results + "/Plot_Results/Prec_Reca_All_Effect_hidden_%s.txt" %(temp_ending)
+# Save the results
+if 0:   
+    no_hidden_neurons_list = np.array(no_hidden_neurons_list)
+    no_hidden_neurons_list_str = no_hidden_neurons_list.astype('str')
+    temp_ending = file_name_ending + '_' + '_'.join(no_hidden_neurons_list_str)
+    file_name = file_name_base_results + "/Plot_Results/Prec_Reca_All_Effect_hidden_%s.txt" %(temp_ending)
 
-hidden_visible_ration = np.divide(no_hidden_neurons_list,(n-no_hidden_neurons_list).astype(float))
-temp = np.vstack([prec_exc_h,prec_inh_h,prec_void_h,rec_exc_h,rec_inh_h,rec_void_h])
-temp = temp.T
-temp = np.hstack([np.reshape(hidden_visible_ration,[len(hidden_visible_ration),1]),temp])
+    hidden_visible_ration = np.divide(no_hidden_neurons_list,(n-no_hidden_neurons_list).astype(float))
+    temp = np.vstack([prec_exc_h,prec_inh_h,prec_void_h,rec_exc_h,rec_inh_h,rec_void_h])
+    temp = temp.T
+    temp = np.hstack([np.reshape(hidden_visible_ration,[len(hidden_visible_ration),1]),temp])
 
-np.savetxt(file_name,temp,'%f',delimiter='\t',newline='\n')
+    np.savetxt(file_name,temp,'%f',delimiter='\t',newline='\n')
