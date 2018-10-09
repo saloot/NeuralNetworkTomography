@@ -53,7 +53,7 @@ if (kernel_choice!= 'E') and (kernel_choice!='D'):
 d_window = 2                                    # The time window the algorithm considers to account for pre-synaptic spikes
 rand_sample_flag = 1                            # If 1, the spikes are sampled randomly on intervals
 #kernel_choice = 'E'
-no_avg_itr = 10                                 # Number of times the inference algorithm is run with different parameters to find the connectivtiy
+no_avg_itr = 5                                 # Number of times the inference algorithm is run with different parameters to find the connectivtiy
 
 no_itr_over_dataset = max_itr_optimization
 max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
