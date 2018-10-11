@@ -643,7 +643,9 @@ def parse_commands_plots(input_opts):
     results_dir = file_name_base_results+'/Inferred_Graphs'
     if file_name_ending:
         for file in os.listdir(results_dir):
-            if file.startswith(file_name_ending):
+            part1 = file_name_ending.split('***')[0]
+            part2 = file_name_ending.split('***')[1]
+            if file.startswith(part1) and part2 in file:
                 file_name = os.path.join(results_dir, file)
                 if '_n_' not in file_name:
                     file_name_ending_list.append(file_name.replace(results_dir+'/',''))

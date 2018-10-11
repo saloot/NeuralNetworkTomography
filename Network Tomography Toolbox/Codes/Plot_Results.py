@@ -25,7 +25,7 @@ os.system('clear')                                              # Clear the comm
 #==============================================================================
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:A:F:R:L:M:B:R:G:J:N:U:Z:Y:O:o:f:V:p:x:y:n:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:A:F:R:L:H:M:B:R:G:J:N:U:Z:Y:O:o:f:V:p:x:y:n:")
 
 file_name_ending_list,file_name_base_results,file_name_ground_truth,x_label,y_label,plot_type,plot_var,x_axis_values,network_size,n_ind,no_hidden_neurons,no_structural_connections = parse_commands_plots(input_opts)
 #==============================================================================
@@ -88,25 +88,28 @@ std_void = np.zeros([len(x_axis_values)])
 if plot_type in ['P','R']:
 
     #------------------------Read the Files-----------------------
-    itr = 0
-    for file_name_ending in file_name_ending_list:
-        ind = file_name_ending.index('_ID_')
-        aa = file_name_ending[ind:ind+10]
-        file_name_ending = file_name_ending.replace(aa,'')
-        file_name_ending = file_name_ending.replace('W_Binary_','')
-        file_name_ending = file_name_ending.replace('W_Pll_','')
+    for itr in range(0,len(x_axis_values)):
+        temp_str = plot_var + '_' + str(x_axis_values[itr])
+    
+        for file_name_ending in file_name_ending_list:
+            ind = file_name_ending.index('_ID_')
+            aa = file_name_ending[ind:ind+10]
+            file_name_ending = file_name_ending.replace(aa,'')
+            file_name_ending = file_name_ending.replace('W_Binary_','')
+            file_name_ending = file_name_ending.replace('W_Pll_','')
+
+            if temp_str in file_name_ending:
+                file_name_ending
+                break
 
         if plot_type == 'P':
             file_name = file_name_base_results + "/Accuracies/Prec_" + file_name_ending
         elif plot_type == 'R':
             file_name = file_name_base_results + "/Accuracies/Rec_" + file_name_ending
             
-
         #~~~~~~~~~Update Precision and Recall Variables~~~~~~~~~~~
         temp_str = plot_var + '_' + str(x_axis_values[itr])
-        if temp_str not in file_name:
-            print('Something seems to be wrong!')
-        else:
+        if 1:
             vals = np.genfromtxt(file_name, dtype='float', delimiter='\t')
             vals_exc[itr] = vals[0]
             vals_inh[itr] = vals[1]
