@@ -176,17 +176,26 @@ for n_ind in neuron_range:
             i = np.where(zero_connections == n_ind)[0]
             zero_connections[i] = zero_connections_orig[no_structural_connections]
 
+        zero_connections = list(zero_connections)
         if len(hidden_neurons):
-            hidden_neurons += list(zero_connections)
+            # Make sure the structural neurons are not among the hidden neurons
+            temp_itr = 0
+            for ij in zero_connections:
+                if ij in hidden_neurons:
+                    zero_connections.remove(ij)
+                    temp_itr += 1
+                    zero_connections.append(zero_connections_orig[no_structural_connections+temp_itr])
+
+            hidden_neurons += zero_connections
         else:
             hidden_neurons = zero_connections
     #-------------------------------------------------------------------------
     
-    #-------------------Find an Remove Duplicates, If Any---------------------
-    if len(hidden_neurons):
-        hidden_neurons_new  = [item for item, count in Counter(hidden_neurons).iteritems() if count == 1]
-        hidden_neurons = hidden_neurons_new
-    #-------------------------------------------------------------------------
+    ##-------------------Find an Remove Duplicates, If Any---------------------
+    #if len(hidden_neurons):
+    #    hidden_neurons_new  = [item for item, count in Counter(hidden_neurons).iteritems() if count == 1]
+    #    hidden_neurons = hidden_neurons_new
+    ##-------------------------------------------------------------------------
 
     for it in range(0,no_avg_itr):
         W_temp,used_ram_temp,cost = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params,hidden_neurons)
