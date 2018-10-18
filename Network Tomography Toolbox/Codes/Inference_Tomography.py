@@ -172,7 +172,9 @@ for n_ind in neuron_range:
         w_act = W_gt[:,n_ind]
         zero_connections_orig = np.where(w_act == 0)[0]
 
+
         # Remove hidden neurons from this list if we have any
+        zero_connections_orig = list(zero_connections_orig)
         for ij in hidden_neurons:
             if ij in zero_connections_orig:
                 zero_connections_orig.remove(ij)
@@ -182,6 +184,7 @@ for n_ind in neuron_range:
             zero_connections_orig.remove(n_ind)
 
         zero_inds = np.random.permutation(len(zero_connections_orig))
+        zero_connections_orig = np.array(zero_connections_orig)
         zero_connections = zero_connections_orig[zero_inds[0:no_structural_connections]]
         zero_connections = list(zero_connections)
 
