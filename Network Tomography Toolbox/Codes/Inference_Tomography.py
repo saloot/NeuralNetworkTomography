@@ -177,7 +177,7 @@ for n_ind in neuron_range:
             zero_connections[i] = zero_connections_orig[no_structural_connections]
 
         if len(hidden_neurons):
-            hidden_neurons += zero_connections
+            hidden_neurons += list(zero_connections)
         else:
             hidden_neurons = zero_connections
     #-------------------------------------------------------------------------
