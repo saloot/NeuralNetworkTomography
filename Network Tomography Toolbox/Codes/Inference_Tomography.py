@@ -142,9 +142,12 @@ if not os.path.isfile(file_name_spikes2):
 
 #======================GENERATE LIST OF HIDDEN NEURONS=========================
 if no_hidden_neurons:
-        hidden_neurons_temp2 = np.random.permutation(no_neurons)
-        hidden_neurons_temp = hidden_neurons_temp2[0:no_hidden_neurons]
-        hidden_neurons_temp = list(hidden_neurons_temp)
+    w_act = W_gt[:,n_ind]
+    nonzero_connections_orig = np.where(w_act != 0)[0]
+    #hidden_neurons_temp2 = np.random.permutation(no_neurons)
+    hidden_neurons_temp2 = np.random.permutation(len(nonzero_connections_orig))
+    hidden_neurons_temp = hidden_neurons_temp2[0:no_hidden_neurons]
+    hidden_neurons_temp = list(hidden_neurons_temp)
 else:
     hidden_neurons_temp = []
 #==============================================================================
