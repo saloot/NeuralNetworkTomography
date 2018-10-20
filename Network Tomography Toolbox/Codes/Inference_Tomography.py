@@ -148,8 +148,12 @@ for n_ind in neuron_range:
     if no_hidden_neurons:
         w_act = W_gt[:,n_ind]
         nonzero_connections_orig = np.where(w_act != 0)[0]
+
+        if no_hidden_neurons > len(nonzero_connections_orig):
+            print('Warning: Number of hidden neurons are larger than number of non-zero connections.')
         #hidden_neurons_temp2 = np.random.permutation(no_neurons)
         hidden_neurons_temp2 = np.random.permutation(len(nonzero_connections_orig))
+        hidden_neurons_temp2 = nonzero_connections_orig[hidden_neurons_temp2]
         hidden_neurons_temp = hidden_neurons_temp2[0:no_hidden_neurons]
         hidden_neurons_temp = list(hidden_neurons_temp)
     else:
