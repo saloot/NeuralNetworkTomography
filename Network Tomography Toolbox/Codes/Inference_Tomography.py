@@ -138,27 +138,26 @@ if not os.path.isfile(file_name_spikes2):
 #------------------------------------------------------------------------------
 
 #==============================================================================
-
-
-#======================GENERATE LIST OF HIDDEN NEURONS=========================
-if no_hidden_neurons:
-    w_act = W_gt[:,n_ind]
-    nonzero_connections_orig = np.where(w_act != 0)[0]
-    #hidden_neurons_temp2 = np.random.permutation(no_neurons)
-    hidden_neurons_temp2 = np.random.permutation(len(nonzero_connections_orig))
-    hidden_neurons_temp = hidden_neurons_temp2[0:no_hidden_neurons]
-    hidden_neurons_temp = list(hidden_neurons_temp)
-else:
-    hidden_neurons_temp = []
-#==============================================================================
-
+W_infer = np.zeros([no_neurons+1-no_hidden_neurons-no_structural_connections,len(neuron_range)])
 
 #============================INFER THE CONNECTIONS=============================
-W_infer = np.zeros([no_neurons+1-len(hidden_neurons_temp)-no_structural_connections,len(neuron_range)])
-    
 itr_n = 0
 for n_ind in neuron_range:
+
+    #======================GENERATE LIST OF HIDDEN NEURONS=========================
+    if no_hidden_neurons:
+        w_act = W_gt[:,n_ind]
+        nonzero_connections_orig = np.where(w_act != 0)[0]
+        #hidden_neurons_temp2 = np.random.permutation(no_neurons)
+        hidden_neurons_temp2 = np.random.permutation(len(nonzero_connections_orig))
+        hidden_neurons_temp = hidden_neurons_temp2[0:no_hidden_neurons]
+        hidden_neurons_temp = list(hidden_neurons_temp)
+    else:
+        hidden_neurons_temp = []
+    #==============================================================================
     
+    
+
     #print 'memory so far %s' %str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
     t_start = time.time()                           # starting time of the algorithm
     
