@@ -89,7 +89,7 @@ if plot_type in ['P','R']:
 
     #------------------------Read the Files-----------------------
     for itr in range(0,len(x_axis_values)):
-        temp_str = plot_var + '_' + str(x_axis_values[itr])
+        temp_str = plot_var + '_' + str(x_axis_values[itr]) + '_'
     
         for file_name_ending in file_name_ending_list:
             ind = file_name_ending.index('_ID_')
@@ -99,7 +99,6 @@ if plot_type in ['P','R']:
             file_name_ending = file_name_ending.replace('W_Pll_','')
 
             if temp_str in file_name_ending:
-                file_name_ending
                 break
 
         if plot_type == 'P':
@@ -108,17 +107,15 @@ if plot_type in ['P','R']:
             file_name = file_name_base_results + "/Accuracies/Rec_" + file_name_ending
             
         #~~~~~~~~~Update Precision and Recall Variables~~~~~~~~~~~
-        temp_str = plot_var + '_' + str(x_axis_values[itr])
-        if 1:
-            vals = np.genfromtxt(file_name, dtype='float', delimiter='\t')
-            vals_exc[itr] = vals[0]
-            vals_inh[itr] = vals[1]
-            vals_void[itr] = vals[2]
+        vals = np.genfromtxt(file_name, dtype='float', delimiter='\t')
+        vals_exc[itr] = vals[0]
+        vals_inh[itr] = vals[1]
+        vals_void[itr] = vals[2]
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-            itr += 1
-            if itr >= len(x_axis_values):
-                break
+        itr += 1
+        if itr >= len(x_axis_values):
+            break
     #-------------------------------------------------------------
 
     #-----------------------Plot the Results-----------------------
@@ -138,6 +135,7 @@ if plot_type in ['P','R']:
     plt.ylabel(y_label, fontsize=16)
     plt.legend(loc='upper left')
     plt.show();
+    pdb.set_trace()
     #-------------------------------------------------------------
 
     #----------------------Save the Plots-------------------------

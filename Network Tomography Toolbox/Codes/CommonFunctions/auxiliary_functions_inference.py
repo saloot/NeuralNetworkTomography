@@ -554,7 +554,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         #~~~~~~~~~~~~~~~~~~~~Retrieve the Processed Results~~~~~~~~~~~~~~~~~~~~
         mem_temp = 0
         for result in int_results:
-            (aa,yy,tt_start,tt_end,spike_flag,memory_used) = result.get()
+            try:
+                (aa,yy,tt_start,tt_end,spike_flag,memory_used) = result.get()
+            except:
+                continue
             mem_temp = mem_temp + memory_used
             if spike_flag < 0:
                 A[tt_start-block_start:tt_end-block_start,:] = aa
