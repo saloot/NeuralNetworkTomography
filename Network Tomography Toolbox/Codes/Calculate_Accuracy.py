@@ -224,9 +224,12 @@ false_pos_void_tot = false_pos_void_tot/itr_i
 
 #==================================SAVE THE RESULTS====================================
 temp_ending = file_name_ending
-ind = temp_ending.index('_ID_')
-aa = temp_ending[ind:ind+10]
-temp_ending = temp_ending.replace(aa,'')
+try:
+    ind = temp_ending.index('_ID_')
+    aa = temp_ending[ind:ind+10]
+    temp_ending = temp_ending.replace(aa,'')
+except:
+    pass
 temp_ending = temp_ending.replace('W_Binary_','')
 temp_ending = temp_ending.replace('W_Pll_','')
 

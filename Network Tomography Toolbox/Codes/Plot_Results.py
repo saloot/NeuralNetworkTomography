@@ -92,9 +92,12 @@ if plot_type in ['P','R']:
         temp_str = plot_var + '_' + str(x_axis_values[itr]) + '_'
     
         for file_name_ending in file_name_ending_list:
-            ind = file_name_ending.index('_ID_')
-            aa = file_name_ending[ind:ind+10]
-            file_name_ending = file_name_ending.replace(aa,'')
+            try:
+                ind = file_name_ending.index('_ID_')
+                aa = file_name_ending[ind:ind+10]
+                file_name_ending = file_name_ending.replace(aa,'')
+            except:
+                pass
             file_name_ending = file_name_ending.replace('W_Binary_','')
             file_name_ending = file_name_ending.replace('W_Pll_','')
 
@@ -167,9 +170,12 @@ if plot_type == 'C':
     #------------------------Read the Files-----------------------
     itr = 0
     for file_name_ending in file_name_ending_list:
-        ind = file_name_ending.index('_ID_')
-        aa = file_name_ending[ind:ind+10]
-        file_name_ending = file_name_ending.replace(aa,'')
+        try:
+            ind = file_name_ending.index('_ID_')
+            aa = file_name_ending[ind:ind+10]
+            file_name_ending = file_name_ending.replace(aa,'')
+        except:
+            pass
         file_name_ending = file_name_ending.replace('W_Binary_','')
         file_name_ending = file_name_ending.replace('W_Pll_','')
     
