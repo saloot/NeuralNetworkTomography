@@ -149,6 +149,7 @@ To plot recall against the number of recorded samples, we can use:
     `python Plot_Results.py -N 1000 -n 2 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_3_T_***" -U R -O "1000000,2000000,3000000,7000000" -V T`
 
 Or to plot precision against the number of known structural neurons, we can use
+
   `python Plot_Results.py -o "0,1" -N 1000 -n 0 -H 150 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_1.0_C_8_B_400000_K_E_H_0.0_ii_2_0_F_150_f_***_T_3000000" -U P -O "10,50,100,150" -V f`
 
 
@@ -160,14 +161,6 @@ Since one usually has to do the above steps for a lot of different settings and 
 * The code relies heavily on [Numpy](http://www.numpy.org/),
   [Scipy](http://www.scipy.org/), and [matplotlib](http://matplotlib.org).
 * To generate neural data (using the `Generate_Neural_Data.py`), the code uses [Brian simulator](http://briansimulator.org/).
-
-
-* `-f xxx`: To specify the type of plots that should be displayed, as a list given by `xxx`. More specifically, `xxx` has the following format:
-  * `-f "F_1,F_2,F_3"`, where `F_i` (a *character*) is the plot type. The flags can be
-    * B: for displaying the avaerage value of beliefs
-    * P: for displaying precision and recall
-    * S: for displaying scatter plots
-    * W: to show a sample of inferred graphs
 
 
 ### The codes have been successfully tested on
