@@ -152,6 +152,9 @@ Or to plot precision against the number of known structural neurons, we can use
   `python Plot_Results.py -o "0,1" -N 1000 -n 0 -H 150 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_1.0_C_8_B_400000_K_E_H_0.0_ii_2_0_F_150_f_***_T_3000000" -U P -O "10,50,100,150" -V f`
 
 
+### Bash script
+Since one usually has to do the above steps for a lot of different settings and different neurons, we have also provided a small script (`post_simulation_processing.sh`) to help transfer the results from server, calculate the ternary matrix, compute the accuracies and plot the results. 
+
 ### Dependencies
 * A working distribution of [Python 2.7](https://www.python.org/downloads/).
 * The code relies heavily on [Numpy](http://www.numpy.org/),
