@@ -88,7 +88,7 @@ The codes accept a few command line options to identify the specifications of th
 * `-S xxx`: To specify the block size, i.e. the number of firing samples to loa into RAM for running each batch of algorithm, with `xxx` being an *integer*.
 
 ##### Example usage: 
-    `python -T 500000 -o "0,1" -S 200000 -Q 8 -X 3 -L 'E' -J 0.0 -N 1000 -Y 0.1 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt"`
+    `python Inference_Tomography.py -T 500000 -o "0,1" -S 200000 -Q 8 -X 3 -L 'E' -J 0.0 -N 1000 -Y 0.1 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt"`
 
  
 #### Options for the digitization algorithms
@@ -105,7 +105,7 @@ The codes accept a few command line options to identify the specifications of th
 * `-F xxx`: To specify the file name that contains the ground truth, with `xxx` being a *string* (file path).
 
 ##### Example usage: 
-    python Transform_to_Ternary.py -B 4 -o "0,1" -N 1000 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000
+    python Transform_to_Ternary.py -B 4 -N 1000 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000
 
 
 #### Options for evaluating performance 
@@ -121,21 +121,36 @@ data to count them as hidden and then perform the algorithm to identify the perf
   * For this to work, the ground truth file should be specified as well.
 
 ##### Example usage: 
-    python Calculate_Accuracy.py -o "0,1" -N 1000 -n 0 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000"
+    python Calculate_Accuracy.py -N 1000 -n 0 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000"
   
 
-
-
 #### Options for plotting the results
-* `-V xxx`: The plot variable ...
-* `-U xxx`: The plot parameter (perceision,...) ...
-* `-O xxx`: To specify the range of recorded durations to evaluate the performance upon, as a list given by `xxx`. More specifically, `xxx` has the following format:
-  * `-O "T_1,T_2,T_3"`, where `T_i` (an *integer* in miliseconds) is the duration of recording in session `i`.
+* `-A xxx`: To specify the ending of the file that contains the results (e.g. precision or recall) which we want to plot, with `xxx` being a *string*.
+  * **NOTE**: You can place '\*\*\*' in the filename as a placeholder where the variable against which the plot should be derived is saved in the file name. Please see the examples provided below.
+* `-n xxx`: To specify the target neuron for which we want to evlauate the performance, with `xxx` being an *integer*.
+* `-V xxx`: The plot variable. The options are:
+  * T': for number of recorded samples
+  * 'F': number of "artifcially" hidden neurons
+  * 'f': number of neurons for which we have some structural information
+* `-U xxx`: The metric we want to plot. The choices are:
+  * 'P': for precision
+  * 'R': for recall
+  * 'C': spend respurces
+  * 'W': average of weights
+  * 'S': scatter plots
+* `-O xxx`: To specify the range of variable we want to evaluate the performance upon, as a list given by `xxx`. More specifically, `xxx` has the following format:
+  * `-O "T_1,T_2,T_3"`, where `T_i` (an *integer*) is, for instance, the duration of recording in session or number of hidden neurons.
 * `-x xxx`: The x label
 * `-y xxx`: The y label
 
 ##### Example usage: 
-    `python -o "0,1" -S 200000 -Q 8 -X 3 -L 'E' -J 0.0 -N 1000 -Y 0.1 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_1.0_C_8_B_400000_K_E_H_0.0_ii_2_0_f_50_T_" -U P -V T `
+To plot recall against the number of recorded samples, we can use:
+    
+    `python Plot_Results.py -N 1000 -n 2 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_3_T_***" -U R -O "1000000,2000000,3000000,7000000" -V T`
+
+Or to plot precision against the number of known structural neurons, we can use
+  `python Plot_Results.py -o "0,1" -N 1000 -n 0 -H 150 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_1.0_C_8_B_400000_K_E_H_0.0_ii_2_0_F_150_f_***_T_3000000" -U P -O "10,50,100,150" -V f`
+
 
 ### Dependencies
 * A working distribution of [Python 2.7](https://www.python.org/downloads/).
