@@ -122,7 +122,7 @@ if plot_type in ['P','R']:
     #-------------------------------------------------------------
 
     #-----------------------Plot the Results-----------------------
-    bar_width = 0.01*x_axis_values.mean()
+    bar_width = 0.04*x_axis_values.mean()
     
     #x_axis_values = x_axis_values/1000.0
     plt.bar(x_axis_values,vals_exc,bar_width,color='r',label='Excitatory');    
@@ -136,7 +136,7 @@ if plot_type in ['P','R']:
 
     plt.xlabel(x_label, fontsize=16)
     plt.ylabel(y_label, fontsize=16)
-    plt.legend(loc='upper left')
+    plt.legend(loc='lower left')
     plt.show();
     pdb.set_trace()
     #-------------------------------------------------------------
