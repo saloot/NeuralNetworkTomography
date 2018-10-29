@@ -412,3 +412,75 @@ def spike_binning(spikes_mat,bin_size):
 #==============================================================================
 #==============================================================================
 
+#==============================================================================
+#===============Count Avg and Minimum Number of Incoming Spikes================
+# This function counts the average and minimum of incoming spikes for all 
+# incoming connections of all neurons in the network.
+#==============================================================================
+def count_incoming_spikes(file_name_ground_truth):
+
+    #----------------------Load Ground Truth Connectivity----------------------
+    W = np.genfromtxt(file_name_ground_truth, dtype=None, delimiter='\t')
+    W = W.T
+    n,m = W.shape
+    #--------------------------------------------------------------------------
+
+    #------------------------Load Ground Truth Spikes--------------------------
+    file_name_spikes = '../Data/Spikes/LIF_Spike_Times_file.txt'
+    #out_spikes = np.genfromtxt(file_name_spikes, dtype=float, delimiter='\t')
+    neurons_spikes = []
+    with open(file_name_spikes, 'r') as f:
+        lines = f.readlines()
+        for i in range(0,len(lines)):
+            a = (lines[i][:-1]).split(' ')
+            neurons_spikes += a
+    #--------------------------------------------------------------------------
+
+    #-----------------------Calculate Spike Counts-----------------------------
+    neuron_range = range(0,22)
+    no_spikes_neurons_min = np.zeros(len(neuron_range))
+    no_spikes_neurons_avg = np.zeros(len(neuron_range))
+    no_spikes_neurons_max = np.zeros(len(neuron_range))
+
+    no_spikes_neurons_outgoing = np.zeros(len(neuron_range))
+
+    no_spikes = np.zeros([n])
+    for n_ind in range(0,n):
+        #d = (np.where(neurons_spikes==n_ind))
+        #no_spikes[n_ind] = sum(d[0])
+        d = neurons_spikes.count(str(n_ind))
+        no_spikes[n_ind] = d
+
+    for n_ind in neuron_range:
+        W_ss = W[:,n_ind]
+        d = (np.where(neurons_spikes==n_ind))
+        no_spikes_neurons_outgoing[n_ind] = sum(d[0])
+
+        incoming_connections = np.where(W_ss != 0)[0]
+        no_incoming_spikes = []
+        for i in incoming_connections:
+            no_incoming_spikes.append(no_spikes[i])
+
+        no_spikes_neurons_min[n_ind] = min(no_incoming_spikes)
+        no_spikes_neurons_max[n_ind] = max(no_incoming_spikes)
+        no_spikes_neurons_avg[n_ind] = np.mean(no_incoming_spikes)
+    #--------------------------------------------------------------------------
+
+    #----------------------------Plot the Results------------------------------
+    bar_width = 0.24#*x_axis_values.mean()
+    
+    #x_axis_values = x_axis_values/1000.0
+    plt.bar(neuron_range,no_spikes_neurons_outgoing,bar_width,color='r',label='Outgoing');    
+    plt.bar(neuron_range + bar_width,no_spikes_neurons_min,bar_width,color='b',label='Min. Incoming');
+    plt.bar(neuron_range + 2*bar_width,no_spikes_neurons_avg,bar_width,color='y',label='Avg. Incoming');
+    plt.bar(neuron_range + 3*bar_width,no_spikes_neurons_max,bar_width,color='g',label='Max. Incoming');
+
+    plt.xlabel('Neuron Index', fontsize=16)
+    plt.ylabel('No. Spikes', fontsize=16)
+    plt.legend(loc='lower right')
+    plt.show();
+    #--------------------------------------------------------------------------
+
+#==============================================================================
+#==============================================================================
+
