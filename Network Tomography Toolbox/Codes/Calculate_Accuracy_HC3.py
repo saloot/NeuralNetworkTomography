@@ -53,7 +53,7 @@ for ik in range(0,n):
 #============================Read the  Inferred Weights========================
 W_inferred = np.zeros([n,n])
 #file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_T_1200000.txt"
-file_name_base = "W_binary_W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_T_1200000.txt"
+file_name_base = "W_binary_W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_T_1200000_1_1_B_4.txt"
 for i in range(0,n):
     file_name = "../Results/Inferred_Graphs/" + file_name_base.replace('***',str(i))
     W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
@@ -101,6 +101,7 @@ recal_inh = true_pos_inh/float(no_inh)
 precision_exc = true_pos_exc/float(sum(aa>0))
 precision_inh = true_pos_inh/float(sum(aa<0))
 
+print(recal_exc,recal_inh,precision_exc,precision_inh)
 #==============================================================================
 else:
     if file_name_prefix == 'HC3':
