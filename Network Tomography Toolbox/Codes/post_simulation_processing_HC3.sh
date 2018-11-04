@@ -7,16 +7,11 @@
 
 plot_var='f'
 #plot_var='H'
-no_hidden_neurons=50
 no_structural_neurons=0
 no_itr_over_dataset=2
 
-for n_ind in 0; do
-    file_ending="LIF_Spike_Times_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_${no_itr_over_dataset}_${n_ind}"
-    if [ ${no_hidden_neurons} -gt 0 ]
-    then
-        file_ending="${file_ending}_F_${no_hidden_neurons}"
-    fi
+for n_ind in 0 .. 94; do
+    file_ending="HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_${no_itr_over_dataset}_${n_ind}"
 
     echo "${file_ending}"
     # Get the inferred files
@@ -25,8 +20,8 @@ for n_ind in 0; do
     # Get the structural or hidden neurons informations
     #scp -r salavati@deneb2.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/Inferred_Graphs/Hidden_or_Structured_Neurons_${file_ending}*" ../Results/Inferred_Graphs/
 
-    for TT in 1000000 2000000 3000000 7000000; do
-        for ff in 0 10 20 30 40 50; do
+    for TT in 1200000; do
+        for ff in 0; do
  
             echo "Running for neuron ${n_ind} and no structural neurons ${ff} and recording size of ${TT}"
             if [ ${ff} -gt 0 ]
@@ -41,7 +36,7 @@ for n_ind in 0; do
             python Transform_to_Ternary.py -B 4 -N 1000 -H ${no_hidden_neurons} -${plot_var} ${ff} -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "${file_ending2}_T_${TT}"
 
             # Calculating accuracy
-            python Calculate_Accuracy.py -B 4 -N 1000 -H ${no_hidden_neurons} -${plot_var} ${ff} -n ${n_ind} -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_${file_ending2}_T_${TT}"
+            # python Calculate_Accuracy.py -B 4 -N 1000 -H ${no_hidden_neurons} -${plot_var} ${ff} -n ${n_ind} -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_${file_ending2}_T_${TT}"
         done   
     done
 done
