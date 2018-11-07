@@ -44,9 +44,9 @@ false_neurons_type_sum = np.zeros([len(Var1_range),1])
 false_neurons_type_max = np.zeros([len(Var1_range),1])
 neurons_type_actual = np.zeros([n,1])
 for ik in range(0,n):
-    if W_deg[ik,0] > W_deg[ik,1]:
+    if W_deg[ik,8] > 0:#W_deg[ik,0] > W_deg[ik,1]:
         neurons_type_actual[ik,0] = 1
-    elif W_deg[ik,0] < W_deg[ik,1]:
+    elif W_deg[ik,8] < 0:#W_deg[ik,0] < W_deg[ik,1]:
         neurons_type_actual[ik,0] = -1
 #==============================================================================
 
