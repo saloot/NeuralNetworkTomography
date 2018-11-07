@@ -219,3 +219,31 @@ W_deg[:,5] = -W_deg[:,5]             # For the inhibitory neurons
 
 np.savetxt('./W_deg.txt',W_deg,'%3.2f',delimiter='\t')
 #----------------------------------------------------------------------------
+
+#---------------------Construct Structural Information-----------------------
+# This is a matrix where a 0 in poistion A_ij indicates that we are sort of
+# sure that there is no connection from neuron i to neuron j. A non-zero 
+# value shows that there "might" be a connection.
+
+# The matrix is constructed according to the region of the neurons and the 
+# evidence from the article below, where it suggests that there is no direct
+# connection from CA1 to EC region. 
+#Also, only EC3 region seems to have connections to CA1.
+# https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5050062/#S3title
+
+structural_info = np.ones([n,n])
+for i in range(0,n):
+    w_i = W_deg[i,:]
+    r_i = w_i[6]
+    for j in range(0,n):
+        w_j = W_deg[j,:]
+        r_j = w_j[6]
+
+        if r_i in [4,5] and r_j in [1,2,3]:
+            structural_info[i,j] = 0
+
+        elif r_i in [2,3] and r_j in [4,5]:
+            structural_info[i,j] = 0
+
+np.savetxt('./Data/HC3_Structural_Info.txt',structural_info,'%3.2f',delimiter='\t')
+#----------------------------------------------------------------------------
