@@ -73,6 +73,12 @@ for file_name_ending in file_name_ending_list:
     file_name_ending2 = file_name_ending.replace('.txt','') + "_%s" %str(adj_fact_exc)
     file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
     file_name_ending2 = file_name_ending2 + "_B_%s" %str(ternary_mode)
+    try:
+        ind = file_name_ending2.index('_ID_')
+        aa = file_name_ending2[ind:ind+10]
+        file_name_ending2 = file_name_ending2.replace(aa,'')
+    except:
+        pass
                 
     file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2
     np.savetxt(file_name,W_binary,'%d',delimiter='\t',newline='\n')

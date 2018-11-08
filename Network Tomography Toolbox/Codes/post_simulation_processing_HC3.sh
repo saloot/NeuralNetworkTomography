@@ -7,33 +7,35 @@
 
 plot_var='f'
 #plot_var='H'
-no_structural_neurons=0
+no_structural_neurons=20
 no_itr_over_dataset=2
 
-for n_ind in {0..94}; do
-    file_ending="HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_${no_itr_over_dataset}_${n_ind}"
-
-    echo "${file_ending}"
-    # Get the inferred files
-    #scp -r salavati@deneb2.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/Inferred_Graphs/W_Pll_${file_ending}*" ../Results/Inferred_Graphs/
-
-    # Get the structural or hidden neurons informations
-    #scp -r salavati@deneb2.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/Inferred_Graphs/Hidden_or_Structured_Neurons_${file_ending}*" ../Results/Inferred_Graphs/
+for n_ind in {0..94}; do    
 
     for TT in 1200000; do
-        for ff in 0; do
- 
+        for ff in 20; do
+
             echo "Running for neuron ${n_ind} and no structural neurons ${ff} and recording size of ${TT}"
+            
+            file_ending="HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_${no_itr_over_dataset}_${n_ind}"
+            
             if [ ${ff} -gt 0 ]
             then
-                file_ending2="W_Pll_${file_ending}_${plot_var}_${ff}"
+                file_ending2="${file_ending}_${plot_var}_${ff}"
             else
-                file_ending2="W_Pll_${file_ending}"
+                file_ending2="${file_ending}"
             fi
+
+            echo "${file_ending}"
+            # Get the inferred files
+            scp -r salavati@deneb2.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/Inferred_Graphs/W_Pll_${file_ending2}_T_${TT}*" ../Results/Inferred_Graphs/
+
+            # Get the structural or hidden neurons informations
+            scp -r salavati@deneb2.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/Inferred_Graphs/Hidden_or_Structured_Neurons_${file_ending2}*" ../Results/Inferred_Graphs/
 
             # Transforming to ternary   
             echo "${file_ending2}_T_${TT}"
-            python Transform_to_Ternary.py -B 4 -N 94 -${plot_var} ${ff} -A "${file_ending2}_T_${TT}"
+            python Transform_to_Ternary.py -B 4 -N 94 -${plot_var} ${ff} -A "W_Pll_${file_ending2}_T_${TT}"
 
             # Calculating accuracy
             # python Calculate_Accuracy.py -B 4 -N 1000 -H ${no_hidden_neurons} -${plot_var} ${ff} -n ${n_ind} -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_${file_ending2}_T_${TT}"
