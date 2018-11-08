@@ -245,5 +245,5 @@ for i in range(0,n):
         elif r_i in [2,3] and r_j in [4,5]:
             structural_info[i,j] = 0
 
-np.savetxt('./Data/Graphs/HC3_Structural_Info.txt',structural_info,'%3.2f',delimiter='\t')
+np.savetxt('./Data/Graphs/HC3_Structural_Info.txt',structural_info.T,'%3.2f',delimiter='\t')
 #----------------------------------------------------------------------------
