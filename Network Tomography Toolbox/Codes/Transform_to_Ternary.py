@@ -45,8 +45,10 @@ if ternary_mode == 4:
 
 
 #================PERFORM THE INFERENCE TASK FOR EACH ENSEMBLE==================
-W_inferred = np.zeros([n-no_hidden_neurons-no_structural_connections,1])
-W_infer = np.zeros([len(file_name_ending_list),n-no_hidden_neurons-no_structural_connections])
+#W_inferred = np.zeros([n-no_hidden_neurons-no_structural_connections,1])
+#W_infer = np.zeros([len(file_name_ending_list),n-no_hidden_neurons-no_structural_connections])
+W_inferred = np.zeros([n,1])
+W_infer = np.zeros([len(file_name_ending_list),n])
 
 #------------------------Read the Inferred Weights-------------------------
 itr_i = 0
@@ -54,15 +56,13 @@ for file_name_ending in file_name_ending_list:
     file_name = "Inferred_Graphs/" + file_name_ending
     file_name = file_name_base_results + '/' + file_name        
     W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-    W_infer[itr_i,:] = W_read[0:n-no_hidden_neurons-no_structural_connections]
-
-    #if itr_i > 1:
-    #    W_inferred[0:m-no_hidden_neurons-no_structural_connections,0] = W_infer[0:itr_i+1,:].mean(axis = 0)
-    #else:
-    W_inferred[0:m-no_hidden_neurons-no_structural_connections,0] = W_infer[itr_i,:]
+    #W_infer[itr_i,:] = W_read[0:n-no_hidden_neurons-no_structural_connections]
+    #W_inferred[0:m-no_hidden_neurons-no_structural_connections,0] = W_infer[itr_i,:]
     
-    W_inferred_s = W_inferred#[:,neuron_range]
-    #W_inferred_s = W_inferred_s[:-1]
+    W_infer[itr_i,:] = W_read[0:n]
+    W_inferred[0:m,0] = W_infer[itr_i,:]
+    
+    W_inferred_s = W_inferred
     #--------------------------------------------------------------------------
 
     #-----------------Calculate the Binary Matrix From Beliefs-----------------

@@ -42,7 +42,8 @@ elif file_name_ground_truth:
     W = W.T
     n,m = W.shape
     W_ss = W[:,n_ind]
-    W_s = np.zeros([n-no_hidden_neurons-no_structural_connections,1])
+    #W_s = np.zeros([n-no_hidden_neurons-no_structural_connections,1])
+    W_s = np.zeros([n,1])
 #==============================================================================
 
 #================================INITIALIZATIONS===============================
@@ -88,9 +89,11 @@ std_void = np.zeros([len(x_axis_values)])
 if plot_type in ['P','R']:
 
     #------------------------Read the Files-----------------------
+    used_files_list = []
     for itr in range(0,len(x_axis_values)):
         temp_str = plot_var + '_' + str(x_axis_values[itr]) + '_'
     
+        success_flag = 0
         for file_name_ending in file_name_ending_list:
             try:
                 ind = file_name_ending.index('_ID_')
@@ -102,6 +105,8 @@ if plot_type in ['P','R']:
             file_name_ending = file_name_ending.replace('W_Pll_','')
 
             if temp_str in file_name_ending:
+                used_files_list.append(file_name_ending)
+                success_flag = 1
                 break
 
         if plot_type == 'P':
@@ -110,19 +115,21 @@ if plot_type in ['P','R']:
             file_name = file_name_base_results + "/Accuracies/Rec_" + file_name_ending
             
         #~~~~~~~~~Update Precision and Recall Variables~~~~~~~~~~~
-        vals = np.genfromtxt(file_name, dtype='float', delimiter='\t')
-        vals_exc[itr] = vals[0]
-        vals_inh[itr] = vals[1]
-        vals_void[itr] = vals[2]
+        if success_flag:
+            vals = np.genfromtxt(file_name, dtype='float', delimiter='\t')
+            vals_exc[itr] = vals[0]
+            vals_inh[itr] = vals[1]
+            vals_void[itr] = vals[2]
+
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        itr += 1
-        if itr >= len(x_axis_values):
-            break
+            itr += 1
+            if itr >= len(x_axis_values):
+                break
     #-------------------------------------------------------------
 
     #-----------------------Plot the Results-----------------------
-    bar_width = 0.04*x_axis_values.mean()
+    bar_width = 0.24#*x_axis_values.mean()
     
     #x_axis_values = x_axis_values/1000.0
     plt.bar(x_axis_values,vals_exc,bar_width,color='r',label='Excitatory');    
@@ -136,7 +143,7 @@ if plot_type in ['P','R']:
 
     plt.xlabel(x_label, fontsize=16)
     plt.ylabel(y_label, fontsize=16)
-    plt.legend(loc='lower left')
+    plt.legend(loc='lower right')
     plt.show();
     pdb.set_trace()
     #-------------------------------------------------------------
@@ -234,7 +241,7 @@ if plot_type == 'W':
             W_r = np.reshape(W[:,n_ind],[len(W[:,n_ind]),1])
             W_s = W_read[0:min(network_size,len(W_read))]
 
-            if no_hidden_neurons or no_structural_connections:
+            if 0:#no_hidden_neurons or no_structural_connections:
                 file_name_ending_mod = file_name_ending.replace('W_Pll_','')
                 
                 file_name_hidden = "Inferred_Graphs/Hidden_or_Structured_Neurons_" + file_name_ending_mod

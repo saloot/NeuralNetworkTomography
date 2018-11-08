@@ -138,7 +138,8 @@ if not os.path.isfile(file_name_spikes2):
 #------------------------------------------------------------------------------
 
 #==============================================================================
-W_infer = np.zeros([no_neurons+1-no_hidden_neurons-no_structural_connections,len(neuron_range)])
+#W_infer = np.zeros([no_neurons+1-no_hidden_neurons-no_structural_connections,len(neuron_range)])
+W_infer = np.zeros([no_neurons+1,len(neuron_range)])
 
 #============================INFER THE CONNECTIONS=============================
 itr_n = 0
@@ -245,14 +246,22 @@ for n_ind in neuron_range:
 
         
     file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s.txt" %(file_name_prefix,file_name_ending)
-    tmp = W_inferred/float(no_avg_itr)
+
+    # Re-map the connectivity to the actual matrix
+    tmp = np.zeros([no_neurons+1])
+    itr_iij = 0
+    for iij in range(0,no_neurons+1):
+        if iij not in hidden_neurons:
+            tmp[iij] = W_inferred[itr_iij,0]
+            itr_iij += 1
+
+    tmp = tmp/float(no_avg_itr)
     
     #pdb.set_trace()
     tmp = tmp/(0.0001+np.linalg.norm(tmp))
     tmp = tmp/(0.0001+np.abs(tmp).max())
     
     W_infer[:,itr_n] = tmp.ravel()
-    
     
     np.savetxt(file_name,tmp.T,'%2.6f',delimiter='\t')
     #..........................................................................

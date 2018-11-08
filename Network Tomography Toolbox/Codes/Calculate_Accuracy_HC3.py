@@ -52,7 +52,7 @@ for ik in range(0,n):
 #==============================================================================
 
 #============================Read the  Inferred Weights========================
-W_inferred = np.zeros([n-no_structural_info,n])
+W_inferred = np.zeros([n,n])
 #file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_T_1200000.txt"
 if no_structural_info:
     file_name_base = "W_binary_W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_f_" + str(no_structural_info) + "_T_1200000_1_1_B_4.txt"
@@ -62,7 +62,7 @@ else:
 for i in range(0,n):
     file_name = "../Results/Inferred_Graphs/" + file_name_base.replace('***',str(i))
     W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-    W_inferred[:,i] = W_read[0:n-no_structural_info]
+    W_inferred[:,i] = W_read[0:n]
 #==============================================================================
 
 #====================Transform the Inferred Matrix to Ternary==================
