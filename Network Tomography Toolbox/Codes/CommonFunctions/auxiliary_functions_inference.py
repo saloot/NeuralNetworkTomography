@@ -625,10 +625,18 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     #--------------------------------------------------------------------
         
     
-    WW = np.zeros([len_v,1])
-    WW[0:n_ind,0] = W_tot[0:n_ind,0]
-    WW[n_ind+1:,0] = W_tot[n_ind:,0]
-    
+    # Re-map the connectivity to the actual matrix
+    #WW = np.zeros([len_v,1])
+    #WW[0:n_ind,0] = [0:n_ind,0]
+    #WW[n_ind+1:,0] = W_tot[n_ind:,0]
+    WW = np.zeros([n+1])
+    itr_iij = 0
+    hidden_neurons.append(n_ind)
+    for iij in range(0,n+1):
+        if iij not in hidden_neurons:
+            WW[iij] = W_tot[itr_iij,0]
+            itr_iij += 1
+
     A = None
     YA = None
     
