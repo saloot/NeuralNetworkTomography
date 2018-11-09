@@ -631,9 +631,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     #WW[n_ind+1:,0] = W_tot[n_ind:,0]
     WW = np.zeros([n+1])
     itr_iij = 0
-    hidden_neurons.append(n_ind)
     for iij in range(0,n+1):
-        if iij not in hidden_neurons:
+        if iij not in hidden_neurons and iij != n_ind:
             WW[iij] = W_tot[itr_iij,0]
             itr_iij += 1
 
