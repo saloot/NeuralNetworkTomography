@@ -644,7 +644,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     
     
-    return WW[0:len_v].ravel(),max_memory,total_cost[1:itr_cost]
+    return WW.ravel(),max_memory,total_cost[1:itr_cost]
     
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
