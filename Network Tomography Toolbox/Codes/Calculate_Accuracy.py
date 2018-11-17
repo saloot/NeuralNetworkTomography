@@ -41,8 +41,8 @@ if file_name_ground_truth:
     W = W.T
     n,m = W.shape
     W_ss = W[:,n_ind]
-    #W_s = np.zeros([n-no_hidden_neurons-no_structural_connections,1])
-    W_s = np.zeros([n,1])
+    W_s = np.zeros([n-no_hidden_neurons-no_structural_connections-1,1])
+    #W_s = np.zeros([n,1])
 #------------------------------------------------------------------------------
 
 #---------------------Initialize Simulation Variables--------------------------
@@ -76,11 +76,11 @@ false_pos_void_tot = np.zeros([no_roi_steps])
 
 
 #================PERFORM THE INFERENCE TASK FOR EACH ENSEMBLE==================
-#W_inferred = np.zeros([n-no_hidden_neurons-no_structural_connections,1])
-#W_infer = np.zeros([len(file_name_ending_list),n-no_hidden_neurons-no_structural_connections])
+W_inferred = np.zeros([n-no_hidden_neurons-no_structural_connections-1,1])
+W_infer = np.zeros([len(file_name_ending_list),n-no_hidden_neurons-no_structural_connections-1])
 
-W_inferred = np.zeros([n,1])
-W_infer = np.zeros([len(file_name_ending_list),n])
+#W_inferred = np.zeros([n,1])
+#W_infer = np.zeros([len(file_name_ending_list),n])
 
 #------------------------Read the Ternary Weights-------------------------
 itr_i = 0
@@ -89,13 +89,13 @@ for file_name_ending in file_name_ending_list:
     file_name = "Inferred_Graphs/" + file_name_ending
     file_name = file_name_base_results + '/' + file_name        
     W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-    #W_infer[itr_i,:] = W_read[0:n-no_hidden_neurons-no_structural_connections]
+    W_infer[itr_i,:] = W_read[0:n-no_hidden_neurons-no_structural_connections-1]
     #if itr_i > 1:
-    #    W_inferred[0:min(m-no_hidden_neurons-no_structural_connections,len(W_read)),0] = W_infer[0:itr_i,:].mean(axis = 0)
+    #    W_inferred[0:min(m-no_hidden_neurons-no_structural_connections-1,len(W_read)),0] = W_infer[0:itr_i,:].mean(axis = 0)
     #else:
-    #    W_inferred[0:min(m-no_hidden_neurons-no_structural_connections,len(W_read)),0] = W_infer[itr_i-1,:]
+    #    W_inferred[0:min(m-no_hidden_neurons-no_structural_connections-1,len(W_read)),0] = W_infer[itr_i-1,:]
     
-    W_infer[itr_i,:] = W_read[0:n]
+    #W_infer[itr_i,:] = W_read[0:n]
     if itr_i > 1:
         W_inferred[0:min(m,len(W_read)),0] = W_infer[0:itr_i,:].mean(axis = 0)
     else:
@@ -111,7 +111,7 @@ for file_name_ending in file_name_ending_list:
     #--------------------------------------------------------------------------
 
     #-----------------Calculate the Binary Matrix From Beliefs-----------------
-    if 0:# no_hidden_neurons or no_structural_connections:
+    if no_hidden_neurons or no_structural_connections:
         file_name_ending_mod = file_name_ending.replace('W_Binary_','')
         file_name_ending_mod = file_name_ending_mod.replace('W_Pll_','')
         temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
@@ -120,11 +120,24 @@ for file_name_ending in file_name_ending_list:
         file_name_hidden = "Inferred_Graphs/Hidden_or_Structured_Neurons_" + file_name_ending_mod
         file_name = file_name_base_results + '/' + file_name_hidden
         hidden_neurons = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+        hidden_neurons = np.hstack([hidden_neurons,n_ind])
         W_h = np.delete(W_ss,hidden_neurons,0)
-        W_s = W_h
     else:
-        W_s = W_ss
-            
+        W_h = np.delete(W_ss,np.array([n_ind]),0)
+    
+    W_s = W_h
+
+    if no_structural_connections:
+        # Re-map the connectivity to the actual matrix
+        tmp = np.zeros([no_neurons])
+        itr_iij = 0
+        for iij in range(0,no_neurons):
+            if iij not in hidden_neurons and iij != n_ind:
+                tmp[iij] = W_binary[itr_iij,0]
+                itr_iij += 1
+    
+        W_s = W_ss            
+        W_binary = tmp
                     
     #---------Calculate and Display Recall & Precision for Our Method----------    
     recal,precision = caculate_accuracy(W_binary[0:len(W_s)],W_s)
