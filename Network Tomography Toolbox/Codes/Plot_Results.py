@@ -42,8 +42,8 @@ elif file_name_ground_truth:
     W = W.T
     n,m = W.shape
     W_ss = W[:,n_ind]
-    #W_s = np.zeros([n-no_hidden_neurons-no_structural_connections,1])
-    W_s = np.zeros([n,1])
+    W_s = np.zeros([n-no_hidden_neurons-no_structural_connections-1,1])
+    #W_s = np.zeros([n,1])
 #==============================================================================
 
 #================================INITIALIZATIONS===============================
@@ -241,13 +241,16 @@ if plot_type == 'W':
             W_r = np.reshape(W[:,n_ind],[len(W[:,n_ind]),1])
             W_s = W_read[0:min(network_size,len(W_read))]
 
-            if 0:#no_hidden_neurons or no_structural_connections:
+            if no_hidden_neurons or no_structural_connections:
                 file_name_ending_mod = file_name_ending.replace('W_Pll_','')
                 
                 file_name_hidden = "Inferred_Graphs/Hidden_or_Structured_Neurons_" + file_name_ending_mod
                 file_name = file_name_base_results + '/' + file_name_hidden
                 hidden_neurons = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+                hidden_neurons = np.hstack([hidden_neurons,n_ind])
                 W_r = np.delete(W_r,hidden_neurons,0)
+            else:
+                W_r = np.delete(W_r,np.array([n_ind]),0)
                         
             W_s = np.reshape(W_s,[len(W_s),1])
             W_r = np.reshape(W_r,[len(W_r),1])
