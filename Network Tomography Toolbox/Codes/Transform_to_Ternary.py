@@ -46,8 +46,7 @@ if ternary_mode == 4:
 
 #================PERFORM THE INFERENCE TASK FOR EACH ENSEMBLE==================
 n_neuorns = n-no_hidden_neurons-no_structural_connections - 1
-W_inferred = np.zeros([n_neuorns,1])
-W_infer = np.zeros([len(file_name_ending_list),n_neuorns])
+#W_infer = np.zeros([len(file_name_ending_list),n_neuorns])
 #W_inferred = np.zeros([n,1])
 #W_infer = np.zeros([len(file_name_ending_list),n])
 
@@ -57,17 +56,15 @@ for file_name_ending in file_name_ending_list:
     file_name = "Inferred_Graphs/" + file_name_ending
     file_name = file_name_base_results + '/' + file_name        
     W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-    W_infer[itr_i,:] = W_read[0:n_neuorns]
-    W_inferred[0:n_neuorns,0] = W_infer[itr_i,:]
+    #W_infer[itr_i,:] = W_read[0:n_neuorns]
+    W_inferred = W_read#[0:n_neuorns]
     
     #W_infer[itr_i,:] = W_read[0:n]
     #W_inferred[0:m,0] = W_infer[itr_i,:]
-    
-    W_inferred_s = W_inferred
     #--------------------------------------------------------------------------
 
     #-----------------Calculate the Binary Matrix From Beliefs-----------------
-    W_binary,centroids = beliefs_to_ternary(ternary_mode,W_inferred_s,params,dale_law_flag)
+    W_binary,centroids = beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag)
     #--------------------------------------------------------------------------
     
     #--------------------------Store the Binary Matrices-----------------------

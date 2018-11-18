@@ -140,7 +140,7 @@ if not os.path.isfile(file_name_spikes2):
 #==============================================================================
 #W_infer = np.zeros([no_neurons+1-no_hidden_neurons-no_structural_connections,len(neuron_range)])
 #W_infer = np.zeros([no_neurons+1,len(neuron_range)])
-W_infer = np.zeros([no_neurons-no_hidden_neurons-no_structural_connections,len(neuron_range)])
+#W_infer = np.zeros([no_neurons-no_hidden_neurons-no_structural_connections,len(neuron_range)])
 
 #============================INFER THE CONNECTIONS=============================
 itr_n = 0
@@ -221,7 +221,7 @@ for n_ind in neuron_range:
     W_inferred = np.array(W_inferred)
     
     #W_inferred = np.reshape(W_inferred,[no_neurons+1,1])
-    W_inferred = np.reshape(W_inferred,[no_neurons-no_hidden_neurons-no_structural_connections,1])
+    W_inferred = np.reshape(W_inferred,[no_neurons-len(hidden_neurons),1])
     
     #.........................Save the Belief Matrices.........................
     file_name_ending = 'I_' + str(inference_method) + '_S_' + str(float(sparse_thr0))
@@ -263,7 +263,7 @@ for n_ind in neuron_range:
     tmp = tmp/(0.0001+np.linalg.norm(tmp))
     tmp = tmp/(0.0001+np.abs(tmp).max())
     
-    W_infer[:,itr_n] = tmp.ravel()
+    #W_infer[:,itr_n] = tmp.ravel()
     
     np.savetxt(file_name,tmp.T,'%2.6f',delimiter='\t')
     #..........................................................................
@@ -294,7 +294,7 @@ for n_ind in neuron_range:
 #==============================================================================
 
 
-file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_n_%s_%s.txt" %(file_name_prefix,file_name_ending,str(neuron_range[0]),str(neuron_range[-1]))
-np.savetxt(file_name,W_infer,'%2.6f',delimiter='\t')  
+#file_name =  file_name_base_results + "/Inferred_Graphs/W_Pll_%s_%s_n_%s_%s.txt" %(file_name_prefix,file_name_ending,str(neuron_range[0]),str(neuron_range[-1]))
+#np.savetxt(file_name,W_infer,'%2.6f',delimiter='\t')  
 
     
