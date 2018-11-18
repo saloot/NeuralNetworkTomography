@@ -4,7 +4,7 @@ import time
 import numpy as np
 import sys,getopt,os
 from scipy.cluster.vq import kmeans,whiten,kmeans2,vq
-
+import pdb 
 #from CommonFunctions.auxiliary_functions import combine_weight_matrix,generate_file_name
 from CommonFunctions.auxiliary_functions_digitize import beliefs_to_ternary,parse_commands_ternary_algo
 #from CommonFunctions.Neurons_and_Networks import *
@@ -71,12 +71,12 @@ for file_name_ending in file_name_ending_list:
     file_name_ending2 = file_name_ending.replace('.txt','') + "_%s" %str(adj_fact_exc)
     file_name_ending2 = file_name_ending2 +"_%s" %str(adj_fact_inh)
     file_name_ending2 = file_name_ending2 + "_B_%s" %str(ternary_mode)
-    try:
-        ind = file_name_ending2.index('_ID_')
-        aa = file_name_ending2[ind:ind+10]
-        file_name_ending2 = file_name_ending2.replace(aa,'')
-    except:
-        pass
+    #try:
+    #    ind = file_name_ending2.index('_ID_')
+    #    aa = file_name_ending2[ind:ind+10]
+    #    file_name_ending2 = file_name_ending2.replace(aa,'')
+    #except:
+    #    pass
                 
     file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2
     np.savetxt(file_name,W_binary,'%d',delimiter='\t',newline='\n')

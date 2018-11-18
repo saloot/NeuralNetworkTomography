@@ -610,7 +610,7 @@ def parse_commands_accuracy_algo(input_opts):
 
     #---------------Get All the Files with Similar File Name Endings---------------
     file_name_ending_list = []
-    results_dir = file_name_base_results+'/Inferred_Graphs'
+    results_dir = '../Results/Inferred_Graphs'
     if file_name_ending:
         for file in os.listdir(results_dir):
             if file.startswith(file_name_ending):

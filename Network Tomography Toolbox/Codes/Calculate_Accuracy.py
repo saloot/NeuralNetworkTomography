@@ -90,6 +90,7 @@ for file_name_ending in file_name_ending_list:
     file_name = file_name_base_results + '/' + file_name        
     W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
     W_infer[itr_i,:] = W_read[0:n-no_hidden_neurons-no_structural_connections-1]
+
     #if itr_i > 1:
     #    W_inferred[0:min(m-no_hidden_neurons-no_structural_connections-1,len(W_read)),0] = W_infer[0:itr_i,:].mean(axis = 0)
     #else:
@@ -129,11 +130,11 @@ for file_name_ending in file_name_ending_list:
 
     if no_structural_connections:
         # Re-map the connectivity to the actual matrix
-        tmp = np.zeros([no_neurons])
+        tmp = np.zeros([n])
         itr_iij = 0
-        for iij in range(0,no_neurons):
+        for iij in range(0,n):
             if iij not in hidden_neurons and iij != n_ind:
-                tmp[iij] = W_binary[itr_iij,0]
+                tmp[iij] = W_binary[itr_iij]
                 itr_iij += 1
     
         W_s = W_ss            
@@ -149,6 +150,11 @@ for file_name_ending in file_name_ending_list:
     prec_exc[itr_i] = precision[0]
     prec_inh[itr_i] = precision[1]
     prec_void[itr_i] = precision[2]
+    print(recal_exc[itr_i],recal_inh[itr_i],recal_void[itr_i])
+    print('\n')
+    print(prec_exc[itr_i],prec_inh[itr_i],prec_void[itr_i])
+    print('\n')
+    print('\n')
 #======================================================================================
 
 
