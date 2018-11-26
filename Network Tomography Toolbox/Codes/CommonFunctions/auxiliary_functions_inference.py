@@ -476,7 +476,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         t_end = min(block_size-1,t_start + t_step)
         
         
-        #calculate_integration_matrix(n_ind,out_spikes_tot_mat_file,n,t_start,t_end,tau_d,tau_s,kernel_choice)
+        #calculate_integration_matrix(n_ind,out_spikes_tot_mat_file,n,t_start,t_end,tau_d,tau_s,kernel_choice,hidden_neurons)
         func_args = [n_ind,out_spikes_tot_mat_file,n,t_start,t_end,tau_d,tau_s,kernel_choice,hidden_neurons]
         int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         #pool.close()

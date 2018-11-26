@@ -115,6 +115,7 @@ if plot_type in ['P','R']:
             file_name = file_name_base_results + "/Accuracies/Rec_" + file_name_ending
             
         #~~~~~~~~~Update Precision and Recall Variables~~~~~~~~~~~
+        
         if success_flag:
             vals = np.genfromtxt(file_name, dtype='float', delimiter='\t')
             vals_exc[itr] = vals[0]
@@ -123,9 +124,9 @@ if plot_type in ['P','R']:
 
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-            itr += 1
-            if itr >= len(x_axis_values):
-                break
+            #itr += 1
+            #if itr >= len(x_axis_values):
+            #    break
     #-------------------------------------------------------------
 
     #-----------------------Plot the Results-----------------------
