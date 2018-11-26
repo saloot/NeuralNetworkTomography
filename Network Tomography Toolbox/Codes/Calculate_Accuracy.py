@@ -128,11 +128,12 @@ for file_name_ending in file_name_ending_list:
     
     W_s = W_h
 
+    #pdb.set_trace()
     if no_structural_connections:
         # Re-map the connectivity to the actual matrix
-        tmp = np.zeros([n])
+        tmp = np.zeros([n-no_hidden_neurons])
         itr_iij = 0
-        for iij in range(0,n):
+        for iij in range(0,n-no_hidden_neurons):
             if iij not in hidden_neurons and iij != n_ind:
                 tmp[iij] = W_binary[itr_iij]
                 itr_iij += 1
@@ -142,7 +143,7 @@ for file_name_ending in file_name_ending_list:
                     
     #---------Calculate and Display Recall & Precision for Our Method----------    
     recal,precision = caculate_accuracy(W_binary[0:len(W_s)],W_s)
-        
+
     recal_exc[itr_i] = recal[0]
     recal_inh[itr_i] = recal[1]
     recal_void[itr_i] = recal[2]
