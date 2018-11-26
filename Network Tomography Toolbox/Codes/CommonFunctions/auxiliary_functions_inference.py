@@ -419,8 +419,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     d_max = 10
 
     
-    len_v = n+1-len(hidden_neurons)-1                #The extra entry corresponds to larning the firing threshold 
-                                                    # The second -1 is for the self-loops
+    len_v = n+1-len(hidden_neurons)                #The extra entry corresponds to larning the firing threshold 
     #--------------------------------------------------------------------------
     
     #---------------------Necessary Initializations------------------------    
@@ -451,7 +450,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         
     total_cost = np.zeros([len(range_tau)])
         
-    A = np.zeros([block_size,len_v])      # This should contain current block
+    A = np.zeros([block_size,len_v-1])      # This should contain current block
     YA = np.zeros([block_size])
     
     
