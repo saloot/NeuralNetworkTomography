@@ -419,7 +419,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     d_max = 10
 
     
-    len_v = n+1-len(hidden_neurons)                 #The extra entry corresponds to larning the firing threshold 
+    len_v = n+1-len(hidden_neurons)-1                #The extra entry corresponds to larning the firing threshold 
+                                                    # The second -1 is for the self-loops
     #--------------------------------------------------------------------------
     
     #---------------------Necessary Initializations------------------------    
