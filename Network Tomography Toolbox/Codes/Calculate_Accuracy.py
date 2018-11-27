@@ -36,12 +36,13 @@ dale_law_flag = 0   # If 1, the ternarification algorithm returns a matrix in wh
 #---------------------Read The Actual Grapgh If Possible-----------------------
 #file_name = '../Data/Graphs/Moritz_Actual_Connectivity.txt'
 #file_name = '../Results/Inferred_Graphs/W_Pll_Moritz_I_7_S_5_T_75000_0.txt'
+no_neurons = n-no_hidden_neurons-no_structural_connections-1
 if file_name_ground_truth:
     W = np.genfromtxt(file_name_ground_truth, dtype=None, delimiter='\t')
     W = W.T
     n,m = W.shape
     W_ss = W[:,n_ind]
-    W_s = np.zeros([n-no_hidden_neurons-no_structural_connections-1,1])
+    W_s = np.zeros([no_neurons,1])
     #W_s = np.zeros([n,1])
 #------------------------------------------------------------------------------
 
@@ -76,8 +77,8 @@ false_pos_void_tot = np.zeros([no_roi_steps])
 
 
 #================PERFORM THE INFERENCE TASK FOR EACH ENSEMBLE==================
-W_inferred = np.zeros([n-no_hidden_neurons-no_structural_connections-1,1])
-W_infer = np.zeros([len(file_name_ending_list),n-no_hidden_neurons-no_structural_connections-1])
+W_inferred = np.zeros([no_neurons,1])
+W_infer = np.zeros([len(file_name_ending_list),no_neurons])
 
 #W_inferred = np.zeros([n,1])
 #W_infer = np.zeros([len(file_name_ending_list),n])
@@ -89,18 +90,18 @@ for file_name_ending in file_name_ending_list:
     file_name = "Inferred_Graphs/" + file_name_ending
     file_name = file_name_base_results + '/' + file_name        
     W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-    W_infer[itr_i,:] = W_read[0:n-no_hidden_neurons-no_structural_connections-1]
+    W_infer[itr_i,:] = W_read[0:no_neurons]
 
     #if itr_i > 1:
-    #    W_inferred[0:min(m-no_hidden_neurons-no_structural_connections-1,len(W_read)),0] = W_infer[0:itr_i,:].mean(axis = 0)
+    #    W_inferred[0:min(no_neurons,len(W_read)),0] = W_infer[0:itr_i,:].mean(axis = 0)
     #else:
-    #    W_inferred[0:min(m-no_hidden_neurons-no_structural_connections-1,len(W_read)),0] = W_infer[itr_i-1,:]
+    #    W_inferred[0:min(no_neurons,len(W_read)),0] = W_infer[itr_i-1,:]
     
     #W_infer[itr_i,:] = W_read[0:n]
     if itr_i > 1:
-        W_inferred[0:min(m,len(W_read)),0] = W_infer[0:itr_i,:].mean(axis = 0)
+        W_inferred[0:min(no_neurons,len(W_read)),0] = W_infer[0:itr_i,:].mean(axis = 0)
     else:
-        W_inferred[0:min(m,len(W_read)),0] = W_infer[itr_i-1,:]
+        W_inferred[0:min(no_neurons,len(W_read)),0] = W_infer[itr_i-1,:]
 
     W_inferred_s = W_inferred
     #--------------------------------------------------------------------------
@@ -128,22 +129,23 @@ for file_name_ending in file_name_ending_list:
     
     W_s = W_h
 
-    #pdb.set_trace()
-    if no_structural_connections:
+    
+    if 0:
         # Re-map the connectivity to the actual matrix
-        tmp = np.zeros([n-no_hidden_neurons])
+        tmp = np.zeros([n])
         itr_iij = 0
-        for iij in range(0,n-no_hidden_neurons):
+        for iij in range(0,n):
             if iij not in hidden_neurons and iij != n_ind:
                 tmp[iij] = W_binary[itr_iij]
                 itr_iij += 1
     
         W_s = W_ss            
+        pdb.set_trace()
         W_binary = tmp
                     
     #---------Calculate and Display Recall & Precision for Our Method----------    
     recal,precision = caculate_accuracy(W_binary[0:len(W_s)],W_s)
-
+        
     recal_exc[itr_i] = recal[0]
     recal_inh[itr_i] = recal[1]
     recal_void[itr_i] = recal[2]

@@ -57,7 +57,7 @@ for file_name_ending in file_name_ending_list:
     file_name = file_name_base_results + '/' + file_name        
     W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
     #W_infer[itr_i,:] = W_read[0:n_neuorns]
-    W_inferred = W_read[0:n_neuorns]
+    W_inferred = W_read[:-1]#[0:n_neuorns]
     
     #W_infer[itr_i,:] = W_read[0:n]
     #W_inferred[0:m,0] = W_infer[itr_i,:]
