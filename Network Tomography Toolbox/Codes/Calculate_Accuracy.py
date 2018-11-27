@@ -123,28 +123,13 @@ for file_name_ending in file_name_ending_list:
         file_name = file_name_base_results + '/' + file_name_hidden
         hidden_neurons = np.genfromtxt(file_name, dtype=None, delimiter='\t')
         hidden_neurons = np.hstack([hidden_neurons,n_ind])
-        W_h = np.delete(W_ss,hidden_neurons,0)
+        W_s = np.delete(W_ss,hidden_neurons,0)
     else:
-        W_h = np.delete(W_ss,np.array([n_ind]),0)
-    
-    W_s = W_h
+        W_s = np.delete(W_ss,np.array([n_ind]),0)
+    #--------------------------------------------------------------------------
 
-    
-    if 0:
-        # Re-map the connectivity to the actual matrix
-        tmp = np.zeros([n])
-        itr_iij = 0
-        for iij in range(0,n):
-            if iij not in hidden_neurons and iij != n_ind:
-                tmp[iij] = W_binary[itr_iij]
-                itr_iij += 1
-    
-        W_s = W_ss            
-        pdb.set_trace()
-        W_binary = tmp
-                    
     #---------Calculate and Display Recall & Precision for Our Method----------    
-    recal,precision = caculate_accuracy(W_binary[0:len(W_s)],W_s)
+    recal,precision = caculate_accuracy(W_binary,W_s)
         
     recal_exc[itr_i] = recal[0]
     recal_inh[itr_i] = recal[1]
@@ -158,6 +143,8 @@ for file_name_ending in file_name_ending_list:
     print(prec_exc[itr_i],prec_inh[itr_i],prec_void[itr_i])
     print('\n')
     print('\n')
+    #--------------------------------------------------------------------------
+    
 #======================================================================================
 
 
