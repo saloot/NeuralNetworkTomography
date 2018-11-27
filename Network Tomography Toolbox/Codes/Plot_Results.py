@@ -130,7 +130,7 @@ if plot_type in ['P','R']:
     #-------------------------------------------------------------
 
     #-----------------------Plot the Results-----------------------
-    bar_width = 0.24#*x_axis_values.mean()
+    bar_width = 0.2*x_axis_values.mean()
     
     #x_axis_values = x_axis_values/1000.0
     plt.bar(x_axis_values,vals_exc,bar_width,color='r',label='Excitatory');    
