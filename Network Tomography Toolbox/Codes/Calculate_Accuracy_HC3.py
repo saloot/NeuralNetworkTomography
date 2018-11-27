@@ -5,11 +5,11 @@ import sys,getopt,os
 try:
     import matplotlib.pyplot as plt
 except:
-    print 'Matplotlib can not be initiated! Pas de probleme!'
+    print('Matplotlib can not be initiated! Pas de probleme!')
 import pdb
 from copy import deepcopy
 from scipy.cluster.vq import whiten
-from scipy.signal import find_peaks_cwt
+#from scipy.signal import find_peaks_cwt
 import os.path
 
 from CommonFunctions.auxiliary_functions import read_spikes,combine_weight_matrix,combine_spikes_matrix,generate_file_name,spike_binning
@@ -26,9 +26,11 @@ os.system('clear')                                              # Clear the comm
 
 #---------------------Initialize Simulation Variables--------------------------
 n = 94                                          # Number of neurons in the dataset
-no_structural_info = 20
+no_structural_info = 32
 eta = 0.5
 eta_max = 0.1
+ternary_flag = 1                                # If 1, the algorithm bases its analysis on the ternary matrix.
+                                                # If 0, it will uses the analog inferred graphs as the basis of analysis.
 #------------------------------------------------------------------------------
 
 #==============================================================================
@@ -37,62 +39,116 @@ eta_max = 0.1
 file_name_W_deg = '../Data/Graphs/HC3_W_deg.txt'
 W_deg = np.genfromtxt(file_name_W_deg, dtype=None, delimiter='\t')
     
-neurons_type_sum = np.zeros([len(Var1_range),n])
-neurons_type_max = np.zeros([len(Var1_range),n])
-acc_neurons_type_sum = np.zeros([len(Var1_range),1])
-acc_neurons_type_max = np.zeros([len(Var1_range),1])
-false_neurons_type_sum = np.zeros([len(Var1_range),1])
-false_neurons_type_max = np.zeros([len(Var1_range),1])
 neurons_type_actual = np.zeros([n,1])
 for ik in range(0,n):
-    if W_deg[ik,8] > 0:#W_deg[ik,0] > W_deg[ik,1]:
+    if W_deg[ik,8] > 0:#W_deg[ik,0] > W_deg[ik,1]:#
         neurons_type_actual[ik,0] = 1
-    elif W_deg[ik,8] < 0:#W_deg[ik,0] < W_deg[ik,1]:
+    elif W_deg[ik,8] < 0:#:W_deg[ik,0] < W_deg[ik,1]:
         neurons_type_actual[ik,0] = -1
+#==============================================================================
+
+
+#=========================Apply Structural Information=========================
+file_name_ground_truth =  "../Data/Graphs/HC3_Structural_Info.txt"
+W_gt = np.genfromtxt(file_name_ground_truth, dtype=None, delimiter='\t')
+W_gt = W_gt.T
+#W_inferred = np.multiply(W_inferred,W_gt)
 #==============================================================================
 
 #============================Read the  Inferred Weights========================
 W_inferred = np.zeros([n,n])
 #file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_T_1200000.txt"
 if no_structural_info:
-    file_name_base = "W_binary_W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_f_" + str(no_structural_info) + "_T_1200000_1_1_B_4.txt"
+    file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_f_" + str(no_structural_info) + "_T_1200000"
 else:
-    file_name_base = "W_binary_W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_T_1200000_1_1_B_4.txt"
+    file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_T_1200000"
+    
+if ternary_flag:
+    file_name_base = "W_Binary_" + file_name_base
+    if not no_structural_info:
+        file_name_base += "_1_1_B_4.txt"
+elif not no_structural_info:
+    file_name_base += ".txt"
 
 for i in range(0,n):
     file_name = "../Results/Inferred_Graphs/" + file_name_base.replace('***',str(i))
-    W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-    W_inferred[:,i] = W_read[0:n]
+    
+    #---------------Get All the Files with Similar File Name Endings---------------
+    tmp_str = file_name_base.replace('***',str(i))
+    tmp_str = tmp_str.replace('.txt','')
+    file_name_ending_list = []
+
+    results_dir = '../Results/Inferred_Graphs'
+    for file in os.listdir(results_dir):
+        if file.startswith(tmp_str):
+            file_name = os.path.join(results_dir, file)
+            if '_n_' not in file_name:
+                file_name_ending_list.append(file_name)
+    
+    for file_name in file_name_ending_list:
+        W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+
+
+
+    #-----------------Calculate the Binary Matrix From Beliefs-----------------
+        if no_structural_info:
+            file_name_ending_mod = file_name.replace('W_Binary_','')
+            file_name_ending_mod = file_name_ending_mod.replace('../Results/Inferred_Graphs/','')
+            file_name_ending_mod = file_name_ending_mod.replace('W_Pll_','')
+            file_name_ending_mod = file_name_ending_mod.replace("_1_1_B_4",'')
+
+            file_name = '../Results/Inferred_Graphs/Hidden_or_Structured_Neurons_' + file_name_ending_mod
+            try:
+                hidden_neurons = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+            except:
+                continue
+            hidden_neurons = np.hstack([hidden_neurons,i])
+        else:
+            hidden_neurons = [i]
+    #--------------------------------------------------------------------------
+
+    #--------------------Remap the --------------------------
+        itr = 0
+        for j in range(0,n):
+            if j not in hidden_neurons:
+                W_inferred[j,i] = W_read[itr]
+                itr += 1
+    #--------------------------------------------------------------------------
+
 #==============================================================================
 
-#====================Transform the Inferred Matrix to Ternary==================
-
-#==============================================================================
 
 #================Estmate Neuron Type from Inferred Weights=====================
 neurons_type_inferred = np.zeros([n,1])
-aa = sum(W_inferred.T)
+aa = sum(W_inferred)
 
 true_pos_exc = 0
 true_pos_inh = 0
 false_pos_exc = 0
 false_pos_inh = 0
-
+cutoff_thr = 3
 for i in range(0,n):
     W_r = W_inferred[i,:]
     deg_ind = neurons_type_actual[i]
-    neurons_type_inferred[i] = np.sign(aa[i])
+    #neurons_type_inferred[i] = np.sign(aa[i])
+    #ss = aa[i]  
+    ss = sum(W_r>0)-sum(W_r<0)
+
+    if ss > cutoff_thr:
+        neurons_type_inferred[i] = 1
+    elif ss < -cutoff_thr:
+        neurons_type_inferred[i] = -1
     
     if deg_ind > 0:
-        if aa[i] > 0:
+        if neurons_type_inferred[i] == 1:
             true_pos_exc = true_pos_exc + 1
-        else:
+        elif neurons_type_inferred[i] == -1:
             false_pos_inh = false_pos_inh + 1
         
     elif deg_ind < 0:
-        if aa[i] < 0:
+        if neurons_type_inferred[i] == -1:
             true_pos_inh = true_pos_inh + 1
-        else:
+        elif neurons_type_inferred[i] == 1:
             false_pos_exc = false_pos_exc + 1
 #==============================================================================
 
@@ -103,12 +159,19 @@ no_inh = sum(neurons_type_actual<0)
 recal_exc = true_pos_exc/float(no_exc)
 recal_inh = true_pos_inh/float(no_inh)
 
-precision_exc = true_pos_exc/float(sum(aa>0))
-precision_inh = true_pos_inh/float(sum(aa<0))
+precision_exc = true_pos_exc/float(sum(neurons_type_inferred>0))
+precision_inh = true_pos_inh/float(sum(neurons_type_inferred<0))
 
 print(recal_exc,recal_inh,precision_exc,precision_inh)
 #==============================================================================
-else:
+if 0:
+    neurons_type_sum = np.zeros([len(Var1_range),n])
+    neurons_type_max = np.zeros([len(Var1_range),n])
+    acc_neurons_type_sum = np.zeros([len(Var1_range),1])
+    acc_neurons_type_max = np.zeros([len(Var1_range),1])
+    false_neurons_type_sum = np.zeros([len(Var1_range),1])
+    false_neurons_type_max = np.zeros([len(Var1_range),1])
+
     if file_name_prefix == 'HC3':
                 W_r = W_inferred[0:n,0:n]
                 #W_r = W_inferred[0:n,0:n]-np.dot(np.ones([n,1]),np.reshape(W_inferred[0:n,0:n].mean(axis = 0),[1,n]))
