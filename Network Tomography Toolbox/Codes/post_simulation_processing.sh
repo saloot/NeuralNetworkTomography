@@ -8,8 +8,8 @@
 plot_var='f'
 #plot_var='H'
 no_hidden_neurons=0
-no_structural_neurons=110
-no_itr_over_dataset=2
+no_structural_neurons=2
+no_itr_over_dataset=6
 
 for n_ind in 0; do
     file_ending="LIF_Spike_Times_I_1_S_1.0_C_8_B_400000_K_E_H_0.0_ii_${no_itr_over_dataset}_${n_ind}"
@@ -20,7 +20,7 @@ for n_ind in 0; do
 
     
     for TT in 1000000 5000000; do
-        for ff in 110; do
+        for ff in 2 44 140; do
  
             echo "Running for neuron ${n_ind} and no structural neurons ${ff} and recording size of ${TT}"
             if [ ${ff} -gt 0 ]
