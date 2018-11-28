@@ -26,7 +26,7 @@ os.system('clear')                                              # Clear the comm
 
 #---------------------Initialize Simulation Variables--------------------------
 n = 94                                          # Number of neurons in the dataset
-no_structural_info = 32
+no_structural_info = 28
 eta = 0.5
 eta_max = 0.1
 ternary_flag = 1                                # If 1, the algorithm bases its analysis on the ternary matrix.
@@ -59,9 +59,9 @@ W_gt = W_gt.T
 W_inferred = np.zeros([n,n])
 #file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_T_1200000.txt"
 if no_structural_info:
-    file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_f_" + str(no_structural_info) + "_T_1200000"
+    file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_4_***_f_" + str(no_structural_info) + "_T_1200000"
 else:
-    file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_T_1200000"
+    file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_4_***_T_1200000"
     
 if ternary_flag:
     file_name_base = "W_Binary_" + file_name_base
@@ -126,7 +126,7 @@ true_pos_exc = 0
 true_pos_inh = 0
 false_pos_exc = 0
 false_pos_inh = 0
-cutoff_thr = 3
+cutoff_thr = 0
 for i in range(0,n):
     W_r = W_inferred[i,:]
     deg_ind = neurons_type_actual[i]

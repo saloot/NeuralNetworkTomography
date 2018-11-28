@@ -8,19 +8,19 @@
 plot_var='f'
 #plot_var='H'
 no_hidden_neurons=0
-no_structural_neurons=105
+no_structural_neurons=110
 no_itr_over_dataset=2
 
 for n_ind in 0; do
-    file_ending="LIF_Spike_Times_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_${no_itr_over_dataset}_${n_ind}"
+    file_ending="LIF_Spike_Times_I_1_S_1.0_C_8_B_400000_K_E_H_0.0_ii_${no_itr_over_dataset}_${n_ind}"
     if [ ${no_hidden_neurons} -gt 0 ]
     then
         file_ending="${file_ending}_F_${no_hidden_neurons}"
     fi
 
     
-    for TT in 300000 1000000 3000000; do
-        for ff in 105; do
+    for TT in 1000000 5000000; do
+        for ff in 110; do
  
             echo "Running for neuron ${n_ind} and no structural neurons ${ff} and recording size of ${TT}"
             if [ ${ff} -gt 0 ]
@@ -32,10 +32,10 @@ for n_ind in 0; do
 
             echo "${file_ending2}"
             # Get the inferred files
-            scp -r salavati@deneb2.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/Inferred_Graphs/W_Pll_${file_ending2}_T_${TT}*" ../Results/Inferred_Graphs/
+            #scp -r salavati@deneb2.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/Inferred_Graphs/W_Pll_${file_ending2}_T_${TT}*" ../Results/Inferred_Graphs/
 
             # Get the structural or hidden neurons informations
-            scp -r salavati@deneb2.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/Inferred_Graphs/Hidden_or_Structured_Neurons_${file_ending2}*" ../Results/Inferred_Graphs/
+            #scp -r salavati@deneb2.epfl.ch:"~/NeuralNetworkTomography/Network\ Tomography\ Toolbox/Results/Inferred_Graphs/Hidden_or_Structured_Neurons_${file_ending2}*" ../Results/Inferred_Graphs/
 
             # Transforming to ternary   
             python Transform_to_Ternary.py -B 4 -N 1000 -H ${no_hidden_neurons} -${plot_var} ${ff} -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_${file_ending2}_T_${TT}"
@@ -47,7 +47,7 @@ for n_ind in 0; do
 done
 
 # Plot precision as a function of number of recorded samples
-python Plot_Results.py  -N 1000 -n ${n_ind}  -H ${no_hidden_neurons}-F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_${file_ending2}_T_***" -U R -O "1000000,2000000,3000000,7000000" -V T
+python Plot_Results.py  -N 1000 -n ${n_ind}  -H ${no_hidden_neurons} -${plot_var} ${ff} -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_${file_ending2}_T_***" -U R -O "1000000,5000000" -V T
 #python Plot_Results.py  -N 1000 -n ${n_ind}  -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_${file_ending2}_" -U P -O "4000000,5000000,6000000,7000000"
 
 

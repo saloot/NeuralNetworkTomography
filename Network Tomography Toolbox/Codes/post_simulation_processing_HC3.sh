@@ -7,13 +7,13 @@
 
 plot_var='f'
 #plot_var='H'
-no_structural_neurons=20
-no_itr_over_dataset=2
+no_structural_neurons=28
+no_itr_over_dataset=4
 
 for n_ind in {0..94}; do    
 
     for TT in 1200000; do
-        for ff in 20; do
+        for ff in 28; do
 
             echo "Running for neuron ${n_ind} and no structural neurons ${ff} and recording size of ${TT}"
             
