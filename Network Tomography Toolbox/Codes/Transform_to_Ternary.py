@@ -8,15 +8,18 @@ import pdb
 #from CommonFunctions.auxiliary_functions import combine_weight_matrix,generate_file_name
 from CommonFunctions.auxiliary_functions_digitize import beliefs_to_ternary,parse_commands_ternary_algo
 #from CommonFunctions.Neurons_and_Networks import *
-
+try:
+    import matplotlib.pyplot as plt
+except:
+    pass
 os.system('clear')                                              # Clear the commandline window
 #==============================================================================
 
 
 #==========================PARSE COMMAND LINE ARGUMENTS========================
-input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:K:C:Y:U:Z:o:N:H:j:c:f:")
+input_opts, args = getopt.getopt(sys.argv[1:],"hE:I:P:Q:T:S:D:A:F:R:L:M:B:R:G:K:C:Y:U:Z:o:N:H:j:c:f:n:")
 
-file_name_ending_list,file_name_base_results,ternary_mode,n,no_hidden_neurons,no_structural_connections,adj_fact_exc,adj_fact_inh = parse_commands_ternary_algo(input_opts)
+file_name_ending_list,file_name_base_results,ternary_mode,n,n_ind,no_hidden_neurons,no_structural_connections,adj_fact_exc,adj_fact_inh = parse_commands_ternary_algo(input_opts)
 
 m = n
 #==============================================================================
@@ -31,7 +34,7 @@ dale_law_flag = 0   # If 1, the ternarification algorithm returns a matrix in wh
 
 #.............................Sorting-Based Approach...........................
 if ternary_mode == 2:    
-    params = []                     # Parameters will be set later
+    params = [adj_fact_exc,adj_fact_inh]                     # Parameters will be set later
 #..............................................................................
 
 #..........................Clustering-based Approach...........................
@@ -45,7 +48,9 @@ if ternary_mode == 4:
 
 
 #================PERFORM THE INFERENCE TASK FOR EACH ENSEMBLE==================
-n_neuorns = n-no_hidden_neurons-no_structural_connections - 1
+n_neuorns = n
+if no_hidden_neurons:
+    n_neuorns -= (no_hidden_neurons+1)
 #W_infer = np.zeros([len(file_name_ending_list),n_neuorns])
 #W_inferred = np.zeros([n,1])
 #W_infer = np.zeros([len(file_name_ending_list),n])
@@ -63,8 +68,35 @@ for file_name_ending in file_name_ending_list:
     #W_inferred[0:m,0] = W_infer[itr_i,:]
     #--------------------------------------------------------------------------
 
+    #-----------Reconstruct Based on Available Structural Information----------
+    if no_structural_connections:
+        file_name_ending_mod = file_name_ending.replace('W_Pll_','')
+        file_name_hidden = "../Results/Inferred_Graphs/Hidden_or_Structured_Neurons_" + file_name_ending_mod
+        structural_neurons = np.genfromtxt(file_name_hidden, dtype=None, delimiter='\t')
+        structural_neurons = np.hstack([structural_neurons,n_ind])
+
+        tmp = np.zeros([n])
+        W_inferred = W_inferred - W_inferred.mean()
+
+        itr_iij = 0
+        for iij in range(0,n):
+            if iij not in structural_neurons:
+                tmp[iij] = W_inferred[itr_iij]
+                itr_iij += 1
+        
+        W_inferred = tmp
+        
+    else:
+        structural_neurons = []
+
+    #--------------------------------------------------------------------------
+
+
     #-----------------Calculate the Binary Matrix From Beliefs-----------------
     W_binary,centroids = beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag)
+    for i in structural_neurons:
+        if W_binary[i] != 0:
+            W_binary[i] = 0
     #--------------------------------------------------------------------------
     
     #--------------------------Store the Binary Matrices-----------------------

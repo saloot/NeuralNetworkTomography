@@ -435,6 +435,10 @@ def parse_commands_ternary_algo(input_opts):
                     Var_range.append(int(i))
             elif opt == '-N':
                 no_neurons = int(arg)                               # Number of observed eurons
+            elif opt == '-n':
+                n_ind = int(arg)                                    # The target neuron. 
+                                                                    # This is to load the correct set of incoming weights from
+                                                                    # the ground truth matrix.
             elif opt == '-H':
                 no_hidden_neurons = int(arg)                        # The number of neurons to artificially hide
             elif opt == '-f': 
@@ -516,4 +520,4 @@ def parse_commands_ternary_algo(input_opts):
     #------------------------------------------------------------------------------
 
 
-    return file_name_ending_list,file_name_base_results,ternary_mode,no_neurons,no_hidden_neurons,no_structural_connections,adj_fact_exc,adj_fact_inh
+    return file_name_ending_list,file_name_base_results,ternary_mode,no_neurons,n_ind,no_hidden_neurons,no_structural_connections,adj_fact_exc,adj_fact_inh

@@ -130,7 +130,7 @@ if plot_type in ['P','R']:
     #-------------------------------------------------------------
 
     #-----------------------Plot the Results-----------------------
-    bar_width = 0.2*x_axis_values.mean()
+    bar_width = 0.1*x_axis_values.mean()
     
     #x_axis_values = x_axis_values/1000.0
     plt.bar(x_axis_values,vals_exc,bar_width,color='r',label='Excitatory');    
@@ -221,77 +221,52 @@ if plot_type == 'C':
 
 #========Plot the Quality of Beliefs (Average of Weights)=========
 if plot_type == 'W':
+    
+
+    #------------------------Read the Files-----------------------
+    used_files_list = []
     means_vector = np.zeros([3,len(x_axis_values)])
     std_vector = np.zeros([3,len(x_axis_values)])
 
-    itr_x = 0
-    for x in x_axis_values:
-    #------------------Read the Filesin the Ensemble---------------
-        itr_i = 0
-
-        file_name_temp = plot_var + '_' + str(x)
+    for itr in range(0,len(x_axis_values)):
+        temp_str = plot_var + '_' + str(x_axis_values[itr]) + '_'
+    
+        success_flag = 0
         for file_name_ending in file_name_ending_list:
-            if file_name_temp in file_name_ending:    
-                file_name = file_name_base_results + '/Inferred_Graphs/' + file_name_ending
-                W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-            else:
-                continue
-    #-------------------------------------------------------------
+            try:
+                ind = file_name_ending.index('_ID_')
+                aa = file_name_ending[ind:ind+10]
+                file_name_ending = file_name_ending.replace(aa,'')
+            except:
+                pass
+            file_name_ending = file_name_ending.replace('W_Binary_','')
+            file_name_ending = file_name_ending.replace('W_Pll_','')
 
-    #--------Reconstruct the Ground Truth in This Ensemble--------
-            W_r = np.reshape(W[:,n_ind],[len(W[:,n_ind]),1])
-            W_s = W_read[0:min(network_size,len(W_read))]
+            if temp_str in file_name_ending:
+                used_files_list.append(file_name_ending)
+                success_flag = 1
+                break
 
-            if no_hidden_neurons or no_structural_connections:
-                file_name_ending_mod = file_name_ending.replace('W_Pll_','')
-                
-                file_name_hidden = "Inferred_Graphs/Hidden_or_Structured_Neurons_" + file_name_ending_mod
-                file_name = file_name_base_results + '/' + file_name_hidden
-                hidden_neurons = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-                hidden_neurons = np.hstack([hidden_neurons,n_ind])
-                W_r = np.delete(W_r,hidden_neurons,0)
-            else:
-                W_r = np.delete(W_r,np.array([n_ind]),0)
-                        
-            W_s = np.reshape(W_s,[len(W_s),1])
-            W_r = np.reshape(W_r,[len(W_r),1])
-    #-------------------------------------------------------------
-
-    #------------Calculate Mean and Variance of Beliefs-----------
-            W_e = np.ma.masked_array(W_s,mask= (W_r<=0).astype(int))
-            means_vector[0,itr_x] += W_e.mean()#.data
-            std_vector[0,itr_x] += W_e.std()#.data
+        #temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
+        #file_name_ending = file_name_ending.replace(temp_str)
+        file_name = file_name_base_results + "/Accuracies/Mean_Std_Beliefs_" + file_name_ending
             
-            W_i = np.ma.masked_array(W_s,mask= (W_r>=0).astype(int))
-            means_vector[1,itr_x] += W_i.mean()#.data
-            std_vector[1,itr_x] += W_i.std()#.data
-                            
-            W_v = np.ma.masked_array(W_s,mask= (W_r!=0).astype(int))
-            means_vector[2,itr_x] += W_v.mean()#.data
-            std_vector[2,itr_x] += W_v.std()#.data
+        #~~~~~~~~~Update Precision and Recall Variables~~~~~~~~~~~
+        if success_flag:
+            vals = np.genfromtxt(file_name, dtype='float', delimiter='\t')
+            vals_exc[itr] = vals[0]
+            vals_inh[itr] = vals[1]
+            vals_void[itr] = vals[2]
 
-            itr_i += 1
-
-        means_vector[:,itr_x] /= float(itr_i)            # Normalize w.r.t. ensemble size
-        std_vector[:,itr_x] /= float(itr_i)              # Normalize w.r.t. ensemble size
-
-        itr_x += 1
+            std_exc[itr] = vals[3]
+            std_inh[itr] = vals[4]
+            std_void[itr] = vals[5]
+        #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     #-------------------------------------------------------------
-
 
     #-----------------------Plot the Results-----------------------
-    vals_exc = means_vector[0,:]
-    std_exc  = std_vector[0,:]
-                                                
-    vals_inh = means_vector[1,:]
-    std_inh = std_vector[1,:]
-                                                
-    vals_void = means_vector[2,:]
-    std_void = std_vector[2,:]
-
     fig, axs = plt.subplots(nrows=1, ncols=1)
     ax = axs
-        
     
     ax.errorbar(x_axis_values,vals_exc,std_exc,color='r',label='Excitatory')
     ax.errorbar(x_axis_values,vals_inh,std_inh,color='b',label='Inhibitory');
@@ -306,6 +281,7 @@ if plot_type == 'W':
     plt.legend(loc='lower left')
     ax.set_title('Average belief qualities')
     plt.show();
+    pdb.set_trace()
     #-------------------------------------------------------------
 
     #------------------Export Plots to Plotly---------------------

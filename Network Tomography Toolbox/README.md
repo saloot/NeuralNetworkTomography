@@ -103,9 +103,11 @@ The codes accept a few command line options to identify the specifications of th
 * `-f xxx`: To specify the number of neurons where we have some prior structural information, with `xxx` being an *integer*. If not 0, the algorithm randomly selects `xxx` neurons from data and assumes that we know if these neurons are NOT connected to the target neuron.
   * For this to work, the ground truth file should be specified as well.
 * `-F xxx`: To specify the file name that contains the ground truth, with `xxx` being a *string* (file path).
+* `-n xxx`: To specify the target neuron for which we want to evlauate the performance, with `xxx` being an *integer*.
+* `-N xxx`: To specify the number of observed neurons in the recorded data, with `xxx` being an *integer*.
 
 ##### Example usage: 
-    python Transform_to_Ternary.py -B 4 -N 1000 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000
+    python Transform_to_Ternary.py -B 4 -N 1000 -n 0 -f 50 -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Pll_LIF_Spike_Times_I_1_S_0.1_C_8_B_200000_K_E_H_0.0_ii_3_0_f_50_T_500000
 
 
 #### Options for evaluating performance 

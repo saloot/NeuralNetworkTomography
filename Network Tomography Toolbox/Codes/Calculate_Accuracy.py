@@ -36,7 +36,10 @@ dale_law_flag = 0   # If 1, the ternarification algorithm returns a matrix in wh
 #---------------------Read The Actual Grapgh If Possible-----------------------
 #file_name = '../Data/Graphs/Moritz_Actual_Connectivity.txt'
 #file_name = '../Results/Inferred_Graphs/W_Pll_Moritz_I_7_S_5_T_75000_0.txt'
-no_neurons = n-no_hidden_neurons-no_structural_connections-1
+no_neurons = n#-no_structural_connections-1
+if no_hidden_neurons:
+    no_neurons -= (no_hidden_neurons + 1)
+
 if file_name_ground_truth:
     W = np.genfromtxt(file_name_ground_truth, dtype=None, delimiter='\t')
     W = W.T
@@ -71,6 +74,16 @@ false_pos_inh_tot = np.zeros([no_roi_steps])
 
 true_pos_void_tot = np.zeros([no_roi_steps])
 false_pos_void_tot = np.zeros([no_roi_steps])
+
+
+mean_belief_exc = np.zeros([len(file_name_ending_list)])
+std_belief_exc = np.zeros([len(file_name_ending_list)])
+
+mean_belief_void = np.zeros([len(file_name_ending_list)])
+std_belief_void = np.zeros([len(file_name_ending_list)])
+
+mean_belief_inh = np.zeros([len(file_name_ending_list)])
+std_belief_inh = np.zeros([len(file_name_ending_list)])
 #------------------------------------------------------------------------------
     
 #==============================================================================
@@ -87,9 +100,46 @@ W_infer = np.zeros([len(file_name_ending_list),no_neurons])
 itr_i = 0
 for file_name_ending in file_name_ending_list:
 
-    file_name = "Inferred_Graphs/" + file_name_ending
-    file_name = file_name_base_results + '/' + file_name        
+    file_name_ending_mod = file_name_ending.replace('W_Binary_','')
+    file_name_ending_mod = file_name_ending_mod.replace('W_Pll_','')
+    temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
+    file_name_ending_mod = file_name_ending_mod.replace(temp_str,'')
+    if ("_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_") in file_name_ending_mod:
+        continue
+
+    #-----------------Calculate the Binary Matrix From Beliefs-----------------
+    if no_hidden_neurons or no_structural_connections:
+        file_name_hidden = "Inferred_Graphs/Hidden_or_Structured_Neurons_" + file_name_ending_mod
+        file_name = file_name_base_results + '/' + file_name_hidden
+        hidden_neurons = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+        hidden_neurons = np.hstack([hidden_neurons,n_ind])
+        
+    if no_hidden_neurons:
+        W_s = np.delete(W_ss,hidden_neurons,0)
+    else:
+        W_s = W_ss
+        #    W_s = np.delete(W_ss,np.array([n_ind]),0)
+    #--------------------------------------------------------------------------
+
+    #-------------------Read the Inferred (Analog) Weights---------------------
+    file_name = "../Results/Inferred_Graphs/" + file_name_ending
+    file_name = file_name.replace('W_Binary_','')
+    temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
+    file_name = file_name.replace(temp_str,'')
     W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+
+    if no_structural_connections:
+        tmp = np.zeros([no_neurons])
+        W_inferred -= W_read.mean()
+
+        itr_iij = 0
+        for iij in range(0,no_neurons):
+            if iij not in hidden_neurons:
+                tmp[iij] = W_read[itr_iij]
+                itr_iij += 1
+        
+        W_read = tmp
+
     W_infer[itr_i,:] = W_read[0:no_neurons]
 
     #if itr_i > 1:
@@ -102,31 +152,15 @@ for file_name_ending in file_name_ending_list:
         W_inferred[0:min(no_neurons,len(W_read)),0] = W_infer[0:itr_i,:].mean(axis = 0)
     else:
         W_inferred[0:min(no_neurons,len(W_read)),0] = W_infer[itr_i-1,:]
-
-    W_inferred_s = W_inferred
     #--------------------------------------------------------------------------
 
     #-------------------Transfrom the Results to Ternary-----------------------
     file_name = file_name_base_results + "/Inferred_Graphs/" + file_name_ending
 
     W_binary = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+    W_binary = np.reshape(W_binary,[no_neurons,1])
     #--------------------------------------------------------------------------
 
-    #-----------------Calculate the Binary Matrix From Beliefs-----------------
-    if no_hidden_neurons or no_structural_connections:
-        file_name_ending_mod = file_name_ending.replace('W_Binary_','')
-        file_name_ending_mod = file_name_ending_mod.replace('W_Pll_','')
-        temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
-        file_name_ending_mod = file_name_ending_mod.replace(temp_str,'')
-
-        file_name_hidden = "Inferred_Graphs/Hidden_or_Structured_Neurons_" + file_name_ending_mod
-        file_name = file_name_base_results + '/' + file_name_hidden
-        hidden_neurons = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-        hidden_neurons = np.hstack([hidden_neurons,n_ind])
-        W_s = np.delete(W_ss,hidden_neurons,0)
-    else:
-        W_s = np.delete(W_ss,np.array([n_ind]),0)
-    #--------------------------------------------------------------------------
 
     #---------Calculate and Display Recall & Precision for Our Method----------    
     recal,precision = caculate_accuracy(W_binary,W_s)
@@ -144,6 +178,25 @@ for file_name_ending in file_name_ending_list:
     print('\n')
     print('\n')
     #--------------------------------------------------------------------------
+
+
+    #------Calculate and Display Mean of Inferred Weights for Our Method-------
+    W_e = np.ma.masked_array(W_read,mask= (W_s<=0).astype(int))
+    mean_belief_exc[itr_i] += W_e.mean()#.data
+    std_belief_exc[itr_i] += W_e.std()#.data
+            
+    W_i = np.ma.masked_array(W_read,mask= (W_s>=0).astype(int))
+    mean_belief_inh[itr_i] += W_i.mean()#.data
+    std_belief_inh[itr_i] += W_i.std()#.data
+                            
+    W_v = np.ma.masked_array(W_read,mask= (W_s!=0).astype(int))
+    mean_belief_void[itr_i] += W_v.mean()#.data
+    std_belief_void[itr_i] += W_v.std()#.data
+
+    print(mean_belief_exc[itr_i],mean_belief_inh[itr_i],mean_belief_void[itr_i])
+    print('\n')
+    print('\n')
+    #--------------------------------------------------------------------------
     
 #======================================================================================
 
@@ -151,12 +204,12 @@ for file_name_ending in file_name_ending_list:
 #==============================CALCULATE THE ROC CURVE=================================
     
 #---------------------------For Excitatory Connections-----------------------------
-    ww = W_inferred_s
+    ww = W_inferred
     ww = ww - ww.mean()
     ww = whiten(ww)
         
-    min_val = W_inferred_s.min()
-    max_val = W_inferred_s.max()
+    min_val = W_inferred.min()
+    max_val = W_inferred.max()
     mid_val = int(0.5*(max_val+min_val))
 
     
@@ -249,6 +302,7 @@ except:
 temp_ending = temp_ending.replace('W_Binary_','')
 temp_ending = temp_ending.replace('W_Pll_','')
 
+#pdb.set_trace()
 recal_exc = recal_exc.mean()
 recal_inh = recal_inh.mean()
 recal_void = recal_void.mean()
@@ -259,6 +313,7 @@ prec_void = prec_void.mean()
 
 temp = np.vstack([recal_exc,recal_inh,recal_void])
 temp = temp.T
+
 #temp = np.hstack([np.reshape(var_range,[len(var_range),1]),temp])
 file_name = file_name_base_results + "/Accuracies/Rec_" + temp_ending
 np.savetxt(file_name,temp,'%f',delimiter='\t',newline='\n')
@@ -278,6 +333,24 @@ np.savetxt(file_name,np.vstack([false_pos_inh_tot,true_pos_inh_tot]).T,'%f',deli
     
 file_name = file_name_base_results + "/Plot_Results/ROC_void_" + temp_ending
 np.savetxt(file_name,np.vstack([false_pos_void_tot,true_pos_void_tot]).T,'%f',delimiter='\t',newline='\n')
+
+
+mean_belief_exc = mean_belief_exc.mean()
+std_belief_exc = std_belief_exc.mean()
+
+mean_belief_inh = mean_belief_inh.mean()
+std_belief_inh = std_belief_inh.mean()
+
+mean_belief_void = mean_belief_void.mean()
+std_belief_void = std_belief_void.mean()
+
+
+temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
+temp_ending = temp_ending.replace(temp_str,'')
+file_name = file_name_base_results + "/Accuracies/Mean_Std_Beliefs_" + temp_ending
+temp = np.vstack([mean_belief_exc,mean_belief_inh,mean_belief_void,std_belief_exc,std_belief_inh,std_belief_void])
+temp = temp.T
+np.savetxt(file_name,temp,'%f',delimiter='\t',newline='\n')
 #======================================================================================
 
 #=================================PLOT THE ROC CURVES==================================
