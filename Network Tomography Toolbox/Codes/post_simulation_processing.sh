@@ -8,7 +8,7 @@
 plot_var='f'
 #plot_var='H'
 no_hidden_neurons=0
-no_structural_neurons=960
+no_structural_neurons=2
 no_itr_over_dataset=2
 
 for n_ind in 0; do
@@ -19,8 +19,8 @@ for n_ind in 0; do
     fi
 
     
-    for TT in 500000 1000000 3000000; do
-        for ff in 960; do
+    for TT in 1000000 3000000; do
+        for ff in 140; do
  
             echo "Running for neuron ${n_ind} and no structural neurons ${ff} and recording size of ${TT}"
             if [ ${ff} -gt 0 ]
@@ -46,6 +46,7 @@ for n_ind in 0; do
     done
 done
 
+
 # Plot precision as a function of number of recorded samples
 python Plot_Results.py  -N 1000 -n ${n_ind}  -H ${no_hidden_neurons} -${plot_var} ${ff} -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_${file_ending2}_T_***" -U R -O "1000000,5000000" -V T
 #python Plot_Results.py  -N 1000 -n ${n_ind}  -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_${file_ending2}_" -U P -O "4000000,5000000,6000000,7000000"
@@ -53,3 +54,4 @@ python Plot_Results.py  -N 1000 -n ${n_ind}  -H ${no_hidden_neurons} -${plot_var
 
 # Plot precision as a function of number of hidden/structural information
 python Plot_Results.py -o "0,1" -N 1000 -n ${n_ind} -H ${no_hidden_neurons} -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_${file_ending}_${ff}_" -U "P" -O "50,100,150,200" -V ${plot_var}
+#python Plot_Results.py  -N 1000 -n 0  -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_W_Pll_LIF_Spike_Times_I_1_S_1.0_C_8_B_400000_K_E_H_0.0_ii_2_0_f_***_T_3000000_" -U R -O "2,44,140" -V f -T 3000000

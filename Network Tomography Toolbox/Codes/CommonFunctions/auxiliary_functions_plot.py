@@ -642,6 +642,8 @@ def parse_commands_plots(input_opts):
     file_name_ending_list = []
     results_dir = file_name_base_results+'/Inferred_Graphs'
     if file_name_ending:
+        if plot_type.lower() == 'w':
+            file_name_ending = file_name_ending.replace('W_Binary_','')
         part1 = file_name_ending.split('***')[0]
         part2 = file_name_ending.split('***')[1]
         for file in os.listdir(results_dir):

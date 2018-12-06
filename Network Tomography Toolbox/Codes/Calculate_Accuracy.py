@@ -111,8 +111,12 @@ for file_name_ending in file_name_ending_list:
     if no_hidden_neurons or no_structural_connections:
         file_name_hidden = "Inferred_Graphs/Hidden_or_Structured_Neurons_" + file_name_ending_mod
         file_name = file_name_base_results + '/' + file_name_hidden
+
+        #file_name = '../Results/Inferred_Graphs/Hidden_or_Structured_Neurons_LIF_Spike_Times_I_1_S_1.0_C_8_B_400000_K_E_H_0.0_ii_2_0_f_140_T_3000000_ID_8WCLWM.txt'
         hidden_neurons = np.genfromtxt(file_name, dtype=None, delimiter='\t')
         hidden_neurons = np.hstack([hidden_neurons,n_ind])
+    else:
+        hidden_neurons = [n_ind]
         
     if no_hidden_neurons:
         W_s = np.delete(W_ss,hidden_neurons,0)
@@ -130,7 +134,7 @@ for file_name_ending in file_name_ending_list:
 
     if no_structural_connections:
         tmp = np.zeros([no_neurons])
-        W_inferred -= W_read.mean()
+        W_read -= W_read.mean()
 
         itr_iij = 0
         for iij in range(0,no_neurons):
@@ -139,6 +143,7 @@ for file_name_ending in file_name_ending_list:
                 itr_iij += 1
         
         W_read = tmp
+
 
     W_infer[itr_i,:] = W_read[0:no_neurons]
 
@@ -172,15 +177,11 @@ for file_name_ending in file_name_ending_list:
     prec_exc[itr_i] = precision[0]
     prec_inh[itr_i] = precision[1]
     prec_void[itr_i] = precision[2]
-    print(recal_exc[itr_i],recal_inh[itr_i],recal_void[itr_i])
-    print('\n')
-    print(prec_exc[itr_i],prec_inh[itr_i],prec_void[itr_i])
-    print('\n')
-    print('\n')
     #--------------------------------------------------------------------------
 
 
     #------Calculate and Display Mean of Inferred Weights for Our Method-------
+    W_read = W_read/np.linalg.norm(W_read)
     W_e = np.ma.masked_array(W_read,mask= (W_s<=0).astype(int))
     mean_belief_exc[itr_i] += W_e.mean()#.data
     std_belief_exc[itr_i] += W_e.std()#.data
@@ -192,10 +193,6 @@ for file_name_ending in file_name_ending_list:
     W_v = np.ma.masked_array(W_read,mask= (W_s!=0).astype(int))
     mean_belief_void[itr_i] += W_v.mean()#.data
     std_belief_void[itr_i] += W_v.std()#.data
-
-    print(mean_belief_exc[itr_i],mean_belief_inh[itr_i],mean_belief_void[itr_i])
-    print('\n')
-    print('\n')
     #--------------------------------------------------------------------------
     
 #======================================================================================
@@ -303,9 +300,18 @@ temp_ending = temp_ending.replace('W_Binary_','')
 temp_ending = temp_ending.replace('W_Pll_','')
 
 #pdb.set_trace()
+recal_exc = recal_exc[np.nonzero(recal_exc)[0]]
+recal_inh = recal_inh[np.nonzero(recal_inh)[0]]
+recal_void = recal_void[np.nonzero(recal_void)[0]]
+
 recal_exc = recal_exc.mean()
 recal_inh = recal_inh.mean()
 recal_void = recal_void.mean()
+
+
+prec_exc = prec_exc[np.nonzero(prec_exc)[0]]
+prec_inh = prec_inh[np.nonzero(prec_inh)[0]]
+prec_void = prec_void[np.nonzero(prec_void)[0]]
 
 prec_exc = prec_exc.mean()
 prec_inh = prec_inh.mean()
@@ -353,6 +359,14 @@ temp = temp.T
 np.savetxt(file_name,temp,'%f',delimiter='\t',newline='\n')
 #======================================================================================
 
+print(recal_exc,recal_inh,recal_void)
+print('\n')
+print(prec_exc,prec_inh,prec_void)
+print('\n')
+
+
+print(mean_belief_exc,mean_belief_inh,mean_belief_void)
+print('\n')
 #=================================PLOT THE ROC CURVES==================================
 val_range = range(0,100)
 val_range = np.array(val_range)/100.0
