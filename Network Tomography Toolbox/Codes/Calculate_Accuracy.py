@@ -299,6 +299,9 @@ except:
 temp_ending = temp_ending.replace('W_Binary_','')
 temp_ending = temp_ending.replace('W_Pll_','')
 
+temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
+temp_ending = temp_ending.replace(temp_str,'')
+
 #pdb.set_trace()
 recal_exc = recal_exc[np.nonzero(recal_exc)[0]]
 recal_inh = recal_inh[np.nonzero(recal_inh)[0]]
@@ -350,9 +353,6 @@ std_belief_inh = std_belief_inh.mean()
 mean_belief_void = mean_belief_void.mean()
 std_belief_void = std_belief_void.mean()
 
-
-temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
-temp_ending = temp_ending.replace(temp_str,'')
 file_name = file_name_base_results + "/Accuracies/Mean_Std_Beliefs_" + temp_ending
 temp = np.vstack([mean_belief_exc,mean_belief_inh,mean_belief_void,std_belief_exc,std_belief_inh,std_belief_void])
 temp = temp.T
@@ -363,7 +363,6 @@ print(recal_exc,recal_inh,recal_void)
 print('\n')
 print(prec_exc,prec_inh,prec_void)
 print('\n')
-
 
 print(mean_belief_exc,mean_belief_inh,mean_belief_void)
 print('\n')
