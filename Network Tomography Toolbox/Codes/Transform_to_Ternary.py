@@ -75,28 +75,30 @@ for file_name_ending in file_name_ending_list:
         structural_neurons = np.genfromtxt(file_name_hidden, dtype=None, delimiter='\t')
         structural_neurons = np.hstack([structural_neurons,n_ind])
 
-        tmp = np.zeros([n])
-        W_inferred = W_inferred - W_inferred.mean()
+        #W_inferred = W_inferred - W_inferred.mean()
+        
+    #else:
+    #    structural_neurons = [n_ind]
 
-        itr_iij = 0
-        for iij in range(0,n):
-            if iij not in structural_neurons:
-                tmp[iij] = W_inferred[itr_iij]
-                itr_iij += 1
-        
-        W_inferred = tmp
-        
-    else:
-        structural_neurons = []
+    
 
     #--------------------------------------------------------------------------
 
 
     #-----------------Calculate the Binary Matrix From Beliefs-----------------
     W_binary,centroids = beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag)
-    for i in structural_neurons:
-        if W_binary[i] != 0:
-            W_binary[i] = 0
+    
+    #for i in structural_neurons:
+    #    W_binary[i] = 0
+
+    tmp = np.zeros([n])
+    itr_iij = 0
+    for iij in range(0,n):
+        if iij not in structural_neurons:
+            tmp[iij] = W_binary[itr_iij]
+            itr_iij += 1
+        
+    W_binary = tmp
     #--------------------------------------------------------------------------
     
     #--------------------------Store the Binary Matrices-----------------------

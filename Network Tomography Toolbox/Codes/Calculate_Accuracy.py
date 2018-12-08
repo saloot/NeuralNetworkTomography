@@ -163,6 +163,17 @@ for file_name_ending in file_name_ending_list:
     file_name = file_name_base_results + "/Inferred_Graphs/" + file_name_ending
 
     W_binary = np.genfromtxt(file_name, dtype=None, delimiter='\t')
+    if no_structural_connections:
+        tmp = np.zeros([no_neurons])
+
+        itr_iij = 0
+        for iij in range(0,no_neurons):
+            if iij not in hidden_neurons:
+                tmp[iij] = W_binary[iij]
+                itr_iij += 1
+        
+        W_binary = tmp
+
     W_binary = np.reshape(W_binary,[no_neurons,1])
     #--------------------------------------------------------------------------
 
@@ -302,15 +313,16 @@ temp_ending = temp_ending.replace('W_Pll_','')
 temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
 temp_ending = temp_ending.replace(temp_str,'')
 
-#pdb.set_trace()
+
 recal_exc = recal_exc[np.nonzero(recal_exc)[0]]
 recal_inh = recal_inh[np.nonzero(recal_inh)[0]]
 recal_void = recal_void[np.nonzero(recal_void)[0]]
 
+#pdb.set_trace()
+
 recal_exc = recal_exc.mean()
 recal_inh = recal_inh.mean()
 recal_void = recal_void.mean()
-
 
 prec_exc = prec_exc[np.nonzero(prec_exc)[0]]
 prec_inh = prec_inh[np.nonzero(prec_inh)[0]]
@@ -324,6 +336,7 @@ temp = np.vstack([recal_exc,recal_inh,recal_void])
 temp = temp.T
 
 #temp = np.hstack([np.reshape(var_range,[len(var_range),1]),temp])
+
 file_name = file_name_base_results + "/Accuracies/Rec_" + temp_ending
 np.savetxt(file_name,temp,'%f',delimiter='\t',newline='\n')
         
@@ -342,6 +355,15 @@ np.savetxt(file_name,np.vstack([false_pos_inh_tot,true_pos_inh_tot]).T,'%f',deli
     
 file_name = file_name_base_results + "/Plot_Results/ROC_void_" + temp_ending
 np.savetxt(file_name,np.vstack([false_pos_void_tot,true_pos_void_tot]).T,'%f',delimiter='\t',newline='\n')
+
+
+mean_belief_exc = mean_belief_exc[np.nonzero(mean_belief_exc)[0]]
+mean_belief_inh = mean_belief_inh[np.nonzero(mean_belief_inh)[0]]
+mean_belief_void = mean_belief_void[np.nonzero(mean_belief_void)[0]]
+
+std_belief_exc = std_belief_exc[np.nonzero(std_belief_exc)[0]]
+std_belief_inh = std_belief_inh[np.nonzero(std_belief_inh)[0]]
+std_belief_void = std_belief_void[np.nonzero(std_belief_void)[0]]
 
 
 mean_belief_exc = mean_belief_exc.mean()
@@ -366,6 +388,7 @@ print('\n')
 
 print(mean_belief_exc,mean_belief_inh,mean_belief_void)
 print('\n')
+print(std_belief_exc,std_belief_inh,std_belief_void)
 #=================================PLOT THE ROC CURVES==================================
 val_range = range(0,100)
 val_range = np.array(val_range)/100.0
