@@ -453,8 +453,7 @@ def count_incoming_spikes(file_name_ground_truth):
 
     for n_ind in neuron_range:
         W_ss = W[:,n_ind]
-        d = (np.where(neurons_spikes==n_ind))
-        no_spikes_neurons_outgoing[n_ind] = sum(d[0])
+        no_spikes_neurons_outgoing[n_ind] = no_spikes[n_ind]
 
         incoming_connections = np.where(W_ss != 0)[0]
         no_incoming_spikes = []
@@ -467,9 +466,10 @@ def count_incoming_spikes(file_name_ground_truth):
     #--------------------------------------------------------------------------
 
     #----------------------------Plot the Results------------------------------
-    bar_width = 0.24#*x_axis_values.mean()
+    bar_width = 0.14#*x_axis_values.mean()
     
     #x_axis_values = x_axis_values/1000.0
+    neuron_range = np.array(neuron_range)
     plt.bar(neuron_range,no_spikes_neurons_outgoing,bar_width,color='r',label='Outgoing');    
     plt.bar(neuron_range + bar_width,no_spikes_neurons_min,bar_width,color='b',label='Min. Incoming');
     plt.bar(neuron_range + 2*bar_width,no_spikes_neurons_avg,bar_width,color='y',label='Avg. Incoming');
@@ -477,10 +477,35 @@ def count_incoming_spikes(file_name_ground_truth):
 
     plt.xlabel('Neuron Index', fontsize=16)
     plt.ylabel('No. Spikes', fontsize=16)
-    plt.legend(loc='lower right')
+    plt.legend(loc='upper right')
     plt.show();
+    #--------------------------------------------------------------------------
+
+    #------------------------------Save the Results----------------------------
+    np.save('../Data/Spikes/LIF_Firing_Rates.npy', no_spikes)
+    np.save('../Data/Spikes/Summary_Firing_Rates.npy', [no_spikes_neurons_outgoing,no_spikes_neurons_min,no_spikes_neurons_max,no_spikes_neurons_avg])
     #--------------------------------------------------------------------------
 
 #==============================================================================
 #==============================================================================
 
+
+
+#==============================================================================
+#=================REMAP CONNECTIONS BASED ON REFERENCE VECTOR==================
+# The following function gets a vector as input and an array containing index 
+# of connection we are sure are equal to zero.
+#==============================================================================
+def remap_connections(input_vector,structural_connections,no_items):
+
+    import numpy as np
+    tmp = np.zeros([no_items])
+    itr_iij = 0
+    for iij in range(0,no_items):
+        if iij not in structural_connections:
+            tmp[iij] = input_vector[itr_iij]
+            itr_iij += 1
+        
+    return tmp
+#==============================================================================
+#==============================================================================

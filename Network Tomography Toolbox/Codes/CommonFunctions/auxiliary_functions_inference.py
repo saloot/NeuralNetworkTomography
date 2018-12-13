@@ -351,9 +351,10 @@ def calculate_integration_matrix(n_ind,spikes_file,n,t_start,t_end,tau_d,tau_s,k
     #AA = np.delete(AA.T,n_ind,0).T
     
     V = V.T
-    if n_ind not in hidden_neurons:
-        hidden_neurons = np.hstack([hidden_neurons,n_ind])
-    V = np.delete(V.T,hidden_neurons,0).T
+    #if n_ind not in hidden_neurons:
+    #    hidden_neurons = np.hstack([hidden_neurons,n_ind])
+    if len(hidden_neurons):
+        V = np.delete(V.T,hidden_neurons,0).T
     #V = np.delete(V.T,n_ind,0).T
     #---------------------------------------------------------------------
     
@@ -373,8 +374,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     max_memory = 0
     
     #----------------------Import Necessary Libraries----------------------
-    from auxiliary_functions import soft_threshold
-    from auxiliary_functions import soft_threshold_double
+    from auxiliary_functions import soft_threshold_double, remap_connections,soft_threshold
     import os.path
     
     import multiprocessing
@@ -393,6 +393,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     sparsity_flag = inferece_params[3]
     max_itr_opt = inferece_params[4]
     kernel_choice = inferece_params[10]
+    structural_connections = inferece_params[11]
+    inferece_params[11] = structural_connections.append[n_ind]
     
     #weight_of_weights = np.abs(np.array(range(0,n)) - n_ind)
     #weight_of_weights = np.exp(-weight_of_weights/(0.5*n))
@@ -418,7 +420,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     h0 = 0.0                                        # The reset membrane voltage (in mV
     d_max = 10
 
-    
     len_v = n+1-len(hidden_neurons)                #The extra entry corresponds to larning the firing threshold 
     #--------------------------------------------------------------------------
     
@@ -435,18 +436,17 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         beta_K = 1
     
     if (mthd == 3) or (mthd == 4):
-        W_tot = np.random.randn(len_v-1,1)
+        W_tot = np.random.randn(len_v,1)
         W_tot = W_tot - W_tot.mean()
         W_tot = whiten(W_tot)
         W_tot = W_tot/len_v
     else:
-        W_tot = np.zeros([len_v-1,1])
-        W_tot = np.random.randn(len_v-1,1)
+        W_tot = np.zeros([len_v,1])
+        W_tot = np.random.randn(len_v,1)
         W_tot = W_tot - W_tot.mean()
         #W_tot = whiten(W_tot)
         W_tot = W_tot/(0.001+np.linalg.norm(W_tot))/float(len_v)
         
-    Z_tot = np.zeros([len_v-1,1])    
         
     total_cost = np.zeros([len(range_tau)])
         
@@ -455,7 +455,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     
     
-    Delta_W = np.zeros([len_v-1,1])
+    Delta_W = np.zeros([len_v,1])
     
     itr_block_t = 1
     itr_block_w = 0
@@ -655,6 +655,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 
 #------------------------------------------------------------------------------
 def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
+
+    from auxiliary_functions import remap_connections,
     
     warnings.filterwarnings("error")
     #---------------------Read Inference Parameters------------------------
@@ -667,6 +669,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     class_sample_freq = inferece_params[8]
     rand_sample_flag = inferece_params[9]
     #weights_weight = inferece_params[12]
+    structural_connections = inferece_params[11]
     
     #weights_weight = np.reshape(weights_weight,[len_v-1,1])
     #----------------------------------------------------------------------
@@ -725,27 +728,6 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     #W_temp[-1] = 0.1
     
     no_firings_per_neurons = 2*np.ones(W_temp.shape)                # This variable tracks the number of times each pre-synaptic neuron has fired
-    if 0:#max(W_temp.shape) == 94:
-        no_firings_per_neurons = [ 0.51390311,  0.55878293,  0.56535145,  0.5646233 ,
-             0.56620095,  0.56255262,  0.62126728,  0.53129527,  0.58542108,
-             0.58517077,  0.50000758,  0.5909808 ,  1.12309145,  0.5       ,
-             0.50772901,  0.5       ,  0.51575382,  0.50471022,  0.54981758,
-             0.51781692,  0.55744799,  0.51950076,  0.50467988,  0.51113462,
-             0.50034132,  0.51501809,  0.50334494,  0.52704773,  0.52007721,
-             0.50667471,  0.51799137,  0.50101638,  0.50304154,  0.50472539,
-             0.50543837,  0.66023088,  0.84892029,  0.52372555,  0.60291943,
-             0.53981311,  0.50069023,  0.50150181,  0.51010308,  0.50361799,
-             0.50138804,  0.5000986 ,  0.51975865,  0.5071298 ,  0.52157144,
-             0.50666712,  0.50118324,  0.51463885,  0.51724805,  0.50744837,
-             0.51783967,  0.57304253,  0.87852413,  0.51447956,  0.52308842,
-             0.55449746,  0.57268604,  0.50339045,  0.50276849,  0.50352698,
-             0.50037166,  0.50409584,  0.52183691,  0.6436048 ,  1.5       ,
-             1.40827588,  0.51577658,  0.50796414,  0.51709635,  0.94915466,
-             0.60803164,  0.54299118,  0.52094948,  0.51003481,  0.65719693,
-             0.60683323,  0.51222685,  0.5372039 ,  0.51454024,  0.51114221,
-             0.73898484,  0.50840406,  0.50345871,  0.50039441,  0.50129702,
-             0.50211619,  0.50580244,  0.502814  ,  0.50370901, 1]
-        
     no_firings_per_neurons = np.array(no_firings_per_neurons)
     no_firings_per_neurons = np.reshape(no_firings_per_neurons,[len(no_firings_per_neurons),1])
     #no_firings_per_neurons = np.delete(W_r,hidden_neurons,0)
@@ -1043,6 +1025,10 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     memory_used = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - initial_memory
     if no_firings_per_neurons.max() > 2:
         print(no_firings_per_neurons)
+
+    if len(structural_connections):
+        Delta_W = remap_connections(Delta_W,structural_connections,len_v)
+        
     return Delta_W,d_alp_vec,t_start,t_end,cst,memory_used
 
 #------------------------------------------------------------------------------
