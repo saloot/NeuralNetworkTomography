@@ -374,7 +374,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     max_memory = 0
     
     #----------------------Import Necessary Libraries----------------------
-    from auxiliary_functions import soft_threshold_double, remap_connections,soft_threshold
+    from auxiliary_functions import soft_threshold_double,remap_connections,soft_threshold
     import os.path
     
     import multiprocessing
@@ -394,7 +394,8 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     max_itr_opt = inferece_params[4]
     kernel_choice = inferece_params[10]
     structural_connections = inferece_params[11]
-    inferece_params[11] = structural_connections.append(n_ind)
+    structural_connections.append(n_ind)
+    inferece_params[11] = structural_connections
     
     #weight_of_weights = np.abs(np.array(range(0,n)) - n_ind)
     #weight_of_weights = np.exp(-weight_of_weights/(0.5*n))
@@ -656,7 +657,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 #------------------------------------------------------------------------------
 def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
 
-    from auxiliary_functions import remap_connections
+    from auxiliary_functions import enforce_structural_connections
     
     warnings.filterwarnings("error")
     #---------------------Read Inference Parameters------------------------
@@ -1027,7 +1028,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         print(no_firings_per_neurons)
 
     if len(structural_connections):
-        Delta_W = remap_connections(Delta_W,structural_connections,len_v)
+        Delta_W = enforce_structural_connections(Delta_W,structural_connections)
         
     return Delta_W,d_alp_vec,t_start,t_end,cst,memory_used
 

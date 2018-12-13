@@ -509,3 +509,19 @@ def remap_connections(input_vector,structural_connections,no_items):
     return tmp
 #==============================================================================
 #==============================================================================
+
+
+#==============================================================================
+#=================REMAP CONNECTIONS BASED ON REFERENCE VECTOR==================
+# The following function gets a vector as input and an array containing index 
+# of connection we are sure are equal to zero.
+#==============================================================================
+def enforce_structural_connections(input_vector,structural_connections):
+
+    tmp = input_vector
+    for iij in structural_connections:
+        tmp[iij] = 0
+        
+    return tmp
+#==============================================================================
+#==============================================================================
