@@ -587,7 +587,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         if itr_block_w >= len(block_start_inds):
             #Delta_W_loc = np.dot(A.T,lambda_tot[b_st:t_end_last_w+2])
             
-            W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v-1,1])
+            W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v,1])
             
             if (mthd == 3) or (mthd == 4) or (mthd == 6):
                 W_tot[:-1] = W_tot[:-1] - W_tot[:-1].mean()
@@ -841,7 +841,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                 
                 #~~~~~~~~~~~~~~~~~~Upate Weights for SDCD~~~~~~~~~~~~~~~~~~~
                 if (mthd == 1):
-                    Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])# * yy_t#/float(cf)
+                    Delta_W_loc = d_alp * np.reshape(aa_t,[len_v,1])# * yy_t#/float(cf)
                     #Delta_W_loc = np.divide(Delta_W_loc,0.5*(no_firings_per_neurons))
                     #Delta_W_loc = np.divide(Delta_W_loc,(no_firings_per_neurons))
                     
@@ -876,7 +876,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                 
                 #~~~~~~~~~~~~~Upate Weights for Sketched SDCD~~~~~~~~~~~~~~~
                 elif (mthd == 2):
-                    Delta_W_loc = d_alp * np.reshape(aa_t,[len_v-1,1])# * yy_t#/float(cf)
+                    Delta_W_loc = d_alp * np.reshape(aa_t,[len_v,1])# * yy_t#/float(cf)
                     Delta_W_loc = np.divide(Delta_W_loc,0.1*np.log(no_firings_per_neurons))
                     
                     #s = prng.randint(0,beta,[len_v-1,1])
@@ -904,7 +904,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                     d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
                     Delta_W_loc = 0
                     if d_alp:
-                        Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
+                        Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v,1])
                     
                     #Delta_W_loc = Delta_W_loc + 0.7*(W_temp<0).astype(int)
                     Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
@@ -927,11 +927,11 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                     d_alp = max(0,0-np.dot(W_temp.T,aa_t))
                     if d_alp:
                         try:
-                            s = prng.randint(0,beta,[len_v-1,1])
+                            s = prng.randint(0,beta,[len_v,1])
                             s = (s>=beta-1).astype(int)
                             
                             
-                            Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])
+                            Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v,1])
                             #Delta_W_loc = np.multiply(Delta_W_loc,s)
                             
                             #Delta_W_loc = np.divide(Delta_W_loc,0.4*np.log(no_firings_per_neurons))
@@ -940,7 +940,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                             #Delta_W_loc = np.multiply(Delta_W_loc,(weights_weight))
                     
                             if 0:#sum(s):
-                                Delta_W_loc = Delta_W_loc/(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v-1,1]),s)),2))
+                                Delta_W_loc = Delta_W_loc/(0.0001+pow(np.linalg.norm(np.multiply(np.reshape(aa_t,[len_v,1]),s)),2))
                             
                             if 1:
                                 sparse_thr_pos = np.multiply(W_temp[:-1],(W_temp[:-1]>=0).astype(int)).std()/float(sparse_thr_0)
@@ -966,9 +966,9 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                     d_alp = max(0,0.5*e0-np.dot(W_temp.T,aa_t))
                     if d_alp:
                         if np.dot(W_temp.T,aa_t)<e0:
-                            Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])#/(0.0001+pow(np.linalg.norm(aa_t),2))
+                            Delta_W_loc = max(0,e0-np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v,1])#/(0.0001+pow(np.linalg.norm(aa_t),2))
                         else:
-                            Delta_W_loc = -max(0,e1+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v-1,1])#/(0.0001+pow(np.linalg.norm(aa_t),2))
+                            Delta_W_loc = -max(0,e1+np.dot(W_temp.T,aa_t))*np.reshape(aa_t,[len_v,1])#/(0.0001+pow(np.linalg.norm(aa_t),2))
                         
                         Delta_W_loc = 1*Delta_W_loc - 0.001*W_temp
                         #Delta_W_loc[-1] = .1
@@ -980,7 +980,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                 
                 #~~~Upate Weights for Perceptron with Cross Entropy Loss~~~~
                 elif (mthd == 7):
-                    x_t = np.reshape(aa_t,[len_v-1,1]) * yy_t
+                    x_t = np.reshape(aa_t,[len_v,1]) * yy_t
                     yyy_t = (yy_t + 1)*0.5
                     z_t = 1/(1.0 + math.exp(-(np.dot(W_temp.T,x_t))))
                     Delta_W_loc = x_t * (z_t - yyy_t)
