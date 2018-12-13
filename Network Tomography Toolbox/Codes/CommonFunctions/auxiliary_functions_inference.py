@@ -656,7 +656,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 #------------------------------------------------------------------------------
 def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
 
-    from auxiliary_functions import remap_connections,
+    from auxiliary_functions import remap_connections
     
     warnings.filterwarnings("error")
     #---------------------Read Inference Parameters------------------------
