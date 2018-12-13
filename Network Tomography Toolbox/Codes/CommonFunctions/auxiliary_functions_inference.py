@@ -394,7 +394,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     max_itr_opt = inferece_params[4]
     kernel_choice = inferece_params[10]
     structural_connections = inferece_params[11]
-    inferece_params[11] = list(structural_connections).append[n_ind]
+    inferece_params[11] = structural_connections.append([n_ind])
     
     #weight_of_weights = np.abs(np.array(range(0,n)) - n_ind)
     #weight_of_weights = np.exp(-weight_of_weights/(0.5*n))
