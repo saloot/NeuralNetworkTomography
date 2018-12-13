@@ -210,7 +210,7 @@ for n_ind in neuron_range:
         hidden_neurons = hidden_neurons_new
     ##-------------------------------------------------------------------------
     if no_structural_connections:
-        inferece_params.append(hidden_neurons)
+        inferece_params.append(zero_connections)
     else:
         inferece_params.append([])
 
