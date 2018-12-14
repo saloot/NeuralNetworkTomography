@@ -7,6 +7,7 @@ from scipy.cluster.vq import kmeans,whiten,kmeans2,vq
 import pdb 
 #from CommonFunctions.auxiliary_functions import combine_weight_matrix,generate_file_name
 from CommonFunctions.auxiliary_functions_digitize import beliefs_to_ternary,parse_commands_ternary_algo
+from CommonFunctions.auxiliary_functions import enforce_structural_connections
 #from CommonFunctions.Neurons_and_Networks import *
 try:
     import matplotlib.pyplot as plt
@@ -63,7 +64,6 @@ for file_name_ending in file_name_ending_list:
     W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
     #W_infer[itr_i,:] = W_read[0:n_neuorns]
     W_inferred = W_read[:-1]#[0:n_neuorns]
-    
     #W_infer[itr_i,:] = W_read[0:n]
     #W_inferred[0:m,0] = W_infer[itr_i,:]
     #--------------------------------------------------------------------------
@@ -88,17 +88,8 @@ for file_name_ending in file_name_ending_list:
     #-----------------Calculate the Binary Matrix From Beliefs-----------------
     W_binary,centroids = beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag)
     
-    #for i in structural_neurons:
-    #    W_binary[i] = 0
-
-    tmp = np.zeros([n])
-    itr_iij = 0
-    for iij in range(0,n):
-        if iij not in structural_neurons:
-            tmp[iij] = W_binary[itr_iij]
-            itr_iij += 1
-        
-    W_binary = tmp
+    if no_structural_connections:
+        W_binary = enforce_structural_connections(W_binary,structural_connections)
     #--------------------------------------------------------------------------
     
     #--------------------------Store the Binary Matrices-----------------------
