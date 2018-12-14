@@ -74,15 +74,12 @@ for file_name_ending in file_name_ending_list:
         file_name_hidden = "../Results/Inferred_Graphs/Hidden_or_Structured_Neurons_" + file_name_ending_mod
         structural_neurons = np.genfromtxt(file_name_hidden, dtype=None, delimiter='\t')
         structural_neurons = np.hstack([structural_neurons,n_ind])
-
+        
         #W_inferred = W_inferred - W_inferred.mean()
-        W_inferred = enforce_structural_connections(W_inferred,structural_connections)
+        W_inferred = enforce_structural_connections(W_inferred,structural_neurons)
         
     #else:
     #    structural_neurons = [n_ind]
-
-    
-
     #--------------------------------------------------------------------------
 
 
@@ -90,7 +87,7 @@ for file_name_ending in file_name_ending_list:
     W_binary,centroids = beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag)
     
     if no_structural_connections:
-        W_binary = enforce_structural_connections(W_binary,structural_connections)
+        W_binary = enforce_structural_connections(W_binary,structural_neurons)
     #--------------------------------------------------------------------------
     
     #--------------------------Store the Binary Matrices-----------------------
@@ -103,7 +100,7 @@ for file_name_ending in file_name_ending_list:
     #    file_name_ending2 = file_name_ending2.replace(aa,'')
     #except:
     #    pass
-                
+             
     file_name = file_name_base_results + "/Inferred_Graphs/W_Binary_%s.txt" %file_name_ending2
     np.savetxt(file_name,W_binary,'%d',delimiter='\t',newline='\n')
     

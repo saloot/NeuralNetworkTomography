@@ -131,21 +131,8 @@ for file_name_ending in file_name_ending_list:
     temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
     file_name = file_name.replace(temp_str,'')
     W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-
-    if no_structural_connections:
-        tmp = np.zeros([no_neurons])
-        W_read -= W_read.mean()
-
-        itr_iij = 0
-        for iij in range(0,no_neurons):
-            if iij not in hidden_neurons:
-                tmp[iij] = W_read[itr_iij]
-                itr_iij += 1
-        
-        W_read = tmp
-
-
-    W_infer[itr_i,:] = W_read[0:no_neurons]
+    W_read = W_read[:-1]
+    W_infer[itr_i,:] = W_read#[0:no_neurons]
 
     #if itr_i > 1:
     #    W_inferred[0:min(no_neurons,len(W_read)),0] = W_infer[0:itr_i,:].mean(axis = 0)
@@ -154,26 +141,15 @@ for file_name_ending in file_name_ending_list:
     
     #W_infer[itr_i,:] = W_read[0:n]
     if itr_i > 1:
-        W_inferred[0:min(no_neurons,len(W_read)),0] = W_infer[0:itr_i,:].mean(axis = 0)
+        W_inferred[:,0] = W_infer[0:itr_i,:].mean(axis = 0)
     else:
-        W_inferred[0:min(no_neurons,len(W_read)),0] = W_infer[itr_i-1,:]
+        W_inferred[:,0] = W_infer[itr_i-1,:]
     #--------------------------------------------------------------------------
 
     #-------------------Transfrom the Results to Ternary-----------------------
     file_name = file_name_base_results + "/Inferred_Graphs/" + file_name_ending
 
     W_binary = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-    if no_structural_connections:
-        tmp = np.zeros([no_neurons])
-
-        itr_iij = 0
-        for iij in range(0,no_neurons):
-            if iij not in hidden_neurons:
-                tmp[iij] = W_binary[iij]
-                itr_iij += 1
-        
-        W_binary = tmp
-
     W_binary = np.reshape(W_binary,[no_neurons,1])
     #--------------------------------------------------------------------------
 
@@ -310,10 +286,6 @@ except:
 temp_ending = temp_ending.replace('W_Binary_','')
 temp_ending = temp_ending.replace('W_Pll_','')
 
-temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
-temp_ending = temp_ending.replace(temp_str,'')
-
-
 recal_exc = recal_exc[np.nonzero(recal_exc)[0]]
 recal_inh = recal_inh[np.nonzero(recal_inh)[0]]
 recal_void = recal_void[np.nonzero(recal_void)[0]]
@@ -374,6 +346,9 @@ std_belief_inh = std_belief_inh.mean()
 
 mean_belief_void = mean_belief_void.mean()
 std_belief_void = std_belief_void.mean()
+
+temp_str = "_" + str(adj_fact_exc) +"_" + str(adj_fact_inh) + "_B_" + str(ternary_mode)
+temp_ending = temp_ending.replace(temp_str,'')
 
 file_name = file_name_base_results + "/Accuracies/Mean_Std_Beliefs_" + temp_ending
 temp = np.vstack([mean_belief_exc,mean_belief_inh,mean_belief_void,std_belief_exc,std_belief_inh,std_belief_void])
