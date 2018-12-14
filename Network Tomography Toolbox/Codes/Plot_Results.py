@@ -229,7 +229,7 @@ if plot_type == 'W':
     std_vector = np.zeros([3,len(x_axis_values)])
 
     for itr in range(0,len(x_axis_values)):
-        temp_str = plot_var + '_' + str(x_axis_values[itr]) + '_'
+        temp_str = plot_var + '_' + str(x_axis_values[itr])# + '_'
     
         success_flag = 0
         for file_name_ending in file_name_ending_list:
