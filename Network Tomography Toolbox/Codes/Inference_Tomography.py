@@ -289,9 +289,13 @@ for n_ind in neuron_range:
     #..........................................................................
     
     #..........................Store Hidden Neurons.............................
-    if no_hidden_neurons or no_structural_connections:
+    if no_hidden_neurons:
         file_name =  file_name_base_results + "/Inferred_Graphs/Hidden_or_Structured_Neurons_%s_%s.txt" %(file_name_prefix,file_name_ending)
         np.savetxt(file_name,hidden_neurons,delimiter='\t')
+
+    if no_structural_connections:
+        file_name =  file_name_base_results + "/Inferred_Graphs/Hidden_or_Structured_Neurons_%s_%s.txt" %(file_name_prefix,file_name_ending)
+        np.savetxt(file_name,zero_connections,delimiter='\t')
     #..........................................................................
     
     itr_n = itr_n + 1

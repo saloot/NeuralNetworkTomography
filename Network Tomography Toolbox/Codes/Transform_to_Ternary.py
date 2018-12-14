@@ -76,6 +76,7 @@ for file_name_ending in file_name_ending_list:
         structural_neurons = np.hstack([structural_neurons,n_ind])
 
         #W_inferred = W_inferred - W_inferred.mean()
+        W_inferred = enforce_structural_connections(W_inferred,structural_connections)
         
     #else:
     #    structural_neurons = [n_ind]
