@@ -867,6 +867,10 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                         W_temp = W_temp + s_size * Delta_W_loc
                         
                     
+                    if len(structural_connections):
+                        Delta_W_loc -= Delta_W_loc.mean()
+                        Delta_W_loc = enforce_structural_connections(Delta_W_loc,structural_connections)
+    
                     Delta_W = Delta_W + s_size * Delta_W_loc
                     #cst = np.dot(aa,W_temp);cst[jj-20:jj+20].T
                     #cst = np.dot(aa,Delta_W_loc);cst[jj-20:jj+20].T
