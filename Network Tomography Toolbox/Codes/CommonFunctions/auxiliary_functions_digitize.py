@@ -97,8 +97,8 @@ def determine_binary_threshold(method,params,obs):
         res = 0
         temp= np.zeros([no_clusters])
         
-        while success_itr<10:
-            temp,res = kmeans(obs,no_clusters,iter=30)
+        while success_itr<100:
+            temp,res = kmeans(obs,no_clusters,iter=10)
             temp.sort()
             success_itr = success_itr + 1
             if len(temp) == len(centroids):
@@ -149,7 +149,7 @@ def determine_binary_threshold(method,params,obs):
     #thr_zero = ss[1]
     #thr_exc = val_exc
         
-    return [thr_inh,thr_zero,thr_exc]
+    return np.sort([thr_inh,thr_zero,thr_exc])
 #==============================================================================
 #==============================================================================        
 
@@ -292,9 +292,10 @@ def beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag):
             #~---~~~~~~~~~~~~~Classify Incoming Edges~~~~~~~~~~~~~~~~~~~~~~~~~~
             params = params[0:2]
             params.append(3)                        # "3" refers to the number of classes, namely, excitatory, inhibitory and non-existent
-            if 0:
+            if 1:
                 W_inferred_temp = W_inferred_temp - W_inferred_temp.mean()
                 W_inferred_temp = whiten(W_inferred_temp)
+            
             else:
                 W_inferred_pos = np.multiply(W_inferred_temp,(W_inferred_temp>0).astype(int))
                 W_inferred_neg = np.multiply(W_inferred_temp,(W_inferred_temp<0).astype(int))
@@ -304,8 +305,9 @@ def beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag):
                 
                 
             thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,W_inferred_temp.ravel())
-            thr_exc = W_inferred_pos.mean() + W_inferred_pos.std()
-            centroids[i,:] = [thr_inh,thr_zero,thr_exc]
+
+            #thr_exc = W_inferred_pos.mean() + W_inferred_pos.std()
+            centroids[i,:] = np.sort([thr_inh,thr_zero,thr_exc])
             
             if sum(abs(centroids[i,:])):
                 W_temp,res = vq(W_inferred_temp.ravel(),np.array([thr_inh,thr_zero,thr_exc]))
