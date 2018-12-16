@@ -1028,6 +1028,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         print(no_firings_per_neurons)
 
     if len(structural_connections):
+        Delta_W -= Delta_W.mean()
         Delta_W = enforce_structural_connections(Delta_W,structural_connections)
         
     return Delta_W,d_alp_vec,t_start,t_end,cst,memory_used
