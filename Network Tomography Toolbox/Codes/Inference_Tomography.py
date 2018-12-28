@@ -140,7 +140,7 @@ if not os.path.isfile(file_name_spikes2):
 #==============================================================================
 #W_infer = np.zeros([no_neurons+1-no_hidden_neurons-no_structural_connections,len(neuron_range)])
 #W_infer = np.zeros([no_neurons+1,len(neuron_range)])
-#W_infer = np.zeros([no_neurons-no_hidden_neurons-no_structural_connections,len(neuron_range)])
+W_infer = np.zeros([no_neurons-no_hidden_neurons-no_structural_connections,len(neuron_range)])
 
 #============================INFER THE CONNECTIONS=============================
 itr_n = 0
@@ -196,11 +196,11 @@ for n_ind in neuron_range:
         zero_connections = zero_connections_orig[zero_inds[0:no_structural_connections]]
         zero_connections = list(zero_connections)
 
-        #if len(hidden_neurons):
-        #    # Make sure the structural neurons are not among the hidden neurons
-        #    hidden_neurons += zero_connections
-        #else:
-        #    hidden_neurons = zero_connections
+        if len(hidden_neurons):
+            # Make sure the structural neurons are not among the hidden neurons
+            hidden_neurons += zero_connections
+        else:
+            hidden_neurons = zero_connections
 
     #-------------------------------------------------------------------------
     
@@ -289,13 +289,13 @@ for n_ind in neuron_range:
     #..........................................................................
     
     #..........................Store Hidden Neurons.............................
-    if no_hidden_neurons:
+    if no_hidden_neurons or no_structural_connections:
         file_name =  file_name_base_results + "/Inferred_Graphs/Hidden_or_Structured_Neurons_%s_%s.txt" %(file_name_prefix,file_name_ending)
         np.savetxt(file_name,hidden_neurons,delimiter='\t')
 
-    if no_structural_connections:
-        file_name =  file_name_base_results + "/Inferred_Graphs/Hidden_or_Structured_Neurons_%s_%s.txt" %(file_name_prefix,file_name_ending)
-        np.savetxt(file_name,zero_connections,delimiter='\t')
+    #if no_structural_connections:
+    #    file_name =  file_name_base_results + "/Inferred_Graphs/Hidden_or_Structured_Neurons_%s_%s.txt" %(file_name_prefix,file_name_ending)
+    #    np.savetxt(file_name,zero_connections,delimiter='\t')
     #..........................................................................
     
     itr_n = itr_n + 1
