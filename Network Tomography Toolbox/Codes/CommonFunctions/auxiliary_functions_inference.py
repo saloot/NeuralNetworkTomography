@@ -374,7 +374,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     max_memory = 0
     
     #----------------------Import Necessary Libraries----------------------
-    from auxiliary_functions import soft_threshold_double,remap_connections,soft_threshold
+    from auxiliary_functions import soft_threshold_double,soft_threshold
     import os.path
     
     import multiprocessing
@@ -657,7 +657,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 #------------------------------------------------------------------------------
 def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
 
-    from auxiliary_functions import enforce_structural_connections
+    #from auxiliary_functions import enforce_structural_connections
     
     warnings.filterwarnings("error")
     #---------------------Read Inference Parameters------------------------
@@ -867,10 +867,6 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                         W_temp = W_temp + s_size * Delta_W_loc
                         
                     
-                    if len(structural_connections):
-                        #Delta_W_loc -= Delta_W_loc.mean()
-                        Delta_W_loc = enforce_structural_connections(Delta_W_loc,structural_connections)
-    
                     Delta_W = Delta_W + s_size * Delta_W_loc
                     #cst = np.dot(aa,W_temp);cst[jj-20:jj+20].T
                     #cst = np.dot(aa,Delta_W_loc);cst[jj-20:jj+20].T
@@ -1031,9 +1027,9 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     if no_firings_per_neurons.max() > 2:
         print(no_firings_per_neurons)
 
-    if len(structural_connections):
-        #Delta_W -= Delta_W.mean()
-        Delta_W = enforce_structural_connections(Delta_W,structural_connections)
+    #if len(structural_connections):
+    #    #Delta_W -= Delta_W.mean()
+    #    Delta_W = enforce_structural_connections(Delta_W,structural_connections)
         
     return Delta_W,d_alp_vec,t_start,t_end,cst,memory_used
 

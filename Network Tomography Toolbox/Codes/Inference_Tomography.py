@@ -209,11 +209,7 @@ for n_ind in neuron_range:
         hidden_neurons_new  = [item for item, count in Counter(hidden_neurons).iteritems() if count == 1]
         hidden_neurons = hidden_neurons_new
     ##-------------------------------------------------------------------------
-    if no_structural_connections:
-        inferece_params.append(zero_connections)
-    else:
-        inferece_params.append([])
-
+    
     for it in range(0,no_avg_itr):
         W_temp,used_ram_temp,cost = inference_constraints_hinge_parallel(file_name_spikes2,T,block_size,no_neurons,n_ind,num_process,inferece_params,hidden_neurons)
         if not it:
