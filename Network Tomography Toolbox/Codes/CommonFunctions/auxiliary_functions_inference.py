@@ -393,9 +393,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     sparsity_flag = inferece_params[3]
     max_itr_opt = inferece_params[4]
     kernel_choice = inferece_params[10]
-    structural_connections = inferece_params[11]
-    structural_connections.append(n_ind)
-    inferece_params[11] = structural_connections
     
     #weight_of_weights = np.abs(np.array(range(0,n)) - n_ind)
     #weight_of_weights = np.exp(-weight_of_weights/(0.5*n))
@@ -657,8 +654,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
 #------------------------------------------------------------------------------
 def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
 
-    #from auxiliary_functions import enforce_structural_connections
-    
     warnings.filterwarnings("error")
     #---------------------Read Inference Parameters------------------------
     mthd = inferece_params[0]
@@ -670,7 +665,6 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     class_sample_freq = inferece_params[8]
     rand_sample_flag = inferece_params[9]
     #weights_weight = inferece_params[12]
-    structural_connections = inferece_params[11]
     
     #weights_weight = np.reshape(weights_weight,[len_v-1,1])
     #----------------------------------------------------------------------
@@ -1027,9 +1021,6 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     if no_firings_per_neurons.max() > 2:
         print(no_firings_per_neurons)
 
-    #if len(structural_connections):
-    #    #Delta_W -= Delta_W.mean()
-    #    Delta_W = enforce_structural_connections(Delta_W,structural_connections)
         
     return Delta_W,d_alp_vec,t_start,t_end,cst,memory_used
 
