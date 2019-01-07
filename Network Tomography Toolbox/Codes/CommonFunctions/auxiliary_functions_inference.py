@@ -351,8 +351,8 @@ def calculate_integration_matrix(n_ind,spikes_file,n,t_start,t_end,tau_d,tau_s,k
     #AA = np.delete(AA.T,n_ind,0).T
     
     V = V.T
-    #if n_ind not in hidden_neurons:
-    #    hidden_neurons = np.hstack([hidden_neurons,n_ind])
+    if n_ind not in hidden_neurons:
+        hidden_neurons = np.hstack([hidden_neurons,n_ind])
     if len(hidden_neurons):
         V = np.delete(V.T,hidden_neurons,0).T
     #V = np.delete(V.T,n_ind,0).T
@@ -418,7 +418,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     h0 = 0.0                                        # The reset membrane voltage (in mV
     d_max = 10
 
-    len_v = n+1-len(hidden_neurons)                #The extra entry corresponds to larning the firing threshold 
+    len_v = n-len(hidden_neurons)                #The extra entry corresponds to larning the firing threshold 
     #--------------------------------------------------------------------------
     
     #---------------------Necessary Initializations------------------------    
