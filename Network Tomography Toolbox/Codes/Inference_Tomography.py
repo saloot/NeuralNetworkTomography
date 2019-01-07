@@ -222,7 +222,7 @@ for n_ind in neuron_range:
     W_inferred = np.array(W_inferred)
     
     #W_inferred = np.reshape(W_inferred,[no_neurons+1,1])
-    W_inferred = np.reshape(W_inferred,[no_neurons+1-len(hidden_neurons),1])
+    W_inferred = np.reshape(W_inferred,[no_neurons-len(hidden_neurons),1])
     
     #.........................Save the Belief Matrices.........................
     file_name_ending = 'I_' + str(inference_method) + '_S_' + str(float(sparse_thr0))
