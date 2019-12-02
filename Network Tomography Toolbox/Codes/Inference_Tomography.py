@@ -206,7 +206,7 @@ for n_ind in neuron_range:
     
     ##-------------------Find an Remove Duplicates, If Any---------------------
     if len(hidden_neurons):
-        hidden_neurons_new  = [item for item, count in Counter(hidden_neurons).iteritems() if count == 1]
+        hidden_neurons_new  = [item for item, count in Counter(hidden_neurons).items() if count == 1]
         hidden_neurons = hidden_neurons_new
     ##-------------------------------------------------------------------------
     
