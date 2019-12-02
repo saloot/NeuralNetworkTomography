@@ -2,7 +2,6 @@
 import math
 #from brian import *
 import numpy as np
-from scipy import sparse
 import pdb
 import random
 import copy
@@ -123,7 +122,7 @@ def read_spikes(file_name):
     print(s[0])
             
     
-    print firing_times_max
+    print(firing_times_max)
     return Neural_Spikes,firing_times_max
 #==============================================================================
 #==============================================================================
@@ -269,7 +268,7 @@ def combine_spikes_matrix(Neural_Spikes,T,jitter=0,del_prob=0):
             itr = itr + 1
         else:
             if sum(spikes_mat[i,:]) > 0:
-                print 'Oops! There is something wrong here!'
+                print('Oops! There is something wrong here!')
     
     non_zero_neurons.sort()
     return spikes_mat,spikes_mat_nonzero_s,non_zero_neurons

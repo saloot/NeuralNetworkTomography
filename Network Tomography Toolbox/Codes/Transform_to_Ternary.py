@@ -3,7 +3,7 @@
 import time
 import numpy as np
 import sys,getopt,os
-from scipy.cluster.vq import kmeans,whiten,kmeans2,vq
+from CommonFunctions.auxiliary_functions import remap_connections
 import pdb 
 #from CommonFunctions.auxiliary_functions import combine_weight_matrix,generate_file_name
 from CommonFunctions.auxiliary_functions_digitize import beliefs_to_ternary,parse_commands_ternary_algo
@@ -76,18 +76,19 @@ for file_name_ending in file_name_ending_list:
         structural_neurons = np.hstack([structural_neurons,n_ind])
         
         #W_inferred = W_inferred - W_inferred.mean()
-        W_inferred = enforce_structural_connections(W_inferred,structural_neurons)
-        W_inferred /= W_inferred.max()
+        #W_inferred = enforce_structural_connections(W_inferred,structural_neurons)
+        #W_inferred /= W_inferred.max()
         
-    #else:
-    #    structural_neurons = [n_ind]
+    else:
+        structural_neurons = [n_ind]
     #--------------------------------------------------------------------------
 
 
     #-----------------Calculate the Binary Matrix From Beliefs-----------------
     W_binary,centroids = beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag)
-    if no_structural_connections:
-        W_binary = enforce_structural_connections(W_binary,structural_neurons)
+    if len(structural_neurons):
+        #W_binary = enforce_structural_connections(W_binary,structural_neurons)
+        W_binary = remap_connections(W_binary,structural_neurons,n)
     #--------------------------------------------------------------------------
     
     #--------------------------Store the Binary Matrices-----------------------

@@ -1,13 +1,12 @@
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 import math
 #from brian import *
-from scipy import sparse
 import numpy as np
 import pdb,os,sys
 import random
 import copy
 import numpy.ma as ma
-from default_values import *
+from CommonFunctions.default_values import *
 #==============================================================================
 
 
@@ -593,7 +592,7 @@ def parse_commands_accuracy_algo(input_opts):
         adj_fact_inh = 1
 
     if 'n_ind' not in locals():
-        print 'Sorry you should specify the target neuron for which the evaluation should proceed.'
+        print('Sorry you should specify the target neuron for which the evaluation should proceed.')
         sys.exit()
     #------------------------------------------------------------------------------
     

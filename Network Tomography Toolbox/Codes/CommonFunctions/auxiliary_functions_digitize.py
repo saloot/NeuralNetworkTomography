@@ -1,13 +1,12 @@
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 import math
 #from brian import *
-from scipy import sparse
 import numpy as np
 import pdb,os,sys
 import random
 import copy
 import numpy.ma as ma
-from default_values import *
+from CommonFunctions.default_values import *
 #==============================================================================
 
 
@@ -292,11 +291,11 @@ def beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag):
             #~---~~~~~~~~~~~~~Classify Incoming Edges~~~~~~~~~~~~~~~~~~~~~~~~~~
             params = params[0:2]
             params.append(3)                        # "3" refers to the number of classes, namely, excitatory, inhibitory and non-existent
-            if 1:
+            if 0:
                 W_inferred_temp = W_inferred_temp - W_inferred_temp.mean()
                 W_inferred_temp = whiten(W_inferred_temp)
             
-            else:
+            if 1:
                 W_inferred_pos = np.multiply(W_inferred_temp,(W_inferred_temp>0).astype(int))
                 W_inferred_neg = np.multiply(W_inferred_temp,(W_inferred_temp<0).astype(int))
                 W_inferred_pos = W_inferred_pos/(0.00001+W_inferred_pos.max())
@@ -305,8 +304,7 @@ def beliefs_to_ternary(ternary_mode,W_inferred,params,dale_law_flag):
                 
                 
             thr_inh,thr_zero,thr_exc = determine_binary_threshold('c',params,W_inferred_temp.ravel())
-
-            #thr_exc = W_inferred_pos.mean() + W_inferred_pos.std()
+            thr_exc = W_inferred_pos.mean() + W_inferred_pos.std()
             centroids[i,:] = np.sort([thr_inh,thr_zero,thr_exc])
             
             if sum(abs(centroids[i,:])):

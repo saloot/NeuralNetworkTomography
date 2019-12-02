@@ -60,7 +60,7 @@ max_itr_optimization = no_itr_over_dataset*int(T/float(block_size))
 
 num_process = min(no_processes,multiprocessing.cpu_count())
 block_size = min(block_size,T)
-print id_generator()
+print(id_generator())
 #------------------------------------------------------------------------------
 
 #-------------------------Initialize Inference Parameters----------------------
@@ -75,7 +75,7 @@ if file_name_ground_truth:
     W_gt = np.genfromtxt(file_name_ground_truth, dtype=None, delimiter='\t')
     W_gt = W_gt.T
 elif no_structural_connections:
-    print 'Sorry! for the structural information to work, you must specify the file name of gorund truth.'
+    print('Sorry! for the structural information to work, you must specify the file name of gorund truth.')
     sys.exit()
 #------------------------------------------------------------------------------
 
@@ -97,7 +97,7 @@ file_name_prefix = file_name_prefix[0]
         
 #---------------------Preprocess the Spikes If Necessary-----------------------
 file_name_spikes2 = file_name_spikes[:-4] + '_file.txt'
-if not os.path.isfile(file_name_spikes2):            
+if not os.path.isfile(file_name_spikes2):
     out_spikes = np.genfromtxt(file_name_spikes, dtype=float, delimiter='\t')            
     spike_file = open(file_name_spikes2,'w')
     fire_matx = [''] * (T+1)
@@ -116,7 +116,7 @@ if not os.path.isfile(file_name_spikes2):
                     else:
                         temp = str(nn)
                 else:
-                    print 'What the ...?'
+                    print('What the ...?')
                     #pdb.set_trace()
                         
                 if tt<=T:
@@ -270,7 +270,7 @@ for n_ind in neuron_range:
     np.savetxt(file_name,tmp.T,'%2.6f',delimiter='\t')
     #..........................................................................
     
-    print 'Inference successfully completed for T = %s ms. The results are saved on %s' %(str(T/1000.0),file_name)
+    print('Inference successfully completed for T = %s ms. The results are saved on %s' %(str(T/1000.0),file_name))
     
     #....................Store Spent Time and Memory............................
     t_end = time.time()                           # The ending time of the algorithm    

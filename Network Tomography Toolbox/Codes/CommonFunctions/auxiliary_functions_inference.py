@@ -1,7 +1,6 @@
 #=======================IMPORT THE NECESSARY LIBRARIES=========================
 import math
 #from brian import *
-from scipy import sparse,linalg
 import warnings
 import pdb,os,sys
 import random
@@ -13,10 +12,9 @@ except:
     pass
 import numpy as np
 import math
-from default_values import *
+from CommonFunctions.default_values import *
 import time
 import resource
-from scipy.cluster.vq import kmeans,whiten,kmeans2,vq
 from numpy.random import randint
 from numpy.random import RandomState
 import linecache
@@ -28,7 +26,6 @@ except:
     print('CVXOpt is not installed. No biggie!')
     cvx_flag = 0
 
-from scipy import optimize
 #==============================================================================
 
 
@@ -352,7 +349,7 @@ def calculate_integration_matrix(n_ind,spikes_file,n,t_start,t_end,tau_d,tau_s,k
     
     V = V.T
     if n_ind not in hidden_neurons:
-        hidden_neurons = np.hstack([hidden_neurons,n_ind])
+        hidden_neurons = np.hstack([hidden_neurons,n_ind]).astype('int')
     if len(hidden_neurons):
         V = np.delete(V.T,hidden_neurons,0).T
     #V = np.delete(V.T,n_ind,0).T
@@ -374,7 +371,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     max_memory = 0
     
     #----------------------Import Necessary Libraries----------------------
-    from auxiliary_functions import soft_threshold_double,soft_threshold
+    from CommonFunctions.auxiliary_functions import soft_threshold_double,soft_threshold
     import os.path
     
     import multiprocessing
@@ -424,7 +421,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     #---------------------Necessary Initializations------------------------    
     prng = RandomState(int(time.time()))
     block_start_inds = range(T0,TT,block_size)
-    no_blocks = (1+TT-T0)/block_size
+    no_blocks = math.floor((1+TT-T0)/block_size)
     
     if (mthd == 1) or (mthd == 2):
         lambda_tot = np.zeros([TT,1])
@@ -444,6 +441,7 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         W_tot = W_tot - W_tot.mean()
         #W_tot = whiten(W_tot)
         W_tot = W_tot/(0.001+np.linalg.norm(W_tot))/float(len_v)
+        W_tot = np.zeros([len_v,1])
         
         
     total_cost = np.zeros([len(range_tau)])
@@ -469,12 +467,12 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     
     #--------------------Prepare the First Spike Matrix------------------------
     int_results = []
-        
     for t_start in range(0,block_size,t_step):
         t_end = min(block_size-1,t_start + t_step)
-        
-        
+        if t_end - t_start < 1:
+            continue
         #calculate_integration_matrix(n_ind,out_spikes_tot_mat_file,n,t_start,t_end,tau_d,tau_s,kernel_choice,hidden_neurons)
+        
         func_args = [n_ind,out_spikes_tot_mat_file,n,t_start,t_end,tau_d,tau_s,kernel_choice,hidden_neurons]
         int_results.append(pool.apply_async( calculate_integration_matrix, func_args) )
         #pool.close()
@@ -520,7 +518,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                 inferece_params[10] = 0
 
                 #Delta_W,d_alp_vec,t_start,t_end,cst,memory_used  = infer_w_block(W_tot,A,YA,lambda_temp,len_v,0,t_step_w,inferece_params)
-                
                 #pdb.set_trace()
                     
                 if 0:#not (itr_cost%2):
@@ -575,16 +572,16 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
                     
                 if tt_end == t_end_last_w:
                     itr_block_w = itr_block_w + 1
-                    total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,W_tot)<0)
-                    print(total_cost[itr_cost])
+                    #total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,W_tot)<0)
+                    
                 
                 if (mthd == 1) or (mthd == 2):
                     lambda_tot[tt_start:tt_end] = lambda_tot[tt_start:tt_end] + d_alp_vec * (beta_K/float(no_blocks)) 
-        
-        #pdb.set_trace()       
+
         if itr_block_w >= len(block_start_inds):
             #Delta_W_loc = np.dot(A.T,lambda_tot[b_st:t_end_last_w+2])
             
+            #pdb.set_trace()
             W_tot = W_tot + (beta_K/float(no_blocks)) * np.reshape(Delta_W,[len_v,1])
             
             if (mthd == 3) or (mthd == 4) or (mthd == 6):
@@ -603,7 +600,6 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
             print('Processing %s blocks was finished, with cost being %s' %(str(no_blocks),str(total_cost[itr_cost])))
             #W_tot = np.multiply(W_tot,(W_tot>0).astype(int))
             itr_block_w = 0
-            itr_cost = itr_cost + 1
             Delta_W = 0*Delta_W#np.zeros([n,1])
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         total_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss + mem_temp
@@ -613,13 +609,19 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
         print('Total memory after iteration %s is %s' %(str(ttau),str(max_memory)))
             
         #~~~~~~~~~~Break If Stopping Condition is Reached~~~~~~~~~~~
-        if itr_cost >= 7:
+        total_cost[itr_cost] = total_cost[itr_cost] + sum(np.dot(A,Delta_W)<0)
+        #if sum(np.dot(A,Delta_W)<0) > 1000:
+        #    pdb.set_trace()
+        
+        print(total_cost[itr_cost])
+        if itr_cost >= 2 * len(block_start_inds):
             if abs(total_cost[itr_cost-1]-total_cost[itr_cost-2])/(0.001+total_cost[itr_cost-2]) < 0.00001:
                 break
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        itr_cost = itr_cost + 1
         
         
-    print(total_cost[1:itr_cost])
+    #print(total_cost[1:itr_cost])
     #--------------------------------------------------------------------
         
     
@@ -636,8 +638,10 @@ def inference_constraints_hinge_parallel(out_spikes_tot_mat_file,TT,block_size,n
     #        itr_iij += 1
 
     WW = W_tot[:,0]
+    #pdb.set_trace()
     A = None
     YA = None
+    
     
     pool.close()
     pool.join()
@@ -671,8 +675,8 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
     
     #------------------------Initializations------------------------
     initial_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    from auxiliary_functions import soft_threshold
-    from auxiliary_functions import soft_threshold_double
+    from CommonFunctions.auxiliary_functions import soft_threshold
+    from CommonFunctions.auxiliary_functions import soft_threshold_double
     from numpy.random import RandomState
     prng = RandomState(int(time.time()))
     #if not np.linalg.norm(W_in):
@@ -683,7 +687,7 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         t_gap = 4
         #t_init = np.random.randint(0,t_gap)
         t_init = prng.randint(0,t_gap)
-        t_inds = np.array(range(t_init,t_end-t_start,t_gap))
+        t_inds = np.array(range(t_init,t_end-t_start-1,t_gap))
         aa = aa[t_inds,:]
         yy = yy[t_inds]
         
@@ -1004,7 +1008,8 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
                     sparse_thr_neg = np.multiply(W_temp[:-1],(W_temp[:-1]<0).astype(int)).std()/float(sparse_thr_0)
                     W_temp[:-1] = soft_threshold_double(W_temp[:-1],sparse_thr_pos,sparse_thr_neg)
                     
-                cst = cst + np.sign(max(0,.1-np.dot(W_temp.T,aa_t)))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
+                cst = cst + max(0,.1-np.dot(W_temp.T,aa_t))#(hinge_loss_func(W_temp,-aa_t,.1,1,0))
+                #print(hinge_loss_func(W_temp,-aa_t,.1,1,0))
             #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             
             #--------------In Compliance with Jaggi's Work------------------
@@ -1018,6 +1023,8 @@ def infer_w_block(W_in,aa,yy,lambda_temp,len_v,t_start,t_end,inferece_params):
         w_flag_for_parallel = -1                # This is to make return arguments to 4 and make sure that it is distinguishable from other parallel jobs
         #pdb.set_trace()
     memory_used = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss - initial_memory
+    
+    print(cst)
     if no_firings_per_neurons.max() > 2:
         print(no_firings_per_neurons)
 
