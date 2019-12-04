@@ -26,7 +26,7 @@ os.system('clear')                                              # Clear the comm
 
 #---------------------Initialize Simulation Variables--------------------------
 n = 94                                          # Number of neurons in the dataset
-no_structural_info = 28
+no_structural_info = 0
 eta = 0.5
 eta_max = 0.1
 ternary_flag = 1                                # If 1, the algorithm bases its analysis on the ternary matrix.
@@ -58,15 +58,19 @@ W_gt = W_gt.T
 #============================Read the  Inferred Weights========================
 W_inferred = np.zeros([n,n])
 #file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_2_***_T_1200000.txt"
+# TODO: make these into a pipline too
 if no_structural_info:
-    file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_4_***_f_" + str(no_structural_info) + "_T_1200000"
+    file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_8.0_C_4_B_150000_K_E_H_0.5_ii_5_***_f_" + str(no_structural_info) + "_T_1500000"
 else:
     file_name_base = "W_Pll_HC3_ec013_198_processed_I_1_S_1.0_C_8_B_300000_K_E_H_0.0_ii_4_***_T_1200000"
     
+# TODO: make this based on command line as well
+ternary_adjustment_ending = "_1.75_2.0_B_4"
+
 if ternary_flag:
     file_name_base = "W_Binary_" + file_name_base
     if not no_structural_info:
-        file_name_base += "_1_1_B_4.txt"
+        file_name_base += ternary_adjustment_ending + ".txt"
 elif not no_structural_info:
     file_name_base += ".txt"
 
@@ -84,20 +88,18 @@ for i in range(0,n):
             file_name = os.path.join(results_dir, file)
             if '_n_' not in file_name:
                 file_name_ending_list.append(file_name)
-    
     for file_name in file_name_ending_list:
         W_read = np.genfromtxt(file_name, dtype=None, delimiter='\t')
-
-
 
     #-----------------Calculate the Binary Matrix From Beliefs-----------------
         if no_structural_info:
             file_name_ending_mod = file_name.replace('W_Binary_','')
             file_name_ending_mod = file_name_ending_mod.replace('../Results/Inferred_Graphs/','')
             file_name_ending_mod = file_name_ending_mod.replace('W_Pll_','')
-            file_name_ending_mod = file_name_ending_mod.replace("_1_1_B_4",'')
+            file_name_ending_mod = file_name_ending_mod.replace(ternary_adjustment_ending,'')
 
             file_name = '../Results/Inferred_Graphs/Hidden_or_Structured_Neurons_' + file_name_ending_mod
+
             try:
                 hidden_neurons = np.genfromtxt(file_name, dtype=None, delimiter='\t')
             except:
@@ -108,6 +110,7 @@ for i in range(0,n):
     #--------------------------------------------------------------------------
 
     #--------------------Remap the --------------------------
+        hidden_neurons = hidden_neurons.astype(int)
         itr = 0
         for j in range(0,n):
             if j not in hidden_neurons:
@@ -126,11 +129,11 @@ true_pos_exc = 0
 true_pos_inh = 0
 false_pos_exc = 0
 false_pos_inh = 0
-cutoff_thr = 0
+cutoff_thr = 12
 for i in range(0,n):
     W_r = W_inferred[i,:]
     deg_ind = neurons_type_actual[i]
-    #neurons_type_inferred[i] = np.sign(aa[i])
+    neurons_type_inferred[i] = np.sign(aa[i])
     #ss = aa[i]  
     ss = sum(W_r>0)-sum(W_r<0)
 

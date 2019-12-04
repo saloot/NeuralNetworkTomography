@@ -6,18 +6,18 @@
 #file_ending="LIF_Spike_Times_I_1_S_1.0_C_8_B_400000_K_E_H_0.0_ii_2_0_F_150_f"
 
 plot_var=''
-#plot_var='H'
-no_structural_neurons=0
-no_itr_over_dataset=10
+plot_var='f'
+no_structural_neurons=20
+no_itr_over_dataset=5
 
 for n_ind in $(seq 0 95); do    
 
-    for TT in 1000000; do
-        for ff in 0; do
+    for TT in 1500000; do
+        for ff in 20; do
 
             echo "Running for neuron ${n_ind} and no structural neurons ${ff} and recording size of ${TT}"
             
-            file_ending="HC3_ec013_198_processed_I_1_S_1.0_C_4_B_100000_K_E_H_0_ii_${no_itr_over_dataset}_${n_ind}"
+            file_ending="HC3_ec013_198_processed_I_1_S_8.0_C_4_B_150000_K_E_H_0.5_ii_${no_itr_over_dataset}_${n_ind}"
             
             if [ ${ff} -gt 0 ]
             then
@@ -35,7 +35,7 @@ for n_ind in $(seq 0 95); do
 
             # Transforming to ternary   
             echo "${file_ending2}_T_${TT}"
-            python Transform_to_Ternary.py -B 4 -N 94 -n ${n_ind} -A "W_Pll_${file_ending2}_T_${TT}"
+            python Transform_to_Ternary.py -B 4 -N 94 -n ${n_ind} -f ${no_structural_neurons} -A "W_Pll_${file_ending2}_T_${TT}" -j 1.75 -c 2
 
             # Calculating accuracy
             # python Calculate_Accuracy.py -B 4 -N 1000 -H ${no_hidden_neurons} -${plot_var} ${ff} -n ${n_ind} -F "../Data/Graphs/LIF_Actual_Connectivity.txt" -A "W_Binary_${file_ending2}_T_${TT}"
