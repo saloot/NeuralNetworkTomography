@@ -35,19 +35,6 @@ ternary_flag = 1                                # If 1, the algorithm bases its 
 
 #==============================================================================
 
-#================Read the Degree Distribution of the Dataset===================
-file_name_W_deg = '../Data/Graphs/HC3_W_deg.txt'
-W_deg = np.genfromtxt(file_name_W_deg, dtype=None, delimiter='\t')
-    
-neurons_type_actual = np.zeros([n,1])
-for ik in range(0,n):
-    if W_deg[ik,8] > 0:#W_deg[ik,0] > W_deg[ik,1]:#
-        neurons_type_actual[ik,0] = 1
-    elif W_deg[ik,8] < 0:#:W_deg[ik,0] < W_deg[ik,1]:
-        neurons_type_actual[ik,0] = -1
-#==============================================================================
-
-
 #=========================Apply Structural Information=========================
 file_name_ground_truth =  "../Data/Graphs/HC3_Structural_Info.txt"
 W_gt = np.genfromtxt(file_name_ground_truth, dtype=None, delimiter='\t')
@@ -120,6 +107,17 @@ for i in range(0,n):
 
 #==============================================================================
 
+#================Read the Degree Distribution of the Dataset===================
+file_name_W_deg = '../Data/Graphs/HC3_W_deg.txt'
+W_deg = np.genfromtxt(file_name_W_deg, dtype=None, delimiter='\t')
+    
+neurons_type_actual = np.zeros([n,1])
+for ik in range(0,n):
+    if W_deg[ik,0] > W_deg[ik,1]:#W_deg[ik,8] > 0
+        neurons_type_actual[ik,0] = 1
+    elif W_deg[ik,0] < W_deg[ik,1]: #W_deg[ik,8] < 0
+        neurons_type_actual[ik,0] = -1
+#==============================================================================
 
 #================Estmate Neuron Type from Inferred Weights=====================
 neurons_type_inferred = np.zeros([n,1])
@@ -129,15 +127,15 @@ true_pos_exc = 0
 true_pos_inh = 0
 false_pos_exc = 0
 false_pos_inh = 0
-cutoff_thr = 12
+cutoff_thr = 5
 for i in range(0,n):
     W_r = W_inferred[i,:]
     deg_ind = neurons_type_actual[i]
     neurons_type_inferred[i] = np.sign(aa[i])
     #ss = aa[i]  
-    ss = sum(W_r>0)-sum(W_r<0)
+    ss = (sum(W_r>0)-sum(W_r<0))
 
-    if ss > cutoff_thr:
+    if ss/sum(W_r!=0) > 0.95 and ss > cutoff_thr:
         neurons_type_inferred[i] = 1
     elif ss < -cutoff_thr:
         neurons_type_inferred[i] = -1
@@ -161,6 +159,13 @@ no_inh = sum(neurons_type_actual<0)
 
 recal_exc = true_pos_exc/float(no_exc)
 recal_inh = true_pos_inh/float(no_inh)
+
+# To calculate precision, limit attention to those neurons we are
+# "SURE" what their type is
+if 1:
+    for i in range(0,len(neurons_type_actual)):
+        if neurons_type_actual[i] == 0:
+            neurons_type_inferred[i] = 0
 
 precision_exc = true_pos_exc/float(sum(neurons_type_inferred>0))
 precision_inh = true_pos_inh/float(sum(neurons_type_inferred<0))
